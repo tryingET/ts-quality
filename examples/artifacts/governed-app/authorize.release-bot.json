@@ -2,7 +2,7 @@
   "action": "merge",
   "agentId": "release-bot",
   "consideredAttestations": [],
-  "id": "2026-03-18T01-35-42-645Z:release-bot:merge",
+  "id": "2026-03-18T01-39-39-748Z:release-bot:merge",
   "missingProof": [
     "ci.tests.passed"
   ],
