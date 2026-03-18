@@ -126,6 +126,9 @@ function grantMatches(grant: AuthorityGrant, action: string, changedFiles: strin
   if (!grant.actions.includes(action)) {
     return false;
   }
+  if (changedFiles.length === 0) {
+    return false;
+  }
   if (!changedFiles.every((filePath) => matchesAny(grant.paths, filePath))) {
     return false;
   }
@@ -181,6 +184,20 @@ export function authorizeChange(agentId: string, action: string, bundle: ChangeB
       missingProof: [],
       requiredApprovers: [],
       consideredAttestations: []
+    };
+  }
+
+  if (bundle.changedFiles.length === 0) {
+    return {
+      id: `${bundle.runId}:${agentId}:${action}`,
+      agentId,
+      action,
+      outcome: 'deny',
+      reasons: ['No changed files were bound to this authorization request. Re-run check with explicit changes or allow it to default to discovered source files.'],
+      scope: bundle.changedFiles,
+      missingProof: [],
+      requiredApprovers: [],
+      consideredAttestations: attestations.map((item) => item.issuer)
     };
   }
 
