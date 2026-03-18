@@ -29,7 +29,7 @@
     {
       "code": "surviving-mutant",
       "evidence": [
-        "✔ active token before expiry allows access (0.486587ms)\n✔ missing token denies access (0.089786ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 47.903329"
+        "✔ active token before expiry allows access (0.473546ms)\n✔ missing token denies access (0.088394ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 43.931048"
       ],
       "id": "policy:surviving:sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15",
       "level": "error",
@@ -41,7 +41,7 @@
     {
       "code": "surviving-mutant",
       "evidence": [
-        "✔ active token before expiry allows access (0.776517ms)\n✔ missing token denies access (0.110697ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 47.570213"
+        "✔ active token before expiry allows access (0.459234ms)\n✔ missing token denies access (0.087522ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 43.994715"
       ],
       "id": "policy:surviving:sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20",
       "level": "error",
@@ -53,7 +53,7 @@
     {
       "code": "surviving-mutant",
       "evidence": [
-        "✔ active token before expiry allows access (0.463713ms)\n✔ missing token denies access (0.091839ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 48.679965"
+        "✔ active token before expiry allows access (0.4566ms)\n✔ missing token denies access (0.088754ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 41.664079"
       ],
       "id": "policy:surviving:sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8",
       "level": "error",

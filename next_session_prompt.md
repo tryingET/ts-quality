@@ -1,5 +1,5 @@
 ---
-summary: "Active handoff: AK #187 is complete; start with #185, then #186 unless the operator reprioritizes."
+summary: "Active handoff: AK #185 is complete; start with #186 unless the operator reprioritizes."
 read_when:
   - "At the start of every work session"
   - "When resuming work in ts-quality after a pause"
@@ -14,8 +14,8 @@ Do not ask for permission to start.
 
 ## ACTIVE GOAL STACK
 - **Strategic goal:** SG1 — close the remaining concise operator-surface gaps under `behaviorClaims[].evidenceSummary`
-- **Tactical goal:** TG2 — align generated sample artifacts and README with the concise output contract
-- **Operating slices:** AK `#185`, then AK `#186`
+- **Tactical goal:** TG3 — lock concise output parity with targeted regression coverage
+- **Operating slices:** AK `#186`
 
 ## START HERE
 1. Run `./scripts/ak.sh --doctor`
@@ -23,15 +23,14 @@ Do not ask for permission to start.
    ```bash
    ./scripts/ak.sh task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
    ```
-3. Unless the operator reprioritizes, start with **AK `#185`** — `ts-quality: include check-summary.txt in generated sample artifacts and README`
+3. Unless the operator reprioritizes, start with **AK `#186`** — `ts-quality: add regression coverage for check-summary provenance output`
 
 ## CURRENT QUEUE TRUTH
 Ready now:
-- `#185` — include `check-summary.txt` in generated sample artifacts and README
 - `#186` — add regression coverage for check-summary provenance output
 
 Completed this session:
-- `#187` — surface risky invariant context in trend output
+- `#185` — include `check-summary.txt` in generated sample artifacts and README
 
 ## READ-FIRST ORDER
 1. `AGENTS.md`

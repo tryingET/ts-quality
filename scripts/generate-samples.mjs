@@ -59,7 +59,7 @@ const amendOut = run(['amend', '--proposal', 'proposal.json'], target);
 const outDir = path.join(root, 'examples', 'artifacts', 'governed-app');
 fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
-for (const fileName of ['run.json', 'verdict.json', 'report.md', 'report.json', 'pr-summary.md', 'explain.txt', 'plan.txt', 'govern.txt']) {
+for (const fileName of ['run.json', 'verdict.json', 'report.md', 'report.json', 'pr-summary.md', 'check-summary.txt', 'explain.txt', 'plan.txt', 'govern.txt']) {
   fs.copyFileSync(path.join(runDir, fileName), path.join(outDir, fileName));
 }
 const releaseDecisionPath = path.join(runDir, 'authorize.release-bot.merge.json');

@@ -24,7 +24,7 @@ That foundation narrows the real strategic choice to what still remains unfinish
 
 | Rank | Goal | Importance | Urgency | Difficulty | Why it made the cut |
 |---|---|---:|---:|---:|---|
-| 1 | **SG1 — Close the remaining concise operator-surface gaps under `behaviorClaims[].evidenceSummary`** | 5 | 5 | 3 | Runtime concise surfaces now project risky-invariant context, but the reviewed sample bundle/README contract and parity-hardening work still lag behind that shipped evidence surface. |
+| 1 | **SG1 — Close the remaining concise operator-surface gaps under `behaviorClaims[].evidenceSummary`** | 5 | 5 | 3 | Runtime concise surfaces and the reviewed sample bundle/README contract are now aligned, but parity-hardening regression coverage still lags behind that shipped evidence surface. |
 | 2 | **SG2 — Carry the same evidence truth into governance/legitimacy decision surfaces that still compress authority too far** | 4 | 3 | 4 | The vision explicitly calls for governance and legitimacy to consume the same explainable evidence basis, but the repo has not yet decomposed that later wave into executable repo-local work. |
 
 ## Active now vs next

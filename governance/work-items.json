@@ -89,14 +89,15 @@
         {
           "id": "AK-TASK-0185",
           "title": "ts-quality: include check-summary.txt in generated sample artifacts and README",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: include check-summary.txt in generated sample artifacts and README (task #185)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-03-18"
         },
         {
           "id": "AK-TASK-0186",

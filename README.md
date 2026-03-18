@@ -61,6 +61,7 @@ A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<ru
 - `verdict.json` — merge-confidence verdict
 - `report.md` — human-readable report
 - `pr-summary.md` — PR-facing summary with concise invariant evidence provenance
+- `check-summary.txt` — terse run-status summary with the first at-risk invariant provenance when present
 - `explain.txt` — explanation trail
 - `plan.txt` — governance plan with related invariant evidence provenance for the at-risk claim
 - `govern.txt` — governance findings with related invariant evidence provenance for the at-risk claim
@@ -124,4 +125,4 @@ Use `./scripts/ak.sh` as the canonical entrypoint and `./scripts/ak-v2.sh` as th
 
 ## Sample artifacts
 
-Generated sample artifacts live under `examples/artifacts/governed-app/` after `npm run sample-artifacts`.
+Generated sample artifacts live under `examples/artifacts/governed-app/` after `npm run sample-artifacts`, including concise operator surfaces like `pr-summary.md`, `check-summary.txt`, `plan.txt`, and `govern.txt`.

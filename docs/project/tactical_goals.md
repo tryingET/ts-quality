@@ -1,5 +1,5 @@
 ---
-summary: "Tactical goals for the active strategic goal (SG1) in ts-quality, with TG2 now active after concise run-status parity landed."
+summary: "Tactical goals for the active strategic goal (SG1) in ts-quality, with TG3 now active after sample-artifact / README alignment landed."
 read_when:
   - "When planning the next sprint/week for ts-quality"
   - "When turning the active strategic goal into bounded delivery waves"
@@ -17,8 +17,8 @@ It does **not** yet decompose SG2.
 | Rank | Tactical goal | Importance | Urgency | Difficulty | Status |
 |---|---|---:|---:|---:|---|
 | 1 | **TG1 — Finish concise run-status outputs so they still show risky-invariant context** | 5 | 5 | 2 | **completed 2026-03-18** |
-| 2 | **TG2 — Align generated sample artifacts and README with the concise output contract** | 4 | 4 | 2 | **active now** |
-| 3 | **TG3 — Lock concise output parity with targeted regression coverage** | 4 | 4 | 3 | next under SG1 |
+| 2 | **TG2 — Align generated sample artifacts and README with the concise output contract** | 4 | 4 | 2 | **completed 2026-03-18** |
+| 3 | **TG3 — Lock concise output parity with targeted regression coverage** | 4 | 4 | 3 | **active now** |
 | 4 | **TG4 — Re-audit remaining decision-side outputs after run-status parity lands** | 3 | 3 | 3 | later under SG1 |
 
 ## TG1 — Finish concise run-status outputs so they still show risky-invariant context
@@ -39,20 +39,25 @@ That gap is now closed:
 
 ## TG2 — Align generated sample artifacts and README with the concise output contract
 
-### Why this is active now
-The runtime concise surfaces are now aligned, but the reviewed example bundle and README still lag behind the shipped contract.
-The next work should make the reviewed artifacts show the same concise surfaces operators are expected to trust.
+### Why TG2 is now complete
+The reviewed example bundle and README now show the same concise surfaces operators are expected to trust:
+- `scripts/generate-samples.mjs` exports `check-summary.txt`
+- `examples/artifacts/governed-app/` now includes `check-summary.txt`
+- `README.md` lists `check-summary.txt` as part of the concise run-status artifact contract
 
-### Success signals
+### Completion signals now true
 - `scripts/generate-samples.mjs` exports the concise surfaces the repo intends reviewers to trust
 - `README.md` lists and describes those concise artifacts truthfully
 - example artifacts remain reviewable and intentional
 
+### Operating-plan handoff
+`operating_plan.md` now decomposes **TG3 only**.
+
 ## TG3 — Lock concise output parity with targeted regression coverage
 
-### Why this matters next
-Concise outputs drift easily because they look secondary.
-They need explicit regression coverage once the sample-artifact / README alignment pass lands.
+### Why this is active now
+The runtime surfaces and reviewed sample/documentation contract are aligned.
+The remaining SG1 risk is drift: concise outputs look secondary, so they need explicit regression coverage before future report tweaks can silently break the contract.
 
 ### Success signals
 - targeted tests fail if concise provenance disappears from the intended surfaces
@@ -62,8 +67,8 @@ They need explicit regression coverage once the sample-artifact / README alignme
 ## TG4 — Re-audit remaining decision-side outputs after run-status parity lands
 
 ### Why this stays later
-This tactical goal belongs to the same strategic theme, but it should wait until TG2-TG3 are complete.
-After the sample/README contract and parity hardening land, the repo can re-check whether any remaining decision-side outputs still summarize evidence too aggressively.
+This tactical goal belongs to the same strategic theme, but it should wait until TG3 is complete.
+After parity hardening lands, the repo can re-check whether any remaining decision-side outputs still summarize evidence too aggressively.
 
 ### Likely evidence to inspect when promoted
 - authorization / attestation review text
@@ -74,4 +79,4 @@ After the sample/README contract and parity hardening land, the repo can re-chec
 - keep `behaviorClaims[].evidenceSummary` as the additive root
 - do not let concise outputs outrank `run.json`
 - prefer small end-to-end slices over broad redesign
-- do not decompose TG3-TG4 into operating slices until TG2 is materially complete
+- do not decompose TG4 into active operating slices until TG3 is materially complete

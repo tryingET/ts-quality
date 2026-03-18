@@ -1,0 +1,9 @@
+Merge confidence: 6/100
+Outcome: fail
+Best next action: Add or tighten an assertion covering src/auth/token.js around the surviving mutant.
+
+Invariant evidence at risk: auth.refresh.validity
+Evidence provenance: explicit 3, inferred 1, missing 1
+focused-test-alignment [clear; mode=inferred]: 1 focused test file aligned to invariant scope
+scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support
+mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 4 mutation sites
