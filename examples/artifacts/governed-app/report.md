@@ -69,7 +69,7 @@ type: "reference"
   - scenario results: expired-boundary=missing failure-path evidence
   - sub-signals:
     - focused-test-alignment [clear; mode=inferred]: 1 focused test file aligned to invariant scope
-      - mode reason: matched focused tests via deterministic path/name/selector hints
+      - mode reason: matched focused tests via deterministic path/import/selector hints
       - impacted files: src/auth/token.js
       - focused tests: test/token.test.js
     - scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support

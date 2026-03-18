@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.evaluateInvariants = evaluateInvariants;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const typescript_1 = __importDefault(require("typescript"));
 const index_1 = require("../../evidence-model/src/index");
 function selectorMatchesInvariant(selector, filePath, symbols) {
     if (selector.startsWith('path:')) {
@@ -36,6 +37,27 @@ function impactedFiles(invariant, changedFiles, changedRegions, complexity) {
     }
     return [...output].sort();
 }
+function importHintsForDocument(filePath, contents) {
+    const sourceFile = typescript_1.default.createSourceFile(filePath, contents, typescript_1.default.ScriptTarget.Latest, true);
+    const hints = [];
+    function pushSpecifier(specifier) {
+        hints.push(...lexicalVariants(specifier));
+    }
+    function visit(node) {
+        if ((typescript_1.default.isImportDeclaration(node) || typescript_1.default.isExportDeclaration(node)) && node.moduleSpecifier && typescript_1.default.isStringLiteral(node.moduleSpecifier)) {
+            pushSpecifier(node.moduleSpecifier.text);
+        }
+        if (typescript_1.default.isCallExpression(node) && node.expression?.getText(sourceFile) === 'require' && node.arguments.length === 1) {
+            const argument = node.arguments[0];
+            if (typescript_1.default.isStringLiteral(argument)) {
+                pushSpecifier(argument.text);
+            }
+        }
+        typescript_1.default.forEachChild(node, visit);
+    }
+    visit(sourceFile);
+    return unique(hints.map((hint) => hint.toLowerCase()));
+}
 function loadTestDocuments(rootDir, patterns) {
     const files = (0, index_1.collectSourceFiles)(rootDir, patterns);
     return files.map((filePath) => {
@@ -43,7 +65,8 @@ function loadTestDocuments(rootDir, patterns) {
         return {
             filePath,
             contents,
-            lowered: contents.toLowerCase()
+            lowered: contents.toLowerCase(),
+            importHints: importHintsForDocument(filePath, contents)
         };
     });
 }
@@ -95,14 +118,14 @@ function focusedTestDocuments(testDocuments, invariant, files) {
     ]).filter((hint) => hint.length >= 3);
     const documents = testDocuments.filter((document) => {
         const loweredPath = document.filePath.toLowerCase();
-        return hints.some((hint) => loweredPath.includes(hint) || document.lowered.includes(hint));
+        return hints.some((hint) => loweredPath.includes(hint) || document.importHints.some((importHint) => importHint.includes(hint)));
     });
     return {
         documents,
         mode: documents.length > 0 ? 'inferred' : 'missing',
         modeReason: documents.length > 0
-            ? 'matched focused tests via deterministic path/name/selector hints'
-            : 'no focused tests matched deterministic path/name/selector hints'
+            ? 'matched focused tests via deterministic path/import/selector hints'
+            : 'no focused tests matched deterministic path/import/selector hints'
     };
 }
 function scenarioHasCoverage(corpus, keywords) {

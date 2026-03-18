@@ -194,15 +194,29 @@ function resolveCliPath(rootDir, candidate, options) {
     }
     return options?.preferRoot === false ? cwdResolved : rootResolved;
 }
+function relativePathInsideRoot(rootDir, absolutePath) {
+    const relative = portablePath(path_1.default.relative(rootDir, absolutePath));
+    if (!relative || relative === '..' || relative.startsWith('../') || path_1.default.isAbsolute(relative)) {
+        return undefined;
+    }
+    return (0, index_1.normalizePath)(relative);
+}
+function runScopedArtifactReference(subjectFile) {
+    const match = /^\.ts-quality\/runs\/([^/]+)\/([^/]+)$/.exec((0, index_1.normalizePath)(subjectFile));
+    if (!match) {
+        return undefined;
+    }
+    return {
+        runId: match[1] ?? '',
+        artifactName: match[2] ?? ''
+    };
+}
 function recordSubjectPath(rootDir, resolvedSubject, originalCandidate) {
-    const relative = portablePath(path_1.default.relative(rootDir, resolvedSubject));
-    if (relative && !relative.startsWith('..')) {
+    const relative = relativePathInsideRoot(rootDir, resolvedSubject);
+    if (relative) {
         return relative;
     }
-    if (path_1.default.isAbsolute(resolvedSubject)) {
-        return portablePath(resolvedSubject);
-    }
-    return (0, index_1.normalizePath)(originalCandidate);
+    throw new Error(`attestation subject must be inside --root: ${originalCandidate}`);
 }
 function verifyAttestationAtRoot(rootDir, attestation, trustedKeys) {
     const signature = (0, index_7.verifyAttestation)(attestation, trustedKeys);
@@ -211,9 +225,22 @@ function verifyAttestationAtRoot(rootDir, attestation, trustedKeys) {
     }
     const subjectFile = typeof attestation.payload?.subjectFile === 'string' ? attestation.payload.subjectFile : undefined;
     if (!subjectFile) {
-        return signature;
+        return { ok: false, reason: 'subject file missing from attestation payload' };
     }
-    const resolvedSubject = path_1.default.isAbsolute(subjectFile) ? subjectFile : path_1.default.resolve(rootDir, subjectFile);
+    if (path_1.default.isAbsolute(subjectFile)) {
+        return { ok: false, reason: 'subject file must be repo-relative' };
+    }
+    const normalizedSubject = (0, index_1.normalizePath)(subjectFile);
+    const resolvedSubject = path_1.default.resolve(rootDir, normalizedSubject);
+    const relativeSubject = relativePathInsideRoot(rootDir, resolvedSubject);
+    if (!relativeSubject || relativeSubject !== normalizedSubject) {
+        return { ok: false, reason: 'subject file escapes repository root' };
+    }
+    const scopedSubject = runScopedArtifactReference(normalizedSubject);
+    const payloadRunId = typeof attestation.payload?.runId === 'string' ? attestation.payload.runId : undefined;
+    if (payloadRunId && scopedSubject && payloadRunId !== scopedSubject.runId) {
+        return { ok: false, reason: 'attestation payload runId does not match subject path' };
+    }
     if (!fs_1.default.existsSync(resolvedSubject)) {
         return { ok: false, reason: `subject file missing: ${subjectFile}` };
     }
@@ -224,10 +251,22 @@ function verifyAttestationAtRoot(rootDir, attestation, trustedKeys) {
     return { ok: true, reason: 'verified' };
 }
 function attestationAppliesToRun(attestation, runId) {
-    const subjectFile = typeof attestation.payload?.subjectFile === 'string' ? portablePath(attestation.payload.subjectFile) : '';
-    return subjectFile.includes(`runs/${runId}/`);
+    const subjectFile = typeof attestation.payload?.subjectFile === 'string' ? attestation.payload.subjectFile : undefined;
+    if (!subjectFile || path_1.default.isAbsolute(subjectFile)) {
+        return false;
+    }
+    const scopedSubject = runScopedArtifactReference(subjectFile);
+    if (!scopedSubject || scopedSubject.runId !== runId) {
+        return false;
+    }
+    const payloadRunId = typeof attestation.payload?.runId === 'string' ? attestation.payload.runId : undefined;
+    return payloadRunId === undefined || payloadRunId === runId;
 }
 function writeModuleExport(filePath, value) {
+    if (filePath.endsWith('.json')) {
+        (0, index_1.writeJson)(filePath, value);
+        return;
+    }
     (0, index_1.ensureDir)(path_1.default.dirname(filePath));
     fs_1.default.writeFileSync(filePath, `export default ${(0, index_1.stableStringify)(value)};\n`, 'utf8');
 }
@@ -243,7 +282,15 @@ function loadVerifiedAttestations(rootDir, attestationsDir, trustedKeysDir) {
     const verification = [];
     const attestations = [];
     for (const filePath of attestationFiles(rootDir, attestationsDir)) {
-        const attestation = JSON.parse(fs_1.default.readFileSync(filePath, 'utf8'));
+        let attestation;
+        try {
+            attestation = JSON.parse(fs_1.default.readFileSync(filePath, 'utf8'));
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            verification.push({ issuer: path_1.default.basename(filePath), ok: false, reason: `invalid JSON: ${message}` });
+            continue;
+        }
         const result = verifyAttestationAtRoot(rootDir, attestation, keys);
         verification.push({ issuer: attestation.issuer, ok: result.ok, reason: result.reason });
         if (result.ok) {
@@ -266,7 +313,8 @@ function runCheck(rootDir, options) {
     const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
     const sourceFiles = (0, index_1.collectSourceFiles)(rootDir, loaded.config.sourcePatterns);
     const changedRegions = loaded.config.changeSet.diffFile ? (0, config_1.loadChangedRegions)(rootDir, loaded.config.changeSet.diffFile) : [];
-    const changedFiles = (options?.changedFiles ?? loaded.config.changeSet.files ?? sourceFiles).map((item) => (0, index_1.normalizePath)(item));
+    const configuredChangedFiles = loaded.config.changeSet.files ?? [];
+    const changedFiles = (options?.changedFiles ?? (configuredChangedFiles.length > 0 ? configuredChangedFiles : sourceFiles)).map((item) => (0, index_1.normalizePath)(item));
     const runId = (0, index_1.assertSafeRunId)(options?.runId ?? (0, index_1.createRunId)());
     const createdAt = (0, index_1.nowIso)();
     const lcovPath = path_1.default.join(rootDir, loaded.config.coverage.lcovPath);
@@ -350,11 +398,9 @@ function runCheck(rootDir, options) {
         mutationBaseline: mutationRun.baseline,
         behaviorClaims: claims,
         governance,
-        waivers
+        waivers,
+        ...(previousRun ? { previousRun } : {})
     };
-    if (previousRun) {
-        evaluatedInput.previousRun = previousRun;
-    }
     const evaluated = (0, index_5.evaluatePolicy)(evaluatedInput);
     const repo = (0, index_1.buildRepositoryEntity)(rootDir, sourceFiles);
     const analysis = buildAnalysisContext({
@@ -443,17 +489,17 @@ function renderLatestExplain(rootDir) {
     return `${(0, index_5.renderExplainText)((0, index_1.readLatestRun)(rootDir))}\n`;
 }
 function renderTrend(rootDir) {
-    const runIds = (0, index_1.listRunIds)(rootDir);
-    if (runIds.length < 2) {
+    const runs = (0, index_1.listRunIds)(rootDir)
+        .map((runId) => (0, index_1.loadRun)(rootDir, runId))
+        .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.runId.localeCompare(right.runId));
+    if (runs.length < 2) {
         return 'Not enough runs for trend analysis.\n';
     }
-    const currentId = runIds[runIds.length - 1];
-    const previousId = runIds[runIds.length - 2];
-    if (!currentId || !previousId) {
+    const current = runs[runs.length - 1];
+    const previous = runs[runs.length - 2];
+    if (!current || !previous) {
         return 'Not enough runs for trend analysis.\n';
     }
-    const current = (0, index_1.loadRun)(rootDir, currentId);
-    const previous = (0, index_1.loadRun)(rootDir, previousId);
     const survivingCurrent = current.mutations.filter((item) => item.status === 'survived').length;
     const survivingPrevious = previous.mutations.filter((item) => item.status === 'survived').length;
     const lines = [
@@ -469,24 +515,24 @@ function renderTrend(rootDir) {
     }
     return `${lines.join('\n')}\n`;
 }
-function renderGovernance(rootDir) {
-    const loaded = (0, config_1.loadContext)(rootDir);
+function renderGovernance(rootDir, options) {
+    const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
     const run = (0, index_1.readLatestRun)(rootDir);
     const constitution = (0, config_1.loadConstitution)(rootDir, loaded.config.constitutionPath);
     const agents = (0, config_1.loadAgents)(rootDir, loaded.config.agentsPath);
     const plan = (0, index_6.generateGovernancePlan)(run, constitution, agents);
     return renderGovernanceText(run, plan);
 }
-function renderPlan(rootDir) {
-    const loaded = (0, config_1.loadContext)(rootDir);
+function renderPlan(rootDir, options) {
+    const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
     const run = (0, index_1.readLatestRun)(rootDir);
     const constitution = (0, config_1.loadConstitution)(rootDir, loaded.config.constitutionPath);
     const agents = (0, config_1.loadAgents)(rootDir, loaded.config.agentsPath);
     const plan = (0, index_6.generateGovernancePlan)(run, constitution, agents);
     return renderPlanText(run, plan);
 }
-function runAuthorize(rootDir, agentId, action) {
-    const loaded = (0, config_1.loadContext)(rootDir);
+function runAuthorize(rootDir, agentId, action, options) {
+    const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
     const run = (0, index_1.readLatestRun)(rootDir);
     const agents = (0, config_1.loadAgents)(rootDir, loaded.config.agentsPath);
     const constitution = (0, config_1.loadConstitution)(rootDir, loaded.config.constitutionPath);
@@ -509,6 +555,8 @@ function runAuthorize(rootDir, agentId, action) {
 function attestSign(rootDir, issuer, keyId, privateKeyPath, subjectFile, claims, outputPath) {
     const resolvedSubject = resolveCliPath(rootDir, subjectFile);
     const resolvedKey = resolveCliPath(rootDir, privateKeyPath);
+    const recordedSubjectPath = recordSubjectPath(rootDir, resolvedSubject, subjectFile);
+    const scopedSubject = runScopedArtifactReference(recordedSubjectPath);
     const subjectText = fs_1.default.readFileSync(resolvedSubject, 'utf8');
     const attestation = (0, index_7.signAttestation)({
         issuer,
@@ -517,7 +565,10 @@ function attestSign(rootDir, issuer, keyId, privateKeyPath, subjectFile, claims,
         subjectType: path_1.default.extname(resolvedSubject) === '.json' ? 'json-artifact' : 'file',
         subjectDigest: (0, index_1.digestObject)(subjectText),
         claims,
-        payload: { subjectFile: recordSubjectPath(rootDir, resolvedSubject, subjectFile) }
+        payload: {
+            subjectFile: recordedSubjectPath,
+            ...(scopedSubject ? { runId: scopedSubject.runId, artifactName: scopedSubject.artifactName } : {})
+        }
     });
     const resolvedOutput = resolveCliPath(rootDir, outputPath);
     (0, index_1.ensureDir)(path_1.default.dirname(resolvedOutput));
@@ -539,8 +590,8 @@ function attestGenerateKey(outDir, keyId) {
     fs_1.default.writeFileSync(publicPath, pair.publicKeyPem, 'utf8');
     return `${privatePath}\n${publicPath}\n`;
 }
-function runAmend(rootDir, proposalFile, apply = false) {
-    const loaded = (0, config_1.loadContext)(rootDir);
+function runAmend(rootDir, proposalFile, apply = false, options) {
+    const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
     const constitution = (0, config_1.loadConstitution)(rootDir, loaded.config.constitutionPath);
     const agents = (0, config_1.loadAgents)(rootDir, loaded.config.agentsPath);
     const proposal = JSON.parse(fs_1.default.readFileSync(resolveCliPath(rootDir, proposalFile), 'utf8'));
