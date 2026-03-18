@@ -51,7 +51,7 @@ Focused tests are selected by either:
 - explicit `requiredTestPatterns`, or
 - deterministic alignment to the impacted source via file-name/import hints
 
-Unrelated tests elsewhere in the repo do not satisfy an invariant just because they contain the same words.
+Unrelated tests elsewhere in the repo do not satisfy an invariant just because they contain the same words or mention selector text in free-form prose.
 
 When evidence is weak, it emits concrete `TestObligation` records.
 

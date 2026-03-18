@@ -54,6 +54,8 @@ npx ts-quality attest sign --issuer ci.verify --key-id sample --private-key .ts-
 npx ts-quality amend --proposal proposal.json
 ```
 
+`attest sign` expects `--subject` to point at a repo-local artifact under `--root` (for example `.ts-quality/runs/<run-id>/verdict.json`).
+
 ## What a run produces
 
 A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<run-id>/`:
@@ -67,7 +69,7 @@ A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<ru
 - `plan.txt` — governance plan with related invariant evidence provenance for the at-risk claim
 - `govern.txt` — governance findings with related invariant evidence provenance for the at-risk claim
 
-`run.json` now also carries additive execution receipts that make the run boundary explicit instead of implicit: `analysis` records the preallocated run id, exact changed scope, source file set, and mutation execution fingerprint; `mutationBaseline` records whether the baseline test command was green before mutants were interpreted. The mutation execution fingerprint now includes the effective execution environment after nested test-runner recursion context is stripped, so stale cache entries from runner leakage are not silently reused. Caller-supplied run ids are treated as artifact ids and must use only letters, numbers, dots, underscores, and hyphens.
+`run.json` now also carries additive execution receipts that make the run boundary explicit instead of implicit: `analysis` records the preallocated run id, exact changed scope, source file set, and mutation execution fingerprint; `mutationBaseline` records whether the baseline test command was green before mutants were interpreted. When `changeSet.files` is absent or empty, `check` falls back to all discovered source files instead of silently analyzing an empty authorization scope. The mutation execution fingerprint now includes the effective execution environment after nested test-runner recursion context is stripped, so stale cache entries from runner leakage are not silently reused. Caller-supplied run ids are treated as artifact ids and must use only letters, numbers, dots, underscores, and hyphens.
 
 Each impacted invariant also carries a structured `behaviorClaims[].evidenceSummary` in `run.json`, exposing the invariant-scoped evidence basis directly: impacted files, focused tests, changed functions, coverage pressure, mutation counts, per-scenario support, and named deterministic sub-signals such as `focused-test-alignment`, `scenario-support`, `coverage-pressure`, `mutation-pressure`, and `changed-function-pressure`. Every sub-signal is also labeled as `explicit`, `inferred`, or `missing` so reviewers can tell whether support came from direct configured/artifact evidence or deterministic alignment heuristics.
 
@@ -129,3 +131,4 @@ Use `./scripts/ak.sh` as the canonical entrypoint and `./scripts/ak-v2.sh` as th
 ## Sample artifacts
 
 Generated sample artifacts live under `examples/artifacts/governed-app/` after `npm run sample-artifacts`, including concise operator surfaces like `pr-summary.md`, `check-summary.txt`, `plan.txt`, and `govern.txt`. The sample generation flow is now idempotent over the checked-in bundle: `npm run verify` reruns `sample-artifacts` twice and fails if the second pass changes the reviewed examples.
+ reviewed examples.

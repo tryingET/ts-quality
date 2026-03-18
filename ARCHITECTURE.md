@@ -38,7 +38,7 @@ Constitution layer. It enforces architectural boundaries, approval rules, rollba
 
 ### `packages/legitimacy`
 
-Legitimacy layer. It models agents and grants, builds proof-carrying change bundles, signs and verifies attestations with Ed25519, evaluates change authorization, records overrides, and evaluates constitutional amendments. Overrides are re-validated against override grants on the exact changed scope; a recorded override is not a blanket bypass.
+Legitimacy layer. It models agents and grants, builds proof-carrying change bundles, signs and verifies attestations with Ed25519, evaluates change authorization, records overrides, and evaluates constitutional amendments. Attestations are trusted only when they bind to repo-local artifacts under the exact evaluated run boundary, and authorization refuses vacuous empty-file scopes. Overrides are re-validated against override grants on the exact changed scope; a recorded override is not a blanket bypass.
 
 ### `packages/ts-quality`
 

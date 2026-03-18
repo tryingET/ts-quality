@@ -19,7 +19,11 @@ Attestations are signed JSON claims.
   "subjectDigest": "sha256:...",
   "claims": ["ci.tests.passed"],
   "issuedAt": "2026-03-17T00:00:00.000Z",
-  "payload": { "subjectFile": ".ts-quality/runs/<run-id>/verdict.json" },
+  "payload": {
+    "subjectFile": ".ts-quality/runs/<run-id>/verdict.json",
+    "runId": "<run-id>",
+    "artifactName": "verdict.json"
+  },
   "signature": {
     "algorithm": "ed25519",
     "keyId": "ci.verify",
@@ -28,4 +32,4 @@ Attestations are signed JSON claims.
 }
 ```
 
-Use `ts-quality attest sign` to create them and `ts-quality attest verify` to validate them against trusted public keys.
+Use `ts-quality attest sign` to create them and `ts-quality attest verify` to validate them against trusted public keys. The signed `subjectFile` must be repo-relative and stay inside `--root`; legitimacy flows only trust attestations that bind to repo-local artifacts under the exact evaluated run boundary.
