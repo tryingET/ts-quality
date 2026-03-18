@@ -51,7 +51,7 @@ test('evaluateInvariants produces obligations for missing failure-path tests', (
   const focusedAlignment = authClaim.evidenceSummary.subSignals.find((item) => item.signalId === 'focused-test-alignment');
   assert.ok(focusedAlignment);
   assert.equal(focusedAlignment.mode, 'inferred');
-  assert.match(focusedAlignment.facts.join('\n'), /mode reason: matched focused tests via deterministic path\/name\/selector hints/);
+  assert.match(focusedAlignment.facts.join('\n'), /mode reason: matched focused tests via deterministic path\/import\/selector hints/);
 
   const mutationPressure = authClaim.evidenceSummary.subSignals.find((item) => item.signalId === 'mutation-pressure');
   assert.ok(mutationPressure);

@@ -81,7 +81,7 @@ test('renderPrSummary projects concise invariant evidence provenance for the ris
               label: 'Focused test alignment',
               level: 'clear',
               mode: 'inferred',
-              modeReason: 'matched focused tests via deterministic path/name/selector hints',
+              modeReason: 'matched focused tests via deterministic path/import/selector hints',
               summary: '1 focused test file aligned to invariant scope',
               facts: []
             },

@@ -17,6 +17,19 @@ test('init creates starter files in an empty repo', () => {
   assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'invariants.ts')), true);
 });
 
+test('check treats empty init changeSet.files as all discovered source files', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.rmSync(path.join(target, 'ts-quality.config.ts'), { force: true });
+  fs.rmSync(path.join(target, '.ts-quality'), { recursive: true, force: true });
+  let result = spawnSync('node', [cli, 'init', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const run = readRun(target);
+  assert.equal(run.changedFiles.includes('src/auth/token.js'), true);
+  assert.equal(run.behaviorClaims.some((claim) => claim.invariantId === 'auth.refresh.validity'), true);
+});
+
 test('check, report, explain, plan, and govern produce aligned artifacts', () => {
   const target = tempCopyOfFixture('governed-app');
   const check = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
@@ -91,6 +104,34 @@ test('trend keeps deltas visible while surfacing the latest risky invariant prov
   assert.match(trend.stdout, /Evidence provenance: explicit 3, inferred 1, missing 1/);
   assert.match(trend.stdout, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
   assert.doesNotMatch(trend.stdout, /^Obligation:/m);
+});
+
+test('trend orders runs by createdAt rather than lexical run id sort', () => {
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'run-2'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'run-10'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  const trend = spawnSync('node', [cli, 'trend', '--root', target], { encoding: 'utf8' });
+  assert.equal(trend.status, 0, trend.stderr);
+  assert.match(trend.stdout, /Current run: run-10/);
+  assert.match(trend.stdout, /Previous run: run-2/);
+});
+
+test('check, plan, govern, and authorize accept --config for a nonstandard config file name', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.renameSync(path.join(target, 'ts-quality.config.ts'), path.join(target, 'custom-config.ts'));
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--config', 'custom-config.ts'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'plan', '--root', target, '--config', 'custom-config.ts'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'govern', '--root', target, '--config', 'custom-config.ts'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'authorize', '--root', target, '--config', 'custom-config.ts', '--agent', 'release-bot'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const decision = JSON.parse(result.stdout);
+  assert.equal(typeof decision.outcome, 'string');
 });
 
 test('check accepts a caller-supplied run id for exact approval binding', () => {
@@ -182,4 +223,15 @@ test('attest verify fails when the signed subject file changes', () => {
   result = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation', output, '--trusted-keys', '.ts-quality/keys'], { encoding: 'utf8' });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /failed \(subject digest mismatch\)/);
+});
+
+test('check quarantines malformed attestation files instead of crashing', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.mkdirSync(path.join(target, '.ts-quality', 'attestations'), { recursive: true });
+  fs.writeFileSync(path.join(target, '.ts-quality', 'attestations', 'broken.json'), '{not json\n', 'utf8');
+  const result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const runId = latestRunId(target);
+  const verifyText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', runId, 'attestation-verify.txt'), 'utf8');
+  assert.match(verifyText, /broken\.json: failed \(invalid JSON:/);
 });

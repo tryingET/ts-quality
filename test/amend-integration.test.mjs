@@ -73,3 +73,65 @@ test('amend --apply writes a loadable constitution module', () => {
   result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
 });
+
+test('amend --apply preserves json constitution format when configured', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.rmSync(path.join(target, 'ts-quality.config.ts'), { force: true });
+  fs.writeFileSync(path.join(target, 'ts-quality.config.json'), JSON.stringify({
+    sourcePatterns: ['src/**/*.js'],
+    testPatterns: ['test/**/*.js'],
+    coverage: { lcovPath: 'coverage/lcov.info' },
+    mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 4 },
+    policy: { maxChangedCrap: 30, minMutationScore: 0.5, minMergeConfidence: 50 },
+    changeSet: { files: ['src/auth/token.js'] },
+    invariantsPath: '.ts-quality/invariants.ts',
+    constitutionPath: '.ts-quality/constitution.json',
+    agentsPath: '.ts-quality/agents.ts',
+    approvalsPath: '.ts-quality/approvals.json',
+    waiversPath: '.ts-quality/waivers.json',
+    overridesPath: '.ts-quality/overrides.json',
+    attestationsDir: '.ts-quality/attestations',
+    trustedKeysDir: '.ts-quality/keys'
+  }, null, 2), 'utf8');
+  fs.writeFileSync(path.join(target, '.ts-quality', 'constitution.json'), JSON.stringify([
+    {
+      kind: 'approval',
+      id: 'payments-maintainer-approval',
+      paths: ['src/payments/**'],
+      message: 'Payments changes require a maintainer approval.',
+      minApprovals: 1,
+      roles: ['maintainer']
+    }
+  ], null, 2), 'utf8');
+
+  const proposalPath = path.join(target, 'proposal-json-apply.json');
+  fs.writeFileSync(proposalPath, JSON.stringify({
+    id: 'amend-payments-approval-json',
+    title: 'Clarify payment approval wording in json constitution',
+    rationale: 'Non-sensitive wording update.',
+    evidence: ['docs updated'],
+    changes: [{
+      action: 'replace',
+      ruleId: 'payments-maintainer-approval',
+      rule: {
+        kind: 'approval',
+        id: 'payments-maintainer-approval',
+        paths: ['src/payments/**'],
+        message: 'Payment changes require explicit maintainer review.',
+        minApprovals: 1,
+        roles: ['maintainer']
+      }
+    }],
+    approvals: [
+      { by: 'maintainer', role: 'maintainer', rationale: 'wording ok', createdAt: new Date().toISOString(), targetId: 'amend-payments-approval-json' }
+    ]
+  }, null, 2));
+
+  let result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath, '--apply'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const constitutionText = fs.readFileSync(path.join(target, '.ts-quality', 'constitution.json'), 'utf8');
+  assert.doesNotMatch(constitutionText, /export default/);
+  assert.equal(Array.isArray(JSON.parse(constitutionText)), true);
+  result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
