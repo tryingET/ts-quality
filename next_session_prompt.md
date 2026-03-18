@@ -1,5 +1,5 @@
 ---
-summary: "Active handoff: corrective AK #189 is complete; no ready repo-local AK slice is materialized yet, so the next session should decompose SG2 first."
+summary: "Active handoff: AK #192 is complete; no ready repo-local follow-on SG2 slice is materialized yet, so the next session should decompose amendment/attestation-facing outputs first."
 read_when:
   - "At the start of every work session"
   - "When resuming work in ts-quality after a pause"
@@ -15,7 +15,7 @@ Do not ask for permission to start.
 ## ACTIVE GOAL STACK
 - **Strategic goal:** SG2 — carry the same evidence truth into governance/legitimacy decision surfaces that still compress authority too far
 - **Tactical goal:** none materialized yet
-- **Operating slice:** no ready repo-local AK task is materialized yet
+- **Operating slice:** no ready repo-local follow-on SG2 task is materialized yet
 
 ## START HERE
 1. Run `./scripts/ak.sh --doctor`
@@ -23,14 +23,14 @@ Do not ask for permission to start.
    ```bash
    ./scripts/ak.sh task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
    ```
-3. If readiness is still empty, audit governance / legitimacy decision-facing outputs and materialize the first SG2 AK slice before coding.
+3. If readiness is still empty, audit amendment-facing results and attestation-review outputs, then materialize the next SG2 AK slice before coding.
 
 ## CURRENT QUEUE TRUTH
 Ready now:
 - none repo-local
 
 Completed this session:
-- `#189` — stabilize sample artifact generation and gate drift in verify
+- `#192` — surface run-boundary evidence in authorization decisions
 
 Deferred with AK binding this session:
 - `#190` — automate AK-to-handoff projection sync
@@ -43,9 +43,9 @@ Deferred with AK binding this session:
 4. `docs/project/strategic_goals.md`
 5. `docs/project/tactical_goals.md`
 6. `docs/project/operating_plan.md`
-7. `docs/config-reference.md`
-8. `docs/invariant-dsl.md`
-9. relevant governance / legitimacy source + tests for the SG2 candidate slice
+7. `docs/legitimacy-agent-licensing.md`
+8. `docs/governance-constitution.md`
+9. relevant amendment / attestation source + tests for the SG2 candidate slice
 
 ## EXECUTION RULES
 - Keep `behaviorClaims[].evidenceSummary` as the additive authority.

@@ -154,26 +154,47 @@
         {
           "id": "AK-TASK-0190",
           "title": "ts-quality: automate AK-to-handoff projection sync",
-          "state": "deferred",
+          "state": "queued",
           "tasks": [
             {
               "text": "ts-quality: automate AK-to-handoff projection sync (task #190)",
               "done": false
             }
           ],
-          "dod": "Decision reached on projection authority and deferred task is resumed or replaced by a bound implementation slice."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "labels": [
+            "deferred"
+          ],
+          "note": "Deferred:\n- reason: Requires an explicit repo-level decision on whether next_session_prompt.md/docs/project/*/governance/work-items.json should be generated from AK or continue as manually synchronized projections; implementing automation ad hoc in this corrective pass would risk changing authority boundaries.\n- kind: until_decision\n- trigger_ref: repo-decision:projection-authority\n- review_at: 2026-03-25T12:00:00Z"
         },
         {
           "id": "AK-TASK-0191",
           "title": "ts-quality: stabilize or untrack volatile verification artifacts",
-          "state": "deferred",
+          "state": "queued",
           "tasks": [
             {
               "text": "ts-quality: stabilize or untrack volatile verification artifacts (task #191)",
               "done": false
             }
           ],
-          "dod": "Decision reached on the checked-in verification artifact contract and deferred task is resumed or replaced by a bound implementation slice."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "labels": [
+            "deferred"
+          ],
+          "note": "Deferred:\n- reason: Requires a repo-level decision on whether VERIFICATION.md and verification/verification.log remain checked-in reference artifacts or become ephemeral CI outputs; changing this without an explicit policy choice could break the documented verification contract.\n- kind: until_decision\n- trigger_ref: repo-decision:verification-artifact-contract\n- review_at: 2026-03-25T12:00:00Z"
+        },
+        {
+          "id": "AK-TASK-0192",
+          "title": "ts-quality: surface run-boundary evidence in authorization decisions",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: surface run-boundary evidence in authorization decisions (task #192)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-03-18"
         }
       ]
     }

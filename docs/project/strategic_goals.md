@@ -1,5 +1,5 @@
 ---
-summary: "Strategic handoff for ts-quality after SG1 completion; SG2 is now the active next wave."
+summary: "Strategic handoff for ts-quality with SG2 active and its first authorization-facing slice now landed."
 read_when:
   - "When deciding the next quarter-scale direction for ts-quality"
   - "When translating the current repo truth into the next strategic wave"
@@ -46,13 +46,15 @@ The current operator-surface wave is materially complete.
 The next meaningful risk is later decision surfaces where authority can still compress evidence too aggressively even though the additive artifact truth already exists.
 
 ### Likely scope when decomposed
-- authorization / attestation review surfaces
+- authorization review surfaces **(opening slice landed via AK `#192`)**
+- attestation review surfaces
 - amendment-facing outputs
 - governance and legitimacy docs where authority boundaries could drift from emitted artifacts
 - any remaining decision-facing summaries that still hide too much evidence provenance or run-boundary context
 
 ### Success signals
 - governance and legitimacy actions stay visibly tied to exact evidence artifacts and run boundaries
+- authorization decisions now project exact run-bound artifact paths, blocking governance findings, and first risky-invariant provenance without competing with `run.json`
 - reviewer-facing decision outputs remain explainable without competing with `run.json`
 - exact approval / attestation / override semantics stay clearer in concise outputs and docs
 

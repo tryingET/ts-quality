@@ -8,7 +8,7 @@ import { latestRunId, readRun, repoRoot, tempCopyOfFixture } from './helpers.mjs
 
 const cli = path.join(repoRoot, 'dist', 'packages', 'ts-quality', 'src', 'cli.js');
 
-test('authorize denies automation without override and approves with a maintainer override', () => {
+test('authorize projects run-bound governance and invariant evidence into the decision artifact', () => {
   const target = tempCopyOfFixture('governed-app');
   let result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0);
@@ -17,6 +17,14 @@ test('authorize denies automation without override and approves with a maintaine
   assert.equal(denied.outcome === 'deny' || denied.outcome === 'require-human-approver' || denied.outcome === 'request-more-proof', true);
 
   const runId = latestRunId(target);
+  assert.equal(denied.evidenceContext.runId, runId);
+  assert.equal(denied.evidenceContext.artifactPaths.run, `.ts-quality/runs/${runId}/run.json`);
+  assert.equal(denied.evidenceContext.artifactPaths.bundle, `.ts-quality/runs/${runId}/bundle.release-bot.merge.json`);
+  assert.equal(denied.evidenceContext.governanceErrors.some((item) => item.ruleId === 'auth-risk-budget'), true);
+  assert.equal(denied.evidenceContext.riskyInvariant.invariantId, 'auth.refresh.validity');
+  assert.deepEqual(denied.evidenceContext.riskyInvariant.evidenceProvenance, { explicit: 3, inferred: 1, missing: 1 });
+  assert.equal(denied.evidenceContext.riskyInvariant.signals.some((item) => item.signalId === 'scenario-support' && item.mode === 'missing'), true);
+
   const overridesPath = path.join(target, '.ts-quality', 'overrides.json');
   fs.writeFileSync(overridesPath, JSON.stringify([
     {
@@ -32,6 +40,8 @@ test('authorize denies automation without override and approves with a maintaine
   const approved = JSON.parse(result.stdout);
   assert.equal(approved.outcome, 'approve');
   assert.equal(approved.overrideUsed, 'maintainer');
+  assert.equal(approved.evidenceContext.runId, runId);
+  assert.equal(approved.evidenceContext.riskyInvariant.invariantId, 'auth.refresh.validity');
 });
 
 test('attest sign and verify produce a valid signed claim', () => {

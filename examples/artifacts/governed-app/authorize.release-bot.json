@@ -2,6 +2,73 @@
   "action": "merge",
   "agentId": "release-bot",
   "consideredAttestations": [],
+  "evidenceContext": {
+    "artifactPaths": {
+      "bundle": ".ts-quality/runs/sample-governed-app-run/bundle.release-bot.merge.json",
+      "governance": ".ts-quality/runs/sample-governed-app-run/govern.txt",
+      "run": ".ts-quality/runs/sample-governed-app-run/run.json",
+      "verdict": ".ts-quality/runs/sample-governed-app-run/verdict.json"
+    },
+    "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
+    "governanceErrors": [
+      {
+        "evidence": [
+          "Mutation score 0.25 below budget 0.75"
+        ],
+        "message": "Auth code requires stronger evidence because it decides authorization.",
+        "ruleId": "auth-risk-budget",
+        "scope": [
+          "src/auth/token.js"
+        ]
+      },
+      {
+        "evidence": [
+          "Merge confidence 46 below minimum 65"
+        ],
+        "message": "Auth code requires stronger evidence because it decides authorization.",
+        "ruleId": "auth-risk-budget",
+        "scope": [
+          "src/auth/token.js"
+        ]
+      }
+    ],
+    "mergeConfidence": 6,
+    "riskyInvariant": {
+      "description": "Refresh token validity applies to src/auth/token.js",
+      "evidenceProvenance": {
+        "explicit": 3,
+        "inferred": 1,
+        "missing": 1
+      },
+      "invariantId": "auth.refresh.validity",
+      "obligation": "Add or tighten a focused test for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.",
+      "signals": [
+        {
+          "label": "Focused test alignment",
+          "level": "clear",
+          "mode": "inferred",
+          "signalId": "focused-test-alignment",
+          "summary": "1 focused test file aligned to invariant scope"
+        },
+        {
+          "label": "Scenario support",
+          "level": "missing",
+          "mode": "missing",
+          "signalId": "scenario-support",
+          "summary": "0/1 scenario(s) have deterministic support"
+        },
+        {
+          "label": "Mutation pressure",
+          "level": "warning",
+          "mode": "explicit",
+          "signalId": "mutation-pressure",
+          "summary": "3 surviving mutants across 4 mutation sites"
+        }
+      ]
+    },
+    "runId": "sample-governed-app-run",
+    "runOutcome": "fail"
+  },
   "id": "sample-governed-app-run:release-bot:merge",
   "missingProof": [
     "ci.tests.passed"

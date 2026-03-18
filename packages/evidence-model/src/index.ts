@@ -321,6 +321,35 @@ export interface OverrideRecord extends Approval {
   kind: 'override';
 }
 
+export interface AuthorizationEvidenceArtifactPaths {
+  run: string;
+  verdict: string;
+  governance: string;
+  bundle: string;
+}
+
+export interface AuthorizationRiskyInvariantSummary {
+  invariantId: string;
+  description: string;
+  evidenceProvenance: {
+    explicit: number;
+    inferred: number;
+    missing: number;
+  };
+  signals: Array<Pick<InvariantEvidenceSubSignal, 'signalId' | 'label' | 'level' | 'mode' | 'summary'>>;
+  obligation?: string | undefined;
+}
+
+export interface AuthorizationEvidenceContext {
+  runId: string;
+  runOutcome: Outcome;
+  mergeConfidence: number;
+  bestNextAction?: string | undefined;
+  artifactPaths: AuthorizationEvidenceArtifactPaths;
+  governanceErrors: Array<Pick<GovernanceFinding, 'ruleId' | 'message' | 'evidence' | 'scope'>>;
+  riskyInvariant?: AuthorizationRiskyInvariantSummary | undefined;
+}
+
 export interface AuthorizationDecision {
   id: string;
   agentId: string;
@@ -332,6 +361,7 @@ export interface AuthorizationDecision {
   requiredApprovers: string[];
   consideredAttestations: string[];
   overrideUsed?: string | undefined;
+  evidenceContext?: AuthorizationEvidenceContext | undefined;
 }
 
 export interface AmendmentProposal {

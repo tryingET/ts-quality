@@ -115,6 +115,55 @@ function renderGovernanceArtifactText(run, plan) {
     }
     return `${lines.join('\n')}\n`;
 }
+function authorizationRiskSignals(claim) {
+    const summary = claim.evidenceSummary;
+    if (!summary || summary.subSignals.length === 0) {
+        return [];
+    }
+    const projectedSignals = summary.subSignals
+        .filter((item) => item.mode !== 'explicit' || item.level !== 'clear')
+        .slice(0, 3);
+    const selectedSignals = projectedSignals.length > 0 ? projectedSignals : summary.subSignals.slice(0, Math.min(2, 3));
+    return selectedSignals.map(({ signalId, label, level, mode, summary: signalSummary }) => ({
+        signalId,
+        label,
+        level,
+        mode,
+        summary: signalSummary
+    }));
+}
+function buildAuthorizationEvidenceContext(run, agentId, action) {
+    const riskyInvariant = (0, index_5.findFirstRiskyInvariantClaim)(run);
+    const riskySummary = riskyInvariant?.evidenceSummary;
+    const evidenceProvenance = riskySummary?.subSignals.reduce((counts, item) => {
+        counts[item.mode] += 1;
+        return counts;
+    }, { explicit: 0, inferred: 0, missing: 0 });
+    return {
+        runId: run.runId,
+        runOutcome: run.verdict.outcome,
+        mergeConfidence: run.verdict.mergeConfidence,
+        bestNextAction: run.verdict.bestNextAction,
+        artifactPaths: {
+            run: `.ts-quality/runs/${run.runId}/run.json`,
+            verdict: `.ts-quality/runs/${run.runId}/verdict.json`,
+            governance: `.ts-quality/runs/${run.runId}/govern.txt`,
+            bundle: `.ts-quality/runs/${run.runId}/bundle.${agentId}.${action}.json`
+        },
+        governanceErrors: run.governance
+            .filter((item) => item.level === 'error')
+            .map(({ ruleId, message, evidence, scope }) => ({ ruleId, message, evidence, scope })),
+        riskyInvariant: riskyInvariant && evidenceProvenance
+            ? {
+                invariantId: riskyInvariant.invariantId,
+                description: riskyInvariant.description,
+                evidenceProvenance,
+                signals: authorizationRiskSignals(riskyInvariant),
+                obligation: riskyInvariant.obligations[0]?.description
+            }
+            : undefined
+    };
+}
 function latestRunOrUndefined(rootDir) {
     try {
         return (0, index_1.readLatestRun)(rootDir);
@@ -445,7 +494,11 @@ function runAuthorize(rootDir, agentId, action) {
     const { attestations } = loadVerifiedAttestations(rootDir, loaded.config.attestationsDir, loaded.config.trustedKeysDir);
     const runAttestations = attestations.filter((attestation) => attestationAppliesToRun(attestation, run.runId));
     const bundle = (0, index_7.buildChangeBundle)(rootDir, run, agentId, action);
-    const decision = (0, index_7.authorizeChange)(agentId, action, bundle, run, agents, constitution, runAttestations, overrides);
+    const baseDecision = (0, index_7.authorizeChange)(agentId, action, bundle, run, agents, constitution, runAttestations, overrides);
+    const decision = {
+        ...baseDecision,
+        evidenceContext: buildAuthorizationEvidenceContext(run, agentId, action)
+    };
     const artifactDir = path_1.default.join(rootDir, '.ts-quality', 'runs', run.runId);
     const bundlePath = path_1.default.join(artifactDir, `bundle.${agentId}.${action}.json`);
     const decisionPath = path_1.default.join(artifactDir, `authorize.${agentId}.${action}.json`);

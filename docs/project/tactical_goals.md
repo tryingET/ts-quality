@@ -1,5 +1,5 @@
 ---
-summary: "Tactical handoff after SG1 completion; SG2 is active but no repo-local SG2 tactical slice is materialized yet."
+summary: "Tactical handoff with the opening SG2 authorization slice complete and no follow-on repo-local slice materialized yet."
 read_when:
   - "When planning the next sprint/week for ts-quality"
   - "When turning the current strategic state into bounded delivery waves"
@@ -10,9 +10,10 @@ type: "reference"
 
 ## Current decomposition state
 SG1 is materially complete as of 2026-03-18.
-SG2 is now the active strategic goal, but no repo-local SG2 tactical wave has been materialized into AK yet.
+SG2 is now the active strategic goal, and its opening repo-local tactical slice landed via AK `#192`.
+There is no follow-on repo-local SG2 tactical slice materialized into AK yet.
 
-## SG1 tactical record
+## Tactical record
 
 | Rank | Tactical goal | Importance | Urgency | Difficulty | Status |
 |---|---|---:|---:|---:|---|
@@ -20,35 +21,25 @@ SG2 is now the active strategic goal, but no repo-local SG2 tactical wave has be
 | 2 | **TG2 — Align generated sample artifacts and README with the concise output contract** | 4 | 4 | 2 | **completed 2026-03-18** |
 | 3 | **TG3 — Lock concise output parity with targeted regression coverage** | 4 | 4 | 3 | **completed 2026-03-18** |
 | 4 | **TG4 — Re-audit remaining decision-side outputs after run-status parity lands** | 3 | 3 | 3 | **not promoted; folded into SG2 intake** |
+| 5 | **TG5 — Make authorization decisions cite exact run-bound evidence** | 4 | 3 | 2 | **completed 2026-03-18** |
 
-## TG3 — Lock concise output parity with targeted regression coverage
+## TG5 — Make authorization decisions cite exact run-bound evidence
 
-### Why TG3 is now complete
-The concise operator surfaces are no longer relying only on renderer truth and reviewed-sample convention.
-They now have targeted regression coverage for the remaining `check-summary.txt` projection risk.
+### Why TG5 is now complete
+`ts-quality authorize` no longer collapses legitimacy judgment down to outcome + reasons alone.
+The decision artifact now carries a concise additive projection of the exact run it evaluated, while still treating `run.json` as the authority.
 
 ### Completion signals now true
-- targeted tests fail if concise provenance disappears from `check-summary.txt`
-- golden-output coverage now includes the concise run-status surface the repo treats as contract-bearing with exact deterministic parity restored under `node --test`
-- the checked-in reviewed `examples/artifacts/governed-app/check-summary.txt` sample is now part of the regression-hardening path
-- mutation subprocesses now ignore inherited nested test-runner recursion context so cacheable evidence stays stable across launcher contexts
-- reviewed sample-artifact generation is now idempotent, and repo verification fails if consecutive sample generation passes drift
-
-## TG4 — Re-audit remaining decision-side outputs after run-status parity lands
-
-### Why TG4 was not promoted as the next active tactical goal
-After `#186`, the remaining meaningful work sits one layer later than concise run-status parity.
-That makes it a better fit for **SG2** than for extending SG1 with another mostly-complete operator-surface wave.
-
-### What moved into SG2 intake
-- authorization / attestation review text
-- amendment-facing summaries
-- any remaining governance / legitimacy decision outputs that still compress evidence provenance or exact run targeting too far
+- `authorize.<agent>.<action>.json` now includes `evidenceContext` with the evaluated `runId`, exact artifact paths, merge confidence, current blocking governance findings, and the first at-risk invariant provenance summary
+- the same `evidenceContext` is returned on CLI stdout for `ts-quality authorize`
+- `examples/artifacts/governed-app/authorize*.json` shows the reviewed authorization contract with run-bound evidence context
+- integration coverage now checks that authorization decisions carry the expected run-bound governance and invariant evidence
+- golden-output coverage now locks the reviewed `authorize.release-bot.json` sample against exact deterministic parity
 
 ## Next tactical handoff
 - **Active strategic goal:** SG2
 - **Active tactical goal:** none materialized yet
-- **Next required action:** audit SG2 candidate decision surfaces and materialize the first repo-local AK slice before coding
+- **Next required action:** audit amendment-facing and attestation-review outputs, then materialize the next repo-local SG2 slice before coding
 
 ## Tactical guardrails
 - keep `behaviorClaims[].evidenceSummary` as the additive root

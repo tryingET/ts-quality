@@ -38,3 +38,13 @@ test('concise operator outputs keep stable provenance framing', () => {
   assert.match(govern, /Invariant evidence at risk: auth\.refresh\.validity/);
   assert.match(govern, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
 });
+
+test('authorization sample keeps exact run-bound evidence context', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const check = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'sample-governed-app-run'], { encoding: 'utf8' });
+  assert.equal(check.status, 0, check.stderr);
+  const authorize = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'release-bot'], { encoding: 'utf8' });
+  assert.equal(authorize.status, 0, authorize.stderr);
+  const expected = fs.readFileSync(path.join(repoRoot, 'examples', 'artifacts', 'governed-app', 'authorize.release-bot.json'), 'utf8');
+  assert.equal(authorize.stdout, expected.endsWith('\n') ? expected : `${expected}\n`);
+});
