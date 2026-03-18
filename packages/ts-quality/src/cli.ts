@@ -41,15 +41,19 @@ function runId(): string | undefined {
   return takeOption('--run-id');
 }
 
+function configPath(): string | undefined {
+  return takeOption('--config');
+}
+
 function usage(command?: string, subcommand?: string): string {
   if (!command) {
     return `ts-quality commands:\n- init\n- check\n- explain\n- report [--json]\n- trend\n- plan\n- govern\n- authorize --agent <id> [--action merge]\n- attest sign|verify|keygen\n- amend --proposal <file> [--apply]\n`;
   }
   if (command === 'check') {
-    return 'Usage: ts-quality check [--root <dir>] [--changed <a,b,c>] [--run-id <id>]\n';
+    return 'Usage: ts-quality check [--root <dir>] [--config <file>] [--changed <a,b,c>] [--run-id <id>]\n';
   }
   if (command === 'authorize') {
-    return 'Usage: ts-quality authorize --agent <id> [--action merge] [--root <dir>]\n';
+    return 'Usage: ts-quality authorize --agent <id> [--action merge] [--root <dir>] [--config <file>]\n';
   }
   if (command === 'attest' && subcommand === 'sign') {
     return 'Usage: ts-quality attest sign --issuer <id> --key-id <id> --private-key <file> --subject <file> --out <file> [--claims <a,b>] [--root <dir>]\n';
@@ -88,13 +92,17 @@ function main(): void {
 
   if (command === 'check') {
     const changed = changedFiles();
-    const checkOptions: { changedFiles?: string[]; runId?: string } = {};
+    const explicitConfigPath = configPath();
+    const checkOptions: { changedFiles?: string[]; runId?: string; configPath?: string } = {};
     if (changed) {
       checkOptions.changedFiles = changed;
     }
     const requestedRunId = runId();
     if (requestedRunId) {
       checkOptions.runId = requestedRunId;
+    }
+    if (explicitConfigPath) {
+      checkOptions.configPath = explicitConfigPath;
     }
     const result = runCheck(cwd, checkOptions);
     process.stdout.write(`Merge confidence: ${result.run.verdict.mergeConfidence}/100\nOutcome: ${result.run.verdict.outcome}\nArtifacts: ${result.artifactDir}\n`);
@@ -117,12 +125,14 @@ function main(): void {
   }
 
   if (command === 'plan') {
-    process.stdout.write(renderPlan(cwd));
+    const explicitConfigPath = configPath();
+    process.stdout.write(renderPlan(cwd, explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
     return;
   }
 
   if (command === 'govern') {
-    process.stdout.write(renderGovernance(cwd));
+    const explicitConfigPath = configPath();
+    process.stdout.write(renderGovernance(cwd, explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
     return;
   }
 
@@ -132,7 +142,8 @@ function main(): void {
       throw new Error('authorize requires --agent <id>');
     }
     const action = takeOption('--action') ?? 'merge';
-    const result = runAuthorize(cwd, agentId, action);
+    const explicitConfigPath = configPath();
+    const result = runAuthorize(cwd, agentId, action, explicitConfigPath ? { configPath: explicitConfigPath } : undefined);
     process.stdout.write(result.output);
     return;
   }
@@ -174,7 +185,8 @@ function main(): void {
     if (!proposal) {
       throw new Error('amend requires --proposal <file>');
     }
-    process.stdout.write(runAmend(cwd, proposal, hasFlag('--apply')));
+    const explicitConfigPath = configPath();
+    process.stdout.write(runAmend(cwd, proposal, hasFlag('--apply'), explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
     return;
   }
 
