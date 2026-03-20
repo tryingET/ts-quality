@@ -1,5 +1,5 @@
 ---
-summary: "Strategic handoff for ts-quality with SG2 active, its first authorization-facing slice landed, and repo-wide config/runtime hardening now stronger through AK #193 and #194."
+summary: "Strategic handoff for ts-quality with SG2 active, its authorization and attestation-review slices complete through AK #197, and no follow-on repo-local SG2 task materialized yet."
 read_when:
   - "When deciding the next quarter-scale direction for ts-quality"
   - "When translating the current repo truth into the next strategic wave"
@@ -49,16 +49,22 @@ The work closed the runtime, reviewed-artifact, and regression-hardening gaps wi
 The current operator-surface wave is materially complete.
 The next meaningful risk is later decision surfaces where authority can still compress evidence too aggressively even though the additive artifact truth already exists.
 
-### Likely scope when decomposed
-- authorization review surfaces **(opening slice landed via AK `#192`)**
-- attestation review surfaces
-- amendment-facing outputs
+### Current SG2 decomposition state
+- authorization review surfaces **(landed via AK `#192`)**
+- attestation review surfaces **(landed via AK `#195`, hardened via AK `#196` and AK `#197`)**
+- amendment-facing outputs **(next candidate; not yet materialized into AK)**
 - governance and legitimacy docs where authority boundaries could drift from emitted artifacts
 - any remaining decision-facing summaries that still hide too much evidence provenance or run-boundary context
+
+AK `#195` made attestation review keep signed subject context visible, AK `#196` hardened that slice by canonicalizing attestation verification records, aligning CLI/sample/runtime rendering, enforcing `artifactName` parity against the signed subject path, and extending run-scoped handling to nested artifacts, and AK `#197` closed the remaining operator-facing gaps by adding machine-readable `attest verify --json` output plus malformed-input parity under the same canonical record. That keeps attestation review downstream of one structured verification truth instead of letting adjacent surfaces drift.
 
 ### Success signals
 - governance and legitimacy actions stay visibly tied to exact evidence artifacts and run boundaries
 - authorization decisions now project exact run-bound artifact paths, blocking governance findings, and first risky-invariant provenance without competing with `run.json`
+- attestation verification now projects signed subject path and exact run/artifact identity when available without competing with the signed payload itself
+- attestation verification records now stay canonical across CLI review, persisted run artifacts, and reviewed sample artifacts
+- payload/path parity for run-scoped attestation fields fails closed instead of being silently healed in presentation
+- `attest verify --json` now gives automation a stable machine-readable escape hatch without forcing shell consumers to scrape human text
 - reviewer-facing decision outputs remain explainable without competing with `run.json`
 - exact approval / attestation / override semantics stay clearer in concise outputs and docs
 
@@ -70,5 +76,5 @@ The next meaningful risk is later decision surfaces where authority can still co
 
 ## Relationship to downstream docs
 - `tactical_goals.md` should either decompose SG2 or state explicitly that no SG2 tactical wave is materialized yet
-- `operating_plan.md` should point at the first real SG2 slice once it exists
+- `operating_plan.md` should point at the next real SG2 slice once it exists, or say clearly that none is materialized yet
 - `next_session_prompt.md` should name the next ready AK task, or say clearly that none is materialized yet

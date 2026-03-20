@@ -1,5 +1,5 @@
 ---
-summary: "Operating plan after AK #192, #193, and #194; the opening SG2 authorization slice is complete, config/runtime hardening is materially stronger, and no follow-on repo-local SG2 slice is materialized yet."
+summary: "Operating plan after AK #197: attestation-review outputs now share a canonical verification record across CLI/runtime/sample surfaces with a machine-readable escape hatch, and no follow-on repo-local SG2 slice is materialized yet."
 read_when:
   - "When deciding the next bounded implementation slice in ts-quality"
   - "When translating the current tactical state into the repo-local queue"
@@ -10,7 +10,7 @@ type: "reference"
 
 ## Active decomposition target
 There is no active repo-local implementation slice materialized right now.
-The opening SG2 authorization slice is complete, and the next session should materialize the follow-on SG2 slice before coding.
+The SG2 authorization and attestation-review slices are complete through AK `#197`, and the next execution pass should materialize the follow-on SG2 slice before coding.
 
 ## Why the opening SG2 slice is now complete
 Repo truth now shows legitimacy decisions carrying the same additive run-bound evidence discipline as the reviewed operator surfaces:
@@ -97,22 +97,104 @@ Primary files touched:
 - `docs/project/operating_plan.md`
 - `governance/work-items.json`
 
+### M6 — **AK `#195`** — surface run-bound subject context in attestation verification outputs
+State:
+- completed 2026-03-20
+
+Deliverable now true:
+- `attest verify` now projects the signed subject path alongside verification status/reason
+- when the signed subject is a run-scoped artifact, verification output also surfaces the exact `runId` and artifact name
+- reviewed sample artifacts now include attestation verification output with the same run-bound subject framing
+- regression coverage now locks both successful and failed attestation verification against the emitted subject context
+
+Primary files touched:
+- `packages/ts-quality/src/index.ts`
+- `scripts/generate-samples.mjs`
+- `test/authorization-integration.test.mjs`
+- `test/cli-integration.test.mjs`
+- `test/golden-output.test.mjs`
+- `examples/artifacts/governed-app/attestation.ci.verification.json`
+- `examples/artifacts/governed-app/attestation.verify.txt`
+- `docs/attestation-format.md`
+- `docs/project/strategic_goals.md`
+- `docs/project/tactical_goals.md`
+- `docs/project/operating_plan.md`
+- `next_session_prompt.md`
+- `governance/work-items.json`
+- `diary/2026-03-20--feat-attestation-verify-subject-context.md`
+
+### M7 — **AK `#196`** — canonicalize attestation verification records and enforce signed subject parity
+State:
+- completed 2026-03-20
+
+Deliverable now true:
+- a shared structured attestation-verification record now drives CLI review, persisted `attestation-verify.txt`, and the reviewed `attestation.verify.txt` sample
+- `check` no longer collapses attestation verification back down to issuer + reason while `attest verify` shows richer subject context
+- verification now fails closed when signed `payload.artifactName` drifts from the signed `subjectFile` path
+- run-scoped attestation handling now includes nested artifacts under `.ts-quality/runs/<run-id>/...`
+- regression coverage now locks runtime/CLI/sample parity instead of only the CLI path
+
+Primary files touched:
+- `packages/evidence-model/src/index.ts`
+- `packages/ts-quality/src/index.ts`
+- `test/cli-integration.test.mjs`
+- `test/golden-output.test.mjs`
+- `scripts/generate-samples.mjs`
+- `docs/attestation-format.md`
+- `docs/project/strategic_goals.md`
+- `docs/project/tactical_goals.md`
+- `docs/project/operating_plan.md`
+- `next_session_prompt.md`
+- `governance/work-items.json`
+- `diary/2026-03-20--feat-attestation-verification-record-parity.md`
+
+### M8 — **AK `#197`** — add machine-readable attestation verification output and malformed-input parity
+State:
+- completed 2026-03-20
+
+Deliverable now true:
+- `attest verify --json` now returns the same canonical verification record that text output and `check` artifacts use
+- malformed attestation files now report through that same canonical record instead of leaking raw parser errors to the operator
+- CLI help and docs now advertise the machine-readable escape hatch explicitly
+- regression coverage now locks JSON output shape plus malformed-input behavior
+
+Primary files touched:
+- `packages/ts-quality/src/cli.ts`
+- `packages/ts-quality/src/index.ts`
+- `test/cli-integration.test.mjs`
+- `README.md`
+- `docs/attestation-format.md`
+- `docs/project/strategic_goals.md`
+- `docs/project/tactical_goals.md`
+- `docs/project/operating_plan.md`
+- `next_session_prompt.md`
+- `governance/work-items.json`
+- `diary/2026-03-20--feat-attestation-verify-json-and-malformed-parity.md`
+
 ## Current ready queue
 Ready now:
 - none repo-local
 
 Completed this session:
+- `#178` — refresh direction cascade after #177 closeout and seed the next non-TUI SG2 wave
 - `#192` — surface run-boundary evidence in authorization decisions
 - `#193` — harden config loading by replacing executable module evaluation with a data-only parser
 - `#194` — materialize config/support modules into canonical runtime JSON artifacts
+- `#195` — surface run-bound subject context in attestation verification outputs
+- `#196` — canonicalize attestation verification records and enforce signed subject parity
+- `#197` — add machine-readable attestation verification output and malformed-input parity
 
 Deferred this session (authority-bound in AK):
 - `#190` — automate AK-to-handoff projection sync
 - `#191` — stabilize or untrack volatile verification artifacts
 
-## Next materialization target
+## Planning refresh completed this session
+AK `#178` materialized the attestation-review slice, and AK `#195` through `#197` have now landed.
+Amendment-facing results remain the next candidate, but no follow-on repo-local SG2 task is materialized yet.
+
+## Next implementation target
 Before more implementation work, materialize the next **SG2** slice.
-Candidate starting area: amendment-facing results or attestation-review outputs that still compress targeted evidence or exact run binding too far.
+Candidate starting area: amendment-facing results that still compress proposal/rule context too far.
 
 ## HTN
 
@@ -129,6 +211,10 @@ G0: Make decision-facing outputs stay honest about additive evidence provenance
   SG2: Carry the same evidence truth into governance/legitimacy decision surfaces [active]
     TG5: Make authorization decisions cite exact run-bound evidence [done]
       P4: AK #192 -> project run-bound evidence context into authorize outputs [done]
+    TG6: Make attestation verification outputs cite exact signed subject context [done]
+      P5: AK #195 -> project run-bound subject context into attestation verification outputs [done]
+      P6: AK #196 -> canonicalize attestation verification records and enforce subject-field parity [done]
+      P7: AK #197 -> add machine-readable attestation verification output and malformed-input parity [done]
 ```
 
 ## Queue discipline

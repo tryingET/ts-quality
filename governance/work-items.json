@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-03-18",
+  "updated_at": "2026-03-20",
   "owner": "@tryinget",
   "project_name": "ts-quality",
   "milestones": [
@@ -198,11 +198,11 @@
         },
         {
           "id": "AK-TASK-0193",
-          "title": "ts-quality: harden config loading to eliminate executable TS/JS module evaluation",
+          "title": "Harden config loading to eliminate executable TS/JS module evaluation",
           "state": "done",
           "tasks": [
             {
-              "text": "ts-quality: harden config loading to eliminate executable TS/JS module evaluation (task #193)",
+              "text": "Harden config loading to eliminate executable TS/JS module evaluation (task #193)",
               "done": true
             }
           ],
@@ -211,11 +211,50 @@
         },
         {
           "id": "AK-TASK-0194",
-          "title": "ts-quality: materialize data-only config/support modules into runtime JSON artifacts",
+          "title": "Materialize data-only config/support modules into runtime JSON artifacts",
           "state": "done",
           "tasks": [
             {
-              "text": "ts-quality: materialize data-only config/support modules into runtime JSON artifacts (task #194)",
+              "text": "Materialize data-only config/support modules into runtime JSON artifacts (task #194)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-03-20"
+        },
+        {
+          "id": "AK-TASK-0195",
+          "title": "ts-quality: surface run-bound subject context in attestation verification outputs",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: surface run-bound subject context in attestation verification outputs (task #195)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-03-20"
+        },
+        {
+          "id": "AK-TASK-0196",
+          "title": "ts-quality: canonicalize attestation verification records and enforce signed subject parity",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: canonicalize attestation verification records and enforce signed subject parity (task #196)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-03-20"
+        },
+        {
+          "id": "AK-TASK-0197",
+          "title": "ts-quality: add machine-readable attestation verification output and malformed-input parity",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: add machine-readable attestation verification output and malformed-input parity (task #197)",
               "done": true
             }
           ],

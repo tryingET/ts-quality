@@ -1,5 +1,5 @@
 ---
-summary: "Tactical handoff with the opening SG2 authorization slice complete, no follow-on repo-local SG2 slice materialized yet, and repo-wide config/runtime hardening complete via AK #193 and #194."
+summary: "Tactical handoff with the SG2 authorization and attestation-review slices complete through AK #197, no follow-on repo-local SG2 tactical slice materialized yet, and amendment-facing results still the leading candidate."
 read_when:
   - "When planning the next sprint/week for ts-quality"
   - "When turning the current strategic state into bounded delivery waves"
@@ -10,8 +10,8 @@ type: "reference"
 
 ## Current decomposition state
 SG1 is materially complete as of 2026-03-18.
-SG2 is now the active strategic goal, and its opening repo-local tactical slice landed via AK `#192`.
-There is no follow-on repo-local SG2 tactical slice materialized into AK yet.
+SG2 is now the active strategic goal, and its two repo-local tactical slices so far landed via AK `#192` plus the attestation-review refinement passes in AK `#195`, `#196`, and `#197`.
+There is no follow-on repo-local SG2 tactical slice materialized into AK yet; amendment-facing results remain the leading candidate for the next audit/decomposition pass.
 
 ## Tactical record
 
@@ -22,6 +22,7 @@ There is no follow-on repo-local SG2 tactical slice materialized into AK yet.
 | 3 | **TG3 — Lock concise output parity with targeted regression coverage** | 4 | 4 | 3 | **completed 2026-03-18** |
 | 4 | **TG4 — Re-audit remaining decision-side outputs after run-status parity lands** | 3 | 3 | 3 | **not promoted; folded into SG2 intake** |
 | 5 | **TG5 — Make authorization decisions cite exact run-bound evidence** | 4 | 3 | 2 | **completed 2026-03-18** |
+| 6 | **TG6 — Make attestation verification outputs cite exact signed subject context** | 4 | 3 | 2 | **completed 2026-03-20** |
 
 ## TG5 — Make authorization decisions cite exact run-bound evidence
 
@@ -36,10 +37,27 @@ The decision artifact now carries a concise additive projection of the exact run
 - integration coverage now checks that authorization decisions carry the expected run-bound governance and invariant evidence
 - golden-output coverage now locks the reviewed `authorize.release-bot.json` sample against exact deterministic parity
 
+## TG6 — Make attestation verification outputs cite exact signed subject context
+
+### Why TG6 is now complete
+Attestation review no longer collapses trust down to issuer + verification status alone.
+`attest verify` and the reviewed `attestation.verify.txt` sample now keep the signed subject path visible, and when the subject is run-scoped they also surface the exact `runId` and artifact name.
+That closes the narrow attestation-review SG2 gap without inventing a second authority beyond the attestation payload.
+
+### Completion signals now true
+- `attest verify` projects the signed subject path alongside verification status/reason
+- when the attestation binds to `.ts-quality/runs/<run-id>/<artifact>`, the output also surfaces `runId` and artifact identity, including nested run-scoped artifacts
+- the same structured verification record now drives CLI review, persisted `attestation-verify.txt`, and the reviewed `attestation.verify.txt` sample
+- `attest verify --json` now exposes that same record for machine consumers
+- verification fails closed when signed `payload.runId` or `payload.artifactName` drift from the signed `subjectFile` path
+- malformed attestation files now report through the canonical verification record instead of bubbling raw parser errors
+- targeted regression coverage now locks the attestation-review contract without inventing a second authority beyond the attestation payload itself
+
 ## Next tactical handoff
 - **Active strategic goal:** SG2
 - **Active tactical goal:** none materialized yet
-- **Next required action:** audit amendment-facing and attestation-review outputs, then materialize the next repo-local SG2 slice before coding
+- **Next required action:** audit amendment-facing results, then materialize the next repo-local SG2 slice before coding
+- **Recent completion:** AK `#195`, `#196`, and `#197` landed run-bound subject context, canonical verification-record parity across CLI/runtime/sample surfaces, and a machine-readable escape hatch for automation
 - **Recent repo-wide hardening:** AK `#193` and `#194` are complete; config/support modules now use a data-only contract and can be materialized into canonical runtime JSON artifacts for later runs
 
 ## Tactical guardrails

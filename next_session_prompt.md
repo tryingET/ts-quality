@@ -1,5 +1,5 @@
 ---
-summary: "Active handoff: AK #192, #193, and #194 are complete; no ready repo-local follow-on SG2 slice is materialized yet, so the next session should decompose amendment/attestation-facing outputs first."
+summary: "Active handoff: AK #197 added machine-readable attestation verification output and malformed-input parity, and no ready repo-local follow-on SG2 slice is materialized yet."
 read_when:
   - "At the start of every work session"
   - "When resuming work in ts-quality after a pause"
@@ -23,16 +23,20 @@ Do not ask for permission to start.
    ```bash
    ./scripts/ak.sh task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
    ```
-3. If readiness is still empty, audit amendment-facing results and attestation-review outputs, then materialize the next SG2 AK slice before coding.
+3. If readiness is still empty, audit amendment-facing results, then materialize the next SG2 AK slice before coding.
 
 ## CURRENT QUEUE TRUTH
 Ready now:
 - none repo-local
 
 Completed this session:
+- `#178` — refresh direction cascade after #177 closeout and seed the next non-TUI SG2 wave
 - `#192` — surface run-boundary evidence in authorization decisions
 - `#193` — harden config loading by replacing executable module evaluation with a data-only parser
 - `#194` — materialize config/support modules into canonical runtime JSON artifacts
+- `#195` — surface run-bound subject context in attestation verification outputs
+- `#196` — canonicalize attestation verification records and enforce signed subject parity
+- `#197` — add machine-readable attestation verification output and malformed-input parity
 
 Deferred with AK binding this session:
 - `#190` — automate AK-to-handoff projection sync
@@ -47,7 +51,7 @@ Deferred with AK binding this session:
 6. `docs/project/operating_plan.md`
 7. `docs/legitimacy-agent-licensing.md`
 8. `docs/governance-constitution.md`
-9. relevant amendment / attestation source + tests for the SG2 candidate slice
+9. relevant amendment-facing source + tests for the next SG2 candidate slice
 
 ## EXECUTION RULES
 - Keep `behaviorClaims[].evidenceSummary` as the additive authority.
