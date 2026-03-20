@@ -6,12 +6,14 @@
   "issuer": "ci.verify",
   "kind": "attestation",
   "payload": {
+    "artifactName": "verdict.json",
+    "runId": "sample-governed-app-run",
     "subjectFile": ".ts-quality/runs/sample-governed-app-run/verdict.json"
   },
   "signature": {
     "algorithm": "ed25519",
     "keyId": "sample",
-    "value": "vtweN18wjbeKfmOFjxmatWUfWeMsi6rkvRaWa8s8t1jW9rr2Lp6YZuQRObvhlYbBfK4mKzlPcBBjhSxKL1UYBQ=="
+    "value": "ylb8hGESBjo5gANi3hJShCMW4Vgwgzai1EMTEnl8pih/g+MRy0fkV4UMmsLD+Hn8dD+no7ofAgZMNCxmGgu6CQ=="
   },
   "subjectDigest": "sha256:adb56c1908db61ccaa47a68cd0022902612a7435adbbff4f1f83cc307dff3bb2",
   "subjectType": "json-artifact",

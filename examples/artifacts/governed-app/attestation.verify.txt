@@ -1,1 +1,4 @@
 ci.verify: verified (verified)
+Subject: .ts-quality/runs/sample-governed-app-run/verdict.json
+Run: sample-governed-app-run
+Artifact: verdict.json
