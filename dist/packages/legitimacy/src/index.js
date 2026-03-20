@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.parseAttestationRecord = parseAttestationRecord;
 exports.generateKeyPair = generateKeyPair;
 exports.signAttestation = signAttestation;
 exports.verifyAttestation = verifyAttestation;
@@ -18,6 +19,33 @@ const crypto_1 = __importDefault(require("crypto"));
 const index_1 = require("../../evidence-model/src/index");
 function canonicalBytes(value) {
     return Buffer.from((0, index_1.stableStringify)(value), 'utf8');
+}
+function isStringArray(value) {
+    return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+function parseAttestationRecord(value) {
+    if (!value || typeof value !== 'object') {
+        return { ok: false, reason: 'invalid attestation shape: expected object' };
+    }
+    const candidate = value;
+    const signature = candidate.signature;
+    if (candidate.version !== '1' || candidate.kind !== 'attestation') {
+        return { ok: false, reason: 'invalid attestation shape: version/kind mismatch' };
+    }
+    if (typeof candidate.issuer !== 'string' || typeof candidate.subjectType !== 'string' || typeof candidate.subjectDigest !== 'string' || !isStringArray(candidate.claims) || typeof candidate.issuedAt !== 'string') {
+        return { ok: false, reason: 'invalid attestation shape: missing issuer, subject, claims, or issuedAt' };
+    }
+    if (!signature || typeof signature !== 'object') {
+        return { ok: false, reason: 'invalid attestation shape: missing signature' };
+    }
+    const signatureRecord = signature;
+    if (signatureRecord.algorithm !== 'ed25519' || typeof signatureRecord.keyId !== 'string' || typeof signatureRecord.value !== 'string') {
+        return { ok: false, reason: 'invalid attestation shape: malformed signature' };
+    }
+    if (candidate.payload !== undefined && (typeof candidate.payload !== 'object' || candidate.payload === null || Array.isArray(candidate.payload))) {
+        return { ok: false, reason: 'invalid attestation shape: payload must be an object when present' };
+    }
+    return { ok: true, attestation: candidate };
 }
 function generateKeyPair() {
     const pair = crypto_1.default.generateKeyPairSync('ed25519');
@@ -52,18 +80,23 @@ function signAttestation(subject) {
     };
 }
 function verifyAttestation(attestation, trustedKeys) {
-    const publicKeyPem = trustedKeys[attestation.signature.keyId];
+    const parsed = parseAttestationRecord(attestation);
+    if (!parsed.ok) {
+        return { ok: false, reason: parsed.reason };
+    }
+    const verifiedAttestation = parsed.attestation;
+    const publicKeyPem = trustedKeys[verifiedAttestation.signature.keyId];
     if (!publicKeyPem) {
-        return { ok: false, reason: `Missing trusted public key for ${attestation.signature.keyId}` };
+        return { ok: false, reason: `Missing trusted public key for ${verifiedAttestation.signature.keyId}` };
     }
     const payload = {
-        ...attestation,
+        ...verifiedAttestation,
         signature: {
-            ...attestation.signature,
+            ...verifiedAttestation.signature,
             value: ''
         }
     };
-    const ok = crypto_1.default.verify(null, canonicalBytes(payload), publicKeyPem, Buffer.from(attestation.signature.value, 'base64'));
+    const ok = crypto_1.default.verify(null, canonicalBytes(payload), publicKeyPem, Buffer.from(verifiedAttestation.signature.value, 'base64'));
     return { ok, reason: ok ? 'verified' : 'signature mismatch' };
 }
 function loadTrustedKeys(keyDir) {

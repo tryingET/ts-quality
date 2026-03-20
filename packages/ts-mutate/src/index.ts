@@ -10,6 +10,7 @@ import {
   type MutationSite,
   changedFileSet,
   collectSourceFiles,
+  compilerOptionsForRepoFile,
   digestObject,
   ensureDir,
   fileDigest,
@@ -18,6 +19,7 @@ import {
   matchPattern,
   normalizePath,
   readJson,
+  runtimeMirrorCandidates,
   spanOverlaps,
   writeJson
 } from '../../evidence-model/src/index';
@@ -35,6 +37,7 @@ export interface MutationOptions {
   changedRegions?: ChangedRegion[];
   coverage?: CoverageEvidence[];
   coveredOnly?: boolean;
+  runtimeMirrorRoots?: string[];
   manifestPath?: string;
   timeoutMs?: number;
   maxSites?: number;
@@ -224,13 +227,14 @@ function runCommandReceipt(cwd: string, testCommand: string[], timeoutMs: number
   };
 }
 
-function buildExecutionFingerprint(repoRoot: string, testCommand: string[]): string {
+function buildExecutionFingerprint(repoRoot: string, testCommand: string[], runtimeMirrorRoots: string[]): string {
   const repoFiles = listFiles(repoRoot, { excludeDirs: ['.git', 'node_modules', '.ts-quality'] })
     .map((filePath) => ({ filePath, digest: fileDigest(path.join(repoRoot, filePath)) }));
   const effectiveEnv = mutationCommandEnv();
   return digestObject({
     mutationRuntimeVersion: MUTATION_RUNTIME_VERSION,
     testCommand,
+    runtimeMirrorRoots,
     node: process.version,
     platform: process.platform,
     arch: process.arch,
@@ -270,10 +274,43 @@ function linkSharedPath(sourcePath: string, destinationPath: string): void {
 
 function hydrateTempRuntime(repoRoot: string, tempDir: string): void {
   linkSharedPath(path.join(repoRoot, 'node_modules'), path.join(tempDir, 'node_modules'));
-  linkSharedPath(path.join(repoRoot, 'dist'), path.join(tempDir, 'dist'));
 }
 
-function runSingleMutation(repoRoot: string, site: MutationSite, mutatedSource: string, testCommand: string[], timeoutMs: number): MutationResult {
+function transpileRuntimeMirrorSource(repoRoot: string, site: MutationSite, mutatedSource: string): string {
+  const compilerOptions = compilerOptionsForRepoFile(repoRoot, site.filePath) ?? {};
+  const transpiled = ts.transpileModule(mutatedSource, {
+    fileName: site.filePath,
+    compilerOptions: {
+      ...compilerOptions,
+      target: compilerOptions.target ?? ts.ScriptTarget.ES2020,
+      module: compilerOptions.module ?? ts.ModuleKind.CommonJS,
+      sourceMap: false,
+      inlineSourceMap: false,
+      inlineSources: false,
+      declaration: false,
+      declarationMap: false,
+      emitDeclarationOnly: false
+    },
+    reportDiagnostics: false
+  });
+  return transpiled.outputText;
+}
+
+function writeRuntimeMirrors(repoRoot: string, tempDir: string, site: MutationSite, mutatedSource: string, runtimeMirrorRoots: string[]): void {
+  const extension = path.extname(site.filePath);
+  const runtimeSource = extension === '.ts' || extension === '.tsx'
+    ? transpileRuntimeMirrorSource(repoRoot, site, mutatedSource)
+    : mutatedSource;
+  for (const candidate of runtimeMirrorCandidates(site.filePath, runtimeMirrorRoots)) {
+    const mirrorPath = path.join(tempDir, candidate);
+    if (!fs.existsSync(mirrorPath) || !fs.statSync(mirrorPath).isFile()) {
+      continue;
+    }
+    fs.writeFileSync(mirrorPath, runtimeSource, 'utf8');
+  }
+}
+
+function runSingleMutation(repoRoot: string, site: MutationSite, mutatedSource: string, testCommand: string[], timeoutMs: number, runtimeMirrorRoots: string[]): MutationResult {
   if (hasSyntaxErrors(site.filePath, mutatedSource)) {
     return {
       kind: 'mutation-result',
@@ -289,11 +326,12 @@ function runSingleMutation(repoRoot: string, site: MutationSite, mutatedSource: 
   ensureDir(tempRoot);
   const tempDir = fs.mkdtempSync(path.join(tempRoot, 'mutant-'));
   try {
-    copyRecursive(repoRoot, tempDir, new Set(['.git', 'node_modules', 'dist', '.ts-quality']));
+    copyRecursive(repoRoot, tempDir, new Set(['.git', 'node_modules', '.ts-quality']));
     hydrateTempRuntime(repoRoot, tempDir);
     const targetPath = path.join(tempDir, site.filePath);
     ensureDir(path.dirname(targetPath));
     fs.writeFileSync(targetPath, mutatedSource, 'utf8');
+    writeRuntimeMirrors(repoRoot, tempDir, site, mutatedSource, runtimeMirrorRoots);
     const receipt = runCommandReceipt(tempDir, testCommand, timeoutMs);
     return {
       kind: 'mutation-result',
@@ -320,7 +358,8 @@ export function runMutations(options: MutationOptions): MutationRun {
   });
   const limitedSites = typeof options.maxSites === 'number' ? sites.slice(0, options.maxSites) : sites;
   const timeoutMs = options.timeoutMs ?? 15_000;
-  const executionFingerprint = buildExecutionFingerprint(options.repoRoot, options.testCommand);
+  const runtimeMirrorRoots = options.runtimeMirrorRoots ?? ['dist'];
+  const executionFingerprint = buildExecutionFingerprint(options.repoRoot, options.testCommand, runtimeMirrorRoots);
   const baseline = runCommandReceipt(options.repoRoot, options.testCommand, timeoutMs);
   if (baseline.status !== 'pass') {
     const results = limitedSites.map((site) => ({
@@ -354,7 +393,7 @@ export function runMutations(options: MutationOptions): MutationRun {
     }
     const sourceText = fs.readFileSync(path.join(options.repoRoot, site.filePath), 'utf8');
     const mutatedSource = applyMutation(sourceText, site);
-    const result = runSingleMutation(options.repoRoot, site, mutatedSource, options.testCommand, timeoutMs);
+    const result = runSingleMutation(options.repoRoot, site, mutatedSource, options.testCommand, timeoutMs, runtimeMirrorRoots);
     results.push(result);
     manifest.entries[key] = result;
   }

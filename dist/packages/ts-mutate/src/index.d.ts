@@ -11,6 +11,7 @@ export interface MutationOptions {
     changedRegions?: ChangedRegion[];
     coverage?: CoverageEvidence[];
     coveredOnly?: boolean;
+    runtimeMirrorRoots?: string[];
     manifestPath?: string;
     timeoutMs?: number;
     maxSites?: number;

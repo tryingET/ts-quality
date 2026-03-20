@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.materializeProject = materializeProject;
 exports.loadVerifiedAttestations = loadVerifiedAttestations;
 exports.runCheck = runCheck;
 exports.initProject = initProject;
@@ -268,29 +269,104 @@ function writeModuleExport(filePath, value) {
         return;
     }
     (0, index_1.ensureDir)(path_1.default.dirname(filePath));
-    fs_1.default.writeFileSync(filePath, `export default ${(0, index_1.stableStringify)(value)};\n`, 'utf8');
+    const existingText = fs_1.default.existsSync(filePath) ? fs_1.default.readFileSync(filePath, 'utf8') : '';
+    const useCommonJs = filePath.endsWith('.cjs') || /\bmodule\.exports\b|\bexports\.default\b/.test(existingText);
+    const moduleText = useCommonJs
+        ? `module.exports = ${(0, index_1.stableStringify)(value)};\n`
+        : `export default ${(0, index_1.stableStringify)(value)};\n`;
+    fs_1.default.writeFileSync(filePath, moduleText, 'utf8');
 }
 function attestationFiles(rootDir, dirRelative) {
-    const directory = path_1.default.join(rootDir, dirRelative);
+    const directory = (0, index_1.resolveRepoLocalPath)(rootDir, dirRelative, { allowMissing: true, kind: 'attestations dir' }).absolutePath;
     if (!fs_1.default.existsSync(directory)) {
         return [];
     }
     return fs_1.default.readdirSync(directory).filter((entry) => entry.endsWith('.json')).map((entry) => path_1.default.join(directory, entry)).sort();
 }
+function relativeToRoot(rootDir, targetPath) {
+    return (0, index_1.normalizePath)(path_1.default.relative(rootDir, targetPath));
+}
+function materializedOutputDir(rootDir, outDir) {
+    const target = outDir ?? '.ts-quality/materialized';
+    return (0, index_1.resolveRepoLocalPath)(rootDir, target, { allowMissing: true, kind: 'materialized output dir' }).absolutePath;
+}
+function materializedFilePath(outDir, fileName) {
+    return path_1.default.join(outDir, fileName);
+}
+function materializedInputRelativePath(sourceRelativePath) {
+    return path_1.default.posix.join('inputs', (0, index_1.normalizePath)(sourceRelativePath));
+}
+function materializeProject(rootDir, options) {
+    const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
+    const outputDir = materializedOutputDir(rootDir, options?.outDir);
+    (0, index_1.ensureDir)(outputDir);
+    const invariants = (0, config_1.loadInvariants)(rootDir, loaded.config.invariantsPath);
+    const constitution = (0, config_1.loadConstitution)(rootDir, loaded.config.constitutionPath);
+    const agents = (0, config_1.loadAgents)(rootDir, loaded.config.agentsPath);
+    const approvals = (0, config_1.loadApprovals)(rootDir, loaded.config.approvalsPath);
+    const waivers = (0, config_1.loadWaivers)(rootDir, loaded.config.waiversPath);
+    const overrides = (0, config_1.loadOverrides)(rootDir, loaded.config.overridesPath);
+    const files = [];
+    const writeMaterializedJson = (fileName, value) => {
+        const absolutePath = materializedFilePath(outputDir, fileName);
+        (0, index_1.writeJson)(absolutePath, value);
+        const relativePath = relativeToRoot(rootDir, absolutePath);
+        files.push(relativePath);
+        return relativePath;
+    };
+    const materializedConfig = {
+        ...loaded.config,
+        invariantsPath: writeMaterializedJson('invariants.json', invariants),
+        constitutionPath: writeMaterializedJson('constitution.json', constitution),
+        agentsPath: writeMaterializedJson('agents.json', agents),
+        approvalsPath: writeMaterializedJson('approvals.json', approvals),
+        waiversPath: writeMaterializedJson('waivers.json', waivers),
+        overridesPath: writeMaterializedJson('overrides.json', overrides)
+    };
+    if (loaded.config.changeSet.diffFile) {
+        const diffSourceResolution = (0, index_1.resolveRepoLocalPath)(rootDir, loaded.config.changeSet.diffFile, { allowMissing: true, kind: 'diff file' });
+        if (fs_1.default.existsSync(diffSourceResolution.absolutePath)) {
+            const diffTarget = materializedFilePath(outputDir, materializedInputRelativePath(diffSourceResolution.relativePath));
+            (0, index_1.ensureDir)(path_1.default.dirname(diffTarget));
+            fs_1.default.copyFileSync(diffSourceResolution.absolutePath, diffTarget);
+            materializedConfig.changeSet = {
+                ...materializedConfig.changeSet,
+                diffFile: relativeToRoot(rootDir, diffTarget)
+            };
+            files.push(relativeToRoot(rootDir, diffTarget));
+        }
+    }
+    const configTarget = materializedFilePath(outputDir, 'ts-quality.config.json');
+    (0, index_1.writeJson)(configTarget, materializedConfig);
+    const configPath = relativeToRoot(rootDir, configTarget);
+    files.push(configPath);
+    return {
+        configPath,
+        outDir: relativeToRoot(rootDir, outputDir),
+        files
+    };
+}
 function loadVerifiedAttestations(rootDir, attestationsDir, trustedKeysDir) {
-    const keys = (0, index_7.loadTrustedKeys)(resolveCliPath(rootDir, trustedKeysDir));
+    const keysDir = (0, index_1.resolveRepoLocalPath)(rootDir, trustedKeysDir, { allowMissing: true, kind: 'trusted keys dir' }).absolutePath;
+    const keys = (0, index_7.loadTrustedKeys)(keysDir);
     const verification = [];
     const attestations = [];
     for (const filePath of attestationFiles(rootDir, attestationsDir)) {
-        let attestation;
+        let rawAttestation;
         try {
-            attestation = JSON.parse(fs_1.default.readFileSync(filePath, 'utf8'));
+            rawAttestation = JSON.parse(fs_1.default.readFileSync(filePath, 'utf8'));
         }
         catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             verification.push({ issuer: path_1.default.basename(filePath), ok: false, reason: `invalid JSON: ${message}` });
             continue;
         }
+        const parsed = (0, index_7.parseAttestationRecord)(rawAttestation);
+        if (!parsed.ok) {
+            verification.push({ issuer: path_1.default.basename(filePath), ok: false, reason: parsed.reason });
+            continue;
+        }
+        const attestation = parsed.attestation;
         const result = verifyAttestationAtRoot(rootDir, attestation, keys);
         verification.push({ issuer: attestation.issuer, ok: result.ok, reason: result.reason });
         if (result.ok) {
@@ -343,7 +419,8 @@ function runCheck(rootDir, options) {
         testCommand: loaded.config.mutations.testCommand,
         manifestPath: path_1.default.join(rootDir, '.ts-quality', 'mutation-manifest.json'),
         timeoutMs: loaded.config.mutations.timeoutMs ?? 15_000,
-        maxSites: loaded.config.mutations.maxSites ?? 25
+        maxSites: loaded.config.mutations.maxSites ?? 25,
+        runtimeMirrorRoots: loaded.config.mutations.runtimeMirrorRoots ?? ['dist']
     });
     const claims = (0, index_4.evaluateInvariants)({
         rootDir,
@@ -454,7 +531,7 @@ function initProject(rootDir) {
     (0, index_1.ensureDir)(path_1.default.join(rootDir, '.ts-quality', 'keys'));
     const configPath = path_1.default.join(rootDir, 'ts-quality.config.ts');
     if (!fs_1.default.existsSync(configPath)) {
-        fs_1.default.writeFileSync(configPath, `export default {\n  sourcePatterns: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx', 'src/**/*.mjs', 'src/**/*.cjs'],\n  testPatterns: ['test/**/*.js', 'test/**/*.mjs', 'test/**/*.cjs', 'test/**/*.ts', '**/*.test.js', '**/*.test.mjs', '**/*.test.cjs', '**/*.spec.ts'],\n  coverage: { lcovPath: 'coverage/lcov.info' },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25 },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
+        fs_1.default.writeFileSync(configPath, `export default {\n  sourcePatterns: ${(0, index_1.stableStringify)([...index_1.DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${(0, index_1.stableStringify)([...index_1.DEFAULT_TEST_PATTERNS])},\n  coverage: { lcovPath: 'coverage/lcov.info' },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
     }
     const invariantsPath = path_1.default.join(rootDir, '.ts-quality', 'invariants.ts');
     if (!fs_1.default.existsSync(invariantsPath)) {
@@ -576,8 +653,13 @@ function attestSign(rootDir, issuer, keyId, privateKeyPath, subjectFile, claims,
     return resolvedOutput;
 }
 function attestVerify(rootDir, attestationFile, trustedKeysDir) {
-    const attestation = JSON.parse(fs_1.default.readFileSync(resolveCliPath(rootDir, attestationFile), 'utf8'));
-    const keys = (0, index_7.loadTrustedKeys)(resolveCliPath(rootDir, trustedKeysDir));
+    const parsed = (0, index_7.parseAttestationRecord)(JSON.parse(fs_1.default.readFileSync(resolveCliPath(rootDir, attestationFile), 'utf8')));
+    if (!parsed.ok) {
+        return `${path_1.default.basename(attestationFile)}: failed (${parsed.reason})\n`;
+    }
+    const attestation = parsed.attestation;
+    const keysDir = (0, index_1.resolveRepoLocalPath)(rootDir, trustedKeysDir, { allowMissing: true, kind: 'trusted keys dir' }).absolutePath;
+    const keys = (0, index_7.loadTrustedKeys)(keysDir);
     const result = verifyAttestationAtRoot(rootDir, attestation, keys);
     return `${attestation.issuer}: ${result.ok ? 'verified' : 'failed'} (${result.reason})\n`;
 }
@@ -601,7 +683,8 @@ function runAmend(rootDir, proposalFile, apply = false, options) {
     (0, index_1.writeJson)(resultPath, decision);
     if (apply && decision.outcome === 'approved') {
         const nextConstitution = (0, index_7.applyAmendment)(proposal, constitution);
-        writeModuleExport(path_1.default.join(rootDir, loaded.config.constitutionPath), nextConstitution);
+        const constitutionPath = (0, index_1.resolveRepoLocalPath)(rootDir, loaded.config.constitutionPath, { allowMissing: true, kind: 'constitution path' }).absolutePath;
+        writeModuleExport(constitutionPath, nextConstitution);
     }
     return `${(0, index_1.stableStringify)(decision)}\n`;
 }

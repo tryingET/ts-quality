@@ -179,13 +179,14 @@ function runCommandReceipt(cwd, testCommand, timeoutMs) {
         details: commandDetails(result)
     };
 }
-function buildExecutionFingerprint(repoRoot, testCommand) {
+function buildExecutionFingerprint(repoRoot, testCommand, runtimeMirrorRoots) {
     const repoFiles = (0, index_1.listFiles)(repoRoot, { excludeDirs: ['.git', 'node_modules', '.ts-quality'] })
         .map((filePath) => ({ filePath, digest: (0, index_1.fileDigest)(path_1.default.join(repoRoot, filePath)) }));
     const effectiveEnv = mutationCommandEnv();
     return (0, index_1.digestObject)({
         mutationRuntimeVersion: MUTATION_RUNTIME_VERSION,
         testCommand,
+        runtimeMirrorRoots,
         node: process.version,
         platform: process.platform,
         arch: process.arch,
@@ -220,9 +221,40 @@ function linkSharedPath(sourcePath, destinationPath) {
 }
 function hydrateTempRuntime(repoRoot, tempDir) {
     linkSharedPath(path_1.default.join(repoRoot, 'node_modules'), path_1.default.join(tempDir, 'node_modules'));
-    linkSharedPath(path_1.default.join(repoRoot, 'dist'), path_1.default.join(tempDir, 'dist'));
 }
-function runSingleMutation(repoRoot, site, mutatedSource, testCommand, timeoutMs) {
+function transpileRuntimeMirrorSource(repoRoot, site, mutatedSource) {
+    const compilerOptions = (0, index_1.compilerOptionsForRepoFile)(repoRoot, site.filePath) ?? {};
+    const transpiled = typescript_1.default.transpileModule(mutatedSource, {
+        fileName: site.filePath,
+        compilerOptions: {
+            ...compilerOptions,
+            target: compilerOptions.target ?? typescript_1.default.ScriptTarget.ES2020,
+            module: compilerOptions.module ?? typescript_1.default.ModuleKind.CommonJS,
+            sourceMap: false,
+            inlineSourceMap: false,
+            inlineSources: false,
+            declaration: false,
+            declarationMap: false,
+            emitDeclarationOnly: false
+        },
+        reportDiagnostics: false
+    });
+    return transpiled.outputText;
+}
+function writeRuntimeMirrors(repoRoot, tempDir, site, mutatedSource, runtimeMirrorRoots) {
+    const extension = path_1.default.extname(site.filePath);
+    const runtimeSource = extension === '.ts' || extension === '.tsx'
+        ? transpileRuntimeMirrorSource(repoRoot, site, mutatedSource)
+        : mutatedSource;
+    for (const candidate of (0, index_1.runtimeMirrorCandidates)(site.filePath, runtimeMirrorRoots)) {
+        const mirrorPath = path_1.default.join(tempDir, candidate);
+        if (!fs_1.default.existsSync(mirrorPath) || !fs_1.default.statSync(mirrorPath).isFile()) {
+            continue;
+        }
+        fs_1.default.writeFileSync(mirrorPath, runtimeSource, 'utf8');
+    }
+}
+function runSingleMutation(repoRoot, site, mutatedSource, testCommand, timeoutMs, runtimeMirrorRoots) {
     if (hasSyntaxErrors(site.filePath, mutatedSource)) {
         return {
             kind: 'mutation-result',
@@ -237,11 +269,12 @@ function runSingleMutation(repoRoot, site, mutatedSource, testCommand, timeoutMs
     (0, index_1.ensureDir)(tempRoot);
     const tempDir = fs_1.default.mkdtempSync(path_1.default.join(tempRoot, 'mutant-'));
     try {
-        copyRecursive(repoRoot, tempDir, new Set(['.git', 'node_modules', 'dist', '.ts-quality']));
+        copyRecursive(repoRoot, tempDir, new Set(['.git', 'node_modules', '.ts-quality']));
         hydrateTempRuntime(repoRoot, tempDir);
         const targetPath = path_1.default.join(tempDir, site.filePath);
         (0, index_1.ensureDir)(path_1.default.dirname(targetPath));
         fs_1.default.writeFileSync(targetPath, mutatedSource, 'utf8');
+        writeRuntimeMirrors(repoRoot, tempDir, site, mutatedSource, runtimeMirrorRoots);
         const receipt = runCommandReceipt(tempDir, testCommand, timeoutMs);
         return {
             kind: 'mutation-result',
@@ -268,7 +301,8 @@ function runMutations(options) {
     });
     const limitedSites = typeof options.maxSites === 'number' ? sites.slice(0, options.maxSites) : sites;
     const timeoutMs = options.timeoutMs ?? 15_000;
-    const executionFingerprint = buildExecutionFingerprint(options.repoRoot, options.testCommand);
+    const runtimeMirrorRoots = options.runtimeMirrorRoots ?? ['dist'];
+    const executionFingerprint = buildExecutionFingerprint(options.repoRoot, options.testCommand, runtimeMirrorRoots);
     const baseline = runCommandReceipt(options.repoRoot, options.testCommand, timeoutMs);
     if (baseline.status !== 'pass') {
         const results = limitedSites.map((site) => ({
@@ -300,7 +334,7 @@ function runMutations(options) {
         }
         const sourceText = fs_1.default.readFileSync(path_1.default.join(options.repoRoot, site.filePath), 'utf8');
         const mutatedSource = applyMutation(sourceText, site);
-        const result = runSingleMutation(options.repoRoot, site, mutatedSource, options.testCommand, timeoutMs);
+        const result = runSingleMutation(options.repoRoot, site, mutatedSource, options.testCommand, timeoutMs, runtimeMirrorRoots);
         results.push(result);
         manifest.entries[key] = result;
     }

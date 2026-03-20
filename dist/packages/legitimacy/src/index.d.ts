@@ -10,6 +10,13 @@ export interface ChangeBundle {
     fileDigests: Record<string, string>;
     runDigest: string;
 }
+export declare function parseAttestationRecord(value: unknown): {
+    ok: true;
+    attestation: Attestation;
+} | {
+    ok: false;
+    reason: string;
+};
 export declare function generateKeyPair(): {
     publicKeyPem: string;
     privateKeyPem: string;

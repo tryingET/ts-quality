@@ -28,6 +28,7 @@ The monorepo root is the control plane; package-specific runtime behavior belong
 ## Repo-wide rules
 - No secrets in git.
 - Keep docs aligned with shipped behavior and CLI/report surfaces.
+- Alpha-stage policy: before 1.0, breaking changes are allowed when they improve deterministic evidence, safety, trust-boundary correctness, or contract clarity; record the decision in `docs/decisions/`, reflect it in `README.md`, and mark it in `CHANGELOG.md`.
 - When runtime behavior changes, rebuild `dist/` and keep generated sample artifacts under `examples/artifacts/` intentional and reviewable.
 - Keep invariant reasoning deterministic and inspectable; do **not** broaden evidence search just to make outputs greener.
 - Treat coverage, mutation, invariant, governance, and legitimacy as separate evidence layers even when they roll up into one verdict.

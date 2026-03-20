@@ -31,32 +31,7 @@ function importsForFile(filePath, sourceText) {
     return imports;
 }
 function resolveImport(importerPath, specifier, rootDir) {
-    if (!specifier.startsWith('.')) {
-        return undefined;
-    }
-    const importerDir = path_1.default.dirname(importerPath);
-    const base = path_1.default.resolve(rootDir, importerDir, specifier);
-    const candidates = [
-        base,
-        `${base}.ts`,
-        `${base}.tsx`,
-        `${base}.js`,
-        `${base}.jsx`,
-        `${base}.mjs`,
-        `${base}.cjs`,
-        path_1.default.join(base, 'index.ts'),
-        path_1.default.join(base, 'index.tsx'),
-        path_1.default.join(base, 'index.js'),
-        path_1.default.join(base, 'index.jsx'),
-        path_1.default.join(base, 'index.mjs'),
-        path_1.default.join(base, 'index.cjs')
-    ];
-    for (const candidate of candidates) {
-        if (fs_1.default.existsSync(candidate) && fs_1.default.statSync(candidate).isFile()) {
-            return (0, index_1.normalizePath)(path_1.default.relative(rootDir, candidate));
-        }
-    }
-    return (0, index_1.normalizePath)(path_1.default.relative(rootDir, base));
+    return (0, index_1.resolveRepoImport)(rootDir, importerPath, specifier);
 }
 function evaluateBoundaryRule(rootDir, rule, changedFiles) {
     if (rule.kind !== 'boundary') {

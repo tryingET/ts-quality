@@ -135,3 +135,66 @@ test('amend --apply preserves json constitution format when configured', () => {
   result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
 });
+
+test('amend --apply preserves commonjs constitution modules when configured', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 4 },
+  policy: { maxChangedCrap: 30, minMutationScore: 0.5, minMergeConfidence: 50 },
+  changeSet: { files: ['src/auth/token.js'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.cjs',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '.ts-quality/attestations',
+  trustedKeysDir: '.ts-quality/keys'
+};
+`, 'utf8');
+  fs.writeFileSync(path.join(target, '.ts-quality', 'constitution.cjs'), `module.exports = [
+  {
+    kind: 'approval',
+    id: 'payments-maintainer-approval',
+    paths: ['src/payments/**'],
+    message: 'Payments changes require a maintainer approval.',
+    minApprovals: 1,
+    roles: ['maintainer']
+  }
+];
+`, 'utf8');
+
+  const proposalPath = path.join(target, 'proposal-cjs-apply.json');
+  fs.writeFileSync(proposalPath, JSON.stringify({
+    id: 'amend-payments-approval-cjs',
+    title: 'Clarify payment approval wording in cjs constitution',
+    rationale: 'Non-sensitive wording update.',
+    evidence: ['docs updated'],
+    changes: [{
+      action: 'replace',
+      ruleId: 'payments-maintainer-approval',
+      rule: {
+        kind: 'approval',
+        id: 'payments-maintainer-approval',
+        paths: ['src/payments/**'],
+        message: 'Payment changes require explicit maintainer review.',
+        minApprovals: 1,
+        roles: ['maintainer']
+      }
+    }],
+    approvals: [
+      { by: 'maintainer', role: 'maintainer', rationale: 'wording ok', createdAt: new Date().toISOString(), targetId: 'amend-payments-approval-cjs' }
+    ]
+  }, null, 2));
+
+  let result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath, '--apply'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const constitutionText = fs.readFileSync(path.join(target, '.ts-quality', 'constitution.cjs'), 'utf8');
+  assert.match(constitutionText, /^module\.exports = /);
+  assert.doesNotMatch(constitutionText, /export default/);
+  result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});

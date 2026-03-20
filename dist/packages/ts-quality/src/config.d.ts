@@ -11,6 +11,7 @@ export interface TsQualityConfig {
         coveredOnly?: boolean;
         timeoutMs?: number;
         maxSites?: number;
+        runtimeMirrorRoots?: string[];
     };
     policy?: {
         maxChangedCrap?: number;

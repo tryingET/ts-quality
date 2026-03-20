@@ -5,6 +5,7 @@ import {
   attestSign,
   attestVerify,
   initProject,
+  materializeProject,
   renderGovernance,
   renderLatestExplain,
   renderLatestReport,
@@ -45,9 +46,16 @@ function configPath(): string | undefined {
   return takeOption('--config');
 }
 
+function outDir(): string | undefined {
+  return takeOption('--out-dir');
+}
+
 function usage(command?: string, subcommand?: string): string {
   if (!command) {
-    return `ts-quality commands:\n- init\n- check\n- explain\n- report [--json]\n- trend\n- plan\n- govern\n- authorize --agent <id> [--action merge]\n- attest sign|verify|keygen\n- amend --proposal <file> [--apply]\n`;
+    return `ts-quality commands:\n- init\n- materialize [--out-dir <dir>]\n- check\n- explain\n- report [--json]\n- trend\n- plan\n- govern\n- authorize --agent <id> [--action merge]\n- attest sign|verify|keygen\n- amend --proposal <file> [--apply]\n`;
+  }
+  if (command === 'materialize') {
+    return 'Usage: ts-quality materialize [--root <dir>] [--config <file>] [--out-dir <dir>]\n';
   }
   if (command === 'check') {
     return 'Usage: ts-quality check [--root <dir>] [--config <file>] [--changed <a,b,c>] [--run-id <id>]\n';
@@ -87,6 +95,21 @@ function main(): void {
   if (command === 'init') {
     initProject(cwd);
     process.stdout.write(`Initialized ts-quality in ${cwd}\n`);
+    return;
+  }
+
+  if (command === 'materialize') {
+    const explicitConfigPath = configPath();
+    const requestedOutDir = outDir();
+    const materializeOptions: { configPath?: string; outDir?: string } = {};
+    if (explicitConfigPath) {
+      materializeOptions.configPath = explicitConfigPath;
+    }
+    if (requestedOutDir) {
+      materializeOptions.outDir = requestedOutDir;
+    }
+    const result = materializeProject(cwd, materializeOptions);
+    process.stdout.write(`Materialized runtime config: ${result.configPath}\nOutput dir: ${result.outDir}\nFiles:\n- ${result.files.join('\n- ')}\n`);
     return;
   }
 

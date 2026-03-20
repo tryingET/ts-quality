@@ -1,3 +1,4 @@
+import ts from 'typescript';
 export type Severity = 'info' | 'warn' | 'error';
 export type Outcome = 'pass' | 'warn' | 'fail';
 export interface LineSpan {
@@ -383,6 +384,18 @@ export interface RunArtifact {
 export interface LatestPointer {
     latestRunId: string;
 }
+export declare const DEFAULT_SOURCE_PATTERNS: string[];
+export declare const DEFAULT_TEST_PATTERNS: readonly ["test/**/*.js", "test/**/*.mjs", "test/**/*.cjs", "test/**/*.ts", "test/**/*.tsx", "tests/**/*.js", "tests/**/*.mjs", "tests/**/*.cjs", "tests/**/*.ts", "tests/**/*.tsx", "**/*.test.js", "**/*.test.mjs", "**/*.test.cjs", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.js", "**/*.spec.mjs", "**/*.spec.cjs", "**/*.spec.ts", "**/*.spec.tsx"];
+export declare function resolveRepoLocalPath(rootDir: string, candidate: string, options?: {
+    allowMissing?: boolean;
+    kind?: string;
+}): {
+    absolutePath: string;
+    relativePath: string;
+};
+export declare function compilerOptionsForRepoFile(rootDir: string, filePath: string): ReturnType<typeof ts.parseJsonConfigFileContent>['options'] | undefined;
+export declare function resolveRepoImport(rootDir: string, importerPath: string, specifier: string): string | undefined;
+export declare function runtimeMirrorCandidates(sourcePath: string, mirrorRoots?: string[]): string[];
 export declare function normalizePath(value: string): string;
 export declare function createRunId(date?: Date): string;
 export declare function assertSafeRunId(runId: string): string;

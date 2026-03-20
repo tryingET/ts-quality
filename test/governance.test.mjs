@@ -1,3 +1,6 @@
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import test from 'node:test';
 import assert from 'assert/strict';
 import { fixturePath, importDist } from './helpers.mjs';
@@ -16,6 +19,73 @@ test('evaluateGovernance catches extensionless forbidden imports', () => {
   });
   assert.equal(findings.length, 1);
   assert.match(findings[0].evidence[0], /identity\/src\/store\.js/);
+});
+
+test('evaluateGovernance catches forbidden imports resolved through tsconfig path aliases', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-governance-alias-'));
+  fs.mkdirSync(path.join(rootDir, 'src', 'app'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'src', 'payments'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'tsconfig.json'), JSON.stringify({
+    compilerOptions: {
+      baseUrl: '.',
+      paths: {
+        '@payments/*': ['src/payments/*']
+      }
+    }
+  }, null, 2));
+  fs.writeFileSync(path.join(rootDir, 'src', 'app', 'entry.ts'), "import { charge } from '@payments/charge';\nexport const value = charge();\n", 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'src', 'payments', 'charge.ts'), 'export const charge = () => 1;\n', 'utf8');
+
+  const findings = governance.evaluateGovernance({
+    rootDir,
+    constitution: [{
+      kind: 'boundary',
+      id: 'app-no-payments',
+      from: ['src/app/**'],
+      to: ['src/payments/**'],
+      mode: 'forbid',
+      message: 'App layer must not import payments directly.'
+    }],
+    changedFiles: ['src/app/entry.ts'],
+    changedRegions: []
+  });
+
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].evidence[0], /@payments\/charge -> src\/payments\/charge\.ts/);
+});
+
+test('evaluateGovernance resolves aliases from the nearest package tsconfig in nested repos', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-governance-nested-alias-'));
+  fs.mkdirSync(path.join(rootDir, 'packages', 'app', 'src'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'packages', 'payments', 'src'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'tsconfig.json'), JSON.stringify({ compilerOptions: {} }, null, 2));
+  fs.writeFileSync(path.join(rootDir, 'packages', 'app', 'tsconfig.json'), JSON.stringify({
+    compilerOptions: {
+      baseUrl: '.',
+      paths: {
+        '@payments/*': ['../payments/src/*']
+      }
+    }
+  }, null, 2));
+  fs.writeFileSync(path.join(rootDir, 'packages', 'app', 'src', 'entry.ts'), "import { charge } from '@payments/charge';\nexport const value = charge();\n", 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'packages', 'payments', 'src', 'charge.ts'), 'export const charge = () => 1;\n', 'utf8');
+
+  const findings = governance.evaluateGovernance({
+    rootDir,
+    constitution: [{
+      kind: 'boundary',
+      id: 'app-no-payments',
+      from: ['packages/app/**'],
+      to: ['packages/payments/**'],
+      mode: 'forbid',
+      message: 'App package must not import payments package directly.'
+    }],
+    changedFiles: ['packages/app/src/entry.ts'],
+    changedRegions: []
+  });
+
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].evidence[0], /@payments\/charge -> packages\/payments\/src\/charge\.ts/);
 });
 
 test('approval rules count only unique targeted approvals', () => {

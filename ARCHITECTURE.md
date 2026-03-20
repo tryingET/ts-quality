@@ -14,7 +14,7 @@ type: "reference"
 
 ### `packages/evidence-model`
 
-Shared types and storage primitives. It defines the canonical JSON artifact model, path normalization, stable serialization, hashing, diff-hunk parsing, run storage, waiver matching, additive execution receipts, and exact/unique coverage-path resolution helpers.
+Shared types and storage primitives. It defines the canonical JSON artifact model, path normalization, repo-local path containment checks (including symlink escapes), stable serialization, hashing, diff-hunk parsing, run storage, waiver matching, additive execution receipts, and exact/unique coverage-path resolution helpers.
 
 ### `packages/crap4ts`
 
@@ -22,7 +22,7 @@ AST-backed CRAP analysis for TS/JS. It parses LCOV, discovers function-like node
 
 ### `packages/ts-mutate`
 
-Deterministic mutation testing. It discovers mutation sites from the TypeScript AST, applies exact-span mutations, validates that the baseline test command passes before trusting mutant outcomes, runs tests in isolated temporary copies, strips inherited nested test-runner recursion context before launching mutation subprocesses, and caches results in a manifest keyed by a deterministic execution fingerprint that includes the effective execution environment so test-corpus drift or runner-context leakage cannot silently reuse stale answers.
+Deterministic mutation testing. It discovers mutation sites from the TypeScript AST, applies exact-span mutations, validates that the baseline test command passes before trusting mutant outcomes, runs tests in isolated temporary copies, strips inherited nested test-runner recursion context before launching mutation subprocesses, mirrors mutated JS into configured built-runtime roots when tests execute compiled output, transpiles mutated TS/TSX into matching JS runtime mirrors when the runtime under test is compiled output, and caches results in a manifest keyed by a deterministic execution fingerprint that includes the effective execution environment plus runtime-mirror configuration so test-corpus drift or runner-context leakage cannot silently reuse stale answers.
 
 ### `packages/invariants`
 
@@ -34,15 +34,15 @@ Judgment layer. It combines CRAP, mutation outcomes, invariant impact, waivers, 
 
 ### `packages/governance`
 
-Constitution layer. It enforces architectural boundaries, approval rules, rollback evidence, ownership reservations, and domain risk budgets. It also produces implementation plans with explicit tradeoffs.
+Constitution layer. It enforces architectural boundaries, approval rules, rollback evidence, ownership reservations, and domain risk budgets. Boundary checks use repo-aware module resolution, walking from the importer toward the repo root for the nearest `tsconfig.json`, so TS path aliases and extensionless local imports cannot silently bypass the constitution in common nested package layouts. It also produces implementation plans with explicit tradeoffs.
 
 ### `packages/legitimacy`
 
-Legitimacy layer. It models agents and grants, builds proof-carrying change bundles, signs and verifies attestations with Ed25519, evaluates change authorization, records overrides, and evaluates constitutional amendments. Attestations are trusted only when they bind to repo-local artifacts under the exact evaluated run boundary, and authorization refuses vacuous empty-file scopes. Overrides are re-validated against override grants on the exact changed scope; a recorded override is not a blanket bypass.
+Legitimacy layer. It models agents and grants, builds proof-carrying change bundles, signs and verifies attestations with Ed25519, validates attestation shape before trust decisions, evaluates change authorization, records overrides, and evaluates constitutional amendments. Attestations are trusted only when they bind to repo-local artifacts under the exact evaluated run boundary, and authorization refuses vacuous empty-file scopes. Overrides are re-validated against override grants on the exact changed scope; a recorded override is not a blanket bypass.
 
 ### `packages/ts-quality`
 
-Product surface. It loads configuration, orchestrates the engines, writes artifacts, and exposes the unified CLI.
+Product surface. It loads configuration through a data-only module contract rather than executing repo code, enforces repo-local trust/input paths for config-driven artifacts, can materialize author-authored config/support files into canonical runtime JSON artifacts with reserved input subtrees for copied user files, orchestrates the engines, writes artifacts, and exposes the unified CLI.
 
 ## Data flow
 

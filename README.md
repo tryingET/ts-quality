@@ -10,6 +10,15 @@ type: "reference"
 
 `ts-quality` is an offline-first TypeScript quality platform that turns static evidence into explainable trust for software change.
 
+## Stability
+
+`ts-quality` is currently **alpha**.
+Before 1.0, breaking changes are allowed when they improve deterministic evidence, safety, trust-boundary correctness, or contract clarity.
+That is not permission for silent drift: intentional breaking changes must still be called out in `CHANGELOG.md`, reflected in affected docs, and backed by tests or validation where appropriate.
+
+One important current example: config and repo-local support modules are now treated as **data-only modules**, not executable project code.
+Literal exports remain supported across `.ts`, `.js`, `.mjs`, `.cjs`, and `.json`, including computed property names backed by top-level `const` bindings, but runtime expressions and side effects are intentionally rejected.
+
 It progresses through five layers:
 
 1. **Evidence** — `crap4ts` finds risky code and maps LCOV coverage to functions.
@@ -26,6 +35,7 @@ A strong `ts-quality` result depends on explicit inputs, not hidden inference:
 - **Green mutation baseline** — `mutations.testCommand` must pass before mutation results are trusted. A broken baseline now blocks mutation scoring instead of pretending every failing run killed a mutant.
 - **Executable tests** — `mutations.testCommand` must actually fail when behavior changes, or mutants will survive and confidence will drop.
 - **Hermetic mutation execution** — mutation subprocesses drop inherited nested test-runner recursion context (for example `NODE_TEST_CONTEXT`) so the same repo does not score differently just because `check` was launched from inside `node --test`.
+- **Runtime parity for built-output tests** — when tests execute compiled output from roots such as `dist/` or `lib/`, configured runtime mirrors now receive mutated JS directly for JS sources and transpiled JS for TS/TSX sources so mutation pressure stays aligned with the runtime under test.
 - **Focused test evidence** — invariant scenarios are matched against tests aligned to the impacted source by file naming/import hints or explicit `requiredTestPatterns`, not by unrelated repo-global keyword hits.
 
 ## Deterministic depth, not semantic guesswork
@@ -43,6 +53,7 @@ That makes the system explainable and debuggable, but it also means shallow test
 
 ```bash
 npx ts-quality init
+npx ts-quality materialize
 npx ts-quality check [--run-id <id>]
 npx ts-quality explain
 npx ts-quality report
@@ -55,6 +66,13 @@ npx ts-quality amend --proposal proposal.json
 ```
 
 `attest sign` expects `--subject` to point at a repo-local artifact under `--root` (for example `.ts-quality/runs/<run-id>/verdict.json`).
+
+`materialize` exports the current data-only config and repo-local support modules into canonical runtime JSON under `.ts-quality/materialized/` so later checks can run from boring generated artifacts instead of author-authored module files. Any configured diff input is copied into a reserved `.ts-quality/materialized/inputs/` subtree so user filenames cannot overwrite canonical artifacts:
+
+```bash
+npx ts-quality materialize
+npx ts-quality check --config .ts-quality/materialized/ts-quality.config.json
+```
 
 ## What a run produces
 

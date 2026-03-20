@@ -29,9 +29,15 @@ function runId() {
 function configPath() {
     return takeOption('--config');
 }
+function outDir() {
+    return takeOption('--out-dir');
+}
 function usage(command, subcommand) {
     if (!command) {
-        return `ts-quality commands:\n- init\n- check\n- explain\n- report [--json]\n- trend\n- plan\n- govern\n- authorize --agent <id> [--action merge]\n- attest sign|verify|keygen\n- amend --proposal <file> [--apply]\n`;
+        return `ts-quality commands:\n- init\n- materialize [--out-dir <dir>]\n- check\n- explain\n- report [--json]\n- trend\n- plan\n- govern\n- authorize --agent <id> [--action merge]\n- attest sign|verify|keygen\n- amend --proposal <file> [--apply]\n`;
+    }
+    if (command === 'materialize') {
+        return 'Usage: ts-quality materialize [--root <dir>] [--config <file>] [--out-dir <dir>]\n';
     }
     if (command === 'check') {
         return 'Usage: ts-quality check [--root <dir>] [--config <file>] [--changed <a,b,c>] [--run-id <id>]\n';
@@ -67,6 +73,20 @@ function main() {
     if (command === 'init') {
         (0, index_1.initProject)(cwd);
         process.stdout.write(`Initialized ts-quality in ${cwd}\n`);
+        return;
+    }
+    if (command === 'materialize') {
+        const explicitConfigPath = configPath();
+        const requestedOutDir = outDir();
+        const materializeOptions = {};
+        if (explicitConfigPath) {
+            materializeOptions.configPath = explicitConfigPath;
+        }
+        if (requestedOutDir) {
+            materializeOptions.outDir = requestedOutDir;
+        }
+        const result = (0, index_1.materializeProject)(cwd, materializeOptions);
+        process.stdout.write(`Materialized runtime config: ${result.configPath}\nOutput dir: ${result.outDir}\nFiles:\n- ${result.files.join('\n- ')}\n`);
         return;
     }
     if (command === 'check') {

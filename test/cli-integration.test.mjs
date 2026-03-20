@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { spawnSync } from 'child_process';
 import test from 'node:test';
@@ -134,6 +135,99 @@ test('check, plan, govern, and authorize accept --config for a nonstandard confi
   assert.equal(typeof decision.outcome, 'string');
 });
 
+test('materialize exports runtime JSON artifacts and check can run from them with matching verdicts', () => {
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'materialize', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Materialized runtime config: \.ts-quality\/materialized\/ts-quality\.config\.json/);
+  for (const relativePath of [
+    '.ts-quality/materialized/ts-quality.config.json',
+    '.ts-quality/materialized/invariants.json',
+    '.ts-quality/materialized/constitution.json',
+    '.ts-quality/materialized/agents.json',
+    '.ts-quality/materialized/approvals.json',
+    '.ts-quality/materialized/waivers.json',
+    '.ts-quality/materialized/overrides.json'
+  ]) {
+    assert.equal(fs.existsSync(path.join(target, relativePath)), true, relativePath);
+  }
+
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'source-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const sourceRun = readRun(target);
+
+  result = spawnSync('node', [cli, 'check', '--root', target, '--config', '.ts-quality/materialized/ts-quality.config.json', '--run-id', 'materialized-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const materializedRun = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'materialized-run', 'run.json'), 'utf8'));
+
+  assert.equal(materializedRun.verdict.mergeConfidence, sourceRun.verdict.mergeConfidence);
+  assert.equal(materializedRun.verdict.outcome, sourceRun.verdict.outcome);
+  assert.deepEqual(materializedRun.changedFiles, sourceRun.changedFiles);
+  assert.deepEqual(materializedRun.behaviorClaims.map((claim) => claim.invariantId), sourceRun.behaviorClaims.map((claim) => claim.invariantId));
+  assert.equal(materializedRun.governance.length, sourceRun.governance.length);
+});
+
+test('materialize keeps copied diff inputs in a reserved subdirectory so they cannot overwrite canonical artifacts', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.mkdirSync(path.join(target, 'diffs'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'diffs', 'agents.json'), '@@ -1 +1 @@\n-bad\n+good\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 4 },
+  policy: { maxChangedCrap: 30, minMutationScore: 0.5, minMergeConfidence: 50 },
+  changeSet: { files: ['src/auth/token.js'], diffFile: 'diffs/agents.json' },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '.ts-quality/attestations',
+  trustedKeysDir: '.ts-quality/keys'
+};
+`, 'utf8');
+
+  const result = spawnSync('node', [cli, 'materialize', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'materialized', 'agents.json')), true);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'materialized', 'inputs', 'diffs', 'agents.json')), true);
+  assert.doesNotMatch(fs.readFileSync(path.join(target, '.ts-quality', 'materialized', 'agents.json'), 'utf8'), /^@@/);
+  const check = spawnSync('node', [cli, 'check', '--root', target, '--config', '.ts-quality/materialized/ts-quality.config.json'], { encoding: 'utf8' });
+  assert.equal(check.status, 0, check.stderr);
+});
+
+test('check rejects trust directories that escape the repository root', () => {
+  const fixture = tempCopyOfFixture('governed-app');
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-external-trust-'));
+  const target = path.join(workspace, 'repo');
+  fs.cpSync(fixture, target, { recursive: true });
+  fs.mkdirSync(path.join(workspace, 'outside', 'attestations'), { recursive: true });
+  fs.mkdirSync(path.join(workspace, 'outside', 'keys'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 4 },
+  policy: { maxChangedCrap: 30, minMutationScore: 0.5, minMergeConfidence: 50 },
+  changeSet: { files: ['src/auth/token.js'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '../outside/attestations',
+  trustedKeysDir: '../outside/keys'
+};
+`, 'utf8');
+
+  const result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /attestations dir must stay inside repository root|trusted keys dir must stay inside repository root/);
+});
+
 test('check accepts a caller-supplied run id for exact approval binding', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
@@ -234,4 +328,15 @@ test('check quarantines malformed attestation files instead of crashing', () => 
   const runId = latestRunId(target);
   const verifyText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', runId, 'attestation-verify.txt'), 'utf8');
   assert.match(verifyText, /broken\.json: failed \(invalid JSON:/);
+});
+
+test('check quarantines schema-invalid attestation files instead of crashing', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.mkdirSync(path.join(target, '.ts-quality', 'attestations'), { recursive: true });
+  fs.writeFileSync(path.join(target, '.ts-quality', 'attestations', 'broken-shape.json'), '{"issuer":"broken"}\n', 'utf8');
+  const result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const runId = latestRunId(target);
+  const verifyText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', runId, 'attestation-verify.txt'), 'utf8');
+  assert.match(verifyText, /broken-shape\.json: failed \(invalid attestation shape:/);
 });

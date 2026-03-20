@@ -9,3 +9,10 @@ type: "tutorial"
 # Basic example
 
 This example shows the minimal config and support files needed to run `ts-quality` locally.
+
+You can also materialize the author-authored config/support files into boring runtime JSON before running the check:
+
+```bash
+npx ts-quality materialize --root examples/basic
+npx ts-quality check --root examples/basic --config .ts-quality/materialized/ts-quality.config.json
+```

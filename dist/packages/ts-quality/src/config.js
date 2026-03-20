@@ -15,36 +15,157 @@ exports.loadOverrides = loadOverrides;
 exports.loadChangedRegions = loadChangedRegions;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const vm_1 = __importDefault(require("vm"));
 const typescript_1 = __importDefault(require("typescript"));
-const module_1 = require("module");
 const index_1 = require("../../evidence-model/src/index");
-function transpileModule(filePath) {
+function parsePropertyName(name, sourceFile, bindings) {
+    if (typescript_1.default.isIdentifier(name) || typescript_1.default.isStringLiteral(name) || typescript_1.default.isNumericLiteral(name)) {
+        return name.text;
+    }
+    if (typescript_1.default.isComputedPropertyName(name)) {
+        const computed = evaluateDataExpression(name.expression, sourceFile, bindings);
+        if (typeof computed === 'string' || typeof computed === 'number') {
+            return String(computed);
+        }
+    }
+    throw new Error(`Unsupported property name in data-only module: ${name.getText(sourceFile)}`);
+}
+function evaluateDataExpression(expression, sourceFile, bindings) {
+    if (typescript_1.default.isParenthesizedExpression(expression) || typescript_1.default.isAsExpression(expression) || typescript_1.default.isSatisfiesExpression(expression) || typescript_1.default.isTypeAssertionExpression(expression)) {
+        return evaluateDataExpression(expression.expression, sourceFile, bindings);
+    }
+    if (typescript_1.default.isStringLiteral(expression) || typescript_1.default.isNoSubstitutionTemplateLiteral(expression)) {
+        return expression.text;
+    }
+    if (typescript_1.default.isNumericLiteral(expression)) {
+        return Number(expression.text);
+    }
+    if (expression.kind === typescript_1.default.SyntaxKind.TrueKeyword) {
+        return true;
+    }
+    if (expression.kind === typescript_1.default.SyntaxKind.FalseKeyword) {
+        return false;
+    }
+    if (expression.kind === typescript_1.default.SyntaxKind.NullKeyword) {
+        return null;
+    }
+    if (typescript_1.default.isPrefixUnaryExpression(expression)) {
+        const operand = evaluateDataExpression(expression.operand, sourceFile, bindings);
+        if (typeof operand !== 'number') {
+            throw new Error(`Unsupported unary operand in data-only module: ${expression.getText(sourceFile)}`);
+        }
+        if (expression.operator === typescript_1.default.SyntaxKind.MinusToken) {
+            return -operand;
+        }
+        if (expression.operator === typescript_1.default.SyntaxKind.PlusToken) {
+            return operand;
+        }
+    }
+    if (typescript_1.default.isArrayLiteralExpression(expression)) {
+        return expression.elements.map((element) => {
+            if (typescript_1.default.isSpreadElement(element)) {
+                const spreadValue = evaluateDataExpression(element.expression, sourceFile, bindings);
+                if (!Array.isArray(spreadValue)) {
+                    throw new Error(`Array spread must resolve to an array in data-only module: ${element.getText(sourceFile)}`);
+                }
+                return spreadValue;
+            }
+            return evaluateDataExpression(element, sourceFile, bindings);
+        }).flat();
+    }
+    if (typescript_1.default.isObjectLiteralExpression(expression)) {
+        const result = {};
+        for (const property of expression.properties) {
+            if (typescript_1.default.isPropertyAssignment(property)) {
+                result[parsePropertyName(property.name, sourceFile, bindings)] = evaluateDataExpression(property.initializer, sourceFile, bindings);
+                continue;
+            }
+            if (typescript_1.default.isShorthandPropertyAssignment(property)) {
+                const binding = bindings.get(property.name.text);
+                if (binding === undefined && !bindings.has(property.name.text)) {
+                    throw new Error(`Unknown shorthand binding in data-only module: ${property.name.text}`);
+                }
+                result[property.name.text] = binding;
+                continue;
+            }
+            if (typescript_1.default.isSpreadAssignment(property)) {
+                const spreadValue = evaluateDataExpression(property.expression, sourceFile, bindings);
+                if (!spreadValue || typeof spreadValue !== 'object' || Array.isArray(spreadValue)) {
+                    throw new Error(`Object spread must resolve to an object in data-only module: ${property.getText(sourceFile)}`);
+                }
+                Object.assign(result, spreadValue);
+                continue;
+            }
+            throw new Error(`Unsupported object property in data-only module: ${property.getText(sourceFile)}`);
+        }
+        return result;
+    }
+    if (typescript_1.default.isIdentifier(expression)) {
+        if (expression.text === 'undefined') {
+            return undefined;
+        }
+        if (bindings.has(expression.text)) {
+            return bindings.get(expression.text);
+        }
+        throw new Error(`Unknown identifier in data-only module: ${expression.text}`);
+    }
+    throw new Error(`Unsupported expression in data-only module: ${expression.getText(sourceFile)}`);
+}
+function exportsAssignment(statement, sourceFile) {
+    if (!typescript_1.default.isExpressionStatement(statement) || !typescript_1.default.isBinaryExpression(statement.expression)) {
+        return undefined;
+    }
+    const assignment = statement.expression;
+    if (assignment.operatorToken.kind !== typescript_1.default.SyntaxKind.EqualsToken) {
+        return undefined;
+    }
+    const left = assignment.left;
+    if (typescript_1.default.isPropertyAccessExpression(left)) {
+        if (left.expression.getText(sourceFile) === 'module' && left.name.text === 'exports') {
+            return assignment.right;
+        }
+        if (left.expression.getText(sourceFile) === 'exports' && left.name.text === 'default') {
+            return assignment.right;
+        }
+    }
+    return undefined;
+}
+function parseDataModule(filePath) {
     const sourceText = fs_1.default.readFileSync(filePath, 'utf8');
-    const transpileFilePath = filePath.endsWith('.mjs') || filePath.endsWith('.cjs')
-        ? `${filePath.slice(0, -4)}.js`
-        : filePath;
-    const outputText = typescript_1.default.transpileModule(sourceText, {
-        compilerOptions: {
-            target: typescript_1.default.ScriptTarget.ES2022,
-            module: typescript_1.default.ModuleKind.CommonJS,
-            esModuleInterop: true,
-            allowJs: true
-        },
-        fileName: transpileFilePath
-    }).outputText;
-    const moduleObject = { exports: {} };
-    const sandbox = {
-        module: moduleObject,
-        exports: moduleObject.exports,
-        require: (0, module_1.createRequire)(filePath),
-        __dirname: path_1.default.dirname(filePath),
-        __filename: filePath,
-        process,
-        console
-    };
-    vm_1.default.runInNewContext(outputText, sandbox, { filename: filePath });
-    return moduleObject.exports.default ?? moduleObject.exports;
+    const sourceFile = typescript_1.default.createSourceFile(filePath, sourceText, typescript_1.default.ScriptTarget.Latest, true);
+    const bindings = new Map();
+    let exportedValue;
+    for (const statement of sourceFile.statements) {
+        if (typescript_1.default.isVariableStatement(statement)) {
+            const isConst = (statement.declarationList.flags & typescript_1.default.NodeFlags.Const) !== 0;
+            if (!isConst) {
+                throw new Error(`Only const declarations are supported in data-only modules: ${filePath}`);
+            }
+            for (const declaration of statement.declarationList.declarations) {
+                if (!typescript_1.default.isIdentifier(declaration.name) || !declaration.initializer) {
+                    throw new Error(`Unsupported declaration in data-only module: ${declaration.getText(sourceFile)}`);
+                }
+                bindings.set(declaration.name.text, evaluateDataExpression(declaration.initializer, sourceFile, bindings));
+            }
+            continue;
+        }
+        if (typescript_1.default.isExportAssignment(statement)) {
+            exportedValue = evaluateDataExpression(statement.expression, sourceFile, bindings);
+            continue;
+        }
+        const assignmentExport = exportsAssignment(statement, sourceFile);
+        if (assignmentExport) {
+            exportedValue = evaluateDataExpression(assignmentExport, sourceFile, bindings);
+            continue;
+        }
+        if (typescript_1.default.isEmptyStatement(statement)) {
+            continue;
+        }
+        throw new Error(`Unsupported statement in data-only module ${filePath}: ${statement.getText(sourceFile)}`);
+    }
+    if (exportedValue === undefined) {
+        throw new Error(`Data-only module must export a literal value: ${filePath}`);
+    }
+    return exportedValue;
 }
 function loadModuleFile(filePath) {
     if (!fs_1.default.existsSync(filePath)) {
@@ -54,7 +175,7 @@ function loadModuleFile(filePath) {
         return (0, index_1.readJson)(filePath);
     }
     if (filePath.endsWith('.ts') || filePath.endsWith('.js') || filePath.endsWith('.mjs') || filePath.endsWith('.cjs')) {
-        return transpileModule(filePath);
+        return parseDataModule(filePath);
     }
     throw new Error(`Unsupported file type for ${filePath}`);
 }
@@ -68,10 +189,11 @@ function validateStringArray(name, value) {
     return value;
 }
 function validateConfig(raw) {
-    const sourcePatterns = validateStringArray('sourcePatterns', raw.sourcePatterns) ?? ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx', 'src/**/*.mjs', 'src/**/*.cjs'];
-    const testPatterns = validateStringArray('testPatterns', raw.testPatterns) ?? ['test/**/*.js', 'test/**/*.mjs', 'test/**/*.cjs', 'test/**/*.ts', '**/*.test.js', '**/*.test.mjs', '**/*.test.cjs', '**/*.spec.ts'];
+    const sourcePatterns = validateStringArray('sourcePatterns', raw.sourcePatterns) ?? [...index_1.DEFAULT_SOURCE_PATTERNS];
+    const testPatterns = validateStringArray('testPatterns', raw.testPatterns) ?? [...index_1.DEFAULT_TEST_PATTERNS];
     const changeFiles = validateStringArray('changeSet.files', raw.changeSet?.files) ?? [];
     const mutationCommand = validateStringArray('mutations.testCommand', raw.mutations?.testCommand) ?? ['node', '--test'];
+    const runtimeMirrorRoots = validateStringArray('mutations.runtimeMirrorRoots', raw.mutations?.runtimeMirrorRoots) ?? ['dist'];
     return {
         version: raw.version ?? '5',
         sourcePatterns,
@@ -83,7 +205,8 @@ function validateConfig(raw) {
             testCommand: mutationCommand,
             coveredOnly: raw.mutations?.coveredOnly ?? false,
             timeoutMs: raw.mutations?.timeoutMs ?? 15_000,
-            maxSites: raw.mutations?.maxSites ?? 25
+            maxSites: raw.mutations?.maxSites ?? 25,
+            runtimeMirrorRoots
         },
         policy: {
             maxChangedCrap: raw.policy?.maxChangedCrap ?? 30,
@@ -114,39 +237,39 @@ function findConfigPath(rootDir) {
     throw new Error(`No ts-quality config found in ${rootDir}`);
 }
 function loadContext(rootDir, explicitConfigPath) {
-    const configPath = explicitConfigPath ? path_1.default.resolve(rootDir, explicitConfigPath) : findConfigPath(rootDir);
+    const configPath = explicitConfigPath
+        ? (0, index_1.resolveRepoLocalPath)(rootDir, explicitConfigPath, { kind: 'config path' }).absolutePath
+        : findConfigPath(rootDir);
     const config = validateConfig(loadModuleFile(configPath));
     return { rootDir, configPath, config };
 }
-function loadInvariants(rootDir, relativePath) {
-    const filePath = path_1.default.join(rootDir, relativePath);
+function loadOptionalRepoModule(rootDir, repoPath, kind) {
+    const filePath = (0, index_1.resolveRepoLocalPath)(rootDir, repoPath, { allowMissing: true, kind }).absolutePath;
     return fs_1.default.existsSync(filePath) ? loadModuleFile(filePath) : [];
+}
+function loadInvariants(rootDir, relativePath) {
+    return loadOptionalRepoModule(rootDir, relativePath, 'invariants path');
 }
 function loadConstitution(rootDir, relativePath) {
-    const filePath = path_1.default.join(rootDir, relativePath);
-    return fs_1.default.existsSync(filePath) ? loadModuleFile(filePath) : [];
+    return loadOptionalRepoModule(rootDir, relativePath, 'constitution path');
 }
 function loadAgents(rootDir, relativePath) {
-    const filePath = path_1.default.join(rootDir, relativePath);
-    return fs_1.default.existsSync(filePath) ? loadModuleFile(filePath) : [];
+    return loadOptionalRepoModule(rootDir, relativePath, 'agents path');
 }
 function loadWaivers(rootDir, relativePath) {
-    const filePath = path_1.default.join(rootDir, relativePath);
-    return fs_1.default.existsSync(filePath) ? loadModuleFile(filePath) : [];
+    return loadOptionalRepoModule(rootDir, relativePath, 'waivers path');
 }
 function loadApprovals(rootDir, relativePath) {
-    const filePath = path_1.default.join(rootDir, relativePath);
-    return fs_1.default.existsSync(filePath) ? loadModuleFile(filePath) : [];
+    return loadOptionalRepoModule(rootDir, relativePath, 'approvals path');
 }
 function loadOverrides(rootDir, relativePath) {
-    const filePath = path_1.default.join(rootDir, relativePath);
-    return fs_1.default.existsSync(filePath) ? loadModuleFile(filePath) : [];
+    return loadOptionalRepoModule(rootDir, relativePath, 'overrides path');
 }
 function loadChangedRegions(rootDir, diffFileRelative) {
     if (!diffFileRelative) {
         return [];
     }
-    const filePath = path_1.default.join(rootDir, diffFileRelative);
+    const filePath = (0, index_1.resolveRepoLocalPath)(rootDir, diffFileRelative, { allowMissing: true, kind: 'diff file' }).absolutePath;
     if (!fs_1.default.existsSync(filePath)) {
         return [];
     }

@@ -5,7 +5,7 @@
     ],
     "changedRegions": [],
     "createdAt": "2026-01-01T00:00:00.000Z",
-    "executionFingerprint": "sha256:1849c6473ed679ba4461de4594fad924b8e39a7a6980c3f986e362a94fc4fa44",
+    "executionFingerprint": "sha256:5db5f791adf6559603ace8c8befff2fd4a4ba30129e5898a7c67f937361a7666",
     "runId": "sample-governed-app-run",
     "sourceFiles": [
       "src/auth/token.js",

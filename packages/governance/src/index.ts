@@ -15,6 +15,7 @@ import {
   matchPattern,
   matchesAny,
   normalizePath,
+  resolveRepoImport,
   summarizeMutationScore
 } from '../../evidence-model/src/index';
 
@@ -63,32 +64,7 @@ function importsForFile(filePath: string, sourceText: string): string[] {
 }
 
 function resolveImport(importerPath: string, specifier: string, rootDir: string): string | undefined {
-  if (!specifier.startsWith('.')) {
-    return undefined;
-  }
-  const importerDir = path.dirname(importerPath);
-  const base = path.resolve(rootDir, importerDir, specifier);
-  const candidates = [
-    base,
-    `${base}.ts`,
-    `${base}.tsx`,
-    `${base}.js`,
-    `${base}.jsx`,
-    `${base}.mjs`,
-    `${base}.cjs`,
-    path.join(base, 'index.ts'),
-    path.join(base, 'index.tsx'),
-    path.join(base, 'index.js'),
-    path.join(base, 'index.jsx'),
-    path.join(base, 'index.mjs'),
-    path.join(base, 'index.cjs')
-  ];
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-      return normalizePath(path.relative(rootDir, candidate));
-    }
-  }
-  return normalizePath(path.relative(rootDir, base));
+  return resolveRepoImport(rootDir, importerPath, specifier);
 }
 
 function evaluateBoundaryRule(rootDir: string, rule: ConstitutionRule, changedFiles: string[]): GovernanceFinding[] {

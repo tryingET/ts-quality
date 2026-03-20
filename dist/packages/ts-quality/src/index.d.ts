@@ -3,6 +3,15 @@ export interface CheckResult {
     run: RunArtifact;
     artifactDir: string;
 }
+export interface MaterializeResult {
+    configPath: string;
+    outDir: string;
+    files: string[];
+}
+export declare function materializeProject(rootDir: string, options?: {
+    configPath?: string;
+    outDir?: string;
+}): MaterializeResult;
 export declare function loadVerifiedAttestations(rootDir: string, attestationsDir: string, trustedKeysDir: string): {
     attestations: Attestation[];
     verification: Array<{

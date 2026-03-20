@@ -139,6 +139,80 @@ test('runMutations invalidates manifest entries when the test corpus changes', (
   assert.equal(second.results.every((result) => result.status === 'error'), true);
 });
 
+test('runMutations mutates mirrored dist runtime files so dist-backed tests observe the mutant', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-dist-mirror-'));
+  fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'dist'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'test'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'flag.js'), 'function flag() { return true; }\nmodule.exports = { flag };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'dist', 'flag.js'), 'function flag() { return true; }\nmodule.exports = { flag };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'test', 'flag.test.js'), "const test = require('node:test'); const assert = require('node:assert/strict'); const { flag } = require('../dist/flag.js'); test('flag', () => assert.equal(flag(), true));\n", 'utf8');
+
+  const run = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['src/flag.js'],
+    changedFiles: ['src/flag.js'],
+    testCommand: ['node', '--test'],
+    coveredOnly: false,
+    maxSites: 5,
+    timeoutMs: 5_000
+  });
+
+  assert.equal(run.baseline.status, 'pass');
+  assert.equal(run.results.some((result) => result.status === 'killed'), true, JSON.stringify(run.results, null, 2));
+  assert.equal(run.results.some((result) => result.status === 'survived'), false, JSON.stringify(run.results, null, 2));
+});
+
+test('runMutations transpiles mutated ts sources into mirrored runtime roots for dist-backed tests', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-ts-dist-mirror-'));
+  fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'dist'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'test'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'tsconfig.json'), JSON.stringify({ compilerOptions: { module: 'commonjs', target: 'es2020' } }, null, 2), 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'src', 'flag.ts'), 'export function flag(): boolean { return true; }\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'dist', 'flag.js'), 'function flag() { return true; }\nmodule.exports = { flag };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'test', 'flag.test.js'), "const test = require('node:test'); const assert = require('node:assert/strict'); const { flag } = require('../dist/flag.js'); test('flag', () => assert.equal(flag(), true));\n", 'utf8');
+
+  const run = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['src/flag.ts'],
+    changedFiles: ['src/flag.ts'],
+    testCommand: ['node', '--test'],
+    coveredOnly: false,
+    runtimeMirrorRoots: ['dist'],
+    maxSites: 5,
+    timeoutMs: 5_000
+  });
+
+  assert.equal(run.baseline.status, 'pass');
+  assert.equal(run.results.some((result) => result.status === 'killed'), true, JSON.stringify(run.results, null, 2));
+  assert.equal(run.results.some((result) => result.status === 'survived'), false, JSON.stringify(run.results, null, 2));
+});
+
+test('runMutations supports custom runtime mirror roots for built output outside dist', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-lib-mirror-'));
+  fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'lib'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'test'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'flag.js'), 'function flag() { return true; }\nmodule.exports = { flag };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'lib', 'flag.js'), 'function flag() { return true; }\nmodule.exports = { flag };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'test', 'flag.test.js'), "const test = require('node:test'); const assert = require('node:assert/strict'); const { flag } = require('../lib/flag.js'); test('flag', () => assert.equal(flag(), true));\n", 'utf8');
+
+  const run = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['src/flag.js'],
+    changedFiles: ['src/flag.js'],
+    testCommand: ['node', '--test'],
+    coveredOnly: false,
+    runtimeMirrorRoots: ['lib'],
+    maxSites: 5,
+    timeoutMs: 5_000
+  });
+
+  assert.equal(run.baseline.status, 'pass');
+  assert.equal(run.results.some((result) => result.status === 'killed'), true, JSON.stringify(run.results, null, 2));
+});
+
 
 test('runMutations ignores inherited NODE_TEST_CONTEXT and keeps mutation outcomes deterministic', () => {
   const cleanRoot = tempCopyOfFixture('governed-app');

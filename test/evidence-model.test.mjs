@@ -49,3 +49,15 @@ test('assertSafeRunId rejects path-like values', () => {
   assert.throws(() => evidence.assertSafeRunId('../escape'));
   assert.throws(() => evidence.assertSafeRunId('nested/run'));
 });
+
+test('resolveRepoLocalPath rejects symlink escapes outside the repository root', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-evidence-root-'));
+  const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-evidence-outside-'));
+  const linkedDir = path.join(rootDir, 'linked');
+  fs.symlinkSync(outsideDir, linkedDir, 'dir');
+
+  assert.throws(
+    () => evidence.resolveRepoLocalPath(rootDir, 'linked/escape.json', { allowMissing: true, kind: 'attestations dir' }),
+    /attestations dir must stay inside repository root/
+  );
+});
