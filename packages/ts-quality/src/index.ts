@@ -446,9 +446,50 @@ export function loadVerifiedAttestations(rootDir: string, attestationsDir: strin
   return { attestations, verification };
 }
 
+interface AnalysisManifest {
+  loaded: ReturnType<typeof loadContext>;
+  sourceFiles: string[];
+  changedFiles: string[];
+  changedRegions: RunArtifact['changedRegions'];
+  coveragePath: string;
+  coverage: RunArtifact['coverage'];
+  runtimeMirrorRoots: string[];
+}
+
+function resolveChangedFileOverride(rootDir: string, filePath: string): string {
+  return resolveRepoLocalPath(rootDir, filePath, { allowMissing: true, kind: 'changed file override' }).relativePath;
+}
+
+function buildAnalysisManifest(rootDir: string, options?: { changedFiles?: string[]; configPath?: string }): AnalysisManifest {
+  const loaded = loadContext(rootDir, options?.configPath);
+  const sourceFiles = collectSourceFiles(rootDir, loaded.config.sourcePatterns);
+  const changedRegions = loaded.config.changeSet.diffFile ? loadChangedRegions(rootDir, loaded.config.changeSet.diffFile) : [];
+  const configuredChangedFiles = loaded.config.changeSet.files ?? [];
+  const changedFiles = options?.changedFiles
+    ? options.changedFiles.map((item) => resolveChangedFileOverride(rootDir, item))
+    : configuredChangedFiles.length > 0
+      ? [...configuredChangedFiles]
+      : sourceFiles;
+  const coveragePath = loaded.config.coverage.lcovPath ?? 'coverage/lcov.info';
+  const coverageAbsolutePath = path.join(rootDir, coveragePath);
+  const coverage = fs.existsSync(coverageAbsolutePath) ? parseLcov(fs.readFileSync(coverageAbsolutePath, 'utf8')) : [];
+  return {
+    loaded,
+    sourceFiles,
+    changedFiles,
+    changedRegions,
+    coveragePath,
+    coverage,
+    runtimeMirrorRoots: [...(loaded.config.mutations.runtimeMirrorRoots ?? ['dist'])]
+  };
+}
+
 function buildAnalysisContext(input: {
   runId: string;
   createdAt: string;
+  configPath: string;
+  coverageLcovPath: string;
+  runtimeMirrorRoots: string[];
   sourceFiles: string[];
   changedFiles: string[];
   changedRegions: RunArtifact['changedRegions'];
@@ -457,6 +498,9 @@ function buildAnalysisContext(input: {
   return {
     runId: input.runId,
     createdAt: input.createdAt,
+    configPath: input.configPath,
+    coverageLcovPath: input.coverageLcovPath,
+    runtimeMirrorRoots: [...input.runtimeMirrorRoots],
     sourceFiles: [...input.sourceFiles],
     changedFiles: [...input.changedFiles],
     changedRegions: [...input.changedRegions],
@@ -465,16 +509,14 @@ function buildAnalysisContext(input: {
 }
 
 export function runCheck(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; runId?: string }): CheckResult {
-  const loaded = loadContext(rootDir, options?.configPath);
-  const sourceFiles = collectSourceFiles(rootDir, loaded.config.sourcePatterns);
-  const changedRegions = loaded.config.changeSet.diffFile ? loadChangedRegions(rootDir, loaded.config.changeSet.diffFile) : [];
-
-  const configuredChangedFiles = loaded.config.changeSet.files ?? [];
-  const changedFiles = (options?.changedFiles ?? (configuredChangedFiles.length > 0 ? configuredChangedFiles : sourceFiles)).map((item) => normalizePath(item));
+  const manifest = buildAnalysisManifest(rootDir, options);
+  const loaded = manifest.loaded;
+  const sourceFiles = manifest.sourceFiles;
+  const changedFiles = manifest.changedFiles.map((item) => normalizePath(item));
+  const changedRegions = manifest.changedRegions;
   const runId = assertSafeRunId(options?.runId ?? createRunId());
   const createdAt = nowIso();
-  const lcovPath = path.join(rootDir, loaded.config.coverage.lcovPath);
-  const coverage = fs.existsSync(lcovPath) ? parseLcov(fs.readFileSync(lcovPath, 'utf8')) : [];
+  const coverage = manifest.coverage;
   const waivers = loadWaivers(rootDir, loaded.config.waiversPath);
   const approvals = loadApprovals(rootDir, loaded.config.approvalsPath);
   const overrides = loadOverrides(rootDir, loaded.config.overridesPath);
@@ -502,7 +544,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     manifestPath: path.join(rootDir, '.ts-quality', 'mutation-manifest.json'),
     timeoutMs: loaded.config.mutations.timeoutMs ?? 15_000,
     maxSites: loaded.config.mutations.maxSites ?? 25,
-    runtimeMirrorRoots: loaded.config.mutations.runtimeMirrorRoots ?? ['dist']
+    runtimeMirrorRoots: manifest.runtimeMirrorRoots
   });
 
   const claims = evaluateInvariants({
@@ -571,6 +613,9 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
   const analysis = buildAnalysisContext({
     runId,
     createdAt,
+    configPath: normalizePath(path.relative(rootDir, loaded.configPath)),
+    coverageLcovPath: manifest.coveragePath,
+    runtimeMirrorRoots: manifest.runtimeMirrorRoots,
     sourceFiles,
     changedFiles,
     changedRegions,

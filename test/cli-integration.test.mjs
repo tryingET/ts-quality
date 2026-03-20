@@ -86,6 +86,9 @@ test('check persists analysis context and mutation baseline receipts', () => {
   const run = readRun(target);
   assert.equal(typeof run.analysis?.executionFingerprint, 'string');
   assert.equal(run.analysis?.changedFiles.includes('src/auth/token.js'), true);
+  assert.equal(run.analysis?.configPath, 'ts-quality.config.ts');
+  assert.equal(run.analysis?.coverageLcovPath, 'coverage/lcov.info');
+  assert.deepEqual(run.analysis?.runtimeMirrorRoots, ['dist']);
   assert.equal(run.mutationBaseline?.status, 'pass');
 });
 
@@ -228,6 +231,56 @@ test('check rejects trust directories that escape the repository root', () => {
   assert.match(result.stderr, /attestations dir must stay inside repository root|trusted keys dir must stay inside repository root/);
 });
 
+test('check rejects changeSet files that escape the repository root', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 4 },
+  policy: { maxChangedCrap: 30, minMutationScore: 0.5, minMergeConfidence: 50 },
+  changeSet: { files: ['../outside.js'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '.ts-quality/attestations',
+  trustedKeysDir: '.ts-quality/keys'
+};
+`, 'utf8');
+
+  const result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /changeSet file must stay inside repository root/);
+});
+
+test('check rejects coverage paths that escape the repository root', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: '../external/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 4 },
+  policy: { maxChangedCrap: 30, minMutationScore: 0.5, minMergeConfidence: 50 },
+  changeSet: { files: ['src/auth/token.js'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '.ts-quality/attestations',
+  trustedKeysDir: '.ts-quality/keys'
+};
+`, 'utf8');
+
+  const result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /coverage lcovPath must stay inside repository root/);
+});
+
 test('check accepts a caller-supplied run id for exact approval binding', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
@@ -281,6 +334,13 @@ test('check rejects unsafe run ids', () => {
   const result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', '../../escape'], { encoding: 'utf8' });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /runId must use only letters, numbers, dot, underscore, and hyphen/);
+});
+
+test('check rejects changed file overrides that escape the repository root', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const result = spawnSync('node', [cli, 'check', '--root', target, '--changed', '../outside.js'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /changed file override must stay inside repository root/);
 });
 
 

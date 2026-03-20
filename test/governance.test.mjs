@@ -88,6 +88,31 @@ test('evaluateGovernance resolves aliases from the nearest package tsconfig in n
   assert.match(findings[0].evidence[0], /@payments\/charge -> packages\/payments\/src\/charge\.ts/);
 });
 
+test('evaluateGovernance catches forbidden dynamic imports', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-governance-dynamic-import-'));
+  fs.mkdirSync(path.join(rootDir, 'src', 'shared'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'src', 'identity'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'shared', 'audit.ts'), "export async function readIdentity() { return import('../identity/store'); }\n", 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'src', 'identity', 'store.ts'), 'export const currentUser = () => ({ id: 1 });\n', 'utf8');
+
+  const findings = governance.evaluateGovernance({
+    rootDir,
+    constitution: [{
+      kind: 'boundary',
+      id: 'shared-no-identity',
+      from: ['src/shared/**'],
+      to: ['src/identity/**'],
+      mode: 'forbid',
+      message: 'Shared code must not dynamically import identity state.'
+    }],
+    changedFiles: ['src/shared/audit.ts'],
+    changedRegions: []
+  });
+
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].evidence[0], /\.\.\/identity\/store -> src\/identity\/store\.ts/);
+});
+
 test('approval rules count only unique targeted approvals', () => {
   const rootDir = fixturePath('governed-app');
   const findings = governance.evaluateGovernance({

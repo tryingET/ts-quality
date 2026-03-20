@@ -213,6 +213,30 @@ test('runMutations supports custom runtime mirror roots for built output outside
   assert.equal(run.results.some((result) => result.status === 'killed'), true, JSON.stringify(run.results, null, 2));
 });
 
+test('runMutations mirrors root-level sources into configured built runtime roots', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-root-mirror-'));
+  fs.mkdirSync(path.join(rootDir, 'dist'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'test'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'index.js'), 'function isOne(value) { return value === 1; }\nmodule.exports = { isOne };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'dist', 'index.js'), 'function isOne(value) { return value === 1; }\nmodule.exports = { isOne };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'test', 'index.test.js'), "const test = require('node:test'); const assert = require('node:assert/strict'); const { isOne } = require('../dist/index.js'); test('isOne', () => { assert.equal(isOne(1), true); assert.equal(isOne(2), false); });\n", 'utf8');
+
+  const run = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['index.js'],
+    changedFiles: ['index.js'],
+    testCommand: ['node', '--test'],
+    coveredOnly: false,
+    runtimeMirrorRoots: ['dist'],
+    maxSites: 5,
+    timeoutMs: 5_000
+  });
+
+  assert.equal(run.baseline.status, 'pass');
+  assert.equal(run.results.some((result) => result.status === 'killed'), true, JSON.stringify(run.results, null, 2));
+  assert.equal(run.results.some((result) => result.status === 'survived'), false, JSON.stringify(run.results, null, 2));
+});
+
 
 test('runMutations ignores inherited NODE_TEST_CONTEXT and keeps mutation outcomes deterministic', () => {
   const cleanRoot = tempCopyOfFixture('governed-app');

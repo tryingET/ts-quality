@@ -103,3 +103,32 @@ export default [{
 
   assert.throws(() => config.loadInvariants(rootDir, '.ts-quality/invariants.ts'), /Unsupported expression in data-only module|Unsupported statement in data-only module/);
 });
+
+test('loadContext rejects coverage paths that escape the repository root', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-config-coverage-escape-'));
+  fs.writeFileSync(path.join(rootDir, 'ts-quality.config.json'), JSON.stringify({
+    coverage: { lcovPath: '../outside/lcov.info' },
+    mutations: { testCommand: ['node', '--test'] }
+  }, null, 2));
+
+  assert.throws(() => config.loadContext(rootDir), /coverage lcovPath must stay inside repository root/);
+});
+
+test('loadContext rejects changeSet files that escape the repository root', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-config-changeset-escape-'));
+  fs.writeFileSync(path.join(rootDir, 'ts-quality.config.json'), JSON.stringify({
+    changeSet: { files: ['../outside.js'] },
+    mutations: { testCommand: ['node', '--test'] }
+  }, null, 2));
+
+  assert.throws(() => config.loadContext(rootDir), /changeSet file must stay inside repository root/);
+});
+
+test('loadContext rejects runtime mirror roots that escape the repository root', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-config-mirror-escape-'));
+  fs.writeFileSync(path.join(rootDir, 'ts-quality.config.json'), JSON.stringify({
+    mutations: { testCommand: ['node', '--test'], runtimeMirrorRoots: ['../dist'] }
+  }, null, 2));
+
+  assert.throws(() => config.loadContext(rootDir), /mutation runtime mirror root must stay inside repository root/);
+});

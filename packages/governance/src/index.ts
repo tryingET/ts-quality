@@ -57,6 +57,12 @@ function importsForFile(filePath: string, sourceText: string): string[] {
         imports.push(argument.text);
       }
     }
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments.length === 1) {
+      const argument = node.arguments[0];
+      if (ts.isStringLiteral(argument)) {
+        imports.push(argument.text);
+      }
+    }
     ts.forEachChild(node, visit);
   }
   visit(sourceFile);

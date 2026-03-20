@@ -403,6 +403,9 @@ export interface ExecutionReceipt {
 export interface AnalysisContext {
   runId: string;
   createdAt: string;
+  configPath?: string | undefined;
+  coverageLcovPath?: string | undefined;
+  runtimeMirrorRoots?: string[] | undefined;
   sourceFiles: string[];
   changedFiles: string[];
   changedRegions: ChangedRegion[];
@@ -619,24 +622,34 @@ export function runtimeMirrorCandidates(sourcePath: string, mirrorRoots: string[
   const extension = path.extname(normalized);
   const compiledExtension = extension === '.ts' || extension === '.tsx' || extension === '.jsx' ? '.js' : extension;
   const candidates = new Set<string>();
-  const sourceSegments = normalized.split('/');
+  const sourceSegments = normalized.split('/').filter(Boolean);
   const srcIndex = sourceSegments.indexOf('src');
-  if (srcIndex < 0) {
-    return [];
-  }
+  const sourceDir = path.posix.dirname(normalized);
+  const sourceBase = path.posix.basename(normalized);
 
   for (const mirrorRoot of mirrorRoots.map((item) => normalizePath(item)).filter(Boolean)) {
     const rootSegments = mirrorRoot.split('/').filter(Boolean);
-    const mirroredSegments = [...sourceSegments];
-    mirroredSegments.splice(srcIndex, 1, ...rootSegments);
-    const candidate = withCompiledExtension(mirroredSegments.join('/'), extension, compiledExtension);
-    if (candidate !== normalized) {
-      candidates.add(candidate);
+    if (srcIndex >= 0) {
+      const mirroredSegments = [...sourceSegments];
+      mirroredSegments.splice(srcIndex, 1, ...rootSegments);
+      const candidate = withCompiledExtension(mirroredSegments.join('/'), extension, compiledExtension);
+      if (candidate !== normalized) {
+        candidates.add(normalizePath(candidate));
+      }
+      if (srcIndex === 0) {
+        const rootCandidate = withCompiledExtension(path.posix.join(mirrorRoot, normalized.slice(4)), extension, compiledExtension);
+        if (rootCandidate !== normalized) {
+          candidates.add(normalizePath(rootCandidate));
+        }
+      }
+      continue;
     }
-    if (srcIndex === 0) {
-      const rootCandidate = withCompiledExtension(path.posix.join(mirrorRoot, normalized.slice(4)), extension, compiledExtension);
-      if (rootCandidate !== normalized) {
-        candidates.add(normalizePath(rootCandidate));
+
+    const siblingCandidate = withCompiledExtension(path.posix.join(sourceDir === '.' ? '' : sourceDir, mirrorRoot, sourceBase), extension, compiledExtension);
+    const rootCandidate = withCompiledExtension(path.posix.join(mirrorRoot, normalized), extension, compiledExtension);
+    for (const candidate of [siblingCandidate, rootCandidate]) {
+      if (candidate !== normalized) {
+        candidates.add(normalizePath(candidate));
       }
     }
   }
