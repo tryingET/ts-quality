@@ -397,7 +397,17 @@ function recordSubjectPath(rootDir: string, resolvedSubject: string, originalCan
 }
 
 function hasUnsafeControlCharacters(value: string): boolean {
-  return /[\x00-\x1F\x7F]/.test(value);
+  return /[\x00-\x1F\x7F\u2028\u2029]/.test(value);
+}
+
+function attestationIssuerContext(attestation: Attestation): { ok: true; issuer: string } | { ok: false; reason: string } {
+  if (!attestation.issuer) {
+    return { ok: false, reason: 'attestation issuer missing' };
+  }
+  if (hasUnsafeControlCharacters(attestation.issuer)) {
+    return { ok: false, reason: 'attestation issuer contains unsupported control characters' };
+  }
+  return { ok: true, issuer: attestation.issuer };
 }
 
 function renderVerificationText(value: string): string {
@@ -455,11 +465,13 @@ function attestationSubjectContext(attestation: Attestation): { ok: true; contex
 }
 
 function verifyAttestationRecordAtRoot(rootDir: string, source: string, attestation: Attestation, trustedKeys: Record<string, string>): AttestationVerificationRecord {
+  const issuer = attestationIssuerContext(attestation);
   const context = attestationSubjectContext(attestation);
   const contextFields = context.context;
   const record: AttestationVerificationRecord = {
+    version: '1',
     source,
-    issuer: attestation.issuer,
+    ...(issuer.ok ? { issuer: issuer.issuer } : {}),
     ok: false,
     reason: 'verification did not run',
     ...(contextFields?.subjectFile ? { subjectFile: contextFields.subjectFile } : {}),
@@ -469,6 +481,9 @@ function verifyAttestationRecordAtRoot(rootDir: string, source: string, attestat
   const signature = verifyAttestation(attestation, trustedKeys);
   if (!signature.ok) {
     return { ...record, reason: signature.reason };
+  }
+  if (!issuer.ok) {
+    return { ...record, reason: issuer.reason };
   }
   if (!context.ok) {
     return { ...record, reason: context.reason };
@@ -635,9 +650,8 @@ export function loadVerifiedAttestations(rootDir: string, attestationsDir: strin
     let rawText: string;
     try {
       rawText = fs.readFileSync(filePath, 'utf8');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      verification.push({ source, ok: false, reason: `unreadable attestation file: ${message}` });
+    } catch {
+      verification.push({ version: '1', source, ok: false, reason: 'unreadable attestation file' });
       continue;
     }
     let rawAttestation: unknown;
@@ -645,12 +659,12 @@ export function loadVerifiedAttestations(rootDir: string, attestationsDir: strin
       rawAttestation = JSON.parse(rawText);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      verification.push({ source, ok: false, reason: `invalid JSON: ${message}` });
+      verification.push({ version: '1', source, ok: false, reason: `invalid JSON: ${message}` });
       continue;
     }
     const parsed = parseAttestationRecord(rawAttestation);
     if (!parsed.ok) {
-      verification.push({ source, ok: false, reason: parsed.reason });
+      verification.push({ version: '1', source, ok: false, reason: parsed.reason });
       continue;
     }
     const attestation = parsed.attestation;
@@ -1024,20 +1038,19 @@ export function attestVerify(rootDir: string, attestationFile: string, trustedKe
   let rawText: string;
   try {
     rawText = fs.readFileSync(resolvedAttestation, 'utf8');
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`unable to read attestation file ${attestationFile}: ${message}`);
+  } catch {
+    throw new Error(`unable to read attestation file ${attestationFile}`);
   }
   let rawAttestation: unknown;
   try {
     rawAttestation = JSON.parse(rawText);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return render([{ source, ok: false, reason: `invalid JSON: ${message}` }]);
+    return render([{ version: '1', source, ok: false, reason: `invalid JSON: ${message}` }]);
   }
   const parsed = parseAttestationRecord(rawAttestation);
   if (!parsed.ok) {
-    return render([{ source, ok: false, reason: parsed.reason }]);
+    return render([{ version: '1', source, ok: false, reason: parsed.reason }]);
   }
   const attestation = parsed.attestation;
   const keysDir = resolveRepoLocalPath(rootDir, trustedKeysDir, { allowMissing: true, kind: 'trusted keys dir' }).absolutePath;
@@ -1070,5 +1083,6 @@ export function runAmend(rootDir: string, proposalFile: string, apply = false, o
     const constitutionPath = resolveRepoLocalPath(rootDir, loaded.config.constitutionPath, { allowMissing: true, kind: 'constitution path' }).absolutePath;
     writeModuleExport(constitutionPath, nextConstitution);
   }
-  return `${stableStringify(decision)}\n`;
+  return `${stableStringify(decision)}
+`;
 }

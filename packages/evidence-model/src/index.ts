@@ -310,6 +310,7 @@ export interface Attestation {
 }
 
 export interface AttestationVerificationRecord {
+  version: '1';
   source: string;
   issuer?: string | undefined;
   ok: boolean;

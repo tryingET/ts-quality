@@ -494,7 +494,8 @@ test('attest verify supports machine-readable json output', () => {
     reason: 'verified',
     runId: 'json-verify-run',
     source: 'json.json',
-    subjectFile: '.ts-quality/runs/json-verify-run/verdict.json'
+    subjectFile: '.ts-quality/runs/json-verify-run/verdict.json',
+    version: '1'
   });
 });
 
@@ -507,6 +508,7 @@ test('attest verify reports malformed input through the canonical record instead
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.source, 'broken.json');
   assert.equal(parsed.ok, false);
+  assert.equal(parsed.version, '1');
   assert.match(parsed.reason, /^invalid JSON:/);
 });
 
@@ -514,7 +516,7 @@ test('attest verify fails fast when the requested attestation file is unreadable
   const target = tempCopyOfFixture('governed-app');
   const result = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation', '.ts-quality/attestations/missing.json', '--trusted-keys', '.ts-quality/keys'], { encoding: 'utf8' });
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /unable to read attestation file \.ts-quality\/attestations\/missing\.json:/);
+  assert.match(result.stderr, /^unable to read attestation file \.ts-quality\/attestations\/missing\.json\n$/);
   assert.equal(result.stdout, '');
 });
 
@@ -543,6 +545,7 @@ test('attest verify rejects run metadata on non-run-scoped subjects', async () =
   assert.equal(parsed.ok, false);
   assert.equal(parsed.reason, 'attestation payload runId requires a run-scoped subject path');
   assert.equal(parsed.subjectFile, 'subject.txt');
+  assert.equal(parsed.version, '1');
   assert.equal(parsed.runId, undefined);
   assert.equal(parsed.artifactName, undefined);
 });
@@ -571,6 +574,91 @@ test('attest verify rejects control characters in signed subject metadata instea
   assert.doesNotMatch(result.stdout, /^Subject:/m);
 });
 
+test('attest verify rejects control characters in signed issuer metadata instead of rendering forged lines', async () => {
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'issuer-control-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const legitimacy = await importDist('packages', 'legitimacy', 'src', 'index.js');
+  const evidenceModel = await importDist('packages', 'evidence-model', 'src', 'index.js');
+  const privateKeyPem = fs.readFileSync(path.join(target, '.ts-quality', 'keys', 'sample.pem'), 'utf8');
+  const verdictPath = path.join(target, '.ts-quality', 'runs', 'issuer-control-run', 'verdict.json');
+  const attestation = legitimacy.signAttestation({
+    issuer: 'ci.verify\nSubject: injected\nRun: forged',
+    keyId: 'sample',
+    privateKeyPem,
+    subjectType: 'json-artifact',
+    subjectDigest: evidenceModel.digestObject(fs.readFileSync(verdictPath, 'utf8')),
+    claims: ['ci.tests.passed'],
+    payload: {
+      subjectFile: '.ts-quality/runs/issuer-control-run/verdict.json'
+    }
+  });
+  legitimacy.saveAttestation(path.join(target, '.ts-quality', 'attestations', 'issuer-control-char.json'), attestation);
+  result = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation', '.ts-quality/attestations/issuer-control-char.json', '--trusted-keys', '.ts-quality/keys'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^issuer-control-char\.json: failed \(attestation issuer contains unsupported control characters\)$/m);
+  assert.match(result.stdout, /^Subject: \.ts-quality\/runs\/issuer-control-run\/verdict\.json$/m);
+  assert.match(result.stdout, /^Run: issuer-control-run$/m);
+  assert.match(result.stdout, /^Artifact: verdict\.json$/m);
+  assert.doesNotMatch(result.stdout, /^Subject: injected$/m);
+  assert.doesNotMatch(result.stdout, /^Run: forged$/m);
+});
+
+test('attest verify rejects empty signed issuer metadata instead of rendering an anonymous label', async () => {
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'issuer-empty-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const legitimacy = await importDist('packages', 'legitimacy', 'src', 'index.js');
+  const evidenceModel = await importDist('packages', 'evidence-model', 'src', 'index.js');
+  const privateKeyPem = fs.readFileSync(path.join(target, '.ts-quality', 'keys', 'sample.pem'), 'utf8');
+  const verdictPath = path.join(target, '.ts-quality', 'runs', 'issuer-empty-run', 'verdict.json');
+  const attestation = legitimacy.signAttestation({
+    issuer: '',
+    keyId: 'sample',
+    privateKeyPem,
+    subjectType: 'json-artifact',
+    subjectDigest: evidenceModel.digestObject(fs.readFileSync(verdictPath, 'utf8')),
+    claims: ['ci.tests.passed'],
+    payload: {
+      subjectFile: '.ts-quality/runs/issuer-empty-run/verdict.json'
+    }
+  });
+  legitimacy.saveAttestation(path.join(target, '.ts-quality', 'attestations', 'issuer-empty.json'), attestation);
+  result = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation', '.ts-quality/attestations/issuer-empty.json', '--trusted-keys', '.ts-quality/keys'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^issuer-empty\.json: failed \(attestation issuer missing\)$/m);
+  assert.match(result.stdout, /^Subject: \.ts-quality\/runs\/issuer-empty-run\/verdict\.json$/m);
+  assert.match(result.stdout, /^Run: issuer-empty-run$/m);
+  assert.match(result.stdout, /^Artifact: verdict\.json$/m);
+  assert.doesNotMatch(result.stdout, /^: failed/m);
+});
+
+test('attest verify rejects Unicode line separators in signed metadata instead of rendering forged lines', async () => {
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'unicode-separator-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const legitimacy = await importDist('packages', 'legitimacy', 'src', 'index.js');
+  const evidenceModel = await importDist('packages', 'evidence-model', 'src', 'index.js');
+  const privateKeyPem = fs.readFileSync(path.join(target, '.ts-quality', 'keys', 'sample.pem'), 'utf8');
+  const verdictPath = path.join(target, '.ts-quality', 'runs', 'unicode-separator-run', 'verdict.json');
+  const attestation = legitimacy.signAttestation({
+    issuer: 'ci.verify',
+    keyId: 'sample',
+    privateKeyPem,
+    subjectType: 'json-artifact',
+    subjectDigest: evidenceModel.digestObject(fs.readFileSync(verdictPath, 'utf8')),
+    claims: ['ci.tests.passed'],
+    payload: {
+      subjectFile: '.ts-quality/runs/unicode-separator-run/verdict.json\u2028Subject: injected'
+    }
+  });
+  legitimacy.saveAttestation(path.join(target, '.ts-quality', 'attestations', 'unicode-separator.json'), attestation);
+  result = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation', '.ts-quality/attestations/unicode-separator.json', '--trusted-keys', '.ts-quality/keys'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^ci\.verify: failed \(attestation payload subjectFile contains unsupported control characters\)$/m);
+  assert.doesNotMatch(result.stdout, /^Subject: injected$/m);
+});
+
 test('check quarantines malformed attestation files instead of crashing', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.mkdirSync(path.join(target, '.ts-quality', 'attestations'), { recursive: true });
@@ -590,7 +678,7 @@ test('check quarantines unreadable attestation files instead of crashing', () =>
   assert.equal(result.status, 0, result.stderr);
   const runId = latestRunId(target);
   const verifyText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', runId, 'attestation-verify.txt'), 'utf8');
-  assert.match(verifyText, /unreadable\.json: failed \(unreadable attestation file:/);
+  assert.match(verifyText, /unreadable\.json: failed \(unreadable attestation file\)/);
 });
 
 test('check quarantines schema-invalid attestation files instead of crashing', () => {

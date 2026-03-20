@@ -317,7 +317,16 @@ function recordSubjectPath(rootDir, resolvedSubject, originalCandidate) {
     throw new Error(`attestation subject must be inside --root: ${originalCandidate}`);
 }
 function hasUnsafeControlCharacters(value) {
-    return /[\x00-\x1F\x7F]/.test(value);
+    return /[\x00-\x1F\x7F\u2028\u2029]/.test(value);
+}
+function attestationIssuerContext(attestation) {
+    if (!attestation.issuer) {
+        return { ok: false, reason: 'attestation issuer missing' };
+    }
+    if (hasUnsafeControlCharacters(attestation.issuer)) {
+        return { ok: false, reason: 'attestation issuer contains unsupported control characters' };
+    }
+    return { ok: true, issuer: attestation.issuer };
 }
 function renderVerificationText(value) {
     const rendered = JSON.stringify(value);
@@ -372,11 +381,13 @@ function attestationSubjectContext(attestation) {
     };
 }
 function verifyAttestationRecordAtRoot(rootDir, source, attestation, trustedKeys) {
+    const issuer = attestationIssuerContext(attestation);
     const context = attestationSubjectContext(attestation);
     const contextFields = context.context;
     const record = {
+        version: '1',
         source,
-        issuer: attestation.issuer,
+        ...(issuer.ok ? { issuer: issuer.issuer } : {}),
         ok: false,
         reason: 'verification did not run',
         ...(contextFields?.subjectFile ? { subjectFile: contextFields.subjectFile } : {}),
@@ -386,6 +397,9 @@ function verifyAttestationRecordAtRoot(rootDir, source, attestation, trustedKeys
     const signature = (0, index_7.verifyAttestation)(attestation, trustedKeys);
     if (!signature.ok) {
         return { ...record, reason: signature.reason };
+    }
+    if (!issuer.ok) {
+        return { ...record, reason: issuer.reason };
     }
     if (!context.ok) {
         return { ...record, reason: context.reason };
@@ -535,9 +549,8 @@ function loadVerifiedAttestations(rootDir, attestationsDir, trustedKeysDir) {
         try {
             rawText = fs_1.default.readFileSync(filePath, 'utf8');
         }
-        catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            verification.push({ source, ok: false, reason: `unreadable attestation file: ${message}` });
+        catch {
+            verification.push({ version: '1', source, ok: false, reason: 'unreadable attestation file' });
             continue;
         }
         let rawAttestation;
@@ -546,12 +559,12 @@ function loadVerifiedAttestations(rootDir, attestationsDir, trustedKeysDir) {
         }
         catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            verification.push({ source, ok: false, reason: `invalid JSON: ${message}` });
+            verification.push({ version: '1', source, ok: false, reason: `invalid JSON: ${message}` });
             continue;
         }
         const parsed = (0, index_7.parseAttestationRecord)(rawAttestation);
         if (!parsed.ok) {
-            verification.push({ source, ok: false, reason: parsed.reason });
+            verification.push({ version: '1', source, ok: false, reason: parsed.reason });
             continue;
         }
         const attestation = parsed.attestation;
@@ -884,9 +897,8 @@ function attestVerify(rootDir, attestationFile, trustedKeysDir, format = 'text')
     try {
         rawText = fs_1.default.readFileSync(resolvedAttestation, 'utf8');
     }
-    catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`unable to read attestation file ${attestationFile}: ${message}`);
+    catch {
+        throw new Error(`unable to read attestation file ${attestationFile}`);
     }
     let rawAttestation;
     try {
@@ -894,11 +906,11 @@ function attestVerify(rootDir, attestationFile, trustedKeysDir, format = 'text')
     }
     catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        return render([{ source, ok: false, reason: `invalid JSON: ${message}` }]);
+        return render([{ version: '1', source, ok: false, reason: `invalid JSON: ${message}` }]);
     }
     const parsed = (0, index_7.parseAttestationRecord)(rawAttestation);
     if (!parsed.ok) {
-        return render([{ source, ok: false, reason: parsed.reason }]);
+        return render([{ version: '1', source, ok: false, reason: parsed.reason }]);
     }
     const attestation = parsed.attestation;
     const keysDir = (0, index_1.resolveRepoLocalPath)(rootDir, trustedKeysDir, { allowMissing: true, kind: 'trusted keys dir' }).absolutePath;
@@ -929,6 +941,7 @@ function runAmend(rootDir, proposalFile, apply = false, options) {
         const constitutionPath = (0, index_1.resolveRepoLocalPath)(rootDir, loaded.config.constitutionPath, { allowMissing: true, kind: 'constitution path' }).absolutePath;
         writeModuleExport(constitutionPath, nextConstitution);
     }
-    return `${(0, index_1.stableStringify)(decision)}\n`;
+    return `${(0, index_1.stableStringify)(decision)}
+`;
 }
 //# sourceMappingURL=index.js.map
