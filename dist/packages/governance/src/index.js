@@ -9,26 +9,37 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const typescript_1 = __importDefault(require("typescript"));
 const index_1 = require("../../evidence-model/src/index");
+function stringLikeModuleSpecifier(argument) {
+    if (!argument) {
+        return undefined;
+    }
+    if (typescript_1.default.isStringLiteral(argument) || typescript_1.default.isNoSubstitutionTemplateLiteral(argument)) {
+        return argument.text;
+    }
+    return undefined;
+}
 function importsForFile(filePath, sourceText) {
     const sourceFile = typescript_1.default.createSourceFile(filePath, sourceText, typescript_1.default.ScriptTarget.Latest, true);
     const imports = [];
     function visit(node) {
         if (typescript_1.default.isImportDeclaration(node) || typescript_1.default.isExportDeclaration(node)) {
-            const specifier = node.moduleSpecifier?.text;
+            const specifier = stringLikeModuleSpecifier(node.moduleSpecifier);
             if (typeof specifier === 'string') {
                 imports.push(specifier);
             }
         }
         if (typescript_1.default.isCallExpression(node) && node.expression?.getText(sourceFile) === 'require' && node.arguments.length === 1) {
             const argument = node.arguments[0];
-            if (typescript_1.default.isStringLiteral(argument)) {
-                imports.push(argument.text);
+            const specifier = stringLikeModuleSpecifier(argument);
+            if (typeof specifier === 'string') {
+                imports.push(specifier);
             }
         }
         if (typescript_1.default.isCallExpression(node) && node.expression.kind === typescript_1.default.SyntaxKind.ImportKeyword && node.arguments.length === 1) {
             const argument = node.arguments[0];
-            if (typescript_1.default.isStringLiteral(argument)) {
-                imports.push(argument.text);
+            const specifier = stringLikeModuleSpecifier(argument);
+            if (typeof specifier === 'string') {
+                imports.push(specifier);
             }
         }
         typescript_1.default.forEachChild(node, visit);

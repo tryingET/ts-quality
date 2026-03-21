@@ -176,6 +176,25 @@ function latestRunOrUndefined(rootDir) {
 function expectedRunFileDigest(run, filePath) {
     return run.files.find((item) => item.filePath === (0, index_1.normalizePath)(filePath))?.digest;
 }
+function digestOrMissing(absolutePath) {
+    return fs_1.default.existsSync(absolutePath)
+        ? (0, index_1.fileDigest)(absolutePath)
+        : 'sha256:missing';
+}
+function contentDrift(subject, absolutePath, expected) {
+    const actual = digestOrMissing(absolutePath);
+    if (actual === expected) {
+        return undefined;
+    }
+    return { subject, expected, actual };
+}
+function detectControlPlaneDrift(rootDir, snapshot) {
+    return [
+        contentDrift('control plane config', path_1.default.join(rootDir, snapshot.configPath), snapshot.configDigest),
+        contentDrift('control plane constitution', path_1.default.join(rootDir, snapshot.constitutionPath), snapshot.constitutionDigest),
+        contentDrift('control plane agents', path_1.default.join(rootDir, snapshot.agentsPath), snapshot.agentsDigest)
+    ].filter((item) => Boolean(item));
+}
 function detectRunDrift(rootDir, run) {
     const drift = [];
     for (const filePath of run.changedFiles.map((item) => (0, index_1.normalizePath)(item))) {
@@ -183,13 +202,13 @@ function detectRunDrift(rootDir, run) {
         if (!expectedDigest) {
             continue;
         }
-        const absolutePath = path_1.default.join(rootDir, filePath);
-        const actualDigest = fs_1.default.existsSync(absolutePath)
-            ? (0, index_1.fileDigest)(absolutePath)
-            : 'sha256:missing';
-        if (actualDigest !== expectedDigest) {
-            drift.push({ filePath, expectedDigest, actualDigest });
+        const entry = contentDrift(`changed file ${filePath}`, path_1.default.join(rootDir, filePath), expectedDigest);
+        if (entry) {
+            drift.push(entry);
         }
+    }
+    if (run.controlPlane) {
+        drift.push(...detectControlPlaneDrift(rootDir, run.controlPlane));
     }
     return drift;
 }
@@ -199,15 +218,42 @@ function policyConfigFromLoadedContext(loaded) {
         ...loaded.config.policy
     };
 }
-function projectedRunForDecision(rootDir, loaded, run) {
-    const approvals = (0, config_1.loadApprovals)(rootDir, loaded.config.approvalsPath);
-    const overrides = (0, config_1.loadOverrides)(rootDir, loaded.config.overridesPath);
-    const waivers = (0, config_1.loadWaivers)(rootDir, loaded.config.waiversPath);
-    const constitution = (0, config_1.loadConstitution)(rootDir, loaded.config.constitutionPath);
-    const agents = (0, config_1.loadAgents)(rootDir, loaded.config.agentsPath);
-    const { attestations } = loadVerifiedAttestations(rootDir, loaded.config.attestationsDir, loaded.config.trustedKeysDir);
+function policyConfigFromSnapshot(snapshot) {
+    return {
+        ...(0, index_5.defaultPolicy)(),
+        ...snapshot.policy
+    };
+}
+function buildControlPlaneSnapshot(rootDir, loaded, constitution, agents) {
+    return {
+        configPath: (0, index_1.normalizePath)(path_1.default.relative(rootDir, loaded.configPath)),
+        configDigest: digestOrMissing(loaded.configPath),
+        policy: policyConfigFromLoadedContext(loaded),
+        constitutionPath: loaded.config.constitutionPath,
+        constitutionDigest: digestOrMissing(path_1.default.join(rootDir, loaded.config.constitutionPath)),
+        constitution,
+        agentsPath: loaded.config.agentsPath,
+        agentsDigest: digestOrMissing(path_1.default.join(rootDir, loaded.config.agentsPath)),
+        agents,
+        approvalsPath: loaded.config.approvalsPath,
+        waiversPath: loaded.config.waiversPath,
+        overridesPath: loaded.config.overridesPath,
+        attestationsDir: loaded.config.attestationsDir,
+        trustedKeysDir: loaded.config.trustedKeysDir
+    };
+}
+function projectedRunForDecision(rootDir, run, options) {
+    const loaded = run.controlPlane
+        ? undefined
+        : (0, config_1.loadContext)(rootDir, options?.configPath);
+    const approvals = (0, config_1.loadApprovals)(rootDir, run.controlPlane?.approvalsPath ?? loaded?.config.approvalsPath ?? '.ts-quality/approvals.json');
+    const overrides = (0, config_1.loadOverrides)(rootDir, run.controlPlane?.overridesPath ?? loaded?.config.overridesPath ?? '.ts-quality/overrides.json');
+    const waivers = (0, config_1.loadWaivers)(rootDir, run.controlPlane?.waiversPath ?? loaded?.config.waiversPath ?? '.ts-quality/waivers.json');
+    const constitution = run.controlPlane?.constitution ?? (0, config_1.loadConstitution)(rootDir, loaded?.config.constitutionPath ?? '.ts-quality/constitution.ts');
+    const agents = run.controlPlane?.agents ?? (0, config_1.loadAgents)(rootDir, loaded?.config.agentsPath ?? '.ts-quality/agents.ts');
+    const { attestations } = loadVerifiedAttestations(rootDir, run.controlPlane?.attestationsDir ?? loaded?.config.attestationsDir ?? '.ts-quality/attestations', run.controlPlane?.trustedKeysDir ?? loaded?.config.trustedKeysDir ?? '.ts-quality/keys');
     const runAttestations = attestations.filter((attestation) => attestationAppliesToRun(attestation, run.runId));
-    const policy = policyConfigFromLoadedContext(loaded);
+    const policy = run.controlPlane ? policyConfigFromSnapshot(run.controlPlane) : policyConfigFromLoadedContext(loaded);
     const preliminary = (0, index_5.evaluatePolicy)({
         nowIso: (0, index_1.nowIso)(),
         policy,
@@ -252,7 +298,6 @@ function projectedRunForDecision(rootDir, loaded, run) {
         ...(run.trend ? { trend: run.trend } : {})
     };
     return {
-        loaded,
         run,
         projectedRun,
         approvals,
@@ -266,7 +311,7 @@ function projectedRunForDecision(rootDir, loaded, run) {
 function renderRunDriftNotice(run, drift) {
     const lines = [
         `Run drift detected for ${run.runId}. Re-run ts-quality check before trusting downstream decision surfaces.`,
-        ...drift.map((item) => `- ${item.filePath}: expected ${item.expectedDigest}, actual ${item.actualDigest}`)
+        ...drift.map((item) => `- ${item.subject}: expected ${item.expected}, actual ${item.actual}`)
     ];
     return `${lines.join('\n')}\n`;
 }
@@ -683,6 +728,7 @@ function runCheck(rootDir, options) {
         changedRegions,
         executionFingerprint: mutationRun.executionFingerprint
     });
+    const controlPlane = buildControlPlaneSnapshot(rootDir, loaded, constitution, agents);
     const run = {
         version: '5.0.0',
         runId,
@@ -691,6 +737,7 @@ function runCheck(rootDir, options) {
         changedFiles,
         changedRegions,
         analysis,
+        controlPlane,
         files: fileEntities(rootDir, sourceFiles),
         symbols: symbolEntities(crapReport.hotspots),
         coverage,
@@ -788,7 +835,7 @@ function renderTrend(rootDir) {
     return `${lines.join('\n')}\n`;
 }
 function renderGovernance(rootDir, options) {
-    const context = projectedRunForDecision(rootDir, (0, config_1.loadContext)(rootDir, options?.configPath), (0, index_1.readLatestRun)(rootDir));
+    const context = projectedRunForDecision(rootDir, (0, index_1.readLatestRun)(rootDir), options);
     const plan = (0, index_6.generateGovernancePlan)(context.projectedRun, context.constitution, context.agents);
     const body = renderGovernanceText(context.projectedRun, plan);
     if (context.drift.length === 0) {
@@ -797,7 +844,7 @@ function renderGovernance(rootDir, options) {
     return `${renderRunDriftNotice(context.run, context.drift)}\n${body}`;
 }
 function renderPlan(rootDir, options) {
-    const context = projectedRunForDecision(rootDir, (0, config_1.loadContext)(rootDir, options?.configPath), (0, index_1.readLatestRun)(rootDir));
+    const context = projectedRunForDecision(rootDir, (0, index_1.readLatestRun)(rootDir), options);
     const plan = (0, index_6.generateGovernancePlan)(context.projectedRun, context.constitution, context.agents);
     const body = renderPlanText(context.projectedRun, plan);
     if (context.drift.length === 0) {
@@ -806,7 +853,7 @@ function renderPlan(rootDir, options) {
     return `${renderRunDriftNotice(context.run, context.drift)}\n${body}`;
 }
 function runAuthorize(rootDir, agentId, action, options) {
-    const context = projectedRunForDecision(rootDir, (0, config_1.loadContext)(rootDir, options?.configPath), (0, index_1.readLatestRun)(rootDir));
+    const context = projectedRunForDecision(rootDir, (0, index_1.readLatestRun)(rootDir), options);
     const bundle = (0, index_7.buildChangeBundle)(rootDir, context.run, agentId, action);
     const baseDecision = context.drift.length > 0
         ? {
@@ -814,7 +861,7 @@ function runAuthorize(rootDir, agentId, action, options) {
             agentId,
             action,
             outcome: 'deny',
-            reasons: [`Repository changed since run ${context.run.runId}. Re-run ts-quality check before authorizing ${action}.`],
+            reasons: [`Repository changed since run ${context.run.runId} or its control plane drifted. Re-run ts-quality check before authorizing ${action}.`],
             scope: context.run.changedFiles,
             missingProof: [],
             requiredApprovers: [],

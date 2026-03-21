@@ -253,6 +253,126 @@
       "symbol": "function:isRefreshExpired"
     }
   ],
+  "controlPlane": {
+    "agents": [
+      {
+        "grants": [
+          {
+            "actions": [
+              "merge"
+            ],
+            "id": "release-bot-merge",
+            "minMergeConfidence": 80,
+            "paths": [
+              "src/**"
+            ],
+            "requireAttestations": [
+              "ci.tests.passed"
+            ],
+            "requireHumanReview": true
+          }
+        ],
+        "id": "release-bot",
+        "kind": "automation",
+        "roles": [
+          "ci"
+        ]
+      },
+      {
+        "grants": [
+          {
+            "actions": [
+              "merge",
+              "override",
+              "amend"
+            ],
+            "id": "maintainer-merge",
+            "minMergeConfidence": 60,
+            "paths": [
+              "src/**"
+            ]
+          }
+        ],
+        "id": "maintainer",
+        "kind": "human",
+        "roles": [
+          "maintainer"
+        ]
+      },
+      {
+        "grants": [
+          {
+            "actions": [
+              "override"
+            ],
+            "id": "security-override",
+            "minMergeConfidence": 0,
+            "paths": [
+              "src/auth/**"
+            ]
+          }
+        ],
+        "id": "security-lead",
+        "kind": "human",
+        "roles": [
+          "security"
+        ]
+      }
+    ],
+    "agentsDigest": "sha256:783bbb133a2a7ae7d6d9a29eabec93bb98c157776357962ad8d175bd4bedcbf4",
+    "agentsPath": ".ts-quality/agents.ts",
+    "approvalsPath": ".ts-quality/approvals.json",
+    "attestationsDir": ".ts-quality/attestations",
+    "configDigest": "sha256:6401cc3091cc3728442181ede42dbb084d08ec787fb0ea758588a65a078253e4",
+    "configPath": "ts-quality.config.ts",
+    "constitution": [
+      {
+        "id": "auth-risk-budget",
+        "kind": "risk",
+        "maxCrap": 15,
+        "message": "Auth code requires stronger evidence because it decides authorization.",
+        "minMergeConfidence": 65,
+        "minMutationScore": 0.75,
+        "paths": [
+          "src/auth/**"
+        ]
+      },
+      {
+        "id": "payments-maintainer-approval",
+        "kind": "approval",
+        "message": "Payment domain changes require a maintainer approval.",
+        "minApprovals": 1,
+        "paths": [
+          "src/payments/**"
+        ],
+        "roles": [
+          "maintainer"
+        ]
+      },
+      {
+        "from": [
+          "src/shared/**"
+        ],
+        "id": "pii-boundary",
+        "kind": "boundary",
+        "message": "Shared utility code may not depend directly on identity state.",
+        "mode": "forbid",
+        "to": [
+          "src/identity/**"
+        ]
+      }
+    ],
+    "constitutionDigest": "sha256:13d5733e75df7fb1309dcc51c07b9c84baf82f623893ddd2594e02286bc03287",
+    "constitutionPath": ".ts-quality/constitution.ts",
+    "overridesPath": ".ts-quality/overrides.json",
+    "policy": {
+      "maxChangedCrap": 15,
+      "minMergeConfidence": 65,
+      "minMutationScore": 0.75
+    },
+    "trustedKeysDir": ".ts-quality/keys",
+    "waiversPath": ".ts-quality/waivers.json"
+  },
   "coverage": [
     {
       "coveredLines": 11,

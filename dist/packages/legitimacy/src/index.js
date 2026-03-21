@@ -295,6 +295,49 @@ function uniqueApprovalsForTarget(approvals, approvers, targetId) {
     }
     return [...unique.values()];
 }
+function validateAmendmentChanges(proposal, constitution) {
+    const reasons = [];
+    const activeRuleIds = new Set(constitution.map((rule) => rule.id));
+    for (const change of proposal.changes) {
+        if (change.action === 'add') {
+            if (!change.rule) {
+                reasons.push(`Amendment add ${change.ruleId} must include a replacement rule.`);
+                continue;
+            }
+            if (change.rule.id !== change.ruleId) {
+                reasons.push(`Amendment add ${change.ruleId} must keep change.rule.id aligned with change.ruleId.`);
+                continue;
+            }
+            if (activeRuleIds.has(change.rule.id)) {
+                reasons.push(`Amendment add ${change.rule.id} would create a duplicate constitution rule id.`);
+                continue;
+            }
+            activeRuleIds.add(change.rule.id);
+            continue;
+        }
+        if (change.action === 'remove') {
+            if (!activeRuleIds.has(change.ruleId)) {
+                reasons.push(`Amendment remove ${change.ruleId} targets no existing constitution rule.`);
+                continue;
+            }
+            activeRuleIds.delete(change.ruleId);
+            continue;
+        }
+        if (!change.rule) {
+            reasons.push(`Amendment replace ${change.ruleId} must include a replacement rule.`);
+            continue;
+        }
+        if (!activeRuleIds.has(change.ruleId)) {
+            reasons.push(`Amendment replace ${change.ruleId} targets no existing constitution rule.`);
+            continue;
+        }
+        if (change.rule.id !== change.ruleId) {
+            reasons.push(`Amendment replace ${change.ruleId} may not rename the constitution rule id.`);
+            continue;
+        }
+    }
+    return reasons;
+}
 function authorizeChange(agentId, action, bundle, run, agents, constitution, attestations, overrides) {
     const agent = agents.find((item) => item.id === agentId);
     if (!agent) {
@@ -437,6 +480,7 @@ function authorizeChange(agentId, action, bundle, run, agents, constitution, att
 function evaluateAmendment(proposal, constitution, agents) {
     const maintainers = new Set(agents.filter((agent) => agent.kind === 'human' && (agent.roles.includes('maintainer') || agent.roles.includes('admin'))).map((agent) => agent.id));
     const acceptedApprovals = uniqueApprovalsForTarget(proposal.approvals, maintainers, proposal.id);
+    const changeValidationErrors = validateAmendmentChanges(proposal, constitution);
     const sensitiveRules = proposal.changes.filter((change) => {
         const current = constitution.find((rule) => rule.id === change.ruleId);
         const candidate = change.rule;
@@ -444,6 +488,15 @@ function evaluateAmendment(proposal, constitution, agents) {
         return kind === 'boundary' || kind === 'rollback' || kind === 'risk';
     });
     const requiredApprovals = sensitiveRules.length > 0 ? 2 : 1;
+    if (changeValidationErrors.length > 0) {
+        return {
+            proposalId: proposal.id,
+            outcome: 'denied',
+            reasons: changeValidationErrors,
+            approvalsAccepted: acceptedApprovals.map((item) => item.by),
+            requiredApprovals
+        };
+    }
     if (acceptedApprovals.length < requiredApprovals) {
         return {
             proposalId: proposal.id,
@@ -471,6 +524,10 @@ function evaluateAmendment(proposal, constitution, agents) {
     };
 }
 function applyAmendment(proposal, constitution) {
+    const changeValidationErrors = validateAmendmentChanges(proposal, constitution);
+    if (changeValidationErrors.length > 0) {
+        throw new Error(changeValidationErrors[0]);
+    }
     let current = [...constitution];
     for (const change of proposal.changes) {
         if (change.action === 'remove') {

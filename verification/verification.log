@@ -24,6 +24,8 @@ $ npm test --silent
 ✔ amend --apply writes a loadable constitution module (<duration-ms>)
 ✔ amend --apply preserves json constitution format when configured (<duration-ms>)
 ✔ amend --apply preserves commonjs constitution modules when configured (<duration-ms>)
+✔ amend denies duplicate constitution rule ids instead of silently applying them (<duration-ms>)
+✔ amend denies replace operations that target no existing rule (<duration-ms>)
 ✔ authorize projects run-bound governance and invariant evidence into the decision artifact (<duration-ms>)
 ✔ authorize writes bundle digests that match the run artifact file digests (<duration-ms>)
 ✔ attest sign and verify produce a valid signed claim with exact subject context (<duration-ms>)
@@ -31,12 +33,13 @@ $ npm test --silent
 ✔ authorize ignores attestations that target an older run (<duration-ms>)
 ✔ authorize accepts rollback evidence that is bound to the exact evaluated run (<duration-ms>)
 ✔ authorize denies repository drift after the evaluated run (<duration-ms>)
+✔ authorize denies control-plane drift after the evaluated run (<duration-ms>)
 ✔ authorize denies empty authorization scope instead of matching grants vacuously (<duration-ms>)
 ✔ init creates starter files in an empty repo (<duration-ms>)
 ✔ check treats empty init changeSet.files as all discovered source files (<duration-ms>)
 ✔ check fails closed when changed scope has no measurable mutation pressure (<duration-ms>)
 ✔ check, report, explain, plan, and govern produce aligned artifacts (<duration-ms>)
-✔ check persists analysis context and mutation baseline receipts (<duration-ms>)
+✔ check persists analysis context, mutation baseline receipts, and a run-bound control plane snapshot (<duration-ms>)
 ✔ trend keeps deltas visible while surfacing the latest risky invariant provenance (<duration-ms>)
 ✔ trend orders runs by createdAt rather than lexical run id sort (<duration-ms>)
 ✔ check, plan, govern, and authorize accept --config for a nonstandard config file name (<duration-ms>)
@@ -48,6 +51,7 @@ $ npm test --silent
 ✔ check accepts a caller-supplied run id for exact approval binding (<duration-ms>)
 ✔ govern reprojects latest run governance with exact run-bound approvals (<duration-ms>)
 ✔ plan and govern surface run drift after check (<duration-ms>)
+✔ plan and govern surface control-plane drift after check (<duration-ms>)
 ✔ check assigns nested package files to the deepest matching package (<duration-ms>)
 ✔ check rejects unsafe run ids (<duration-ms>)
 ✔ check rejects changed file overrides that escape the repository root (<duration-ms>)
@@ -121,6 +125,7 @@ $ npm test --silent
 ✔ evaluateGovernance catches forbidden imports resolved through tsconfig path aliases (<duration-ms>)
 ✔ evaluateGovernance resolves aliases from the nearest package tsconfig in nested repos (<duration-ms>)
 ✔ evaluateGovernance catches forbidden dynamic imports (<duration-ms>)
+✔ evaluateGovernance catches forbidden dynamic imports expressed as no-substitution template literals (<duration-ms>)
 ✔ approval rules count only unique targeted approvals (<duration-ms>)
 ✔ approval rules accept exact run-targeted approvals when runId is provided (<duration-ms>)
 ✔ ownership rules require owner approval or an allowed agent approval (<duration-ms>)
@@ -161,9 +166,9 @@ $ npm test --silent
 ✔ runMutations mirrors root-level sources into configured built runtime roots (<duration-ms>)
 ✔ runMutations ignores inherited NODE_TEST_CONTEXT and keeps mutation outcomes deterministic (<duration-ms>)
 ✔ runMutations invalidates cached results when arbitrary execution environment changes (<duration-ms>)
-ℹ tests 141
+ℹ tests 146
 ℹ suites 0
-ℹ pass 141
+ℹ pass 146
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
