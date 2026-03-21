@@ -138,6 +138,53 @@ test('evaluateGovernance catches forbidden dynamic imports expressed as no-subst
   assert.match(findings[0].evidence[0], /\.\.\/identity\/store -> src\/identity\/store\.ts/);
 });
 
+test('evaluateGovernance catches forbidden require calls that flow through local aliases', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-governance-require-alias-'));
+  fs.mkdirSync(path.join(rootDir, 'src', 'shared'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'src', 'identity'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'shared', 'audit.ts'), "export function readIdentity() {\n  let load;\n  load = require;\n  return load('../identity/store');\n}\n", 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'src', 'identity', 'store.ts'), 'export const currentUser = () => ({ id: 1 });\n', 'utf8');
+
+  const findings = governance.evaluateGovernance({
+    rootDir,
+    constitution: [{
+      kind: 'boundary',
+      id: 'shared-no-identity',
+      from: ['src/shared/**'],
+      to: ['src/identity/**'],
+      mode: 'forbid',
+      message: 'Shared code must not require identity state.'
+    }],
+    changedFiles: ['src/shared/audit.ts'],
+    changedRegions: []
+  });
+
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].evidence[0], /\.\.\/identity\/store -> src\/identity\/store\.ts/);
+});
+
+test('evaluateGovernance does not mistake shadowed require parameters for the global loader', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-governance-shadowed-require-'));
+  fs.mkdirSync(path.join(rootDir, 'src', 'shared'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'shared', 'audit.ts'), "export function readIdentity(require) {\n  return require('../identity/store');\n}\n", 'utf8');
+
+  const findings = governance.evaluateGovernance({
+    rootDir,
+    constitution: [{
+      kind: 'boundary',
+      id: 'shared-no-identity',
+      from: ['src/shared/**'],
+      to: ['src/identity/**'],
+      mode: 'forbid',
+      message: 'Shared code must not require identity state.'
+    }],
+    changedFiles: ['src/shared/audit.ts'],
+    changedRegions: []
+  });
+
+  assert.equal(findings.length, 0);
+});
+
 test('evaluateGovernance fails closed on non-literal dynamic imports in boundary-scoped files', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-governance-opaque-import-'));
   fs.mkdirSync(path.join(rootDir, 'src', 'shared'), { recursive: true });
