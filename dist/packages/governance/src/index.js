@@ -55,14 +55,121 @@ function assignBinding(scope, name, requireLike) {
         scope.bindings.set(name, requireLike);
     }
 }
-function declareBindingName(name, requireLike, scope) {
+function propertyNameText(name) {
+    if (!name || typescript_1.default.isComputedPropertyName(name)) {
+        return undefined;
+    }
+    if (typescript_1.default.isIdentifier(name)
+        || typescript_1.default.isStringLiteral(name)
+        || typescript_1.default.isNumericLiteral(name)
+        || typescript_1.default.isNoSubstitutionTemplateLiteral(name)) {
+        return name.text;
+    }
+    return undefined;
+}
+function propertyValueForObjectLiteral(initializer, target) {
+    const candidate = unwrapExpression(initializer);
+    if (!candidate || !typescript_1.default.isObjectLiteralExpression(candidate)) {
+        return undefined;
+    }
+    const propertyName = typescript_1.default.isBindingElement(target)
+        ? propertyNameText(target.propertyName ?? (typescript_1.default.isIdentifier(target.name) ? target.name : undefined))
+        : typescript_1.default.isShorthandPropertyAssignment(target)
+            ? target.name.text
+            : typescript_1.default.isPropertyAssignment(target)
+                ? propertyNameText(target.name)
+                : undefined;
+    if (typeof propertyName !== 'string') {
+        return undefined;
+    }
+    for (let index = candidate.properties.length - 1; index >= 0; index -= 1) {
+        const property = candidate.properties[index];
+        if (typescript_1.default.isSpreadAssignment(property)) {
+            return undefined;
+        }
+        if (typescript_1.default.isShorthandPropertyAssignment(property) && property.name.text === propertyName) {
+            return property.name;
+        }
+        if (typescript_1.default.isPropertyAssignment(property) && propertyNameText(property.name) === propertyName) {
+            return property.initializer;
+        }
+    }
+    return undefined;
+}
+function expressionIsRequireLike(expression, scope) {
+    const candidate = unwrapExpression(expression);
+    if (!candidate) {
+        return false;
+    }
+    if (typescript_1.default.isIdentifier(candidate)) {
+        return lookupRequireLike(scope, candidate.text);
+    }
+    if (typescript_1.default.isBinaryExpression(candidate) && candidate.operatorToken.kind === typescript_1.default.SyntaxKind.EqualsToken) {
+        return expressionIsRequireLike(candidate.right, scope);
+    }
+    if (typescript_1.default.isConditionalExpression(candidate)) {
+        return expressionIsRequireLike(candidate.whenTrue, scope) || expressionIsRequireLike(candidate.whenFalse, scope);
+    }
+    return false;
+}
+function declareBindingName(name, initializer, scope) {
     if (typescript_1.default.isIdentifier(name)) {
-        scope.bindings.set(name.text, requireLike);
+        scope.bindings.set(name.text, initializer ? expressionIsRequireLike(initializer, scope) : false);
+        return;
+    }
+    if (typescript_1.default.isArrayBindingPattern(name)) {
+        const candidate = unwrapExpression(initializer);
+        const elements = candidate && typescript_1.default.isArrayLiteralExpression(candidate) ? candidate.elements : [];
+        for (let index = 0; index < name.elements.length; index += 1) {
+            const element = name.elements[index];
+            if (!typescript_1.default.isBindingElement(element)) {
+                continue;
+            }
+            const matchedInitializer = elements[index];
+            declareBindingName(element.name, matchedInitializer ?? element.initializer, scope);
+        }
         return;
     }
     for (const element of name.elements) {
         if (typescript_1.default.isBindingElement(element)) {
-            declareBindingName(element.name, false, scope);
+            declareBindingName(element.name, propertyValueForObjectLiteral(initializer, element) ?? element.initializer, scope);
+        }
+    }
+}
+function assignBindingTarget(target, initializer, scope) {
+    if (typescript_1.default.isIdentifier(target)) {
+        assignBinding(scope, target.text, initializer ? expressionIsRequireLike(initializer, scope) : false);
+        return;
+    }
+    if (typescript_1.default.isArrayLiteralExpression(target)) {
+        const candidate = unwrapExpression(initializer);
+        const elements = candidate && typescript_1.default.isArrayLiteralExpression(candidate) ? candidate.elements : [];
+        for (let index = 0; index < target.elements.length; index += 1) {
+            const element = target.elements[index];
+            if (typescript_1.default.isOmittedExpression(element)) {
+                continue;
+            }
+            if (typescript_1.default.isSpreadElement(element)) {
+                assignBindingTarget(element.expression, undefined, scope);
+                continue;
+            }
+            assignBindingTarget(element, elements[index], scope);
+        }
+        return;
+    }
+    if (typescript_1.default.isObjectLiteralExpression(target)) {
+        for (const property of target.properties) {
+            if (typescript_1.default.isShorthandPropertyAssignment(property)) {
+                assignBindingTarget(property.name, propertyValueForObjectLiteral(initializer, property), scope);
+                continue;
+            }
+            if (typescript_1.default.isPropertyAssignment(property)) {
+                assignBindingTarget(property.initializer, propertyValueForObjectLiteral(initializer, property), scope);
+                continue;
+            }
+            if (typescript_1.default.isSpreadAssignment(property)) {
+                assignBindingTarget(property.expression, undefined, scope);
+            }
         }
     }
 }
@@ -85,10 +192,6 @@ function declareImportBindings(node, scope) {
         scope.bindings.set(specifier.name.text, false);
     }
 }
-function expressionIsRequireLike(expression, scope) {
-    const candidate = unwrapExpression(expression);
-    return typescript_1.default.isIdentifier(candidate) && lookupRequireLike(scope, candidate.text);
-}
 function importsForFile(filePath, sourceText) {
     const sourceFile = typescript_1.default.createSourceFile(filePath, sourceText, typescript_1.default.ScriptTarget.Latest, true);
     const imports = [];
@@ -103,7 +206,7 @@ function importsForFile(filePath, sourceText) {
             functionScope.bindings.set(node.name.text, false);
         }
         for (const parameter of node.parameters ?? []) {
-            declareBindingName(parameter.name, false, functionScope);
+            declareBindingName(parameter.name, undefined, functionScope);
         }
         for (const parameter of node.parameters ?? []) {
             if (parameter.initializer) {
@@ -118,11 +221,7 @@ function importsForFile(filePath, sourceText) {
         if (node.initializer) {
             visit(node.initializer, scope);
         }
-        if (typescript_1.default.isIdentifier(node.name)) {
-            scope.bindings.set(node.name.text, node.initializer ? expressionIsRequireLike(node.initializer, scope) : false);
-            return;
-        }
-        declareBindingName(node.name, false, scope);
+        declareBindingName(node.name, node.initializer, scope);
     }
     function visit(node, scope) {
         if (!node) {
@@ -243,19 +342,14 @@ function importsForFile(filePath, sourceText) {
         if (typescript_1.default.isCatchClause(node)) {
             const catchScope = createBindingScope(scope);
             if (node.variableDeclaration) {
-                declareBindingName(node.variableDeclaration.name, false, catchScope);
+                declareBindingName(node.variableDeclaration.name, undefined, catchScope);
             }
             visit(node.block, catchScope);
             return;
         }
         if (typescript_1.default.isBinaryExpression(node) && node.operatorToken.kind === typescript_1.default.SyntaxKind.EqualsToken) {
             visit(node.right, scope);
-            if (typescript_1.default.isIdentifier(node.left)) {
-                assignBinding(scope, node.left.text, expressionIsRequireLike(node.right, scope));
-            }
-            else {
-                visit(node.left, scope);
-            }
+            assignBindingTarget(node.left, node.right, scope);
             return;
         }
         if (typescript_1.default.isCallExpression(node)) {
