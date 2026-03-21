@@ -43,6 +43,9 @@ $ npm test --silent
 ✔ check persists analysis context, mutation baseline receipts, and a run-bound control plane snapshot (<duration-ms>)
 ✔ plan, govern, and authorize reject unsupported control-plane snapshot schemas (<duration-ms>)
 ✔ plan, govern, and authorize reject malformed control-plane snapshots instead of falling back (<duration-ms>)
+✔ plan, govern, and authorize reject malformed control-plane schemaVersion types (<duration-ms>)
+✔ plan, govern, and authorize reject malformed control-plane array elements (<duration-ms>)
+✔ plan, govern, and authorize reject out-of-range control-plane policy values (<duration-ms>)
 ✔ plan, govern, and authorize fall back to live context for legacy runs without controlPlane (<duration-ms>)
 ✔ trend keeps deltas visible while surfacing the latest risky invariant provenance (<duration-ms>)
 ✔ trend orders runs by createdAt rather than lexical run id sort (<duration-ms>)
@@ -109,6 +112,7 @@ $ npm test --silent
 ✔ loadContext rejects changeSet files that escape the repository root (<duration-ms>)
 ✔ loadContext rejects runtime mirror roots that escape the repository root (<duration-ms>)
 ✔ loadContext rejects an empty mutation test command (<duration-ms>)
+✔ loadContext rejects out-of-range policy values (<duration-ms>)
 ✔ parseLcov reads coverage entries (<duration-ms>)
 ✔ crapScore increases with lower coverage (<duration-ms>)
 ✔ analyzeCrap marks changed functions (<duration-ms>)
@@ -130,6 +134,8 @@ $ npm test --silent
 ✔ evaluateGovernance resolves aliases from the nearest package tsconfig in nested repos (<duration-ms>)
 ✔ evaluateGovernance catches forbidden dynamic imports (<duration-ms>)
 ✔ evaluateGovernance catches forbidden dynamic imports expressed as no-substitution template literals (<duration-ms>)
+✔ evaluateGovernance catches forbidden require calls that flow through local aliases (<duration-ms>)
+✔ evaluateGovernance does not mistake shadowed require parameters for the global loader (<duration-ms>)
 ✔ evaluateGovernance fails closed on non-literal dynamic imports in boundary-scoped files (<duration-ms>)
 ✔ approval rules count only unique targeted approvals (<duration-ms>)
 ✔ approval rules accept exact run-targeted approvals when runId is provided (<duration-ms>)
@@ -172,9 +178,9 @@ $ npm test --silent
 ✔ runMutations mirrors root-level sources into configured built runtime roots (<duration-ms>)
 ✔ runMutations ignores inherited NODE_TEST_CONTEXT and keeps mutation outcomes deterministic (<duration-ms>)
 ✔ runMutations invalidates cached results when arbitrary execution environment changes (<duration-ms>)
-ℹ tests 152
+ℹ tests 158
 ℹ suites 0
-ℹ pass 152
+ℹ pass 158
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0

@@ -219,56 +219,95 @@ function policyConfigFromLoadedContext(loaded) {
     };
 }
 function policyConfigFromSnapshot(snapshot) {
-    return {
-        ...(0, index_5.defaultPolicy)(),
-        ...snapshot.policy
-    };
+    return { ...snapshot.policy };
+}
+function malformedSnapshotError(runId, detail) {
+    return new Error(`Run ${runId} carries malformed control-plane snapshot schema ${index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}: ${detail}. Re-run ts-quality check before trusting downstream decision surfaces.`);
 }
 function snapshotStringField(snapshot, field, runId) {
     if (typeof snapshot[field] !== 'string' || snapshot[field].length === 0) {
-        throw new Error(`Run ${runId} carries malformed control-plane snapshot schema ${index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}: field ${field} must be a non-empty string. Re-run ts-quality check before trusting downstream decision surfaces.`);
+        throw malformedSnapshotError(runId, `field ${field} must be a non-empty string`);
     }
     return snapshot[field];
 }
-function snapshotNumberField(snapshot, field, runId) {
+function snapshotNumberField(snapshot, field, runId, options = {}) {
     if (typeof snapshot[field] !== 'number' || !Number.isFinite(snapshot[field])) {
-        throw new Error(`Run ${runId} carries malformed control-plane snapshot schema ${index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}: field ${field} must be a finite number. Re-run ts-quality check before trusting downstream decision surfaces.`);
+        throw malformedSnapshotError(runId, `field ${field} must be a finite number`);
     }
-    return snapshot[field];
+    const value = snapshot[field];
+    if (typeof options.min === 'number' && value < options.min) {
+        throw malformedSnapshotError(runId, `field ${field} must be >= ${options.min}`);
+    }
+    if (typeof options.max === 'number' && value > options.max) {
+        throw malformedSnapshotError(runId, `field ${field} must be <= ${options.max}`);
+    }
+    return value;
 }
-function snapshotArrayField(snapshot, field, runId) {
+function snapshotObjectArrayField(snapshot, field, runId, validateItem) {
     if (!Array.isArray(snapshot[field])) {
-        throw new Error(`Run ${runId} carries malformed control-plane snapshot schema ${index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}: field ${field} must be an array. Re-run ts-quality check before trusting downstream decision surfaces.`);
+        throw malformedSnapshotError(runId, `field ${field} must be an array`);
     }
-    return snapshot[field];
+    const value = snapshot[field];
+    for (const [index, item] of value.entries()) {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            throw malformedSnapshotError(runId, `field ${field}[${index}] must be an object`);
+        }
+        validateItem(item, index);
+    }
+    return value;
+}
+function validateSnapshotConstitutionRule(rule, index, runId) {
+    if (typeof rule.id !== 'string' || rule.id.length === 0) {
+        throw malformedSnapshotError(runId, `field constitution[${index}].id must be a non-empty string`);
+    }
+    if (typeof rule.kind !== 'string' || rule.kind.length === 0) {
+        throw malformedSnapshotError(runId, `field constitution[${index}].kind must be a non-empty string`);
+    }
+}
+function validateSnapshotAgent(agent, index, runId) {
+    if (typeof agent.id !== 'string' || agent.id.length === 0) {
+        throw malformedSnapshotError(runId, `field agents[${index}].id must be a non-empty string`);
+    }
+    if (typeof agent.kind !== 'string' || agent.kind.length === 0) {
+        throw malformedSnapshotError(runId, `field agents[${index}].kind must be a non-empty string`);
+    }
+    if (!Array.isArray(agent.roles) || agent.roles.some((item) => typeof item !== 'string')) {
+        throw malformedSnapshotError(runId, `field agents[${index}].roles must be an array of strings`);
+    }
+    if (!Array.isArray(agent.grants)) {
+        throw malformedSnapshotError(runId, `field agents[${index}].grants must be an array`);
+    }
 }
 function validatedControlPlaneSnapshot(run) {
     const snapshot = run.controlPlane;
     if (!snapshot) {
         return undefined;
     }
-    if (snapshot.schemaVersion !== index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION) {
-        throw new Error(`Run ${run.runId} carries unsupported control-plane snapshot schema ${String(snapshot.schemaVersion)}. `
+    const record = snapshot;
+    if (typeof record.schemaVersion !== 'number' || !Number.isInteger(record.schemaVersion)) {
+        throw malformedSnapshotError(run.runId, `field schemaVersion must be integer ${index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}`);
+    }
+    if (record.schemaVersion !== index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION) {
+        throw new Error(`Run ${run.runId} carries unsupported control-plane snapshot schema ${String(record.schemaVersion)}. `
             + `Expected ${index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}. Re-run ts-quality check before trusting downstream decision surfaces.`);
     }
-    const record = snapshot;
     const policy = (typeof record.policy === 'object' && record.policy !== null)
         ? record.policy
         : undefined;
     if (!policy) {
-        throw new Error(`Run ${run.runId} carries malformed control-plane snapshot schema ${index_1.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}: field policy must be an object. Re-run ts-quality check before trusting downstream decision surfaces.`);
+        throw malformedSnapshotError(run.runId, 'field policy must be an object');
     }
     snapshotStringField(record, 'configPath', run.runId);
     snapshotStringField(record, 'configDigest', run.runId);
-    snapshotNumberField(policy, 'maxChangedCrap', run.runId);
-    snapshotNumberField(policy, 'minMutationScore', run.runId);
-    snapshotNumberField(policy, 'minMergeConfidence', run.runId);
+    snapshotNumberField(policy, 'maxChangedCrap', run.runId, { min: 0 });
+    snapshotNumberField(policy, 'minMutationScore', run.runId, { min: 0, max: 1 });
+    snapshotNumberField(policy, 'minMergeConfidence', run.runId, { min: 0, max: 100 });
     snapshotStringField(record, 'constitutionPath', run.runId);
     snapshotStringField(record, 'constitutionDigest', run.runId);
-    snapshotArrayField(record, 'constitution', run.runId);
+    snapshotObjectArrayField(record, 'constitution', run.runId, (item, index) => validateSnapshotConstitutionRule(item, index, run.runId));
     snapshotStringField(record, 'agentsPath', run.runId);
     snapshotStringField(record, 'agentsDigest', run.runId);
-    snapshotArrayField(record, 'agents', run.runId);
+    snapshotObjectArrayField(record, 'agents', run.runId, (item, index) => validateSnapshotAgent(item, index, run.runId));
     snapshotStringField(record, 'approvalsPath', run.runId);
     snapshotStringField(record, 'waiversPath', run.runId);
     snapshotStringField(record, 'overridesPath', run.runId);

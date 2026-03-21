@@ -9,6 +9,9 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const typescript_1 = __importDefault(require("typescript"));
 const index_1 = require("../../evidence-model/src/index");
+function createBindingScope(parent) {
+    return parent ? { bindings: new Map(), parent } : { bindings: new Map() };
+}
 function stringLikeModuleSpecifier(argument) {
     if (!argument) {
         return undefined;
@@ -18,11 +21,138 @@ function stringLikeModuleSpecifier(argument) {
     }
     return undefined;
 }
+function unwrapExpression(expression) {
+    let current = expression;
+    while (current
+        && (typescript_1.default.isParenthesizedExpression(current)
+            || typescript_1.default.isAsExpression(current)
+            || typescript_1.default.isTypeAssertionExpression(current)
+            || typescript_1.default.isNonNullExpression(current))) {
+        current = current.expression;
+    }
+    return current;
+}
+function lookupRequireLike(scope, name) {
+    let current = scope;
+    while (current) {
+        if (current.bindings.has(name)) {
+            return current.bindings.get(name);
+        }
+        current = current.parent;
+    }
+    return name === 'require';
+}
+function assignBinding(scope, name, requireLike) {
+    let current = scope;
+    while (current) {
+        if (current.bindings.has(name)) {
+            current.bindings.set(name, requireLike);
+            return;
+        }
+        current = current.parent;
+    }
+    if (name !== 'require') {
+        scope.bindings.set(name, requireLike);
+    }
+}
+function declareBindingName(name, requireLike, scope) {
+    if (typescript_1.default.isIdentifier(name)) {
+        scope.bindings.set(name.text, requireLike);
+        return;
+    }
+    for (const element of name.elements) {
+        if (typescript_1.default.isBindingElement(element)) {
+            declareBindingName(element.name, false, scope);
+        }
+    }
+}
+function declareImportBindings(node, scope) {
+    const clause = node.importClause;
+    if (!clause) {
+        return;
+    }
+    if (clause.name) {
+        scope.bindings.set(clause.name.text, false);
+    }
+    if (!clause.namedBindings) {
+        return;
+    }
+    if (typescript_1.default.isNamespaceImport(clause.namedBindings)) {
+        scope.bindings.set(clause.namedBindings.name.text, false);
+        return;
+    }
+    for (const specifier of clause.namedBindings.elements) {
+        scope.bindings.set(specifier.name.text, false);
+    }
+}
+function expressionIsRequireLike(expression, scope) {
+    const candidate = unwrapExpression(expression);
+    return typescript_1.default.isIdentifier(candidate) && lookupRequireLike(scope, candidate.text);
+}
 function importsForFile(filePath, sourceText) {
     const sourceFile = typescript_1.default.createSourceFile(filePath, sourceText, typescript_1.default.ScriptTarget.Latest, true);
     const imports = [];
-    function visit(node) {
-        if (typescript_1.default.isImportDeclaration(node) || typescript_1.default.isExportDeclaration(node)) {
+    function visitStatements(statements, scope) {
+        for (const statement of statements) {
+            visit(statement, scope);
+        }
+    }
+    function visitFunctionLike(node, scope) {
+        const functionScope = createBindingScope(scope);
+        if (node.name && typescript_1.default.isIdentifier(node.name)) {
+            functionScope.bindings.set(node.name.text, false);
+        }
+        for (const parameter of node.parameters ?? []) {
+            declareBindingName(parameter.name, false, functionScope);
+        }
+        for (const parameter of node.parameters ?? []) {
+            if (parameter.initializer) {
+                visit(parameter.initializer, functionScope);
+            }
+        }
+        if (node.body) {
+            visit(node.body, functionScope);
+        }
+    }
+    function visitVariableDeclaration(node, scope) {
+        if (node.initializer) {
+            visit(node.initializer, scope);
+        }
+        if (typescript_1.default.isIdentifier(node.name)) {
+            scope.bindings.set(node.name.text, node.initializer ? expressionIsRequireLike(node.initializer, scope) : false);
+            return;
+        }
+        declareBindingName(node.name, false, scope);
+    }
+    function visit(node, scope) {
+        if (!node) {
+            return;
+        }
+        if (typescript_1.default.isSourceFile(node) || typescript_1.default.isModuleBlock(node)) {
+            visitStatements(node.statements, scope);
+            return;
+        }
+        if (typescript_1.default.isBlock(node)) {
+            visitStatements(node.statements, createBindingScope(scope));
+            return;
+        }
+        if (typescript_1.default.isCaseBlock(node)) {
+            const caseScope = createBindingScope(scope);
+            for (const clause of node.clauses) {
+                visit(clause, caseScope);
+            }
+            return;
+        }
+        if (typescript_1.default.isCaseClause(node)) {
+            visit(node.expression, scope);
+            visitStatements(node.statements, scope);
+            return;
+        }
+        if (typescript_1.default.isDefaultClause(node)) {
+            visitStatements(node.statements, scope);
+            return;
+        }
+        if (typescript_1.default.isImportDeclaration(node)) {
             const specifier = stringLikeModuleSpecifier(node.moduleSpecifier);
             if (typeof specifier === 'string') {
                 imports.push({
@@ -32,30 +162,127 @@ function importsForFile(filePath, sourceText) {
                     resolvable: true
                 });
             }
+            declareImportBindings(node, scope);
+            return;
         }
-        if (typescript_1.default.isCallExpression(node) && node.expression?.getText(sourceFile) === 'require' && node.arguments.length === 1) {
-            const argument = node.arguments[0];
-            const specifier = stringLikeModuleSpecifier(argument);
-            imports.push({
-                kind: 'require',
-                ...(typeof specifier === 'string' ? { specifier } : {}),
-                expressionText: argument.getText(sourceFile),
-                resolvable: typeof specifier === 'string'
-            });
+        if (typescript_1.default.isImportEqualsDeclaration(node)) {
+            scope.bindings.set(node.name.text, false);
+            if (typescript_1.default.isExternalModuleReference(node.moduleReference)) {
+                const specifier = stringLikeModuleSpecifier(node.moduleReference.expression);
+                if (typeof specifier === 'string') {
+                    imports.push({
+                        kind: 'static',
+                        specifier,
+                        expressionText: node.moduleReference.expression.getText(sourceFile),
+                        resolvable: true
+                    });
+                }
+            }
+            return;
         }
-        if (typescript_1.default.isCallExpression(node) && node.expression.kind === typescript_1.default.SyntaxKind.ImportKeyword && node.arguments.length === 1) {
-            const argument = node.arguments[0];
-            const specifier = stringLikeModuleSpecifier(argument);
-            imports.push({
-                kind: 'dynamic-import',
-                ...(typeof specifier === 'string' ? { specifier } : {}),
-                expressionText: argument.getText(sourceFile),
-                resolvable: typeof specifier === 'string'
-            });
+        if (typescript_1.default.isExportDeclaration(node)) {
+            const specifier = stringLikeModuleSpecifier(node.moduleSpecifier);
+            if (typeof specifier === 'string') {
+                imports.push({
+                    kind: 'static',
+                    specifier,
+                    expressionText: node.moduleSpecifier.getText(sourceFile),
+                    resolvable: true
+                });
+            }
+            return;
         }
-        typescript_1.default.forEachChild(node, visit);
+        if (typescript_1.default.isFunctionDeclaration(node)) {
+            if (node.name) {
+                scope.bindings.set(node.name.text, false);
+            }
+            visitFunctionLike(node, scope);
+            return;
+        }
+        if (typescript_1.default.isFunctionExpression(node)
+            || typescript_1.default.isArrowFunction(node)
+            || typescript_1.default.isMethodDeclaration(node)
+            || typescript_1.default.isGetAccessorDeclaration(node)
+            || typescript_1.default.isSetAccessorDeclaration(node)
+            || typescript_1.default.isConstructorDeclaration(node)) {
+            visitFunctionLike(node, scope);
+            return;
+        }
+        if (typescript_1.default.isClassDeclaration(node)) {
+            if (node.name) {
+                scope.bindings.set(node.name.text, false);
+            }
+            typescript_1.default.forEachChild(node, (child) => visit(child, scope));
+            return;
+        }
+        if (typescript_1.default.isVariableStatement(node)) {
+            for (const declaration of node.declarationList.declarations) {
+                visitVariableDeclaration(declaration, scope);
+            }
+            return;
+        }
+        if (typescript_1.default.isVariableDeclaration(node)) {
+            visitVariableDeclaration(node, scope);
+            return;
+        }
+        if (typescript_1.default.isForStatement(node)) {
+            const loopScope = createBindingScope(scope);
+            visit(node.initializer, loopScope);
+            visit(node.condition, loopScope);
+            visit(node.incrementor, loopScope);
+            visit(node.statement, loopScope);
+            return;
+        }
+        if (typescript_1.default.isForInStatement(node) || typescript_1.default.isForOfStatement(node)) {
+            const loopScope = createBindingScope(scope);
+            visit(node.initializer, loopScope);
+            visit(node.expression, loopScope);
+            visit(node.statement, loopScope);
+            return;
+        }
+        if (typescript_1.default.isCatchClause(node)) {
+            const catchScope = createBindingScope(scope);
+            if (node.variableDeclaration) {
+                declareBindingName(node.variableDeclaration.name, false, catchScope);
+            }
+            visit(node.block, catchScope);
+            return;
+        }
+        if (typescript_1.default.isBinaryExpression(node) && node.operatorToken.kind === typescript_1.default.SyntaxKind.EqualsToken) {
+            visit(node.right, scope);
+            if (typescript_1.default.isIdentifier(node.left)) {
+                assignBinding(scope, node.left.text, expressionIsRequireLike(node.right, scope));
+            }
+            else {
+                visit(node.left, scope);
+            }
+            return;
+        }
+        if (typescript_1.default.isCallExpression(node)) {
+            if (node.arguments.length === 1 && expressionIsRequireLike(node.expression, scope)) {
+                const argument = node.arguments[0];
+                const specifier = stringLikeModuleSpecifier(argument);
+                imports.push({
+                    kind: 'require',
+                    ...(typeof specifier === 'string' ? { specifier } : {}),
+                    expressionText: argument.getText(sourceFile),
+                    resolvable: typeof specifier === 'string'
+                });
+            }
+            if (node.expression.kind === typescript_1.default.SyntaxKind.ImportKeyword && node.arguments.length === 1) {
+                const argument = node.arguments[0];
+                const specifier = stringLikeModuleSpecifier(argument);
+                imports.push({
+                    kind: 'dynamic-import',
+                    ...(typeof specifier === 'string' ? { specifier } : {}),
+                    expressionText: argument.getText(sourceFile),
+                    resolvable: typeof specifier === 'string'
+                });
+            }
+        }
+        typescript_1.default.forEachChild(node, (child) => visit(child, scope));
     }
-    visit(sourceFile);
+    visit(sourceFile, createBindingScope());
     return imports;
 }
 function resolveImport(importerPath, specifier, rootDir) {

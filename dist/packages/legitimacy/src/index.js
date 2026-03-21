@@ -539,9 +539,6 @@ function applyAmendment(proposal, constitution) {
     }
     let current = [...constitution];
     for (const change of proposal.changes) {
-        if (!isAmendmentChangeAction(change.action)) {
-            throw new Error(`Amendment change ${change.ruleId} has invalid action ${String(change.action)}. Valid actions: add, remove, replace.`);
-        }
         if (change.action === 'remove') {
             current = current.filter((rule) => rule.id !== change.ruleId);
         }
@@ -549,7 +546,8 @@ function applyAmendment(proposal, constitution) {
             current.push(change.rule);
         }
         else if (change.action === 'replace' && change.rule) {
-            current = current.map((rule) => (rule.id === change.ruleId ? change.rule : rule));
+            const replacement = change.rule;
+            current = current.map((rule) => (rule.id === change.ruleId ? replacement : rule));
         }
     }
     return current;
