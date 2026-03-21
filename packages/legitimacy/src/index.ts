@@ -17,6 +17,7 @@ import {
   matchesAny,
   normalizePath,
   stableStringify,
+  validateAttestationMetadata,
   writeJson
 } from '../../evidence-model/src/index';
 
@@ -74,6 +75,32 @@ export function generateKeyPair(): { publicKeyPem: string; privateKeyPem: string
 }
 
 export function signAttestation(subject: { subjectType: string; subjectDigest: string; issuer: string; claims: string[]; payload?: Record<string, unknown>; keyId: string; privateKeyPem: string; issuedAt?: string; }): Attestation {
+  const issuerIssue = validateAttestationMetadata(subject.issuer, 'attestation issuer', { trimEmpty: true });
+  if (issuerIssue) {
+    throw new Error(issuerIssue);
+  }
+  const payload = subject.payload ?? {};
+  const subjectFile = typeof payload.subjectFile === 'string' ? payload.subjectFile : undefined;
+  if (subjectFile !== undefined) {
+    const subjectFileIssue = validateAttestationMetadata(subjectFile, 'attestation payload subjectFile', { trimEmpty: true });
+    if (subjectFileIssue) {
+      throw new Error(subjectFileIssue);
+    }
+  }
+  const runId = typeof payload.runId === 'string' ? payload.runId : undefined;
+  if (runId !== undefined) {
+    const runIdIssue = validateAttestationMetadata(runId, 'attestation payload runId', { trimEmpty: true });
+    if (runIdIssue) {
+      throw new Error(runIdIssue);
+    }
+  }
+  const artifactName = typeof payload.artifactName === 'string' ? payload.artifactName : undefined;
+  if (artifactName !== undefined) {
+    const artifactNameIssue = validateAttestationMetadata(artifactName, 'attestation payload artifactName', { trimEmpty: true });
+    if (artifactNameIssue) {
+      throw new Error(artifactNameIssue);
+    }
+  }
   const unsigned = {
     version: '1' as const,
     kind: 'attestation' as const,
@@ -82,7 +109,7 @@ export function signAttestation(subject: { subjectType: string; subjectDigest: s
     subjectDigest: subject.subjectDigest,
     claims: subject.claims,
     issuedAt: subject.issuedAt ?? new Date().toISOString(),
-    payload: subject.payload ?? {},
+    payload,
     signature: {
       algorithm: 'ed25519' as const,
       keyId: subject.keyId,

@@ -5,7 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = __importDefault(require("path"));
-const index_1 = require("./index");
+const index_1 = require("../../evidence-model/src/index");
+const index_2 = require("./index");
 function args() {
     return process.argv.slice(2);
 }
@@ -71,7 +72,7 @@ function main() {
         return;
     }
     if (command === 'init') {
-        (0, index_1.initProject)(cwd);
+        (0, index_2.initProject)(cwd);
         process.stdout.write(`Initialized ts-quality in ${cwd}\n`);
         return;
     }
@@ -85,7 +86,7 @@ function main() {
         if (requestedOutDir) {
             materializeOptions.outDir = requestedOutDir;
         }
-        const result = (0, index_1.materializeProject)(cwd, materializeOptions);
+        const result = (0, index_2.materializeProject)(cwd, materializeOptions);
         process.stdout.write(`Materialized runtime config: ${result.configPath}\nOutput dir: ${result.outDir}\nFiles:\n- ${result.files.join('\n- ')}\n`);
         return;
     }
@@ -103,30 +104,30 @@ function main() {
         if (explicitConfigPath) {
             checkOptions.configPath = explicitConfigPath;
         }
-        const result = (0, index_1.runCheck)(cwd, checkOptions);
+        const result = (0, index_2.runCheck)(cwd, checkOptions);
         process.stdout.write(`Merge confidence: ${result.run.verdict.mergeConfidence}/100\nOutcome: ${result.run.verdict.outcome}\nArtifacts: ${result.artifactDir}\n`);
         return;
     }
     if (command === 'explain') {
-        process.stdout.write((0, index_1.renderLatestExplain)(cwd));
+        process.stdout.write((0, index_2.renderLatestExplain)(cwd));
         return;
     }
     if (command === 'report') {
-        process.stdout.write((0, index_1.renderLatestReport)(cwd, hasFlag('--json') ? 'json' : 'markdown'));
+        process.stdout.write((0, index_2.renderLatestReport)(cwd, hasFlag('--json') ? 'json' : 'markdown'));
         return;
     }
     if (command === 'trend') {
-        process.stdout.write((0, index_1.renderTrend)(cwd));
+        process.stdout.write((0, index_2.renderTrend)(cwd));
         return;
     }
     if (command === 'plan') {
         const explicitConfigPath = configPath();
-        process.stdout.write((0, index_1.renderPlan)(cwd, explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
+        process.stdout.write((0, index_2.renderPlan)(cwd, explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
         return;
     }
     if (command === 'govern') {
         const explicitConfigPath = configPath();
-        process.stdout.write((0, index_1.renderGovernance)(cwd, explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
+        process.stdout.write((0, index_2.renderGovernance)(cwd, explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
         return;
     }
     if (command === 'authorize') {
@@ -136,7 +137,7 @@ function main() {
         }
         const action = takeOption('--action') ?? 'merge';
         const explicitConfigPath = configPath();
-        const result = (0, index_1.runAuthorize)(cwd, agentId, action, explicitConfigPath ? { configPath: explicitConfigPath } : undefined);
+        const result = (0, index_2.runAuthorize)(cwd, agentId, action, explicitConfigPath ? { configPath: explicitConfigPath } : undefined);
         process.stdout.write(result.output);
         return;
     }
@@ -148,10 +149,10 @@ function main() {
             const subject = takeOption('--subject');
             const output = takeOption('--out');
             const claims = (takeOption('--claims') ?? '').split(',').filter(Boolean);
-            if (!issuer || !keyId || !privateKey || !subject || !output) {
+            if (issuer === undefined || !keyId || !privateKey || !subject || !output) {
                 throw new Error('attest sign requires --issuer --key-id --private-key --subject --out');
             }
-            process.stdout.write(`${(0, index_1.attestSign)(cwd, issuer, keyId, privateKey, subject, claims, output)}\n`);
+            process.stdout.write(`${(0, index_2.attestSign)(cwd, issuer, keyId, privateKey, subject, claims, output)}\n`);
             return;
         }
         if (subcommand === 'verify') {
@@ -160,13 +161,13 @@ function main() {
             if (!attestation) {
                 throw new Error('attest verify requires --attestation <file>');
             }
-            process.stdout.write((0, index_1.attestVerify)(cwd, attestation, trusted, hasFlag('--json') ? 'json' : 'text'));
+            process.stdout.write((0, index_2.attestVerify)(cwd, attestation, trusted, hasFlag('--json') ? 'json' : 'text'));
             return;
         }
         if (subcommand === 'keygen') {
             const out = path_1.default.resolve(cwd, takeOption('--out-dir') ?? path_1.default.join('.ts-quality', 'keys'));
             const keyId = takeOption('--key-id') ?? 'generated';
-            process.stdout.write((0, index_1.attestGenerateKey)(out, keyId));
+            process.stdout.write((0, index_2.attestGenerateKey)(out, keyId));
             return;
         }
         throw new Error('attest requires subcommand sign|verify|keygen');
@@ -177,7 +178,7 @@ function main() {
             throw new Error('amend requires --proposal <file>');
         }
         const explicitConfigPath = configPath();
-        process.stdout.write((0, index_1.runAmend)(cwd, proposal, hasFlag('--apply'), explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
+        process.stdout.write((0, index_2.runAmend)(cwd, proposal, hasFlag('--apply'), explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
         return;
     }
     throw new Error(`Unknown command ${command}`);
@@ -187,7 +188,7 @@ try {
 }
 catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`${message}\n`);
+    process.stderr.write(`${(0, index_1.renderSafeText)(message)}\n`);
     process.exitCode = 1;
 }
 //# sourceMappingURL=cli.js.map

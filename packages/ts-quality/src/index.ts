@@ -26,8 +26,10 @@ import {
   nowIso,
   readLatestRun,
   resolvePackageName,
+  renderSafeText,
   resolveRepoLocalPath,
   stableStringify,
+  validateAttestationMetadata,
   writeJson,
   writeRunArtifact
 } from '../../evidence-model/src/index';
@@ -396,47 +398,45 @@ function recordSubjectPath(rootDir: string, resolvedSubject: string, originalCan
   throw new Error(`attestation subject must be inside --root: ${originalCandidate}`);
 }
 
-function hasUnsafeControlCharacters(value: string): boolean {
-  return /[\x00-\x1F\x7F\u2028\u2029]/.test(value);
-}
-
 function attestationIssuerContext(attestation: Attestation): { ok: true; issuer: string } | { ok: false; reason: string } {
-  if (!attestation.issuer) {
-    return { ok: false, reason: 'attestation issuer missing' };
-  }
-  if (hasUnsafeControlCharacters(attestation.issuer)) {
-    return { ok: false, reason: 'attestation issuer contains unsupported control characters' };
+  const issue = validateAttestationMetadata(attestation.issuer, 'attestation issuer', { trimEmpty: true });
+  if (issue) {
+    return { ok: false, reason: issue };
   }
   return { ok: true, issuer: attestation.issuer };
 }
 
 function renderVerificationText(value: string): string {
-  const rendered = JSON.stringify(value);
-  return typeof rendered === 'string' && rendered.startsWith('"') && rendered.endsWith('"')
-    ? rendered.slice(1, -1)
-    : value;
+  return renderSafeText(value);
 }
 
 function attestationSubjectContext(attestation: Attestation): { ok: true; context: { subjectFile: string; runId?: string; artifactName?: string } } | { ok: false; reason: string; context?: { subjectFile: string; runId?: string; artifactName?: string } } {
   const subjectFile = typeof attestation.payload?.subjectFile === 'string' ? attestation.payload.subjectFile : undefined;
-  if (!subjectFile) {
+  if (subjectFile === undefined || subjectFile.trim().length === 0) {
     return { ok: false, reason: 'subject file missing from attestation payload' };
   }
   if (path.isAbsolute(subjectFile)) {
     return { ok: false, reason: 'subject file must be repo-relative' };
   }
-  if (hasUnsafeControlCharacters(subjectFile)) {
-    return { ok: false, reason: 'attestation payload subjectFile contains unsupported control characters' };
+  const subjectFileIssue = validateAttestationMetadata(subjectFile, 'attestation payload subjectFile', { trimEmpty: true });
+  if (subjectFileIssue) {
+    return { ok: false, reason: subjectFileIssue };
   }
   const normalizedSubject = normalizePath(subjectFile);
   const scopedSubject = runScopedArtifactReference(normalizedSubject);
   const payloadRunId = typeof attestation.payload?.runId === 'string' ? attestation.payload.runId : undefined;
   const payloadArtifactName = typeof attestation.payload?.artifactName === 'string' ? attestation.payload.artifactName : undefined;
-  if (payloadRunId && hasUnsafeControlCharacters(payloadRunId)) {
-    return { ok: false, reason: 'attestation payload runId contains unsupported control characters', context: { subjectFile: normalizedSubject } };
+  if (payloadRunId !== undefined) {
+    const payloadRunIdIssue = validateAttestationMetadata(payloadRunId, 'attestation payload runId', { trimEmpty: true });
+    if (payloadRunIdIssue) {
+      return { ok: false, reason: payloadRunIdIssue, context: { subjectFile: normalizedSubject } };
+    }
   }
-  if (payloadArtifactName && hasUnsafeControlCharacters(payloadArtifactName)) {
-    return { ok: false, reason: 'attestation payload artifactName contains unsupported control characters', context: { subjectFile: normalizedSubject } };
+  if (payloadArtifactName !== undefined) {
+    const payloadArtifactNameIssue = validateAttestationMetadata(payloadArtifactName, 'attestation payload artifactName', { trimEmpty: true });
+    if (payloadArtifactNameIssue) {
+      return { ok: false, reason: payloadArtifactNameIssue, context: { subjectFile: normalizedSubject } };
+    }
   }
   if (!scopedSubject) {
     if (payloadRunId) {

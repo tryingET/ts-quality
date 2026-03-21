@@ -18,6 +18,41 @@ test('signAttestation and verifyAttestation round-trip', () => {
   assert.equal(result.ok, true);
 });
 
+test('signAttestation rejects blank or unsafe rendered metadata', () => {
+  const pair = legitimacy.generateKeyPair();
+  assert.throws(() => legitimacy.signAttestation({
+    issuer: '   ',
+    keyId: 'ci.verify',
+    privateKeyPem: pair.privateKeyPem,
+    subjectType: 'change-bundle',
+    subjectDigest: 'sha256:abc',
+    claims: ['ci.tests.passed']
+  }), /attestation issuer missing/);
+  assert.throws(() => legitimacy.signAttestation({
+    issuer: 'ci.verify',
+    keyId: 'ci.verify',
+    privateKeyPem: pair.privateKeyPem,
+    subjectType: 'change-bundle',
+    subjectDigest: 'sha256:abc',
+    claims: ['ci.tests.passed'],
+    payload: {
+      subjectFile: 'bundle.json\u0085Subject: injected'
+    }
+  }), /attestation payload subjectFile contains unsupported control characters/);
+  assert.throws(() => legitimacy.signAttestation({
+    issuer: 'ci.verify',
+    keyId: 'ci.verify',
+    privateKeyPem: pair.privateKeyPem,
+    subjectType: 'change-bundle',
+    subjectDigest: 'sha256:abc',
+    claims: ['ci.tests.passed'],
+    payload: {
+      subjectFile: 'bundle.json',
+      runId: 'run-1\u202Eevil'
+    }
+  }), /attestation payload runId contains unsupported control characters/);
+});
+
 
 test('authorizeChange requires override grants to match the overridden scope', () => {
   const decision = legitimacy.authorizeChange(

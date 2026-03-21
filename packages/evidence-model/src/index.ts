@@ -673,6 +673,38 @@ export function normalizePath(value: string): string {
   return normalized.replace(/^\.\//, '').replace(/^\//, '').replace(/\/$/, '');
 }
 
+const UNSAFE_ATTESTATION_METADATA_PATTERN = /[\x00-\x1F\x7F-\x9F\u061C\u200E\u200F\u2028\u2029\u202A-\u202E\u2066-\u2069]/u;
+
+function renderUnsafeCodePoint(value: string): string {
+  const codePoint = value.codePointAt(0);
+  if (codePoint === undefined) {
+    return value;
+  }
+  return codePoint <= 0xFFFF
+    ? `\\u${codePoint.toString(16).padStart(4, '0')}`
+    : `\\u{${codePoint.toString(16)}}`;
+}
+
+export function hasUnsafeAttestationMetadata(value: string): boolean {
+  return UNSAFE_ATTESTATION_METADATA_PATTERN.test(value);
+}
+
+export function renderSafeText(value: string): string {
+  return Array.from(value).map((item) => (hasUnsafeAttestationMetadata(item) ? renderUnsafeCodePoint(item) : item)).join('');
+}
+
+export function validateAttestationMetadata(value: string, field: string, options?: { allowEmpty?: boolean; trimEmpty?: boolean }): string | undefined {
+  const trimEmpty = options?.trimEmpty ?? false;
+  const isEmpty = trimEmpty ? value.trim().length === 0 : value.length === 0;
+  if (!options?.allowEmpty && isEmpty) {
+    return `${field} missing`;
+  }
+  if (hasUnsafeAttestationMetadata(value)) {
+    return `${field} contains unsupported control characters`;
+  }
+  return undefined;
+}
+
 export function createRunId(date = new Date()): string {
   return date.toISOString().replace(/[:.]/g, '-');
 }

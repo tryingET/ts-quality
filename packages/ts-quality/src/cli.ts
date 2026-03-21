@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import path from 'path';
+import { renderSafeText } from '../../evidence-model/src/index';
 import {
   attestGenerateKey,
   attestSign,
@@ -179,7 +180,7 @@ function main(): void {
       const subject = takeOption('--subject');
       const output = takeOption('--out');
       const claims = (takeOption('--claims') ?? '').split(',').filter(Boolean);
-      if (!issuer || !keyId || !privateKey || !subject || !output) {
+      if (issuer === undefined || !keyId || !privateKey || !subject || !output) {
         throw new Error('attest sign requires --issuer --key-id --private-key --subject --out');
       }
       process.stdout.write(`${attestSign(cwd, issuer, keyId, privateKey, subject, claims, output)}\n`);
@@ -220,6 +221,6 @@ try {
   main();
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`${message}\n`);
+  process.stderr.write(`${renderSafeText(message)}\n`);
   process.exitCode = 1;
 }

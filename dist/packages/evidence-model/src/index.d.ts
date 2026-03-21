@@ -410,6 +410,12 @@ export declare function compilerOptionsForRepoFile(rootDir: string, filePath: st
 export declare function resolveRepoImport(rootDir: string, importerPath: string, specifier: string): string | undefined;
 export declare function runtimeMirrorCandidates(sourcePath: string, mirrorRoots?: string[]): string[];
 export declare function normalizePath(value: string): string;
+export declare function hasUnsafeAttestationMetadata(value: string): boolean;
+export declare function renderSafeText(value: string): string;
+export declare function validateAttestationMetadata(value: string, field: string, options?: {
+    allowEmpty?: boolean;
+    trimEmpty?: boolean;
+}): string | undefined;
 export declare function createRunId(date?: Date): string;
 export declare function assertSafeRunId(runId: string): string;
 export declare function ensureDir(dirPath: string): void;

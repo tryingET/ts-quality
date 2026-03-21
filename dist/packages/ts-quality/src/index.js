@@ -316,44 +316,43 @@ function recordSubjectPath(rootDir, resolvedSubject, originalCandidate) {
     }
     throw new Error(`attestation subject must be inside --root: ${originalCandidate}`);
 }
-function hasUnsafeControlCharacters(value) {
-    return /[\x00-\x1F\x7F\u2028\u2029]/.test(value);
-}
 function attestationIssuerContext(attestation) {
-    if (!attestation.issuer) {
-        return { ok: false, reason: 'attestation issuer missing' };
-    }
-    if (hasUnsafeControlCharacters(attestation.issuer)) {
-        return { ok: false, reason: 'attestation issuer contains unsupported control characters' };
+    const issue = (0, index_1.validateAttestationMetadata)(attestation.issuer, 'attestation issuer', { trimEmpty: true });
+    if (issue) {
+        return { ok: false, reason: issue };
     }
     return { ok: true, issuer: attestation.issuer };
 }
 function renderVerificationText(value) {
-    const rendered = JSON.stringify(value);
-    return typeof rendered === 'string' && rendered.startsWith('"') && rendered.endsWith('"')
-        ? rendered.slice(1, -1)
-        : value;
+    return (0, index_1.renderSafeText)(value);
 }
 function attestationSubjectContext(attestation) {
     const subjectFile = typeof attestation.payload?.subjectFile === 'string' ? attestation.payload.subjectFile : undefined;
-    if (!subjectFile) {
+    if (subjectFile === undefined || subjectFile.trim().length === 0) {
         return { ok: false, reason: 'subject file missing from attestation payload' };
     }
     if (path_1.default.isAbsolute(subjectFile)) {
         return { ok: false, reason: 'subject file must be repo-relative' };
     }
-    if (hasUnsafeControlCharacters(subjectFile)) {
-        return { ok: false, reason: 'attestation payload subjectFile contains unsupported control characters' };
+    const subjectFileIssue = (0, index_1.validateAttestationMetadata)(subjectFile, 'attestation payload subjectFile', { trimEmpty: true });
+    if (subjectFileIssue) {
+        return { ok: false, reason: subjectFileIssue };
     }
     const normalizedSubject = (0, index_1.normalizePath)(subjectFile);
     const scopedSubject = runScopedArtifactReference(normalizedSubject);
     const payloadRunId = typeof attestation.payload?.runId === 'string' ? attestation.payload.runId : undefined;
     const payloadArtifactName = typeof attestation.payload?.artifactName === 'string' ? attestation.payload.artifactName : undefined;
-    if (payloadRunId && hasUnsafeControlCharacters(payloadRunId)) {
-        return { ok: false, reason: 'attestation payload runId contains unsupported control characters', context: { subjectFile: normalizedSubject } };
+    if (payloadRunId !== undefined) {
+        const payloadRunIdIssue = (0, index_1.validateAttestationMetadata)(payloadRunId, 'attestation payload runId', { trimEmpty: true });
+        if (payloadRunIdIssue) {
+            return { ok: false, reason: payloadRunIdIssue, context: { subjectFile: normalizedSubject } };
+        }
     }
-    if (payloadArtifactName && hasUnsafeControlCharacters(payloadArtifactName)) {
-        return { ok: false, reason: 'attestation payload artifactName contains unsupported control characters', context: { subjectFile: normalizedSubject } };
+    if (payloadArtifactName !== undefined) {
+        const payloadArtifactNameIssue = (0, index_1.validateAttestationMetadata)(payloadArtifactName, 'attestation payload artifactName', { trimEmpty: true });
+        if (payloadArtifactNameIssue) {
+            return { ok: false, reason: payloadArtifactNameIssue, context: { subjectFile: normalizedSubject } };
+        }
     }
     if (!scopedSubject) {
         if (payloadRunId) {

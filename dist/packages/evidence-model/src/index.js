@@ -9,6 +9,9 @@ exports.compilerOptionsForRepoFile = compilerOptionsForRepoFile;
 exports.resolveRepoImport = resolveRepoImport;
 exports.runtimeMirrorCandidates = runtimeMirrorCandidates;
 exports.normalizePath = normalizePath;
+exports.hasUnsafeAttestationMetadata = hasUnsafeAttestationMetadata;
+exports.renderSafeText = renderSafeText;
+exports.validateAttestationMetadata = validateAttestationMetadata;
 exports.createRunId = createRunId;
 exports.assertSafeRunId = assertSafeRunId;
 exports.ensureDir = ensureDir;
@@ -239,6 +242,33 @@ function runtimeMirrorCandidates(sourcePath, mirrorRoots = ['dist']) {
 function normalizePath(value) {
     const normalized = value.replace(/\\/g, '/').replace(/\/+/g, '/');
     return normalized.replace(/^\.\//, '').replace(/^\//, '').replace(/\/$/, '');
+}
+const UNSAFE_ATTESTATION_METADATA_PATTERN = /[\x00-\x1F\x7F-\x9F\u061C\u200E\u200F\u2028\u2029\u202A-\u202E\u2066-\u2069]/u;
+function renderUnsafeCodePoint(value) {
+    const codePoint = value.codePointAt(0);
+    if (codePoint === undefined) {
+        return value;
+    }
+    return codePoint <= 0xFFFF
+        ? `\\u${codePoint.toString(16).padStart(4, '0')}`
+        : `\\u{${codePoint.toString(16)}}`;
+}
+function hasUnsafeAttestationMetadata(value) {
+    return UNSAFE_ATTESTATION_METADATA_PATTERN.test(value);
+}
+function renderSafeText(value) {
+    return Array.from(value).map((item) => (hasUnsafeAttestationMetadata(item) ? renderUnsafeCodePoint(item) : item)).join('');
+}
+function validateAttestationMetadata(value, field, options) {
+    const trimEmpty = options?.trimEmpty ?? false;
+    const isEmpty = trimEmpty ? value.trim().length === 0 : value.length === 0;
+    if (!options?.allowEmpty && isEmpty) {
+        return `${field} missing`;
+    }
+    if (hasUnsafeAttestationMetadata(value)) {
+        return `${field} contains unsupported control characters`;
+    }
+    return undefined;
 }
 function createRunId(date = new Date()) {
     return date.toISOString().replace(/[:.]/g, '-');

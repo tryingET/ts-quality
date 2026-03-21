@@ -27,6 +27,13 @@ test('stableStringify sorts object keys deterministically', () => {
   assert.ok(text.indexOf('"a"') < text.indexOf('"z"'));
 });
 
+test('attestation metadata helpers flag and render unsafe Unicode deterministically', () => {
+  assert.equal(evidence.hasUnsafeAttestationMetadata('safe-value'), false);
+  assert.equal(evidence.hasUnsafeAttestationMetadata('line\u0085break'), true);
+  assert.equal(evidence.hasUnsafeAttestationMetadata('bidi\u202Eflip'), true);
+  assert.equal(evidence.renderSafeText('safe\nvalue\u202Eflip\u0085next'), 'safe\\u000avalue\\u202eflip\\u0085next');
+});
+
 test('parseUnifiedDiff returns changed regions', () => {
   const regions = evidence.parseUnifiedDiff('+++ b/src/auth/token.js\n@@ -1,2 +1,3 @@\n');
   assert.deepEqual(regions, [{ filePath: 'src/auth/token.js', hunkId: 'hunk-0', span: { startLine: 1, endLine: 3 } }]);

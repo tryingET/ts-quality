@@ -55,6 +55,32 @@ function generateKeyPair() {
     };
 }
 function signAttestation(subject) {
+    const issuerIssue = (0, index_1.validateAttestationMetadata)(subject.issuer, 'attestation issuer', { trimEmpty: true });
+    if (issuerIssue) {
+        throw new Error(issuerIssue);
+    }
+    const payload = subject.payload ?? {};
+    const subjectFile = typeof payload.subjectFile === 'string' ? payload.subjectFile : undefined;
+    if (subjectFile !== undefined) {
+        const subjectFileIssue = (0, index_1.validateAttestationMetadata)(subjectFile, 'attestation payload subjectFile', { trimEmpty: true });
+        if (subjectFileIssue) {
+            throw new Error(subjectFileIssue);
+        }
+    }
+    const runId = typeof payload.runId === 'string' ? payload.runId : undefined;
+    if (runId !== undefined) {
+        const runIdIssue = (0, index_1.validateAttestationMetadata)(runId, 'attestation payload runId', { trimEmpty: true });
+        if (runIdIssue) {
+            throw new Error(runIdIssue);
+        }
+    }
+    const artifactName = typeof payload.artifactName === 'string' ? payload.artifactName : undefined;
+    if (artifactName !== undefined) {
+        const artifactNameIssue = (0, index_1.validateAttestationMetadata)(artifactName, 'attestation payload artifactName', { trimEmpty: true });
+        if (artifactNameIssue) {
+            throw new Error(artifactNameIssue);
+        }
+    }
     const unsigned = {
         version: '1',
         kind: 'attestation',
@@ -63,7 +89,7 @@ function signAttestation(subject) {
         subjectDigest: subject.subjectDigest,
         claims: subject.claims,
         issuedAt: subject.issuedAt ?? new Date().toISOString(),
-        payload: subject.payload ?? {},
+        payload,
         signature: {
             algorithm: 'ed25519',
             keyId: subject.keyId,
