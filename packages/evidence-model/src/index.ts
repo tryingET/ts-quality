@@ -423,6 +423,27 @@ export interface AnalysisContext {
   executionFingerprint: string;
 }
 
+export interface ControlPlaneSnapshot {
+  configPath: string;
+  configDigest: string;
+  policy: {
+    maxChangedCrap: number;
+    minMutationScore: number;
+    minMergeConfidence: number;
+  };
+  constitutionPath: string;
+  constitutionDigest: string;
+  constitution: ConstitutionRule[];
+  agentsPath: string;
+  agentsDigest: string;
+  agents: Agent[];
+  approvalsPath: string;
+  waiversPath: string;
+  overridesPath: string;
+  attestationsDir: string;
+  trustedKeysDir: string;
+}
+
 export interface Verdict {
   mergeConfidence: number;
   outcome: Outcome;
@@ -441,6 +462,7 @@ export interface RunArtifact {
   changedFiles: string[];
   changedRegions: ChangedRegion[];
   analysis?: AnalysisContext | undefined;
+  controlPlane?: ControlPlaneSnapshot | undefined;
   files: FileEntity[];
   symbols: SymbolEntity[];
   coverage: CoverageEvidence[];

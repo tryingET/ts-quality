@@ -198,3 +198,71 @@ test('amend --apply preserves commonjs constitution modules when configured', ()
   result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
 });
+
+test('amend denies duplicate constitution rule ids instead of silently applying them', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const proposalPath = path.join(target, 'proposal-duplicate-id.json');
+  const before = fs.readFileSync(path.join(target, '.ts-quality', 'constitution.ts'), 'utf8');
+  fs.writeFileSync(proposalPath, JSON.stringify({
+    id: 'amend-duplicate-rule-id',
+    title: 'Introduce duplicate rule id',
+    rationale: 'adversarial regression',
+    evidence: ['validated'],
+    changes: [{
+      action: 'add',
+      ruleId: 'payments-maintainer-approval',
+      rule: {
+        kind: 'approval',
+        id: 'payments-maintainer-approval',
+        paths: ['src/payments/**'],
+        message: 'Duplicate rule id should be rejected.',
+        minApprovals: 2,
+        roles: ['maintainer']
+      }
+    }],
+    approvals: [
+      { by: 'maintainer', role: 'maintainer', rationale: 'reject duplicate ids', createdAt: new Date().toISOString(), targetId: 'amend-duplicate-rule-id' }
+    ]
+  }, null, 2));
+
+  const result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath, '--apply'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.outcome, 'denied');
+  assert.match(parsed.reasons[0], /duplicate constitution rule id/);
+  assert.equal(fs.readFileSync(path.join(target, '.ts-quality', 'constitution.ts'), 'utf8'), before);
+});
+
+test('amend denies replace operations that target no existing rule', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const proposalPath = path.join(target, 'proposal-missing-rule.json');
+  const before = fs.readFileSync(path.join(target, '.ts-quality', 'constitution.ts'), 'utf8');
+  fs.writeFileSync(proposalPath, JSON.stringify({
+    id: 'amend-missing-rule',
+    title: 'Replace missing rule',
+    rationale: 'adversarial regression',
+    evidence: ['validated'],
+    changes: [{
+      action: 'replace',
+      ruleId: 'missing-rule',
+      rule: {
+        kind: 'approval',
+        id: 'missing-rule',
+        paths: ['src/payments/**'],
+        message: 'Missing rule should not be replaceable.',
+        minApprovals: 1,
+        roles: ['maintainer']
+      }
+    }],
+    approvals: [
+      { by: 'maintainer', role: 'maintainer', rationale: 'reject missing targets', createdAt: new Date().toISOString(), targetId: 'amend-missing-rule' }
+    ]
+  }, null, 2));
+
+  const result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath, '--apply'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.outcome, 'denied');
+  assert.match(parsed.reasons[0], /targets no existing constitution rule/);
+  assert.equal(fs.readFileSync(path.join(target, '.ts-quality', 'constitution.ts'), 'utf8'), before);
+});

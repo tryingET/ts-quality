@@ -273,6 +273,37 @@ test('authorize denies repository drift after the evaluated run', () => {
   assert.match(decision.reasons[0], /Repository changed since run/);
 });
 
+test('authorize denies control-plane drift after the evaluated run', () => {
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'control-plane-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  fs.writeFileSync(path.join(target, '.ts-quality', 'constitution.ts'), 'export default [];\n', 'utf8');
+  fs.writeFileSync(path.join(target, '.ts-quality', 'agents.ts'), `export default [
+  {
+    id: 'release-bot',
+    kind: 'automation',
+    roles: ['ci'],
+    grants: [
+      {
+        id: 'release-bot-merge',
+        actions: ['merge'],
+        paths: ['src/**'],
+        minMergeConfidence: 0,
+        requireHumanReview: false
+      }
+    ]
+  }
+];
+`, 'utf8');
+
+  result = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'release-bot'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const decision = JSON.parse(result.stdout);
+  assert.equal(decision.outcome, 'deny');
+  assert.match(decision.reasons[0], /control plane drifted/);
+});
+
 test('authorize denies empty authorization scope instead of matching grants vacuously', () => {
   const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-empty-scope-'));
   let result = spawnSync('node', [cli, 'init', '--root', target], { encoding: 'utf8' });

@@ -94,7 +94,7 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.match(governText, /Evidence provenance: explicit 3, inferred 1, missing 1/);
 });
 
-test('check persists analysis context and mutation baseline receipts', () => {
+test('check persists analysis context, mutation baseline receipts, and a run-bound control plane snapshot', () => {
   const target = tempCopyOfFixture('governed-app');
   const check = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
   assert.equal(check.status, 0, check.stderr);
@@ -105,6 +105,13 @@ test('check persists analysis context and mutation baseline receipts', () => {
   assert.equal(run.analysis?.coverageLcovPath, 'coverage/lcov.info');
   assert.deepEqual(run.analysis?.runtimeMirrorRoots, ['dist']);
   assert.equal(run.mutationBaseline?.status, 'pass');
+  assert.equal(run.controlPlane?.configPath, 'ts-quality.config.ts');
+  assert.equal(run.controlPlane?.constitutionPath, '.ts-quality/constitution.ts');
+  assert.equal(run.controlPlane?.agentsPath, '.ts-quality/agents.ts');
+  assert.equal(run.controlPlane?.approvalsPath, '.ts-quality/approvals.json');
+  assert.equal(run.controlPlane?.policy.minMergeConfidence, 65);
+  assert.equal(Array.isArray(run.controlPlane?.constitution), true);
+  assert.equal(Array.isArray(run.controlPlane?.agents), true);
 });
 
 test('trend keeps deltas visible while surfacing the latest risky invariant provenance', () => {
@@ -369,6 +376,20 @@ test('plan and govern surface run drift after check', () => {
   assert.equal(govern.status, 0, govern.stderr);
   assert.match(plan.stdout, /Run drift detected for/);
   assert.match(govern.stdout, /Run drift detected for/);
+});
+
+test('plan and govern surface control-plane drift after check', () => {
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'control-plane-plan-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  fs.appendFileSync(path.join(target, '.ts-quality', 'constitution.ts'), '\n// control-plane drift after check\n', 'utf8');
+
+  const plan = spawnSync('node', [cli, 'plan', '--root', target], { encoding: 'utf8' });
+  const govern = spawnSync('node', [cli, 'govern', '--root', target], { encoding: 'utf8' });
+  assert.equal(plan.status, 0, plan.stderr);
+  assert.equal(govern.status, 0, govern.stderr);
+  assert.match(plan.stdout, /Run drift detected for/);
+  assert.match(govern.stdout, /control plane constitution/);
 });
 
 

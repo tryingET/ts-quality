@@ -41,26 +41,38 @@ export interface GovernancePlan {
   }>;
 }
 
+function stringLikeModuleSpecifier(argument: any): string | undefined {
+  if (!argument) {
+    return undefined;
+  }
+  if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) {
+    return argument.text;
+  }
+  return undefined;
+}
+
 function importsForFile(filePath: string, sourceText: string): string[] {
   const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true);
   const imports: string[] = [];
   function visit(node: any): void {
     if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
-      const specifier = node.moduleSpecifier?.text;
+      const specifier = stringLikeModuleSpecifier(node.moduleSpecifier);
       if (typeof specifier === 'string') {
         imports.push(specifier);
       }
     }
     if (ts.isCallExpression(node) && node.expression?.getText(sourceFile) === 'require' && node.arguments.length === 1) {
       const argument = node.arguments[0];
-      if (ts.isStringLiteral(argument)) {
-        imports.push(argument.text);
+      const specifier = stringLikeModuleSpecifier(argument);
+      if (typeof specifier === 'string') {
+        imports.push(specifier);
       }
     }
     if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments.length === 1) {
       const argument = node.arguments[0];
-      if (ts.isStringLiteral(argument)) {
-        imports.push(argument.text);
+      const specifier = stringLikeModuleSpecifier(argument);
+      if (typeof specifier === 'string') {
+        imports.push(specifier);
       }
     }
     ts.forEachChild(node, visit);
