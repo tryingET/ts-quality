@@ -321,12 +321,24 @@ function uniqueApprovalsForTarget(approvals: Approval[], approvers: Set<string>,
   return [...unique.values()];
 }
 
+const VALID_AMENDMENT_ACTIONS = new Set<AmendmentProposal['changes'][number]['action']>(['add', 'remove', 'replace']);
+
+function isAmendmentChangeAction(action: unknown): action is AmendmentProposal['changes'][number]['action'] {
+  return typeof action === 'string' && VALID_AMENDMENT_ACTIONS.has(action as AmendmentProposal['changes'][number]['action']);
+}
+
 function validateAmendmentChanges(proposal: AmendmentProposal, constitution: ConstitutionRule[]): string[] {
   const reasons: string[] = [];
   const activeRuleIds = new Set(constitution.map((rule) => rule.id));
 
   for (const change of proposal.changes) {
-    if (change.action === 'add') {
+    const action = change.action;
+    if (!isAmendmentChangeAction(action)) {
+      reasons.push(`Amendment change ${change.ruleId} has invalid action ${String(action)}. Valid actions: add, remove, replace.`);
+      continue;
+    }
+
+    if (action === 'add') {
       if (!change.rule) {
         reasons.push(`Amendment add ${change.ruleId} must include a replacement rule.`);
         continue;
@@ -343,7 +355,7 @@ function validateAmendmentChanges(proposal: AmendmentProposal, constitution: Con
       continue;
     }
 
-    if (change.action === 'remove') {
+    if (action === 'remove') {
       if (!activeRuleIds.has(change.ruleId)) {
         reasons.push(`Amendment remove ${change.ruleId} targets no existing constitution rule.`);
         continue;
@@ -572,6 +584,9 @@ export function applyAmendment(proposal: AmendmentProposal, constitution: Consti
   }
   let current = [...constitution];
   for (const change of proposal.changes) {
+    if (!isAmendmentChangeAction(change.action)) {
+      throw new Error(`Amendment change ${change.ruleId} has invalid action ${String(change.action)}. Valid actions: add, remove, replace.`);
+    }
     if (change.action === 'remove') {
       current = current.filter((rule) => rule.id !== change.ruleId);
     } else if (change.action === 'add' && change.rule) {

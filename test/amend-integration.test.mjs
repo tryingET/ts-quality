@@ -199,6 +199,40 @@ test('amend --apply preserves commonjs constitution modules when configured', ()
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('amend denies invalid action values instead of silently ignoring them', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const proposalPath = path.join(target, 'proposal-invalid-action.json');
+  const before = fs.readFileSync(path.join(target, '.ts-quality', 'constitution.ts'), 'utf8');
+  fs.writeFileSync(proposalPath, JSON.stringify({
+    id: 'amend-invalid-action',
+    title: 'Use an invalid amendment action',
+    rationale: 'adversarial regression',
+    evidence: ['validated'],
+    changes: [{
+      action: 'rename',
+      ruleId: 'payments-maintainer-approval',
+      rule: {
+        kind: 'approval',
+        id: 'payments-maintainer-approval',
+        paths: ['src/payments/**'],
+        message: 'Invalid action should be rejected.',
+        minApprovals: 1,
+        roles: ['maintainer']
+      }
+    }],
+    approvals: [
+      { by: 'maintainer', role: 'maintainer', rationale: 'reject invalid action', createdAt: new Date().toISOString(), targetId: 'amend-invalid-action' }
+    ]
+  }, null, 2));
+
+  const result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath, '--apply'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.outcome, 'denied');
+  assert.match(parsed.reasons[0], /invalid action rename/);
+  assert.equal(fs.readFileSync(path.join(target, '.ts-quality', 'constitution.ts'), 'utf8'), before);
+});
+
 test('amend denies duplicate constitution rule ids instead of silently applying them', () => {
   const target = tempCopyOfFixture('governed-app');
   const proposalPath = path.join(target, 'proposal-duplicate-id.json');

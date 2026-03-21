@@ -155,3 +155,18 @@ test('evaluateAmendment counts only unique approvers targeting the proposal id',
   assert.equal(pending.outcome, 'needs-approvals');
   assert.deepEqual(pending.approvalsAccepted, ['maintainer']);
 });
+
+test('evaluateAmendment denies invalid runtime action values', () => {
+  const agents = [{ id: 'maintainer', kind: 'human', roles: ['maintainer'], grants: [] }];
+  const constitution = [{ kind: 'approval', id: 'rule-1', paths: ['src/**'], message: 'x', minApprovals: 1, roles: ['maintainer'] }];
+  const decision = legitimacy.evaluateAmendment({
+    id: 'amend-invalid-action',
+    title: 'bad action',
+    rationale: 'test',
+    evidence: ['validated'],
+    changes: [{ action: 'rename', ruleId: 'rule-1' }],
+    approvals: [{ by: 'maintainer', role: 'maintainer', rationale: 'ok', createdAt: new Date().toISOString(), targetId: 'amend-invalid-action' }]
+  }, constitution, agents);
+  assert.equal(decision.outcome, 'denied');
+  assert.match(decision.reasons[0], /invalid action rename/);
+});
