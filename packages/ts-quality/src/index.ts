@@ -378,17 +378,45 @@ function lexicalRelativePathInsideRoot(rootDir: string, absolutePath: string): s
   return normalizePath(relative);
 }
 
-function recordSubjectPath(rootDir: string, resolvedSubject: string, originalCandidate: string): string {
+function remapCliRepoLocalError(error: unknown, kind: string, candidate: string): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.startsWith(`${kind} must stay inside repository root:`)) {
+    throw new Error(`${kind} must be inside --root: ${candidate}`);
+  }
+  if (message.startsWith(`${kind} not found:`)) {
+    throw new Error(`${kind} not found: ${candidate}`);
+  }
+  throw error instanceof Error ? error : new Error(message);
+}
+
+function resolveCliRepoLocalPath(rootDir: string, candidate: string, options?: { allowMissing?: boolean; kind?: string; preferRoot?: boolean }): { absolutePath: string; relativePath: string; canonicalPath: string } {
+  const pathOptions = options?.preferRoot !== undefined ? { preferRoot: options.preferRoot } : undefined;
+  const resolvedCandidate = resolveCliPath(rootDir, candidate, pathOptions);
+  const resolutionOptions: { allowMissing?: boolean; kind?: string } = {};
+  if (options?.allowMissing !== undefined) {
+    resolutionOptions.allowMissing = options.allowMissing;
+  }
+  if (options?.kind !== undefined) {
+    resolutionOptions.kind = options.kind;
+  }
   try {
-    resolveRepoLocalPath(rootDir, resolvedSubject, { kind: 'attestation subject' });
-  } catch {
-    throw new Error(`attestation subject must be inside --root: ${originalCandidate}`);
+    return resolveRepoLocalPath(rootDir, resolvedCandidate, resolutionOptions);
+  } catch (error) {
+    remapCliRepoLocalError(error, options?.kind ?? 'path', candidate);
   }
-  const relative = lexicalRelativePathInsideRoot(rootDir, resolvedSubject);
-  if (relative) {
-    return relative;
+}
+
+function resolveCliAttestationSubject(rootDir: string, candidate: string, options?: { allowMissing?: boolean }): { absolutePath: string; canonicalPath: string; recordedPath: string } {
+  const resolution = resolveCliRepoLocalPath(rootDir, candidate, options?.allowMissing !== undefined ? { allowMissing: options.allowMissing, kind: 'attestation subject' } : { kind: 'attestation subject' });
+  const recordedPath = lexicalRelativePathInsideRoot(rootDir, resolution.absolutePath);
+  if (!recordedPath) {
+    throw new Error(`attestation subject must be inside --root: ${candidate}`);
   }
-  throw new Error(`attestation subject must be inside --root: ${originalCandidate}`);
+  return {
+    absolutePath: resolution.absolutePath,
+    canonicalPath: resolution.canonicalPath,
+    recordedPath
+  };
 }
 
 function renderVerificationText(value: string): string {
@@ -411,30 +439,29 @@ function verifyAttestationRecordAtRoot(rootDir: string, source: string, attestat
   if (!contract.ok) {
     return { ...record, reason: contract.reason };
   }
-  const signature = verifyAttestation(attestation, trustedKeys);
-  if (!signature.ok) {
-    return { ...record, reason: signature.reason };
-  }
   const subjectFile = contextFields.subjectFile;
   if (!subjectFile) {
     return { ...record, reason: 'subject file missing from attestation payload' };
   }
-  let resolvedSubject: string;
+  let subjectResolution: { absolutePath: string; relativePath: string; canonicalPath: string };
   let relativeSubject: string | undefined;
   try {
-    const subjectResolution = resolveRepoLocalPath(rootDir, subjectFile, { allowMissing: true, kind: 'attestation subject' });
-    resolvedSubject = subjectResolution.absolutePath;
-    relativeSubject = lexicalRelativePathInsideRoot(rootDir, resolvedSubject);
+    subjectResolution = resolveRepoLocalPath(rootDir, subjectFile, { allowMissing: true, kind: 'attestation subject' });
+    relativeSubject = lexicalRelativePathInsideRoot(rootDir, subjectResolution.absolutePath);
   } catch {
     return { ...record, reason: 'subject file escapes repository root' };
   }
   if (!relativeSubject || relativeSubject !== subjectFile) {
     return { ...record, reason: 'subject file escapes repository root' };
   }
-  if (!fs.existsSync(resolvedSubject)) {
+  if (!fs.existsSync(subjectResolution.canonicalPath)) {
     return { ...record, reason: `subject file missing: ${subjectFile}` };
   }
-  const digest = digestObject(fs.readFileSync(resolvedSubject, 'utf8'));
+  const signature = verifyAttestation(attestation, trustedKeys);
+  if (!signature.ok) {
+    return { ...record, reason: signature.reason };
+  }
+  const digest = digestObject(fs.readFileSync(subjectResolution.canonicalPath, 'utf8'));
   if (digest !== attestation.subjectDigest) {
     return { ...record, reason: 'subject digest mismatch' };
   }
@@ -944,20 +971,19 @@ export function runAuthorize(rootDir: string, agentId: string, action: string, o
 }
 
 export function attestSign(rootDir: string, issuer: string, keyId: string, privateKeyPath: string, subjectFile: string, claims: string[], outputPath: string): string {
-  const resolvedSubject = resolveCliPath(rootDir, subjectFile);
+  const resolvedSubject = resolveCliAttestationSubject(rootDir, subjectFile);
   const resolvedKey = resolveCliPath(rootDir, privateKeyPath);
-  const recordedSubjectPath = recordSubjectPath(rootDir, resolvedSubject, subjectFile);
-  const scopedSubject = runScopedArtifactReference(recordedSubjectPath);
-  const subjectText = fs.readFileSync(resolvedSubject, 'utf8');
+  const scopedSubject = runScopedArtifactReference(resolvedSubject.recordedPath);
+  const subjectText = fs.readFileSync(resolvedSubject.canonicalPath, 'utf8');
   const attestation = signAttestation({
     issuer,
     keyId,
     privateKeyPem: fs.readFileSync(resolvedKey, 'utf8'),
-    subjectType: path.extname(resolvedSubject) === '.json' ? 'json-artifact' : 'file',
+    subjectType: path.extname(resolvedSubject.canonicalPath) === '.json' ? 'json-artifact' : 'file',
     subjectDigest: digestObject(subjectText),
     claims,
     payload: {
-      subjectFile: recordedSubjectPath,
+      subjectFile: resolvedSubject.recordedPath,
       ...(scopedSubject ? { runId: scopedSubject.runId, artifactName: scopedSubject.artifactName } : {})
     }
   });

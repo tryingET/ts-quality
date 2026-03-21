@@ -57,10 +57,14 @@ $ npm test --silent
 ✔ attest sign treats a missing issuer value before another flag as missing input (<duration-ms>)
 ✔ attest sign accepts issuer values that begin with dashes via --option=value syntax (<duration-ms>)
 ✔ attest sign rejects unknown flags instead of swallowing them as option values (<duration-ms>)
+✔ attest sign rejects verify-only flags instead of silently ignoring them (<duration-ms>)
+✔ attest sign rejects unexpected positional arguments (<duration-ms>)
 ✔ attest sign escapes unsafe subject paths in operator-facing errors (<duration-ms>)
 ✔ attest sign rejects symlinked subjects that resolve outside --root (<duration-ms>)
+✔ attest sign reports missing repo-local subjects as missing input (<duration-ms>)
 ✔ attest verify keeps signed subject context visible when verification fails (<duration-ms>)
 ✔ attest verify rejects symlinked signed subjects that resolve outside --root (<duration-ms>)
+✔ attest verify prioritizes subject escapes before missing trusted keys (<duration-ms>)
 ✔ check writes the same attestation verification framing used by the CLI verify path (<duration-ms>)
 ✔ attest verify rejects signed artifactName drift instead of masking it with the subject path (<duration-ms>)
 ✔ attest verify keeps run-scoped context for nested artifacts under a run directory (<duration-ms>)
@@ -151,9 +155,9 @@ $ npm test --silent
 ✔ runMutations supports custom runtime mirror roots for built output outside dist (<duration-ms>)
 ✔ runMutations mirrors root-level sources into configured built runtime roots (<duration-ms>)
 ✔ runMutations ignores inherited NODE_TEST_CONTEXT and keeps mutation outcomes deterministic (<duration-ms>)
-ℹ tests 131
+ℹ tests 135
 ℹ suites 0
-ℹ pass 131
+ℹ pass 135
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0

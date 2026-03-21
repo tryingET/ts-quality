@@ -9,10 +9,21 @@ fs.mkdirSync(verificationDir, { recursive: true });
 const logPath = path.join(verificationDir, 'verification.log');
 const lines = [];
 
+function sanitizeLogLine(line) {
+  return line
+    .replace(/(\baudited \d+ packages in )\d+(?:\.\d+)?ms\b/, '$1<duration-ms>')
+    .replace(/(\badded \d+ packages in )\d+(?:\.\d+)?ms\b/, '$1<duration-ms>')
+    .replace(/(\bremoved \d+ packages in )\d+(?:\.\d+)?ms\b/, '$1<duration-ms>')
+    .replace(/(\bchanged \d+ packages in )\d+(?:\.\d+)?ms\b/, '$1<duration-ms>')
+    .replace(/\(\d+(?:\.\d+)?ms\)$/u, '(<duration-ms>)')
+    .replace(/(ℹ duration_ms )\d+(?:\.\d+)?$/u, '$1<duration-ms>');
+}
+
 function sanitizeLogFragment(value) {
   return value
-    .replace(/\b\d+(?:\.\d+)?ms\b/g, '<duration-ms>')
-    .replace(/(ℹ duration_ms )\d+(?:\.\d+)?/g, '$1<duration-ms>');
+    .split('\n')
+    .map((line) => sanitizeLogLine(line))
+    .join('\n');
 }
 
 function run(command, args) {

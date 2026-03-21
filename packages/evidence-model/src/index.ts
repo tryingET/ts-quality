@@ -518,7 +518,7 @@ function resolvedPathForContainment(candidatePath: string): string {
   return tail.reduce((resolvedPath, segment) => path.join(resolvedPath, segment), resolvedExistingPath);
 }
 
-export function resolveRepoLocalPath(rootDir: string, candidate: string, options?: { allowMissing?: boolean; kind?: string }): { absolutePath: string; relativePath: string } {
+export function resolveRepoLocalPath(rootDir: string, candidate: string, options?: { allowMissing?: boolean; kind?: string }): { absolutePath: string; relativePath: string; canonicalPath: string } {
   const absoluteRoot = path.resolve(rootDir);
   const resolvedRoot = fs.realpathSync(absoluteRoot);
   const absolutePath = path.isAbsolute(candidate) ? path.resolve(candidate) : path.resolve(absoluteRoot, candidate);
@@ -531,7 +531,7 @@ export function resolveRepoLocalPath(rootDir: string, candidate: string, options
   if (!options?.allowMissing && !fs.existsSync(absolutePath)) {
     throw new Error(`${kind} not found: ${candidate}`);
   }
-  return { absolutePath, relativePath };
+  return { absolutePath, relativePath, canonicalPath: resolvedCandidatePath };
 }
 
 function importResolutionCandidates(basePath: string): string[] {
