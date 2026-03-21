@@ -18,7 +18,8 @@
     "sample-artifacts": "node scripts/generate-samples.mjs",
     "smoke": "node scripts/smoke.mjs",
     "verify": "node scripts/verify.mjs",
-    "clean": "node scripts/clean.mjs"
+    "clean": "node scripts/clean.mjs",
+    "pack:ts-quality": "node scripts/pack-ts-quality.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

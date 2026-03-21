@@ -160,27 +160,29 @@ cd <staged-package-dir>
 npm publish --access public
 ```
 
-## Recommended first follow-up automation
+## Deterministic packaging helper
 
-Before the first real npm publish, add a deterministic helper such as:
+This repo now includes a deterministic helper:
 
-- `scripts/prepare-npm-package.mjs`
-- or `npm run pack:ts-quality`
+- `npm run pack:ts-quality`
 
-That helper should:
+It performs the current staged-package strategy by:
 
-1. create a clean staged package directory
-2. copy built files into publish-correct relative paths
-3. write a publish-ready `package.json`
-4. copy `README.md` and `LICENSE`
-5. run `npm pack` as the final local proof step
+1. creating a clean staging directory under `.ts-quality/npm/ts-quality/package`
+2. copying built files into publish-correct relative paths
+3. writing a publish-ready `package.json`
+4. copying `README.md` and `LICENSE`
+5. running `npm pack`
+6. writing the tarball to `.ts-quality/npm/ts-quality/tarballs/`
+
+Use that helper as the default local proof step before any public publish.
 
 ## Definition of done for “npm-publishable”
 
 `ts-quality` is ready for npm when all of the following are true:
 
 - a fresh machine can install the packed tarball without repo-relative path breakage
-- `npx ts-quality --help` works from the installed tarball
+- `./node_modules/.bin/ts-quality --help` works from the installed tarball
 - published metadata is complete and public-facing surfaces look intentional
 - release validation passes from repo root
 - the packaging path is deterministic and documented, not a one-off manual shell ritual
