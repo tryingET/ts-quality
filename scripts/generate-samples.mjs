@@ -78,7 +78,9 @@ function normalizeRunArtifact(run, target) {
       ? {
           ...run.mutationBaseline,
           durationMs: 0,
-          details: normalizeTimingText(run.mutationBaseline.details)
+          details: run.mutationBaseline.status === 'pass'
+            ? 'Baseline test command passed.'
+            : normalizeTimingText(run.mutationBaseline.details)
         }
       : run.mutationBaseline,
     mutations: run.mutations.map((result) => ({

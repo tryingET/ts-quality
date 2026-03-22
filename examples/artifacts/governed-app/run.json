@@ -509,7 +509,7 @@
     }
   ],
   "mutationBaseline": {
-    "details": "✔ active token before expiry allows access (0ms)\n✔ missing token denies access (0ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 0",
+    "details": "Baseline test command passed.",
     "durationMs": 0,
     "exitCode": 0,
     "status": "pass"
