@@ -1,6 +1,6 @@
 $ npm ci --ignore-scripts --no-audit --no-fund
 
-added 1 package in 248ms
+added 1 package in 243ms
 
 
 exit=0

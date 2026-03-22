@@ -516,7 +516,7 @@
   },
   "mutations": [
     {
-      "details": "✔ active token before expiry allows access (0ms)\n✔ missing token denies access (0ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 0",
+      "details": "Mutation survived for src/auth/token.js (sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15).",
       "durationMs": 0,
       "filePath": "src/auth/token.js",
       "kind": "mutation-result",
@@ -524,7 +524,7 @@
       "status": "survived"
     },
     {
-      "details": "✔ active token before expiry allows access (0ms)\n✔ missing token denies access (0ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 0",
+      "details": "Mutation survived for src/auth/token.js (sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20).",
       "durationMs": 0,
       "filePath": "src/auth/token.js",
       "kind": "mutation-result",
@@ -532,7 +532,7 @@
       "status": "survived"
     },
     {
-      "details": "✔ active token before expiry allows access (0ms)\n✔ missing token denies access (0ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 0",
+      "details": "Mutation survived for src/auth/token.js (sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8).",
       "durationMs": 0,
       "filePath": "src/auth/token.js",
       "kind": "mutation-result",
@@ -540,7 +540,7 @@
       "status": "survived"
     },
     {
-      "details": "✖ active token before expiry allows access (0ms)\n✔ missing token denies access (0ms)\nℹ tests 2\nℹ suites 0\nℹ pass 1\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 0\n\n✖ failing tests:\n\n<truncated failure output>",
+      "details": "Mutation killed for src/auth/token.js (sha256:487f38e332d7dba3ce182d5e19378721fe317f956ba1da67310040b207e1fd5d).",
       "durationMs": 0,
       "filePath": "src/auth/token.js",
       "kind": "mutation-result",

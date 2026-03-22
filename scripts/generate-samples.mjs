@@ -90,6 +90,10 @@ function normalizeTimingText(text) {
     .join('\n');
 }
 
+function stableMutationDetail(result) {
+  return `Mutation ${result.status} for ${result.filePath} (${result.siteId}).`;
+}
+
 function normalizeRunArtifact(run, target) {
   return {
     ...run,
@@ -120,7 +124,7 @@ function normalizeRunArtifact(run, target) {
     mutations: run.mutations.map((result) => ({
       ...result,
       durationMs: 0,
-      details: normalizeTimingText(result.details)
+      details: stableMutationDetail(result)
     })),
     verdict: {
       ...run.verdict,
