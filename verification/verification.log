@@ -1,3 +1,9 @@
+$ npm ci --ignore-scripts --no-audit --no-fund
+
+added 1 package in 246ms
+
+
+exit=0
 $ npm run build --silent
 
 

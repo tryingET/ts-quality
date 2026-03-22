@@ -10,6 +10,7 @@ type: "reference"
 
 The following commands were executed successfully:
 
+- `npm ci --ignore-scripts --no-audit --no-fund`
 - `npm run build --silent`
 - `npm run typecheck --silent`
 - `npm run lint --silent`

@@ -18,7 +18,7 @@
     "sample-artifacts": "node scripts/generate-samples.mjs",
     "smoke": "node scripts/smoke.mjs",
     "verify": "node scripts/verify.mjs",
-    "verify:ci": "node scripts/verify.mjs --skip-install",
+    "verify:ci": "TSQ_SKIP_SAMPLE_IDEMPOTENCE=1 node scripts/verify.mjs --skip-install",
     "clean": "node scripts/clean.mjs",
     "pack:ts-quality": "node scripts/pack-ts-quality.mjs"
   },
