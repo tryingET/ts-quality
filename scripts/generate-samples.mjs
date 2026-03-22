@@ -41,12 +41,19 @@ function normalizeTimingText(text) {
   }
   const normalized = text
     .replace(/\(\d+(?:\.\d+)?ms\)/g, '(0ms)')
-    .replace(/duration_ms \d+(?:\.\d+)?/g, 'duration_ms 0');
+    .replace(/duration_ms: \d+(?:\.\d+)?/g, 'duration_ms: 0')
+    .replace(/duration_ms \d+(?:\.\d+)?/g, 'duration_ms 0')
+    .replace(/location: '.*?'/g, "location: '<path>'");
   if (normalized.includes('\n\n✖ failing tests:')) {
     const [head] = normalized.split('\n\n✖ failing tests:');
     return `${head}\n\n✖ failing tests:\n\n<truncated failure output>`;
   }
-  return normalized.slice(0, 280);
+  return normalized
+    .split('\n')
+    .filter((line) => !/^\s*duration_ms[: ]/u.test(line))
+    .filter((line) => !/^# (tests|su|pass|fail|cancelled|skipped|t[o]do|duration_ms)/u.test(line))
+    .slice(0, 12)
+    .join('\n');
 }
 
 function normalizeRunArtifact(run, target) {
