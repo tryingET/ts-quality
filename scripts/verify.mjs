@@ -40,7 +40,7 @@ function run(command, args) {
 }
 
 function snapshotDirectory(dir) {
-  const entries = [];
+  const entries = new Map();
   function walk(currentDir) {
     for (const entry of fs.readdirSync(currentDir, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))) {
       const absolute = path.join(currentDir, entry.name);
@@ -50,11 +50,29 @@ function snapshotDirectory(dir) {
       }
       const relative = path.relative(dir, absolute).replace(/\\/g, '/');
       const digest = crypto.createHash('sha256').update(fs.readFileSync(absolute)).digest('hex');
-      entries.push(`${relative}:${digest}`);
+      entries.set(relative, digest);
     }
   }
   walk(dir);
-  return entries.join('\n');
+  return entries;
+}
+
+function formatSnapshot(snapshot) {
+  return [...snapshot.entries()].map(([relative, digest]) => `${relative}:${digest}`).join('\n');
+}
+
+function diffSnapshots(left, right) {
+  const files = [...new Set([...left.keys(), ...right.keys()])].sort((a, b) => a.localeCompare(b));
+  const changes = [];
+  for (const file of files) {
+    const before = left.get(file);
+    const after = right.get(file);
+    if (before === after) {
+      continue;
+    }
+    changes.push(`${file}: ${before ?? '<missing>'} -> ${after ?? '<missing>'}`);
+  }
+  return changes;
 }
 
 function assertVerifiedSampleAttestation(sampleArtifactsDir) {
@@ -79,8 +97,9 @@ const firstSampleSnapshot = snapshotDirectory(sampleArtifactsDir);
 run('npm', ['run', 'sample-artifacts', '--silent']);
 assertVerifiedSampleAttestation(sampleArtifactsDir);
 const secondSampleSnapshot = snapshotDirectory(sampleArtifactsDir);
-if (firstSampleSnapshot !== secondSampleSnapshot) {
-  throw new Error('Verification step failed: sample artifacts drifted across consecutive generation passes');
+if (formatSnapshot(firstSampleSnapshot) !== formatSnapshot(secondSampleSnapshot)) {
+  const changes = diffSnapshots(firstSampleSnapshot, secondSampleSnapshot);
+  throw new Error(`Verification step failed: sample artifacts drifted across consecutive generation passes\n${changes.join('\n')}`);
 }
 run('npm', ['run', 'smoke', '--silent']);
 

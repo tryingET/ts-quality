@@ -175,4 +175,5 @@ if (fs.existsSync(maintainerDecisionPath)) {
 fs.copyFileSync(path.join(target, '.ts-quality', 'attestations', 'ci.tests.passed.json'), path.join(outDir, 'attestation.ci.verification.json'));
 fs.copyFileSync(path.join(runDir, 'attestation.verify.txt'), path.join(outDir, 'attestation.verify.txt'));
 fs.writeFileSync(path.join(outDir, 'amend.json'), amendOut, 'utf8');
+fs.rmSync(SAMPLE_REPO_DIR, { recursive: true, force: true });
 console.log(`sample-artifacts: ok -> ${outDir}`);
