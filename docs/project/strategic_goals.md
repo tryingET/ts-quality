@@ -1,5 +1,5 @@
 ---
-summary: "Strategic handoff with SG3 active: packaging proof is now the live outside-repo adoption wave, while projection/verification authority decisions remain the next contract-first follow-on."
+summary: "Strategic handoff with SG3 still active: packaged-proof coverage landed, package-contract hardening is now the live SG3 wave, and SG4 remains the next contract-first follow-on."
 read_when:
   - "When deciding the next major bets for ts-quality"
   - "When reconciling vision.md with the current repo-local direction posture"
@@ -11,14 +11,14 @@ type: "reference"
 ## Active strategic goal
 
 ### SG3 — Prove first outside-repo adoption through deterministic packaging and release ergonomics
-- **Why now:** SG2's amendment-output wave is materially complete through `task:1711-1713`, so the next unfinished repo-local bet is no longer another legitimacy surface. The repo already ships a staged packaging helper (`npm run pack:ts-quality`), public README/release surfaces, and an npm publishing checklist, and the staged tarball path now deserves active task coverage instead of staying a manual release-memory exercise.
-- **Success signal:** `ts-quality` can be staged, installed into a fresh temp project, and exercised through automated repo-local proof that the CLI and public module entrypoint load without repo-relative breakage; release/operator docs stay downstream of that proof instead of hand-wavy manual sequencing.
+- **Why now:** TG8's staged-tarball proof wave is now materially complete through `task:1722-1724`, so SG3's next unfinished repo-local bet is no longer install proof itself. The repo can now stage, install, and exercise the packaged CLI/API under repo-local validation, but the public package contract is still too implicit: staged manifest fields, staged file boundaries, and final tarball contents can still drift without an intentional fail-closed contract.
+- **Success signal:** `ts-quality` keeps a deterministic staged-package proof path **and** validates the public package contract it is proving: manifest metadata, staged file boundaries, packed tarball contents, and downstream release/operator surfaces all stay aligned with the shipped package instead of depending on release-memory or accidental file layout.
 - **Eisenhower-3D:** importance `4`, urgency `3`, difficulty `3`
 
 ## Next strategic goal
 
 ### SG4 — Settle repo-local projection and verification artifact authority without drifting from AK
-- **Why next:** deferred tasks `task:190-191` show real unfinished repo-local process work around whether `next_session_prompt.md`, `docs/project/*`, `governance/work-items.json`, `VERIFICATION.md`, and `verification/verification.log` are manually synchronized projections or generated artifacts. That work is real, but it is still contract-first and should not displace the newly active SG3 execution wave.
+- **Why next:** deferred tasks `task:190-191` still show real unfinished repo-local process work around whether `next_session_prompt.md`, `docs/project/*`, `governance/work-items.json`, `VERIFICATION.md`, and `verification/verification.log` are manually synchronized projections or generated artifacts. That work remains real, but it is still contract-first and should not displace the active SG3 package-contract wave while release-readiness truth is still unfinished.
 - **Success signal:** repo-local handoff and verification artifacts have explicit ownership/generation contracts, so deferred automation or cleanup can be promoted later without accidentally changing authority boundaries or live source-of-truth rules.
 - **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `3`
 

@@ -1,7 +1,5 @@
 $ npm ci --ignore-scripts --no-audit --no-fund
 
-added 1 package in 275ms
-
 
 exit=0
 $ npm run build --silent
@@ -126,6 +124,7 @@ $ npm test --silent
 ✔ resolveRepoLocalPath rejects symlink escapes outside the repository root (<duration-ms>)
 ✔ concise operator outputs keep stable provenance framing (<duration-ms>)
 ✔ authorization sample keeps exact run-bound evidence context (<duration-ms>)
+✔ amendment sample keeps exact proposal-context output parity (<duration-ms>)
 ✔ attestation verification sample keeps exact signed subject context (<duration-ms>)
 ✔ evaluateGovernance catches extensionless forbidden imports (<duration-ms>)
 ✔ evaluateGovernance catches forbidden imports resolved through tsconfig path aliases (<duration-ms>)
@@ -156,6 +155,7 @@ $ npm test --silent
 ✔ evaluateAmendment enforces maintainer approvals and evidence (<duration-ms>)
 ✔ evaluateAmendment counts only unique approvers targeting the proposal id (<duration-ms>)
 ✔ evaluateAmendment denies invalid runtime action values (<duration-ms>)
+✔ staged tarball smoke hardens packaged CLI and API proof points from a fresh temp project (<duration-ms>)
 ✔ evaluatePolicy reduces confidence for survivors and low mutation score (<duration-ms>)
 ✔ evaluatePolicy blocks when mutation pressure is missing instead of scoring it as perfect (<duration-ms>)
 ✔ evaluatePolicy applies active waivers (<duration-ms>)
@@ -183,9 +183,11 @@ $ npm test --silent
 ✔ runMutations mirrors root-level sources into configured built runtime roots (<duration-ms>)
 ✔ runMutations ignores inherited NODE_TEST_CONTEXT and keeps mutation outcomes deterministic (<duration-ms>)
 ✔ runMutations invalidates cached results when arbitrary execution environment changes (<duration-ms>)
-ℹ tests 165
+✔ verification plan gates staged packaging smoke after repo smoke (<duration-ms>)
+✔ verification plan only includes npm ci when install is not skipped (<duration-ms>)
+ℹ tests 169
 ℹ suites 0
-ℹ pass 165
+ℹ pass 169
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
@@ -206,6 +208,60 @@ sample-artifacts: ok -> /home/tryinget/ai-society/softwareco/owned/ts-quality/ex
 exit=0
 $ npm run smoke --silent
 smoke: ok
+
+
+exit=0
+$ npm run smoke:packaging --silent
+{
+  "packageName": "ts-quality",
+  "version": "0.1.0",
+  "stageDir": ".ts-quality/npm/ts-quality/package",
+  "tarball": ".ts-quality/npm/ts-quality/tarballs/ts-quality-0.1.0.tgz",
+  "entrypoints": {
+    "main": "dist/packages/ts-quality/src/index.js",
+    "types": "dist/packages/ts-quality/src/index.d.ts",
+    "bin": "dist/packages/ts-quality/src/cli.js",
+    "exportDefault": "./dist/packages/ts-quality/src/index.js",
+    "exportTypes": "./dist/packages/ts-quality/src/index.d.ts"
+  },
+  "cli": {
+    "helpIncludes": "ts-quality commands:",
+    "initCreated": [
+      "ts-quality.config.ts",
+      ".ts-quality/invariants.ts",
+      ".ts-quality/constitution.ts",
+      ".ts-quality/agents.ts",
+      ".ts-quality/approvals.json",
+      ".ts-quality/waivers.json",
+      ".ts-quality/overrides.json",
+      ".ts-quality/keys/sample.pem",
+      ".ts-quality/keys/sample.pub.pem"
+    ],
+    "materializedConfig": ".ts-quality/materialized/ts-quality.config.json"
+  },
+  "api": {
+    "exportTypes": {
+      "initProject": "function",
+      "materializeProject": "function"
+    },
+    "materializeConfig": ".ts-quality/materialized/ts-quality.config.json",
+    "materializeOutDir": ".ts-quality/materialized",
+    "materializedFiles": [
+      ".ts-quality/materialized/invariants.json",
+      ".ts-quality/materialized/constitution.json",
+      ".ts-quality/materialized/agents.json",
+      ".ts-quality/materialized/approvals.json",
+      ".ts-quality/materialized/waivers.json",
+      ".ts-quality/materialized/overrides.json",
+      ".ts-quality/materialized/ts-quality.config.json"
+    ]
+  },
+  "typesCheck": {
+    "compiler": "tsc",
+    "passed": true,
+    "importStatement": "import { initProject, materializeProject } from 'ts-quality';"
+  }
+}
 
 
 exit=0

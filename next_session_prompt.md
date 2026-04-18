@@ -1,5 +1,5 @@
 ---
-summary: "Active handoff: SG3 packaging proof is now live, with task 1722 ready to codify staged tarball install smoke coverage."
+summary: "Active handoff: TG9 package-contract hardening is now live, with task 1731 ready to codify the staged package manifest contract."
 read_when:
   - "At the start of every work session"
   - "When resuming work in ts-quality after a pause"
@@ -14,8 +14,8 @@ Do not ask for permission to start.
 
 ## ACTIVE GOAL STACK
 - **Strategic goal:** SG3 — prove first outside-repo adoption through deterministic packaging and release ergonomics
-- **Tactical goal:** TG8 — prove staged tarball install/load behavior from a fresh temp project
-- **Operating slice:** OP1 — add staged tarball install smoke coverage (`task:1722`)
+- **Tactical goal:** TG9 — lock publish-correct staged package metadata and file boundaries
+- **Operating slice:** OP1 — assert staged package manifest contract (`task:1731`)
 
 ## START HERE
 1. Run `ak --doctor`
@@ -29,20 +29,20 @@ Do not ask for permission to start.
    ```bash
    ak task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
    ```
-4. If `task:1722` is ready, claim it and codify staged tarball install smoke coverage before touching CLI/API proof hardening or verification gating.
+4. If `task:1731` is ready, claim it and codify the staged package manifest contract before touching staged file-boundary or tarball file-set checks.
 
 ## CURRENT QUEUE TRUTH
 Ready now:
-- `#1722` — add staged tarball install smoke coverage
+- `#1731` — assert staged package manifest contract
 
 Sequenced behind it:
-- `#1723` — harden staged package CLI/API proof points
-- `#1724` — gate staged tarball proof in repo verification
+- `#1732` — assert staged package file-boundary contract
+- `#1733` — assert packed tarball file-set contract
 
 Just completed:
-- `#1711` — surface additive proposal context in amendment decisions
-- `#1712` — align amendment sample/docs with proposal-context contract
-- `#1713` — add parity coverage for amendment proposal-context output
+- `#1722` — add staged tarball install smoke coverage
+- `#1723` — harden staged package CLI/API proof points
+- `#1724` — gate staged tarball proof in repo verification
 
 Still deferred with AK binding:
 - `#190` — automate AK-to-handoff projection sync
@@ -58,13 +58,14 @@ Still deferred with AK binding:
 7. `docs/npm-publishing-checklist.md`
 8. `packages/ts-quality/package.json`
 9. `scripts/pack-ts-quality.mjs`
-10. `scripts/verify.mjs`
-11. `docs/releases/2026-03-20-v0.1.0-github-release-draft.md`
+10. `scripts/packaging-smoke.mjs`
+11. `scripts/verify.mjs`
+12. `docs/releases/2026-03-20-v0.1.0-github-release-draft.md`
 
 ## EXECUTION RULES
 - Keep the staged package downstream of the repo-root build; do not invent a second hidden build topology.
-- Prove packaged behavior from a fresh temp project, not from workspace-relative paths that consumers will not have.
-- Keep release/docs promises downstream of packaged proof.
+- Prove package-contract truth from the staged directory and the packed tarball, not from workspace-relative assumptions.
+- Keep release/docs promises downstream of the proven package contract.
 - Update `docs/project/*`, `next_session_prompt.md`, diary, and `governance/work-items.json` when queue truth changes.
 - If docs change, run `node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict`.
 

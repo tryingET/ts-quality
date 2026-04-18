@@ -18,5 +18,6 @@ The following commands were executed successfully:
 - `npm run sample-artifacts --silent`
 - second `npm run sample-artifacts --silent` idempotence check over `examples/artifacts/governed-app`
 - `npm run smoke --silent`
+- `npm run smoke:packaging --silent`
 
 Log: `verification/verification.log`

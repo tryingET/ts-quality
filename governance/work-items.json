@@ -316,34 +316,73 @@
         {
           "id": "AK-TASK-1722",
           "title": "ts-quality: add staged tarball install smoke coverage",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: add staged tarball install smoke coverage (task #1722)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-18"
         },
         {
           "id": "AK-TASK-1723",
           "title": "ts-quality: harden staged package CLI/API proof points",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: harden staged package CLI/API proof points (task #1723)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-18"
+        },
+        {
+          "id": "AK-TASK-1724",
+          "title": "ts-quality: gate staged tarball proof in repo verification",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: gate staged tarball proof in repo verification (task #1724)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-18"
+        },
+        {
+          "id": "AK-TASK-1731",
+          "title": "ts-quality: assert staged package manifest contract",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: assert staged package manifest contract (task #1731)",
               "done": false
             }
           ],
           "dod": "Task reaches done in society.db with evidence recorded."
         },
         {
-          "id": "AK-TASK-1724",
-          "title": "ts-quality: gate staged tarball proof in repo verification",
+          "id": "AK-TASK-1732",
+          "title": "ts-quality: assert staged package file-boundary contract",
           "state": "queued",
           "tasks": [
             {
-              "text": "ts-quality: gate staged tarball proof in repo verification (task #1724)",
+              "text": "ts-quality: assert staged package file-boundary contract (task #1732)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        },
+        {
+          "id": "AK-TASK-1733",
+          "title": "ts-quality: assert packed tarball file-set contract",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: assert packed tarball file-set contract (task #1733)",
               "done": false
             }
           ],

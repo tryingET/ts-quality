@@ -1,5 +1,5 @@
 ---
-summary: "Operating plan with TG8 active: task 1722 is now the live staged-tarball smoke-proof slice, with CLI/API proof hardening and verification gating sequenced behind it."
+summary: "Operating plan with TG9 active: staged package contract hardening is now the live wave, with manifest, staged-file, and tarball-file-set checks bound to tasks 1731-1733."
 read_when:
   - "When deciding the next bounded implementation slice in ts-quality"
   - "When translating the current tactical state into the repo-local queue"
@@ -10,35 +10,34 @@ type: "reference"
 
 Active strategic goal: **SG3 — Prove first outside-repo adoption through deterministic packaging and release ergonomics**
 
-Active tactical goal: **TG8 — Prove staged tarball install/load behavior from a fresh temp project**
+Active tactical goal: **TG9 — Lock publish-correct staged package metadata and file boundaries**
 
 ## Current state
 
-The repo already ships a staged packaging helper (`npm run pack:ts-quality`), a public package manifest under `packages/ts-quality/package.json`, and release/checklist docs that describe the intended outside-repo path.
-What is still missing is deterministic repo-local proof coverage: the packaged tarball path is not yet guarded by the active validation surfaces, so outside-repo adoption still depends on manual rehearsal.
+The repo now has deterministic packaged-behavior proof: `npm run smoke:packaging` stages the tarball, installs it into a fresh temp project, exercises the shipped CLI/API, and `npm run verify` gates that proof path. What is still missing is a package-contract surface strict enough to fail closed when the staged manifest, staged file boundaries, or final tarball contents drift away from the intended public package.
 
 ## Active operating slices
 
-### OP1 — Add staged tarball install smoke coverage
-- **AK task:** `task:1722`
+### OP1 — Assert staged package manifest contract
+- **AK task:** `task:1731`
 - **State:** active
-- **Deliverable:** automated repo-local smoke coverage stages the tarball and installs it into a fresh temp project instead of assuming workspace-relative execution.
-- **Guardrails:** use temp directories and the staged tarball path; fail closed on install/entrypoint errors; do not widen the slice into docs or publish automation.
+- **Deliverable:** the staged package manifest fields and entrypoint bindings are checked against an intentional public-package contract instead of being whatever the helper happened to emit.
+- **Guardrails:** keep the contract native to the staged package; do not widen the slice into release-copy or broader publish automation.
 
-### OP2 — Harden staged package CLI/API proof points
-- **AK task:** `task:1723`
+### OP2 — Assert staged package file-boundary contract
+- **AK task:** `task:1732`
 - **State:** staged behind OP1
-- **Deliverable:** the packaged proof path asserts the public CLI and module entrypoint behaviors that matter for first outside-repo adoption.
-- **Guardrails:** prove only the shipped package entrypoints; do not accidentally turn internal workspace layout into public API surface area.
+- **Deliverable:** the staged package directory is checked for the intended publish surface before `npm pack`, including required runtime assets and explicit exclusions for repo-only material.
+- **Guardrails:** encode exact allowed/disallowed staged paths; do not rely on the current `dist/` tree shape staying accidental truth.
 
-### OP3 — Gate staged tarball proof in repo verification
-- **AK task:** `task:1724`
+### OP3 — Assert packed tarball file-set contract
+- **AK task:** `task:1733`
 - **State:** staged behind OP2
-- **Deliverable:** repo verification runs the packaged-proof surface so SG3 no longer depends on manual release rehearsal.
-- **Guardrails:** keep the gate deterministic and scoped; do not re-open SG4 authority decisions while wiring proof into validation.
+- **Deliverable:** the final `.tgz` contents are checked against the intended publish contract so `npm pack` cannot silently broaden, drop, or relink the public file set.
+- **Guardrails:** prove tarball reality, not just stage-directory intent; keep the slice focused on the package contract rather than public-doc rewrite.
 
 ## Queue discipline
-- `task:1722` is the live ready slice for TG8
-- `task:1723` stays sequenced behind `task:1722`, and `task:1724` stays sequenced behind `task:1723`
+- `task:1731` is the live ready slice for TG9
+- `task:1732` depends on `task:1731`, and `task:1733` depends on `task:1732`
 - deferred contract-first tasks `task:190-191` remain out of the active SG3 execution wave
-- when OP1-OP3 land, promote TG9 instead of inventing parallel SG3 tactical work
+- when OP1-OP3 land, promote TG10 instead of inventing parallel SG3 tactical work
