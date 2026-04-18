@@ -17,6 +17,7 @@
     "test": "node scripts/run-tests.mjs",
     "sample-artifacts": "node scripts/generate-samples.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "smoke:packaging": "node scripts/packaging-smoke.mjs",
     "verify": "node scripts/verify.mjs",
     "verify:ci": "node scripts/verify.mjs --skip-install",
     "clean": "node scripts/clean.mjs",
