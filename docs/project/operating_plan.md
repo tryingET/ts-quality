@@ -1,5 +1,5 @@
 ---
-summary: "Operating plan with TG7 active: task 1711 landed additive proposalContext in amendment decisions, and task 1712 is now the live docs/sample follow-on with regression parity still staged behind it in task 1713."
+summary: "Operating plan with TG8 active: task 1722 is now the live staged-tarball smoke-proof slice, with CLI/API proof hardening and verification gating sequenced behind it."
 read_when:
   - "When deciding the next bounded implementation slice in ts-quality"
   - "When translating the current tactical state into the repo-local queue"
@@ -8,37 +8,37 @@ type: "reference"
 
 # Operating Plan
 
-Active strategic goal: **SG2 — Carry ts-quality's evidence-native trust model into governance and legitimacy decision surfaces that still compress authority too far**
+Active strategic goal: **SG3 — Prove first outside-repo adoption through deterministic packaging and release ergonomics**
 
-Active tactical goal: **TG7 — Make amendment decisions carry additive proposal/rule context**
+Active tactical goal: **TG8 — Prove staged tarball install/load behavior from a fresh temp project**
 
 ## Current state
 
-Authorization and attestation-review already carry explicit run-bound decision context through `task:192` and `task:195-197`.
-Task `1711` has now landed the first amendment-output implementation slice: `ts-quality amend` decisions keep proposal title/rationale, explicit evidence entries, per-change rule context, and the sensitivity basis behind the approval burden visible through additive `proposalContext` instead of collapsing back to verdict-only shorthand.
-The active follow-on is now docs/sample alignment so the reviewed artifact contract says the same thing the runtime emits.
+The repo already ships a staged packaging helper (`npm run pack:ts-quality`), a public package manifest under `packages/ts-quality/package.json`, and release/checklist docs that describe the intended outside-repo path.
+What is still missing is deterministic repo-local proof coverage: the packaged tarball path is not yet guarded by the active validation surfaces, so outside-repo adoption still depends on manual rehearsal.
 
 ## Active operating slices
 
-### OP1 — Surface additive proposal/rule context in amendment decisions
-- **AK task:** `task:1711`
-- **State:** done
-- **Outcome:** `AmendmentDecision` and `ts-quality amend` now emit additive `proposalContext` fields that keep title/rationale, rule-target/action summary, evidence burden, and approval-burden basis visible without inventing a second authority beyond the proposal and constitution.
-- **Guardrails retained as completed boundary:** keep the proposal file and constitution canonical; keep schema changes additive-first; do not infer ambient repo state that the amendment flow did not actually evaluate.
-
-### OP2 — Align the reviewed amendment artifact and operator docs with the proposal-context contract
-- **AK task:** `task:1712`
+### OP1 — Add staged tarball install smoke coverage
+- **AK task:** `task:1722`
 - **State:** active
-- **Deliverable:** `examples/artifacts/governed-app/amend.json`, sample generation, and operator-facing docs describe the same amendment-result contract the runtime emits.
-- **Guardrails:** keep the reviewed sample deterministic and avoid documenting fields the runtime does not actually ship.
+- **Deliverable:** automated repo-local smoke coverage stages the tarball and installs it into a fresh temp project instead of assuming workspace-relative execution.
+- **Guardrails:** use temp directories and the staged tarball path; fail closed on install/entrypoint errors; do not widen the slice into docs or publish automation.
 
-### OP3 — Lock amendment proposal-context parity with targeted regression coverage
-- **AK task:** `task:1713`
+### OP2 — Harden staged package CLI/API proof points
+- **AK task:** `task:1723`
+- **State:** staged behind OP1
+- **Deliverable:** the packaged proof path asserts the public CLI and module entrypoint behaviors that matter for first outside-repo adoption.
+- **Guardrails:** prove only the shipped package entrypoints; do not accidentally turn internal workspace layout into public API surface area.
+
+### OP3 — Gate staged tarball proof in repo verification
+- **AK task:** `task:1724`
 - **State:** staged behind OP2
-- **Deliverable:** targeted integration/golden coverage proves CLI/runtime/sample parity for the amendment-result contract and makes future context regressions harder to reintroduce.
-- **Guardrails:** harden the exact emitted contract rather than broadening test scope into unrelated legitimacy behavior.
+- **Deliverable:** repo verification runs the packaged-proof surface so SG3 no longer depends on manual release rehearsal.
+- **Guardrails:** keep the gate deterministic and scoped; do not re-open SG4 authority decisions while wiring proof into validation.
 
 ## Queue discipline
-- `task:1712` should be the live ready follow-on once `task:1711` closes; `task:1713` stays sequenced behind it through AK dependencies
-- do not revive deferred decision tasks `task:190-191` as a substitute for TG7 product work
-- when OP2-OP3 land, refresh SG2 direction truth before promoting SG3 packaging/release work
+- `task:1722` is the live ready slice for TG8
+- `task:1723` stays sequenced behind `task:1722`, and `task:1724` stays sequenced behind `task:1723`
+- deferred contract-first tasks `task:190-191` remain out of the active SG3 execution wave
+- when OP1-OP3 land, promote TG9 instead of inventing parallel SG3 tactical work

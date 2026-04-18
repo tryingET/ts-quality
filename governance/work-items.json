@@ -290,22 +290,60 @@
         {
           "id": "AK-TASK-1712",
           "title": "ts-quality: align amendment sample/docs with proposal-context contract",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: align amendment sample/docs with proposal-context contract (task #1712)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-18"
+        },
+        {
+          "id": "AK-TASK-1713",
+          "title": "ts-quality: add parity coverage for amendment proposal-context output",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: add parity coverage for amendment proposal-context output (task #1713)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-18"
+        },
+        {
+          "id": "AK-TASK-1722",
+          "title": "ts-quality: add staged tarball install smoke coverage",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: add staged tarball install smoke coverage (task #1722)",
               "done": false
             }
           ],
           "dod": "Task reaches done in society.db with evidence recorded."
         },
         {
-          "id": "AK-TASK-1713",
-          "title": "ts-quality: add parity coverage for amendment proposal-context output",
+          "id": "AK-TASK-1723",
+          "title": "ts-quality: harden staged package CLI/API proof points",
           "state": "queued",
           "tasks": [
             {
-              "text": "ts-quality: add parity coverage for amendment proposal-context output (task #1713)",
+              "text": "ts-quality: harden staged package CLI/API proof points (task #1723)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        },
+        {
+          "id": "AK-TASK-1724",
+          "title": "ts-quality: gate staged tarball proof in repo verification",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: gate staged tarball proof in repo verification (task #1724)",
               "done": false
             }
           ],

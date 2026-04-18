@@ -1,5 +1,5 @@
 ---
-summary: "Strategic handoff with SG2 active: decision-facing legitimacy surfaces still need the evidence-native trust contract carried through cleanly; SG3 is the next outside-repo adoption wave once SG2 lands."
+summary: "Strategic handoff with SG3 active: packaging proof is now the live outside-repo adoption wave, while projection/verification authority decisions remain the next contract-first follow-on."
 read_when:
   - "When deciding the next major bets for ts-quality"
   - "When reconciling vision.md with the current repo-local direction posture"
@@ -10,22 +10,25 @@ type: "reference"
 
 ## Active strategic goal
 
-### SG2 — Carry ts-quality's evidence-native trust model into governance and legitimacy decision surfaces that still compress authority too far
-- **Why now:** `docs/project/vision.md` says `ts-quality` should feel like a precise evidence debugger for change risk: explicit, additive, explainable, and visibly downstream of canonical artifacts. The concise operator-surface wave is materially complete, authorization now cites exact run-bound evidence through `task:192`, and attestation review now cites exact signed-subject context through `task:195-197`. The next remaining repo-local legitimacy surface that still compresses trust too aggressively is amendment output.
-- **Success signal:** reviewer-facing decision outputs stay tied to explicit proposal, rule, and evidence context instead of collapsing to verdict-only shorthand; legitimacy actions remain downstream of canonical proposal/run artifacts rather than inventing a second report authority.
-- **Eisenhower-3D:** importance `5`, urgency `3`, difficulty `4`
+### SG3 — Prove first outside-repo adoption through deterministic packaging and release ergonomics
+- **Why now:** SG2's amendment-output wave is materially complete through `task:1711-1713`, so the next unfinished repo-local bet is no longer another legitimacy surface. The repo already ships a staged packaging helper (`npm run pack:ts-quality`), public README/release surfaces, and an npm publishing checklist, and the staged tarball path now deserves active task coverage instead of staying a manual release-memory exercise.
+- **Success signal:** `ts-quality` can be staged, installed into a fresh temp project, and exercised through automated repo-local proof that the CLI and public module entrypoint load without repo-relative breakage; release/operator docs stay downstream of that proof instead of hand-wavy manual sequencing.
+- **Eisenhower-3D:** importance `4`, urgency `3`, difficulty `3`
 
 ## Next strategic goal
 
-### SG3 — Prove first outside-repo adoption through deterministic packaging and release ergonomics
-- **Why next:** the repo already ships public README/release surfaces, a staged pack helper, and an npm publishing checklist, but external adoption still depends on turning those materials into an intentional install/pack/publish path rather than relying on monorepo-root build layout accidents. That work is real, but SG2 still has the sharper product-trust gap.
-- **Success signal:** `ts-quality` can be packed, installed, and tried from a clean temp project through the documented staged-package path without repo-relative breakage or hand-wavy release guidance.
-- **Eisenhower-3D:** importance `4`, urgency `2`, difficulty `3`
+### SG4 — Settle repo-local projection and verification artifact authority without drifting from AK
+- **Why next:** deferred tasks `task:190-191` show real unfinished repo-local process work around whether `next_session_prompt.md`, `docs/project/*`, `governance/work-items.json`, `VERIFICATION.md`, and `verification/verification.log` are manually synchronized projections or generated artifacts. That work is real, but it is still contract-first and should not displace the newly active SG3 execution wave.
+- **Success signal:** repo-local handoff and verification artifacts have explicit ownership/generation contracts, so deferred automation or cleanup can be promoted later without accidentally changing authority boundaries or live source-of-truth rules.
+- **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `3`
 
 ## Recently completed strategic history
 
-The earlier concise operator-surface parity wave is complete through repo-local AK tasks `task:184-187`.
-That SG1 work made `check-summary.txt`, `trend`, reviewed sample artifacts, and targeted regression hardening carry the first at-risk invariant provenance without creating a second evidence authority.
+### SG2 — Carry ts-quality's evidence-native trust model into governance and legitimacy decision surfaces that still compress authority too far
+- **Completed by:** repo-local AK tasks `task:192`, `task:195-197`, and `task:1711-1713`.
+- **What landed:** authorization, attestation verification, and amendment outputs now keep exact run/proposal context visible through additive decision projections instead of collapsing to verdict-only shorthand.
+
+The earlier SG1 concise operator-surface parity wave remains complete through repo-local AK tasks `task:184-187`.
 
 ## Not current strategic goals
 
