@@ -36,7 +36,29 @@ test('amend evaluates sensitive proposal with duplicate approvals as needing mor
   const result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
-  assert.equal(parsed.outcome, 'needs-approvals');
+  assert.deepEqual(parsed, {
+    approvalsAccepted: ['maintainer'],
+    outcome: 'needs-approvals',
+    proposalContext: {
+      approvalBurdenBasis: 'sensitive-rule-change',
+      changes: [{
+        action: 'replace',
+        currentRuleKind: 'risk',
+        proposedRuleKind: 'risk',
+        ruleId: 'auth-risk-budget',
+        sensitivity: 'sensitive'
+      }],
+      evidence: ['migration plan approved'],
+      rationale: 'Need a temporary policy adjustment during migration.',
+      sensitiveRuleIds: ['auth-risk-budget'],
+      title: 'Tune auth risk budget'
+    },
+    proposalId: 'amend-auth-risk',
+    reasons: ['Need 2 maintainer approval(s) but only 1 unique targeted approval(s) were supplied.'],
+    requiredApprovals: 2
+  });
+  const persisted = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'amendments', 'amend-auth-risk.result.json'), 'utf8'));
+  assert.deepEqual(persisted, parsed);
 });
 
 test('amend --apply writes a loadable constitution module', () => {

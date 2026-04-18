@@ -49,6 +49,40 @@ test('authorization sample keeps exact run-bound evidence context', () => {
   assert.equal(authorize.stdout, expected.endsWith('\n') ? expected : `${expected}\n`);
 });
 
+test('amendment sample keeps exact proposal-context output parity', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const proposalPath = path.join(target, 'proposal.json');
+  fs.writeFileSync(proposalPath, JSON.stringify({
+    id: 'sample-amendment',
+    title: 'Sample amendment',
+    rationale: 'Documented migration window.',
+    evidence: ['migration validated'],
+    changes: [{
+      action: 'replace',
+      ruleId: 'auth-risk-budget',
+      rule: {
+        kind: 'risk',
+        id: 'auth-risk-budget',
+        paths: ['src/auth/**'],
+        message: 'Adjusted sample policy.',
+        maxCrap: 20,
+        minMutationScore: 0.7,
+        minMergeConfidence: 60
+      }
+    }],
+    approvals: [
+      { by: 'maintainer', role: 'maintainer', rationale: 'approve', createdAt: '2026-01-01T00:15:00.000Z', targetId: 'sample-amendment' },
+      { by: 'maintainer', role: 'maintainer', rationale: 'second recorded approval', createdAt: '2026-01-01T00:15:00.000Z', targetId: 'sample-amendment' }
+    ]
+  }, null, 2));
+  const amend = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath], { encoding: 'utf8' });
+  assert.equal(amend.status, 0, amend.stderr);
+  const expected = fs.readFileSync(path.join(repoRoot, 'examples', 'artifacts', 'governed-app', 'amend.json'), 'utf8');
+  const normalizedExpected = expected.endsWith('\n') ? expected : `${expected}\n`;
+  assert.equal(amend.stdout, normalizedExpected);
+  const persisted = fs.readFileSync(path.join(target, '.ts-quality', 'amendments', 'sample-amendment.result.json'), 'utf8');
+  assert.equal(persisted, normalizedExpected);
+});
 
 test('attestation verification sample keeps exact signed subject context', () => {
   const target = tempCopyOfFixture('governed-app');
