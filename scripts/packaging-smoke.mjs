@@ -3,6 +3,7 @@ import os from 'os';
 import path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
+import { assertStagedPackageManifestContract } from './pack-ts-quality.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -43,6 +44,10 @@ function ensureFile(filePath, label) {
   }
 }
 
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
 function normalizePackageRelative(relativePath) {
   return relativePath.replace(/^\.\//u, '');
 }
@@ -63,13 +68,16 @@ export function runPackagingSmoke() {
   ensureFile(packageJsonPath, 'Staged package manifest');
   ensureFile(tarballPath, 'Packed tarball');
 
-  const stagedPackage = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const stagedPackage = readJson(packageJsonPath);
+  const workspacePackage = readJson(path.join(root, 'package.json'));
+  const publicPackage = readJson(path.join(root, 'packages', 'ts-quality', 'package.json'));
   if (stagedPackage.name !== packSummary.packageName) {
     throw new Error(`Staged package name drifted: expected ${packSummary.packageName}, got ${stagedPackage.name}`);
   }
   if (stagedPackage.version !== packSummary.version) {
     throw new Error(`Staged package version drifted: expected ${packSummary.version}, got ${stagedPackage.version}`);
   }
+  assertStagedPackageManifestContract(stagedPackage, publicPackage, workspacePackage);
 
   for (const [label, relativePath] of Object.entries(packSummary.entrypoints)) {
     ensureFile(path.join(stageDirPath, normalizePackageRelative(relativePath)), `Staged ${label} entrypoint`);
@@ -158,6 +166,7 @@ export function runPackagingSmoke() {
       stageDir: packSummary.stageDir,
       tarball: packSummary.tarball,
       entrypoints: packSummary.entrypoints,
+      manifest: stagedPackage,
       cli: {
         helpIncludes: 'ts-quality commands:',
         initCreated: [...expectedInitFiles],

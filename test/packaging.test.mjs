@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import test from 'node:test';
 import assert from 'assert/strict';
 import { spawnSync } from 'child_process';
@@ -10,6 +12,25 @@ const expectedEntrypoints = {
   exportDefault: './dist/packages/ts-quality/src/index.js',
   exportTypes: './dist/packages/ts-quality/src/index.d.ts'
 };
+
+const expectedManifestKeys = [
+  'name',
+  'version',
+  'description',
+  'license',
+  'repository',
+  'homepage',
+  'bugs',
+  'keywords',
+  'dependencies',
+  'engines',
+  'main',
+  'types',
+  'exports',
+  'bin',
+  'files',
+  'publishConfig'
+];
 
 const expectedInitFiles = [
   'ts-quality.config.ts',
@@ -33,6 +54,47 @@ const expectedMaterializedFiles = [
   '.ts-quality/materialized/ts-quality.config.json'
 ];
 
+function readJson(relativePath) {
+  return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
+}
+
+function expectedManifestContract() {
+  const workspacePackage = readJson('package.json');
+  const publicPackage = readJson('packages/ts-quality/package.json');
+  return {
+    name: publicPackage.name,
+    version: publicPackage.version,
+    description: publicPackage.description,
+    license: publicPackage.license,
+    repository: publicPackage.repository,
+    homepage: publicPackage.homepage,
+    bugs: publicPackage.bugs,
+    keywords: publicPackage.keywords,
+    dependencies: publicPackage.dependencies,
+    engines: workspacePackage.engines,
+    main: 'dist/packages/ts-quality/src/index.js',
+    types: 'dist/packages/ts-quality/src/index.d.ts',
+    exports: {
+      '.': {
+        types: './dist/packages/ts-quality/src/index.d.ts',
+        default: './dist/packages/ts-quality/src/index.js'
+      },
+      './package.json': './package.json'
+    },
+    bin: {
+      'ts-quality': 'dist/packages/ts-quality/src/cli.js'
+    },
+    files: [
+      'dist/**/*',
+      'README.md',
+      'LICENSE'
+    ],
+    publishConfig: {
+      access: 'public'
+    }
+  };
+}
+
 test('staged tarball smoke hardens packaged CLI and API proof points from a fresh temp project', () => {
   const result = spawnSync('npm', ['run', 'smoke:packaging', '--silent'], { cwd: repoRoot, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
@@ -43,6 +105,10 @@ test('staged tarball smoke hardens packaged CLI and API proof points from a fres
   assert.equal(summary.stageDir, '.ts-quality/npm/ts-quality/package');
   assert.match(summary.tarball, /^\.ts-quality\/npm\/ts-quality\/tarballs\/ts-quality-.*\.tgz$/);
   assert.deepEqual(summary.entrypoints, expectedEntrypoints);
+  const manifestContract = expectedManifestContract();
+  assert.deepEqual(Object.keys(summary.manifest).sort(), [...expectedManifestKeys].sort());
+  assert.deepEqual(summary.manifest, manifestContract);
+  assert.deepEqual(readJson(`${summary.stageDir}/package.json`), manifestContract);
   assert.equal(summary.cli.helpIncludes, 'ts-quality commands:');
   assert.deepEqual(summary.cli.initCreated, expectedInitFiles);
   assert.equal(summary.cli.materializedConfig, '.ts-quality/materialized/ts-quality.config.json');
