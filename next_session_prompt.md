@@ -1,5 +1,5 @@
 ---
-summary: "Active handoff: AK #197 added machine-readable attestation verification output and malformed-input parity, and no ready repo-local follow-on SG2 slice is materialized yet."
+summary: "Active handoff: TG7 amendment-result context is now the live SG2 wave, with task 1711 ready and tasks 1712-1713 sequenced behind it."
 read_when:
   - "At the start of every work session"
   - "When resuming work in ts-quality after a pause"
@@ -13,32 +13,33 @@ Reading this file is authorization to begin immediately.
 Do not ask for permission to start.
 
 ## ACTIVE GOAL STACK
-- **Strategic goal:** SG2 — carry the same evidence truth into governance/legitimacy decision surfaces that still compress authority too far
-- **Tactical goal:** none materialized yet
-- **Operating slice:** no ready repo-local follow-on SG2 task is materialized yet
+- **Strategic goal:** SG2 — carry ts-quality's evidence-native trust model into governance and legitimacy decision surfaces that still compress authority too far
+- **Tactical goal:** TG7 — make amendment decisions carry additive proposal/rule context
+- **Operating slice:** OP1 — surface additive proposal/rule context in amendment decisions (`task:1711`)
 
 ## START HERE
-1. Run `./scripts/ak.sh --doctor`
-2. Confirm repo-local ready work with:
+1. Run `ak --doctor`
+2. Refresh repo direction truth:
    ```bash
-   ./scripts/ak.sh task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
+   ak direction import
+   ak direction check
+   ak direction export
    ```
-3. If readiness is still empty, audit amendment-facing results, then materialize the next SG2 AK slice before coding.
+3. Confirm repo-local readiness:
+   ```bash
+   ak task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
+   ```
+4. If `task:1711` is still ready, claim it and work the amendment-result contract before touching later slices.
 
 ## CURRENT QUEUE TRUTH
 Ready now:
-- none repo-local
+- `#1711` — surface additive proposal context in amendment decisions
 
-Completed this session:
-- `#178` — refresh direction cascade after #177 closeout and seed the next non-TUI SG2 wave
-- `#192` — surface run-boundary evidence in authorization decisions
-- `#193` — harden config loading by replacing executable module evaluation with a data-only parser
-- `#194` — materialize config/support modules into canonical runtime JSON artifacts
-- `#195` — surface run-bound subject context in attestation verification outputs
-- `#196` — canonicalize attestation verification records and enforce signed subject parity
-- `#197` — add machine-readable attestation verification output and malformed-input parity
+Sequenced behind it:
+- `#1712` — align amendment sample/docs with proposal-context contract
+- `#1713` — add parity coverage for amendment proposal-context output
 
-Deferred with AK binding this session:
+Still deferred with AK binding:
 - `#190` — automate AK-to-handoff projection sync
 - `#191` — stabilize or untrack volatile verification artifacts
 
@@ -51,10 +52,13 @@ Deferred with AK binding this session:
 6. `docs/project/operating_plan.md`
 7. `docs/legitimacy-agent-licensing.md`
 8. `docs/governance-constitution.md`
-9. relevant amendment-facing source + tests for the next SG2 candidate slice
+9. `packages/evidence-model/src/index.ts`
+10. `packages/legitimacy/src/index.ts`
+11. `packages/ts-quality/src/index.ts`
+12. `test/amend-integration.test.mjs`
 
 ## EXECUTION RULES
-- Keep `behaviorClaims[].evidenceSummary` as the additive authority.
+- Keep `behaviorClaims[].evidenceSummary`, the amendment proposal, and the constitution as the additive authority.
 - Do not invent a second evidence/report authority.
 - Make the smallest end-to-end additive change that proves the claimed slice.
 - Update `docs/project/*`, `next_session_prompt.md`, diary, and `governance/work-items.json` when queue truth changes.
@@ -62,6 +66,6 @@ Deferred with AK binding this session:
 
 ## END-OF-SESSION
 - keep this file short and current
-- point it at the next real AK task, or say clearly that none is materialized yet
+- point it at the next real AK task, not vague backlog prose
 - move session narrative to `diary/`
 - keep AK authoritative for live task state

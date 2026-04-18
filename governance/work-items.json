@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-03-20",
+  "updated_at": "2026-04-18",
   "owner": "@tryinget",
   "project_name": "ts-quality",
   "milestones": [
@@ -260,6 +260,55 @@
           ],
           "dod": "Task reaches done in society.db with evidence recorded.",
           "completed_at": "2026-03-20"
+        },
+        {
+          "id": "AK-TASK-0326",
+          "title": "Remove repo-local rocs_cli GitLab baseline-resolution compatibility path",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Remove repo-local rocs_cli GitLab baseline-resolution compatibility path (task #326)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-01"
+        },
+        {
+          "id": "AK-TASK-1711",
+          "title": "ts-quality: surface additive proposal context in amendment decisions",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: surface additive proposal context in amendment decisions (task #1711)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        },
+        {
+          "id": "AK-TASK-1712",
+          "title": "ts-quality: align amendment sample/docs with proposal-context contract",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: align amendment sample/docs with proposal-context contract (task #1712)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        },
+        {
+          "id": "AK-TASK-1713",
+          "title": "ts-quality: add parity coverage for amendment proposal-context output",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: add parity coverage for amendment proposal-context output (task #1713)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
         }
       ]
     }
