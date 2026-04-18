@@ -3,6 +3,26 @@
     "maintainer"
   ],
   "outcome": "needs-approvals",
+  "proposalContext": {
+    "approvalBurdenBasis": "sensitive-rule-change",
+    "changes": [
+      {
+        "action": "replace",
+        "currentRuleKind": "risk",
+        "proposedRuleKind": "risk",
+        "ruleId": "auth-risk-budget",
+        "sensitivity": "sensitive"
+      }
+    ],
+    "evidence": [
+      "migration validated"
+    ],
+    "rationale": "Documented migration window.",
+    "sensitiveRuleIds": [
+      "auth-risk-budget"
+    ],
+    "title": "Sample amendment"
+  },
   "proposalId": "sample-amendment",
   "reasons": [
     "Need 2 maintainer approval(s) but only 1 unique targeted approval(s) were supplied."

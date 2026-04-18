@@ -69,6 +69,44 @@ function run(args, cwd) {
   return result.stdout;
 }
 
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+function assertStableJsonEqual(actual, expected, message) {
+  const actualJson = evidenceModel.stableStringify(actual);
+  const expectedJson = evidenceModel.stableStringify(expected);
+  if (actualJson !== expectedJson) {
+    throw new Error(`${message}\nexpected: ${expectedJson}\nactual: ${actualJson}`);
+  }
+}
+
+function assertSampleAmendmentDecision(decision) {
+  assertStableJsonEqual(decision, {
+    approvalsAccepted: ['maintainer'],
+    outcome: 'needs-approvals',
+    proposalContext: {
+      approvalBurdenBasis: 'sensitive-rule-change',
+      changes: [{
+        action: 'replace',
+        currentRuleKind: 'risk',
+        proposedRuleKind: 'risk',
+        ruleId: 'auth-risk-budget',
+        sensitivity: 'sensitive'
+      }],
+      evidence: ['migration validated'],
+      rationale: 'Documented migration window.',
+      sensitiveRuleIds: ['auth-risk-budget'],
+      title: 'Sample amendment'
+    },
+    proposalId: 'sample-amendment',
+    reasons: ['Need 2 maintainer approval(s) but only 1 unique targeted approval(s) were supplied.'],
+    requiredApprovals: 2
+  }, 'Sample amendment decision drifted from the reviewed contract.');
+}
+
 function normalizeTimingText(text) {
   if (typeof text !== 'string' || text.length === 0) {
     return text;
@@ -203,6 +241,12 @@ fs.writeFileSync(proposalPath, JSON.stringify({
   ]
 }, null, 2));
 const amendOut = run(['amend', '--proposal', 'proposal.json'], target);
+const amendDecision = JSON.parse(amendOut);
+const amendDecisionPath = path.join(target, '.ts-quality', 'amendments', 'sample-amendment.result.json');
+assert(fs.existsSync(amendDecisionPath), `Expected sample amendment decision at ${amendDecisionPath}`);
+const persistedAmendDecision = JSON.parse(fs.readFileSync(amendDecisionPath, 'utf8'));
+assertStableJsonEqual(amendDecision, persistedAmendDecision, 'Sample amendment stdout drifted from the persisted amendment artifact.');
+assertSampleAmendmentDecision(persistedAmendDecision);
 
 const outDir = path.join(root, 'examples', 'artifacts', SAMPLE_FIXTURE);
 fs.rmSync(outDir, { recursive: true, force: true });
@@ -221,6 +265,6 @@ if (fs.existsSync(maintainerDecisionPath)) {
 }
 fs.copyFileSync(path.join(target, '.ts-quality', 'attestations', 'ci.tests.passed.json'), path.join(outDir, 'attestation.ci.verification.json'));
 fs.copyFileSync(path.join(runDir, 'attestation.verify.txt'), path.join(outDir, 'attestation.verify.txt'));
-fs.writeFileSync(path.join(outDir, 'amend.json'), amendOut, 'utf8');
+evidenceModel.writeJson(path.join(outDir, 'amend.json'), persistedAmendDecision);
 fs.rmSync(SAMPLE_REPO_DIR, { recursive: true, force: true });
 console.log(`sample-artifacts: ok -> ${outDir}`);
