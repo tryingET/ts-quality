@@ -1037,7 +1037,8 @@ function runAmend(rootDir, proposalFile, apply = false, options) {
     const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
     const constitution = (0, config_1.loadConstitution)(rootDir, loaded.config.constitutionPath);
     const agents = (0, config_1.loadAgents)(rootDir, loaded.config.agentsPath);
-    const proposal = JSON.parse(fs_1.default.readFileSync(resolveCliPath(rootDir, proposalFile), 'utf8'));
+    const proposalPath = resolveCliPath(rootDir, proposalFile);
+    const proposal = JSON.parse(fs_1.default.readFileSync(proposalPath, 'utf8'));
     const decision = (0, index_7.evaluateAmendment)(proposal, constitution, agents);
     const resultPath = path_1.default.join(rootDir, '.ts-quality', 'amendments', `${proposal.id}.result.json`);
     (0, index_1.ensureDir)(path_1.default.dirname(resultPath));

@@ -331,12 +331,29 @@ export interface AmendmentProposal {
     }>;
     approvals: Approval[];
 }
+export type AmendmentDecisionApprovalBurdenBasis = 'standard-rule-change' | 'sensitive-rule-change';
+export interface AmendmentDecisionChangeContext {
+    action: string;
+    ruleId: string;
+    currentRuleKind?: ConstitutionRule['kind'] | undefined;
+    proposedRuleKind?: ConstitutionRule['kind'] | undefined;
+    sensitivity: 'standard' | 'sensitive';
+}
+export interface AmendmentDecisionProposalContext {
+    title: string;
+    rationale: string;
+    evidence: string[];
+    changes: AmendmentDecisionChangeContext[];
+    approvalBurdenBasis: AmendmentDecisionApprovalBurdenBasis;
+    sensitiveRuleIds: string[];
+}
 export interface AmendmentDecision {
     proposalId: string;
     outcome: 'approved' | 'denied' | 'needs-approvals';
     reasons: string[];
     approvalsAccepted: string[];
     requiredApprovals: number;
+    proposalContext?: AmendmentDecisionProposalContext | undefined;
 }
 export interface TrendDelta {
     previousRunId?: string | undefined;

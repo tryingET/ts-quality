@@ -277,14 +277,15 @@
         {
           "id": "AK-TASK-1711",
           "title": "ts-quality: surface additive proposal context in amendment decisions",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: surface additive proposal context in amendment decisions (task #1711)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-18"
         },
         {
           "id": "AK-TASK-1712",

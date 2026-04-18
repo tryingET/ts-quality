@@ -1,5 +1,5 @@
 ---
-summary: "Active handoff: TG7 amendment-result context is now the live SG2 wave, with task 1711 ready and tasks 1712-1713 sequenced behind it."
+summary: "Active handoff: task 1711 landed additive amendment proposalContext, and task 1712 is now the live TG7 follow-on for reviewed sample/doc alignment."
 read_when:
   - "At the start of every work session"
   - "When resuming work in ts-quality after a pause"
@@ -15,7 +15,7 @@ Do not ask for permission to start.
 ## ACTIVE GOAL STACK
 - **Strategic goal:** SG2 — carry ts-quality's evidence-native trust model into governance and legitimacy decision surfaces that still compress authority too far
 - **Tactical goal:** TG7 — make amendment decisions carry additive proposal/rule context
-- **Operating slice:** OP1 — surface additive proposal/rule context in amendment decisions (`task:1711`)
+- **Operating slice:** OP2 — align the reviewed amendment artifact and operator docs with the proposal-context contract (`task:1712`)
 
 ## START HERE
 1. Run `ak --doctor`
@@ -29,15 +29,17 @@ Do not ask for permission to start.
    ```bash
    ak task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
    ```
-4. If `task:1711` is still ready, claim it and work the amendment-result contract before touching later slices.
+4. If `task:1712` is ready, claim it and align the reviewed amendment sample/docs before touching parity hardening.
 
 ## CURRENT QUEUE TRUTH
 Ready now:
-- `#1711` — surface additive proposal context in amendment decisions
+- `#1712` — align amendment sample/docs with proposal-context contract
 
 Sequenced behind it:
-- `#1712` — align amendment sample/docs with proposal-context contract
 - `#1713` — add parity coverage for amendment proposal-context output
+
+Just completed:
+- `#1711` — surface additive proposal context in amendment decisions
 
 Still deferred with AK binding:
 - `#190` — automate AK-to-handoff projection sync
@@ -52,10 +54,9 @@ Still deferred with AK binding:
 6. `docs/project/operating_plan.md`
 7. `docs/legitimacy-agent-licensing.md`
 8. `docs/governance-constitution.md`
-9. `packages/evidence-model/src/index.ts`
-10. `packages/legitimacy/src/index.ts`
-11. `packages/ts-quality/src/index.ts`
-12. `test/amend-integration.test.mjs`
+9. `examples/artifacts/governed-app/amend.json`
+10. `scripts/generate-samples.mjs`
+11. `README.md` amendment/legitimacy sections
 
 ## EXECUTION RULES
 - Keep `behaviorClaims[].evidenceSummary`, the amendment proposal, and the constitution as the additive authority.

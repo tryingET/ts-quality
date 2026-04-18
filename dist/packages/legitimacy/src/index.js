@@ -296,8 +296,34 @@ function uniqueApprovalsForTarget(approvals, approvers, targetId) {
     return [...unique.values()];
 }
 const VALID_AMENDMENT_ACTIONS = new Set(['add', 'remove', 'replace']);
+const SENSITIVE_AMENDMENT_RULE_KINDS = new Set(['boundary', 'rollback', 'risk']);
 function isAmendmentChangeAction(action) {
     return typeof action === 'string' && VALID_AMENDMENT_ACTIONS.has(action);
+}
+function buildAmendmentProposalContext(proposal, constitution) {
+    const constitutionById = new Map(constitution.map((rule) => [rule.id, rule]));
+    const changes = proposal.changes.map((change) => {
+        const current = constitutionById.get(change.ruleId);
+        const currentRuleKind = current?.kind;
+        const proposedRuleKind = change.rule?.kind;
+        const sensitivity = SENSITIVE_AMENDMENT_RULE_KINDS.has(proposedRuleKind ?? currentRuleKind ?? 'approval') ? 'sensitive' : 'standard';
+        return {
+            action: String(change.action),
+            ruleId: change.ruleId,
+            currentRuleKind,
+            proposedRuleKind,
+            sensitivity
+        };
+    });
+    const sensitiveRuleIds = [...new Set(changes.filter((change) => change.sensitivity === 'sensitive').map((change) => change.ruleId))];
+    return {
+        title: proposal.title,
+        rationale: proposal.rationale,
+        evidence: [...proposal.evidence],
+        changes,
+        approvalBurdenBasis: sensitiveRuleIds.length > 0 ? 'sensitive-rule-change' : 'standard-rule-change',
+        sensitiveRuleIds
+    };
 }
 function validateAmendmentChanges(proposal, constitution) {
     const reasons = [];
@@ -490,20 +516,16 @@ function evaluateAmendment(proposal, constitution, agents) {
     const maintainers = new Set(agents.filter((agent) => agent.kind === 'human' && (agent.roles.includes('maintainer') || agent.roles.includes('admin'))).map((agent) => agent.id));
     const acceptedApprovals = uniqueApprovalsForTarget(proposal.approvals, maintainers, proposal.id);
     const changeValidationErrors = validateAmendmentChanges(proposal, constitution);
-    const sensitiveRules = proposal.changes.filter((change) => {
-        const current = constitution.find((rule) => rule.id === change.ruleId);
-        const candidate = change.rule;
-        const kind = candidate?.kind ?? current?.kind;
-        return kind === 'boundary' || kind === 'rollback' || kind === 'risk';
-    });
-    const requiredApprovals = sensitiveRules.length > 0 ? 2 : 1;
+    const proposalContext = buildAmendmentProposalContext(proposal, constitution);
+    const requiredApprovals = proposalContext.sensitiveRuleIds.length > 0 ? 2 : 1;
     if (changeValidationErrors.length > 0) {
         return {
             proposalId: proposal.id,
             outcome: 'denied',
             reasons: changeValidationErrors,
             approvalsAccepted: acceptedApprovals.map((item) => item.by),
-            requiredApprovals
+            requiredApprovals,
+            proposalContext
         };
     }
     if (acceptedApprovals.length < requiredApprovals) {
@@ -512,7 +534,8 @@ function evaluateAmendment(proposal, constitution, agents) {
             outcome: 'needs-approvals',
             reasons: [`Need ${requiredApprovals} maintainer approval(s) but only ${acceptedApprovals.length} unique targeted approval(s) were supplied.`],
             approvalsAccepted: acceptedApprovals.map((item) => item.by),
-            requiredApprovals
+            requiredApprovals,
+            proposalContext
         };
     }
     if (proposal.evidence.length === 0) {
@@ -521,7 +544,8 @@ function evaluateAmendment(proposal, constitution, agents) {
             outcome: 'denied',
             reasons: ['Amendments require explicit migration or validation evidence.'],
             approvalsAccepted: acceptedApprovals.map((item) => item.by),
-            requiredApprovals
+            requiredApprovals,
+            proposalContext
         };
     }
     return {
@@ -529,7 +553,8 @@ function evaluateAmendment(proposal, constitution, agents) {
         outcome: 'approved',
         reasons: ['Approvals and supporting evidence satisfy amendment requirements.'],
         approvalsAccepted: acceptedApprovals.map((item) => item.by),
-        requiredApprovals
+        requiredApprovals,
+        proposalContext
     };
 }
 function applyAmendment(proposal, constitution) {
