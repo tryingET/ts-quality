@@ -95,6 +95,19 @@ const stagedPackage = {
 
 fs.writeFileSync(path.join(stageDir, 'package.json'), `${JSON.stringify(stagedPackage, null, 2)}\n`, 'utf8');
 
+const stagedEntrypoints = {
+  main: stagedPackage.main,
+  types: stagedPackage.types,
+  bin: stagedPackage.bin['ts-quality'],
+  exportDefault: stagedPackage.exports['.'].default,
+  exportTypes: stagedPackage.exports['.'].types
+};
+
+for (const [label, relativePath] of Object.entries(stagedEntrypoints)) {
+  const normalizedRelativePath = relativePath.replace(/^\.\//u, '');
+  ensureFile(path.join(stageDir, normalizedRelativePath), `Missing staged ${label} entrypoint: ${relativePath}`);
+}
+
 const tarballStdout = execFileSync('npm', ['pack', '--pack-destination', tarballDir], {
   cwd: stageDir,
   encoding: 'utf8'
@@ -105,8 +118,12 @@ if (!tarballName) {
 }
 
 const summary = {
+  packageName: stagedPackage.name,
+  version: stagedPackage.version,
   stageDir: path.relative(root, stageDir),
-  tarball: path.relative(root, path.join(tarballDir, tarballName))
+  packageJson: path.relative(root, path.join(stageDir, 'package.json')),
+  tarball: path.relative(root, path.join(tarballDir, tarballName)),
+  entrypoints: stagedEntrypoints
 };
 
 console.log(JSON.stringify(summary, null, 2));
