@@ -2,13 +2,85 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { spawnSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const skipInstall = process.argv.includes('--skip-install');
+const scriptPath = fileURLToPath(import.meta.url);
+const root = path.resolve(path.dirname(scriptPath), '..');
 const verificationDir = path.join(root, 'verification');
-fs.mkdirSync(verificationDir, { recursive: true });
 const logPath = path.join(verificationDir, 'verification.log');
-const lines = [];
+
+const installStep = {
+  command: 'npm',
+  args: ['ci', '--ignore-scripts', '--no-audit', '--no-fund'],
+  markdown: '- `npm ci --ignore-scripts --no-audit --no-fund`'
+};
+const buildStep = {
+  command: 'npm',
+  args: ['run', 'build', '--silent'],
+  markdown: '- `npm run build --silent`'
+};
+const typecheckStep = {
+  command: 'npm',
+  args: ['run', 'typecheck', '--silent'],
+  markdown: '- `npm run typecheck --silent`'
+};
+const lintStep = {
+  command: 'npm',
+  args: ['run', 'lint', '--silent'],
+  markdown: '- `npm run lint --silent`'
+};
+const testStep = {
+  command: 'npm',
+  args: ['test', '--silent'],
+  markdown: '- `npm test --silent`'
+};
+const sampleArtifactsStep = {
+  command: 'npm',
+  args: ['run', 'sample-artifacts', '--silent'],
+  markdown: '- `npm run sample-artifacts --silent`'
+};
+const sampleArtifactsIdempotenceMarkdown = '- second `npm run sample-artifacts --silent` idempotence check over `examples/artifacts/governed-app`';
+const smokeStep = {
+  command: 'npm',
+  args: ['run', 'smoke', '--silent'],
+  markdown: '- `npm run smoke --silent`'
+};
+const packagingSmokeStep = {
+  command: 'npm',
+  args: ['run', 'smoke:packaging', '--silent'],
+  markdown: '- `npm run smoke:packaging --silent`'
+};
+
+export function verificationCommands(skipInstall = false) {
+  return [
+    ...(skipInstall ? [] : [installStep]),
+    buildStep,
+    typecheckStep,
+    lintStep,
+    testStep,
+    sampleArtifactsStep,
+    smokeStep,
+    packagingSmokeStep
+  ].map((step) => ({
+    command: step.command,
+    args: [...step.args],
+    markdown: step.markdown
+  }));
+}
+
+export function verificationMarkdownLines(skipInstall = false) {
+  return [
+    ...(skipInstall ? [] : [installStep.markdown]),
+    buildStep.markdown,
+    typecheckStep.markdown,
+    lintStep.markdown,
+    testStep.markdown,
+    sampleArtifactsStep.markdown,
+    sampleArtifactsIdempotenceMarkdown,
+    smokeStep.markdown,
+    packagingSmokeStep.markdown
+  ];
+}
 
 function sanitizeLogLine(line) {
   return line
@@ -25,18 +97,6 @@ function sanitizeLogFragment(value) {
     .split('\n')
     .map((line) => sanitizeLogLine(line))
     .join('\n');
-}
-
-function run(command, args) {
-  lines.push(`$ ${command} ${args.join(' ')}`);
-  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
-  lines.push(sanitizeLogFragment(result.stdout || ''));
-  lines.push(sanitizeLogFragment(result.stderr || ''));
-  lines.push(`exit=${result.status}`);
-  fs.writeFileSync(logPath, lines.join('\n'), 'utf8');
-  if (result.status !== 0) {
-    throw new Error(`Verification step failed: ${command} ${args.join(' ')}`);
-  }
 }
 
 function snapshotDirectory(dir) {
@@ -83,49 +143,72 @@ function assertVerifiedSampleAttestation(sampleArtifactsDir) {
   }
 }
 
-if (!skipInstall) {
-  run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
-}
-run('npm', ['run', 'build', '--silent']);
-run('npm', ['run', 'typecheck', '--silent']);
-run('npm', ['run', 'lint', '--silent']);
-run('npm', ['test', '--silent']);
-run('npm', ['run', 'sample-artifacts', '--silent']);
-const sampleArtifactsDir = path.join(root, 'examples', 'artifacts', 'governed-app');
-assertVerifiedSampleAttestation(sampleArtifactsDir);
-const firstSampleSnapshot = snapshotDirectory(sampleArtifactsDir);
-run('npm', ['run', 'sample-artifacts', '--silent']);
-assertVerifiedSampleAttestation(sampleArtifactsDir);
-const secondSampleSnapshot = snapshotDirectory(sampleArtifactsDir);
-if (formatSnapshot(firstSampleSnapshot) !== formatSnapshot(secondSampleSnapshot)) {
-  const changes = diffSnapshots(firstSampleSnapshot, secondSampleSnapshot);
-  throw new Error(`Verification step failed: sample artifacts drifted across consecutive generation passes\n${changes.join('\n')}`);
-}
-run('npm', ['run', 'smoke', '--silent']);
+export function runVerification(options = {}) {
+  const skipInstall = options.skipInstall === true;
+  fs.mkdirSync(verificationDir, { recursive: true });
+  const lines = [];
 
-const verificationMd = [
-  '---',
-  'summary: "Latest repo verification record produced by scripts/verify.mjs."',
-  'read_when:',
-  '  - "When checking which repo validation commands most recently passed"',
-  '  - "When reviewing the generated verification artifact format"',
-  'type: "reference"',
-  '---',
-  '',
-  '# Verification',
-  '',
-  'The following commands were executed successfully:',
-  '',
-  ...(skipInstall ? [] : ['- `npm ci --ignore-scripts --no-audit --no-fund`']),
-  '- `npm run build --silent`',
-  '- `npm run typecheck --silent`',
-  '- `npm run lint --silent`',
-  '- `npm test --silent`',
-  '- `npm run sample-artifacts --silent`',
-  '- second `npm run sample-artifacts --silent` idempotence check over `examples/artifacts/governed-app`',
-  '- `npm run smoke --silent`',
-  '',
-  `Log: \`${path.relative(root, logPath).replace(/\\/g, '/')}\``
-].join('\n');
-fs.writeFileSync(path.join(root, 'VERIFICATION.md'), `${verificationMd}\n`, 'utf8');
-console.log('verify: ok');
+  function run(command, args) {
+    lines.push(`$ ${command} ${args.join(' ')}`);
+    const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
+    lines.push(sanitizeLogFragment(result.stdout || ''));
+    lines.push(sanitizeLogFragment(result.stderr || ''));
+    lines.push(`exit=${result.status}`);
+    fs.writeFileSync(logPath, lines.join('\n'), 'utf8');
+    if (result.status !== 0) {
+      throw new Error(`Verification step failed: ${command} ${args.join(' ')}`);
+    }
+  }
+
+  if (!skipInstall) {
+    run(installStep.command, installStep.args);
+  }
+  run(buildStep.command, buildStep.args);
+  run(typecheckStep.command, typecheckStep.args);
+  run(lintStep.command, lintStep.args);
+  run(testStep.command, testStep.args);
+  run(sampleArtifactsStep.command, sampleArtifactsStep.args);
+  const sampleArtifactsDir = path.join(root, 'examples', 'artifacts', 'governed-app');
+  assertVerifiedSampleAttestation(sampleArtifactsDir);
+  const firstSampleSnapshot = snapshotDirectory(sampleArtifactsDir);
+  run(sampleArtifactsStep.command, sampleArtifactsStep.args);
+  assertVerifiedSampleAttestation(sampleArtifactsDir);
+  const secondSampleSnapshot = snapshotDirectory(sampleArtifactsDir);
+  if (formatSnapshot(firstSampleSnapshot) !== formatSnapshot(secondSampleSnapshot)) {
+    const changes = diffSnapshots(firstSampleSnapshot, secondSampleSnapshot);
+    throw new Error(`Verification step failed: sample artifacts drifted across consecutive generation passes\n${changes.join('\n')}`);
+  }
+  run(smokeStep.command, smokeStep.args);
+  run(packagingSmokeStep.command, packagingSmokeStep.args);
+
+  const verificationMd = [
+    '---',
+    'summary: "Latest repo verification record produced by scripts/verify.mjs."',
+    'read_when:',
+    '  - "When checking which repo validation commands most recently passed"',
+    '  - "When reviewing the generated verification artifact format"',
+    'type: "reference"',
+    '---',
+    '',
+    '# Verification',
+    '',
+    'The following commands were executed successfully:',
+    '',
+    ...verificationMarkdownLines(skipInstall),
+    '',
+    `Log: \`${path.relative(root, logPath).replace(/\\/g, '/')}\``
+  ].join('\n');
+  const verificationMdPath = path.join(root, 'VERIFICATION.md');
+  fs.writeFileSync(verificationMdPath, `${verificationMd}\n`, 'utf8');
+
+  return {
+    skipInstall,
+    logPath,
+    verificationMdPath
+  };
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
+  runVerification({ skipInstall: process.argv.includes('--skip-install') });
+  console.log('verify: ok');
+}
