@@ -1,5 +1,5 @@
 ---
-summary: "Active handoff: TG9 package-contract hardening is now live, with task 1731 ready to codify the staged package manifest contract."
+summary: "Active handoff: TG10 release-surface alignment is now live, with task 1751 ready to align the npm publishing checklist with the proven staged-package path."
 read_when:
   - "At the start of every work session"
   - "When resuming work in ts-quality after a pause"
@@ -14,8 +14,8 @@ Do not ask for permission to start.
 
 ## ACTIVE GOAL STACK
 - **Strategic goal:** SG3 — prove first outside-repo adoption through deterministic packaging and release ergonomics
-- **Tactical goal:** TG9 — lock publish-correct staged package metadata and file boundaries
-- **Operating slice:** OP1 — assert staged package manifest contract (`task:1731`)
+- **Tactical goal:** TG10 — align public install and release surfaces with the proven staged-package path
+- **Operating slice:** OP1 — align npm publishing checklist with the proven staged-package path (`task:1751`)
 
 ## START HERE
 1. Run `ak --doctor`
@@ -29,20 +29,21 @@ Do not ask for permission to start.
    ```bash
    ak task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
    ```
-4. If `task:1731` is ready, claim it and codify the staged package manifest contract before touching staged file-boundary or tarball file-set checks.
+4. If `task:1751` is ready, claim it and align `docs/npm-publishing-checklist.md` with the proven staged-package path before touching the release draft or README.
 
 ## CURRENT QUEUE TRUTH
 Ready now:
-- `#1731` — assert staged package manifest contract
+- `#1751` — align npm publishing checklist with staged-package proof path
 
 Sequenced behind it:
-- `#1732` — assert staged package file-boundary contract
-- `#1733` — assert packed tarball file-set contract
+- `#1752` — align release draft with staged-package publish path
+- `#1753` — align README package-operator quickstart with staged-package path
 
 Just completed:
-- `#1722` — add staged tarball install smoke coverage
-- `#1723` — harden staged package CLI/API proof points
-- `#1724` — gate staged tarball proof in repo verification
+- `#1744` — promote TG10 in direction and handoff docs
+- `#1731` — assert staged package manifest contract
+- `#1732` — assert staged package file-boundary contract
+- `#1733` — assert packed tarball file-set contract
 
 Still deferred with AK binding:
 - `#190` — automate AK-to-handoff projection sync
@@ -56,16 +57,16 @@ Still deferred with AK binding:
 5. `docs/project/tactical_goals.md`
 6. `docs/project/operating_plan.md`
 7. `docs/npm-publishing-checklist.md`
-8. `packages/ts-quality/package.json`
-9. `scripts/pack-ts-quality.mjs`
-10. `scripts/packaging-smoke.mjs`
-11. `scripts/verify.mjs`
-12. `docs/releases/2026-03-20-v0.1.0-github-release-draft.md`
+8. `docs/releases/2026-03-20-v0.1.0-github-release-draft.md`
+9. `packages/ts-quality/package.json`
+10. `scripts/pack-ts-quality.mjs`
+11. `scripts/packaging-smoke.mjs`
+12. `scripts/verify.mjs`
 
 ## EXECUTION RULES
 - Keep the staged package downstream of the repo-root build; do not invent a second hidden build topology.
-- Prove package-contract truth from the staged directory and the packed tarball, not from workspace-relative assumptions.
-- Keep release/docs promises downstream of the proven package contract.
+- Keep public docs and release promises downstream of the proven staged-package path.
+- Preserve explicit package-contract expectations instead of falling back to accidental workspace layout assumptions.
 - Update `docs/project/*`, `next_session_prompt.md`, diary, and `governance/work-items.json` when queue truth changes.
 - If docs change, run `node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict`.
 

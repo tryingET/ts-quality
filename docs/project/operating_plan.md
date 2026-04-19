@@ -1,5 +1,5 @@
 ---
-summary: "Operating plan with TG9 active: staged package contract hardening is now the live wave, with manifest, staged-file, and tarball-file-set checks bound to tasks 1731-1733."
+summary: "Operating plan with TG10 active: package-contract hardening is complete, and release-surface alignment now runs through checklist, release-draft, and README tasks 1751-1753."
 read_when:
   - "When deciding the next bounded implementation slice in ts-quality"
   - "When translating the current tactical state into the repo-local queue"
@@ -10,34 +10,34 @@ type: "reference"
 
 Active strategic goal: **SG3 — Prove first outside-repo adoption through deterministic packaging and release ergonomics**
 
-Active tactical goal: **TG9 — Lock publish-correct staged package metadata and file boundaries**
+Active tactical goal: **TG10 — Align public install and release surfaces with the proven staged-package path**
 
 ## Current state
 
-The repo now has deterministic packaged-behavior proof: `npm run smoke:packaging` stages the tarball, installs it into a fresh temp project, exercises the shipped CLI/API, and `npm run verify` gates that proof path. What is still missing is a package-contract surface strict enough to fail closed when the staged manifest, staged file boundaries, or final tarball contents drift away from the intended public package.
+The repo now has the hard package proof it was missing: `npm run smoke:packaging` stages the package, verifies the staged manifest and staged file boundaries, asserts the final `.tgz` file set, installs that tarball into a fresh temp project, and `npm run verify` gates the whole path. What is still missing is downstream operator and release copy that describes that proven staged-package path instead of relying on remembered manual sequencing or repo-only assumptions.
 
 ## Active operating slices
 
-### OP1 — Assert staged package manifest contract
-- **AK task:** `task:1731`
+### OP1 — Align npm publishing checklist with the proven staged-package path
+- **AK task:** `task:1751`
 - **State:** active
-- **Deliverable:** the staged package manifest fields and entrypoint bindings are checked against an intentional public-package contract instead of being whatever the helper happened to emit.
-- **Guardrails:** keep the contract native to the staged package; do not widen the slice into release-copy or broader publish automation.
+- **Deliverable:** `docs/npm-publishing-checklist.md` describes the current deterministic staged-package operator path, including the proven helper and validation sequence, without implying a different publish topology than the repo actually ships.
+- **Guardrails:** keep the slice documentation-native; do not widen it into release automation or build-topology changes.
 
-### OP2 — Assert staged package file-boundary contract
-- **AK task:** `task:1732`
+### OP2 — Align the public release draft with the staged-package publish path
+- **AK task:** `task:1752`
 - **State:** staged behind OP1
-- **Deliverable:** the staged package directory is checked for the intended publish surface before `npm pack`, including required runtime assets and explicit exclusions for repo-only material.
-- **Guardrails:** encode exact allowed/disallowed staged paths; do not rely on the current `dist/` tree shape staying accidental truth.
+- **Deliverable:** the release draft describes first-user and first-release behavior in terms that match the proven staged-package path rather than older repo-only quickstart assumptions.
+- **Guardrails:** keep public claims downstream of verified package reality; do not market package ergonomics the repo has not yet proven.
 
-### OP3 — Assert packed tarball file-set contract
-- **AK task:** `task:1733`
+### OP3 — Align README package-operator quickstart with the staged-package path
+- **AK task:** `task:1753`
 - **State:** staged behind OP2
-- **Deliverable:** the final `.tgz` contents are checked against the intended publish contract so `npm pack` cannot silently broaden, drop, or relink the public file set.
-- **Guardrails:** prove tarball reality, not just stage-directory intent; keep the slice focused on the package contract rather than public-doc rewrite.
+- **Deliverable:** the README points package operators at the current truthful staged-package path while preserving repo-local developer workflow guidance.
+- **Guardrails:** keep README truth additive and operator-facing; do not smuggle unrelated repo workflow churn into this slice.
 
 ## Queue discipline
-- `task:1731` is the live ready slice for TG9
-- `task:1732` depends on `task:1731`, and `task:1733` depends on `task:1732`
+- `task:1751` is the live ready slice for TG10
+- `task:1752` depends on `task:1751`, and `task:1753` depends on `task:1752`
+- completed package-contract tasks `task:1731-1733` stay closed unless the package contract itself changes again
 - deferred contract-first tasks `task:190-191` remain out of the active SG3 execution wave
-- when OP1-OP3 land, promote TG10 instead of inventing parallel SG3 tactical work
