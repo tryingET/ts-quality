@@ -552,6 +552,39 @@ function renderAttestationVerificationJson(records) {
     }
     return `${(0, index_1.stableStringify)(records)}\n`;
 }
+function renderAmendmentChangeSummary(change) {
+    const currentRuleKind = (0, index_1.renderSafeText)(change.currentRuleKind ?? 'none');
+    const proposedRuleKind = (0, index_1.renderSafeText)(change.proposedRuleKind ?? 'none');
+    return `- ${(0, index_1.renderSafeText)(change.action)} ${(0, index_1.renderSafeText)(change.ruleId)} (current=${currentRuleKind}; proposed=${proposedRuleKind}; sensitivity=${(0, index_1.renderSafeText)(change.sensitivity)})`;
+}
+function renderAmendmentDecisionText(decision) {
+    const proposalContext = decision.proposalContext;
+    const lines = [
+        `Proposal: ${(0, index_1.renderSafeText)(proposalContext?.title ?? decision.proposalId)}`,
+        `Proposal ID: ${(0, index_1.renderSafeText)(decision.proposalId)}`,
+        `Outcome: ${(0, index_1.renderSafeText)(decision.outcome)}`,
+        `Required approvals: ${String(decision.requiredApprovals)}`,
+        `Accepted approvals: ${decision.approvalsAccepted.length > 0 ? decision.approvalsAccepted.map((item) => (0, index_1.renderSafeText)(item)).join(', ') : 'none'}`
+    ];
+    if (proposalContext) {
+        lines.push(`Approval burden basis: ${(0, index_1.renderSafeText)(proposalContext.approvalBurdenBasis)}`);
+        lines.push(`Sensitive rules: ${proposalContext.sensitiveRuleIds.length > 0 ? proposalContext.sensitiveRuleIds.map((item) => (0, index_1.renderSafeText)(item)).join(', ') : 'none'}`);
+        lines.push(`Rationale: ${(0, index_1.renderSafeText)(proposalContext.rationale)}`);
+        lines.push('', 'Evidence:');
+        lines.push(...(proposalContext.evidence.length > 0
+            ? proposalContext.evidence.map((item) => `- ${(0, index_1.renderSafeText)(item)}`)
+            : ['- none']));
+        lines.push('', 'Changes:');
+        lines.push(...(proposalContext.changes.length > 0
+            ? proposalContext.changes.map((change) => renderAmendmentChangeSummary(change))
+            : ['- none']));
+    }
+    lines.push('', 'Reasons:');
+    lines.push(...(decision.reasons.length > 0
+        ? decision.reasons.map((reason) => `- ${(0, index_1.renderSafeText)(reason)}`)
+        : ['- none']));
+    return `${lines.join('\n')}\n`;
+}
 function attestationAppliesToRun(attestation, runId) {
     const subjectFile = typeof attestation.payload?.subjectFile === 'string' ? attestation.payload.subjectFile : undefined;
     if (!subjectFile || path_1.default.isAbsolute(subjectFile)) {
@@ -1065,8 +1098,10 @@ function runAmend(rootDir, proposalFile, apply = false, options) {
     const proposal = JSON.parse(fs_1.default.readFileSync(proposalPath, 'utf8'));
     const decision = (0, index_7.evaluateAmendment)(proposal, constitution, agents);
     const resultPath = path_1.default.join(rootDir, '.ts-quality', 'amendments', `${proposal.id}.result.json`);
+    const resultTextPath = path_1.default.join(rootDir, '.ts-quality', 'amendments', `${proposal.id}.result.txt`);
     (0, index_1.ensureDir)(path_1.default.dirname(resultPath));
     (0, index_1.writeJson)(resultPath, decision);
+    fs_1.default.writeFileSync(resultTextPath, renderAmendmentDecisionText(decision), 'utf8');
     if (apply && decision.outcome === 'approved') {
         const nextConstitution = (0, index_7.applyAmendment)(proposal, constitution);
         const constitutionPath = (0, index_1.resolveRepoLocalPath)(rootDir, loaded.config.constitutionPath, { allowMissing: true, kind: 'constitution path' }).absolutePath;

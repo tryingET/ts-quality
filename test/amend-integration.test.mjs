@@ -59,6 +59,27 @@ test('amend evaluates sensitive proposal with duplicate approvals as needing mor
   });
   const persisted = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'amendments', 'amend-auth-risk.result.json'), 'utf8'));
   assert.deepEqual(persisted, parsed);
+  const persistedText = fs.readFileSync(path.join(target, '.ts-quality', 'amendments', 'amend-auth-risk.result.txt'), 'utf8');
+  assert.equal(persistedText, [
+    'Proposal: Tune auth risk budget',
+    'Proposal ID: amend-auth-risk',
+    'Outcome: needs-approvals',
+    'Required approvals: 2',
+    'Accepted approvals: maintainer',
+    'Approval burden basis: sensitive-rule-change',
+    'Sensitive rules: auth-risk-budget',
+    'Rationale: Need a temporary policy adjustment during migration.',
+    '',
+    'Evidence:',
+    '- migration plan approved',
+    '',
+    'Changes:',
+    '- replace auth-risk-budget (current=risk; proposed=risk; sensitivity=sensitive)',
+    '',
+    'Reasons:',
+    '- Need 2 maintainer approval(s) but only 1 unique targeted approval(s) were supplied.',
+    ''
+  ].join('\n'));
 });
 
 test('amend --apply writes a loadable constitution module', () => {

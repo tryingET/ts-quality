@@ -1,0 +1,17 @@
+Proposal: Sample amendment
+Proposal ID: sample-amendment
+Outcome: needs-approvals
+Required approvals: 2
+Accepted approvals: maintainer
+Approval burden basis: sensitive-rule-change
+Sensitive rules: auth-risk-budget
+Rationale: Documented migration window.
+
+Evidence:
+- migration validated
+
+Changes:
+- replace auth-risk-budget (current=risk; proposed=risk; sensitivity=sensitive)
+
+Reasons:
+- Need 2 maintainer approval(s) but only 1 unique targeted approval(s) were supplied.

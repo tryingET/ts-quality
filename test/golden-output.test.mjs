@@ -82,6 +82,10 @@ test('amendment sample keeps exact proposal-context output parity', () => {
   assert.equal(amend.stdout, normalizedExpected);
   const persisted = fs.readFileSync(path.join(target, '.ts-quality', 'amendments', 'sample-amendment.result.json'), 'utf8');
   assert.equal(persisted, normalizedExpected);
+  const expectedText = fs.readFileSync(path.join(repoRoot, 'examples', 'artifacts', 'governed-app', 'amend.txt'), 'utf8');
+  const normalizedExpectedText = expectedText.endsWith('\n') ? expectedText : `${expectedText}\n`;
+  const persistedText = fs.readFileSync(path.join(target, '.ts-quality', 'amendments', 'sample-amendment.result.txt'), 'utf8');
+  assert.equal(persistedText, normalizedExpectedText);
 });
 
 test('attestation verification sample keeps exact signed subject context', () => {

@@ -243,7 +243,9 @@ fs.writeFileSync(proposalPath, JSON.stringify({
 const amendOut = run(['amend', '--proposal', 'proposal.json'], target);
 const amendDecision = JSON.parse(amendOut);
 const amendDecisionPath = path.join(target, '.ts-quality', 'amendments', 'sample-amendment.result.json');
+const amendDecisionTextPath = path.join(target, '.ts-quality', 'amendments', 'sample-amendment.result.txt');
 assert(fs.existsSync(amendDecisionPath), `Expected sample amendment decision at ${amendDecisionPath}`);
+assert(fs.existsSync(amendDecisionTextPath), `Expected sample amendment text at ${amendDecisionTextPath}`);
 const persistedAmendDecision = JSON.parse(fs.readFileSync(amendDecisionPath, 'utf8'));
 assertStableJsonEqual(amendDecision, persistedAmendDecision, 'Sample amendment stdout drifted from the persisted amendment artifact.');
 assertSampleAmendmentDecision(persistedAmendDecision);
@@ -266,5 +268,6 @@ if (fs.existsSync(maintainerDecisionPath)) {
 fs.copyFileSync(path.join(target, '.ts-quality', 'attestations', 'ci.tests.passed.json'), path.join(outDir, 'attestation.ci.verification.json'));
 fs.copyFileSync(path.join(runDir, 'attestation.verify.txt'), path.join(outDir, 'attestation.verify.txt'));
 evidenceModel.writeJson(path.join(outDir, 'amend.json'), persistedAmendDecision);
+fs.copyFileSync(amendDecisionTextPath, path.join(outDir, 'amend.txt'));
 fs.rmSync(SAMPLE_REPO_DIR, { recursive: true, force: true });
 console.log(`sample-artifacts: ok -> ${outDir}`);
