@@ -150,17 +150,30 @@ If docs changed during release prep, also run:
 node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict
 ```
 
-### 6) Confirm public repo metadata
+### 6) Confirm legitimacy/operator surfaces
+
+Before publishing, re-check the reviewed legitimacy outputs that README and release notes point at:
+
+- `examples/artifacts/governed-app/authorize.release-bot.json`
+- `examples/artifacts/governed-app/authorize.maintainer-approved.json`
+- `examples/artifacts/governed-app/attestation.verify.txt`
+- `examples/artifacts/governed-app/amend.txt`
+
+These are the current sample anchors for the shipped SG6 legitimacy surface: run-bound authorization evidence, human-readable attestation verification, and the additive amendment summary.
+Keep `run.json`, the authorization decision + bundle artifacts, and the amendment JSON result authoritative; the reviewed sample outputs are operator-facing projections, not a second legitimacy authority.
+
+### 7) Confirm public repo metadata
 
 Before publishing, make sure the public surfaces are coherent:
 
 - GitHub description matches the npm description closely
 - README quickstart and package-operator guidance match the staged-package path
+- README/operator docs point at the same legitimacy outputs the repo actually ships (`authorize.*.json`, `attestation-verify.txt`, and amendment JSON/text)
 - GitHub topics are set
 - social preview image is uploaded in repo settings
 - CHANGELOG documents anything alpha-breaking or release-relevant
 
-### 7) Dry-run the release notes
+### 8) Dry-run the release notes
 
 Prepare a short release note answering:
 
@@ -169,8 +182,11 @@ Prepare a short release note answering:
 - what a first-time user should run
 - what is still alpha / intentionally unstable before 1.0
 - how the staged-package path relates to the first public publish
+- how run-bound authorization evidence, attestation verification, and amendment outputs stay downstream of exact run/proposal truth
 
-### 8) Publish only after staged-package proof
+When possible, anchor those notes to the reviewed sample artifacts above instead of describing the legitimacy surface abstractly.
+
+### 9) Publish only after staged-package proof
 
 For the first release, prefer this exact sequence:
 
@@ -217,4 +233,4 @@ Use `npm run smoke:packaging` as the default release-proof step before any publi
 - shipped API exports and type declarations resolve for consumers
 - public metadata and release surfaces look intentional
 - release validation passes from repo root
-- public operator docs point at the same staged-package path the repo actually proves
+- public operator docs point at the same staged-package path and legitimacy outputs the repo actually proves

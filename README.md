@@ -150,15 +150,30 @@ Look at:
 .ts-quality/runs/<run-id>/verdict.json
 .ts-quality/runs/<run-id>/report.md
 .ts-quality/runs/<run-id>/pr-summary.md
+.ts-quality/runs/<run-id>/check-summary.txt
 .ts-quality/runs/<run-id>/explain.txt
 .ts-quality/runs/<run-id>/plan.txt
 .ts-quality/runs/<run-id>/govern.txt
+.ts-quality/runs/<run-id>/attestation-verify.txt
+.ts-quality/runs/<run-id>/authorize.<agent>.<action>.json
+.ts-quality/runs/<run-id>/bundle.<agent>.<action>.json
+.ts-quality/amendments/<proposal-id>.result.json
+.ts-quality/amendments/<proposal-id>.result.txt
 ```
 
 If you want a reviewed example bundle without generating your own first, see:
 
 ```text
 examples/artifacts/governed-app/
+```
+
+The checked-in sample bundle includes legitimacy-facing operator surfaces such as:
+
+```text
+examples/artifacts/governed-app/authorize.release-bot.json
+examples/artifacts/governed-app/authorize.maintainer-approved.json
+examples/artifacts/governed-app/attestation.verify.txt
+examples/artifacts/governed-app/amend.txt
 ```
 
 ## Top-level commands
@@ -174,12 +189,15 @@ npx ts-quality plan
 npx ts-quality govern
 npx ts-quality authorize --agent release-bot
 npx ts-quality attest sign --issuer ci.verify --key-id sample --private-key .ts-quality/keys/sample.pem --subject .ts-quality/runs/<run-id>/verdict.json --claims ci.tests.passed --out .ts-quality/attestations/ci.tests.passed.json
+npx ts-quality attest verify --attestation .ts-quality/attestations/ci.tests.passed.json --trusted-keys .ts-quality/keys
 npx ts-quality amend --proposal proposal.json
 ```
 
+`authorize` writes `.ts-quality/runs/<run-id>/authorize.<agent>.<action>.json` and the paired `.ts-quality/runs/<run-id>/bundle.<agent>.<action>.json`. The decision artifact remains the operator-facing legitimacy record, while its additive `evidenceContext` points back to the exact evaluated run, blocking governance findings, run-scoped attestation verification outcomes, and the first at-risk invariant provenance summary instead of inventing a second authority beyond `run.json` and the paired bundle.
+
 `amend` writes `.ts-quality/amendments/<proposal-id>.result.json`, mirrors the same JSON to stdout, and also writes a concise human-readable `.ts-quality/amendments/<proposal-id>.result.txt` summary. The JSON result remains authoritative for automation, while the additive `proposalContext` block is also projected into the reviewed text surface so operators can see the proposal title/rationale, explicit evidence entries, per-change rule summary, and approval-burden basis without inventing a second amendment authority beyond the proposal and constitution.
 
-`attest sign` expects `--subject` to point at a repo-local artifact under `--root` (for example `.ts-quality/runs/<run-id>/verdict.json`), reports missing repo-local subjects as missing input, and rejects subjects that only appear repo-local through symlink escapes outside the repository root. Signed subject digests bind to the exact file bytes on disk instead of a UTF-8-decoded text view, so binary or malformed-byte subjects cannot mutate silently while still verifying. `attest verify` defaults to human-readable text output and also supports `--json` for a versioned machine-readable verification record. Single-file CLI verification still treats an unreadable attestation path as an operator error with a non-zero exit, while malformed JSON or schema-invalid attestation content is reported through the canonical verification record. Signed `payload.runId` / `payload.artifactName` are only valid for run-scoped subjects under `.ts-quality/runs/<run-id>/...`, persisted run artifacts redact raw OS read-error detail for unreadable attestation files, and signing plus verification now share the same attestation-contract validation: blank issuers are rejected, renderable issuer/subject metadata cannot contain control, next-line, line/paragraph separator, bidi override/isolation, zero-width, BOM, or other invisible Unicode format characters, run-scoped payload metadata must match the signed `subjectFile`, the CLI fails closed on unknown, missing-value, or subcommand-irrelevant options instead of swallowing them silently, and human-readable verification output plus CLI error text escape unsafe characters that arrive from filenames, paths, or other fallback labels instead of rendering them raw.
+`attest sign` expects `--subject` to point at a repo-local artifact under `--root` (for example `.ts-quality/runs/<run-id>/verdict.json`), reports missing repo-local subjects as missing input, and rejects subjects that only appear repo-local through symlink escapes outside the repository root. Signed subject digests bind to the exact file bytes on disk instead of a UTF-8-decoded text view, so binary or malformed-byte subjects cannot mutate silently while still verifying. `attest verify` defaults to human-readable text output and also supports `--json` for a versioned machine-readable verification record. Single-file CLI verification still treats an unreadable attestation path as an operator error with a non-zero exit, while malformed JSON or schema-invalid attestation content is reported through the canonical verification record. Signed `payload.runId` / `payload.artifactName` are only valid for run-scoped subjects under `.ts-quality/runs/<run-id>/...`, persisted run artifacts redact raw OS read-error detail for unreadable attestation files, and signing plus verification now share the same attestation-contract validation: blank issuers are rejected, renderable issuer/subject metadata cannot contain control, next-line, line/paragraph separator, bidi override/isolation, zero-width, BOM, or other invisible Unicode format characters, run-scoped payload metadata must match the signed `subjectFile`, the CLI fails closed on unknown, missing-value, or subcommand-irrelevant options instead of swallowing them silently, and human-readable verification output plus CLI error text escape unsafe characters that arrive from filenames, paths, or other fallback labels instead of rendering them raw. Every `check` also writes `.ts-quality/runs/<run-id>/attestation-verify.txt` using that same human-readable verification framing so run-bound legitimacy review stays attached to the evaluated run.
 
 ## What a run produces
 
@@ -303,8 +321,9 @@ Those files are deterministic checked-in reference artifacts for the latest reco
 
 ## Sample artifacts
 
-Generated sample artifacts live under `examples/artifacts/governed-app/` after `npm run sample-artifacts`, including concise operator surfaces like `pr-summary.md`, `check-summary.txt`, `plan.txt`, `govern.txt`, and `amend.txt`.
+Generated sample artifacts live under `examples/artifacts/governed-app/` after `npm run sample-artifacts`, including concise operator surfaces like `pr-summary.md`, `check-summary.txt`, `plan.txt`, `govern.txt`, legitimacy-facing outputs such as `attestation.verify.txt`, `authorize.release-bot.json`, `authorize.maintainer-approved.json`, and the human-readable amendment summary `amend.txt`.
 The sample generation flow is idempotent over the checked-in bundle: `npm run verify` reruns `sample-artifacts` twice and fails if the second pass changes the reviewed examples.
+Keep `run.json`, authorization decision artifacts, paired bundle artifacts, and amendment JSON authoritative; the reviewed sample text/JSON surfaces are there to make the shipped operator path inspectable without inventing a second legitimacy authority.
 The generated `verification/verification.log` is intentionally sanitized for volatile duration fields, so it stays reviewable and stable across equivalent runs rather than acting as a byte-for-byte raw transcript.
 
 ## Why it is explainable
