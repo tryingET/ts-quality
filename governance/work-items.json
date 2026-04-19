@@ -596,22 +596,60 @@
         {
           "id": "AK-TASK-1766",
           "title": "ts-quality: surface attestation verification outcomes inside authorize evidence context and bundle artifacts",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: surface attestation verification outcomes inside authorize evidence context and bundle artifacts (task #1766)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1767",
+          "title": "ts-quality: project amendment evaluation context into human-readable outputs and sample artifacts",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: project amendment evaluation context into human-readable outputs and sample artifacts (task #1767)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1791",
+          "title": "ts-quality: align README and publish checklist with SG6 legitimacy outputs",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: align README and publish checklist with SG6 legitimacy outputs (task #1791)",
               "done": false
             }
           ],
           "dod": "Task reaches done in society.db with evidence recorded."
         },
         {
-          "id": "AK-TASK-1767",
-          "title": "ts-quality: project amendment evaluation context into human-readable outputs and sample artifacts",
+          "id": "AK-TASK-1792",
+          "title": "ts-quality: align public release docs with SG6 legitimacy outputs",
           "state": "queued",
           "tasks": [
             {
-              "text": "ts-quality: project amendment evaluation context into human-readable outputs and sample artifacts (task #1767)",
+              "text": "ts-quality: align public release docs with SG6 legitimacy outputs (task #1792)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        },
+        {
+          "id": "AK-TASK-1793",
+          "title": "ts-quality: add regression coverage for SG7 adoption-surface drift",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: add regression coverage for SG7 adoption-surface drift (task #1793)",
               "done": false
             }
           ],

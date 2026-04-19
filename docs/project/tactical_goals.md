@@ -1,5 +1,5 @@
 ---
-summary: "Tactical handoff with SG6 active: TG17 legitimacy-surface continuity is live, TG18 amendment-surface continuity is staged behind it, and the SG5 follow-through is complete history."
+summary: "Tactical handoff with SG7 active: TG19 adoption-surface revalidation is live, TG20 packaged-proof deepening is staged behind it, and SG6 legitimacy continuity is complete history."
 read_when:
   - "When planning the next sprint/week for ts-quality"
   - "When turning the current strategic state into bounded delivery waves"
@@ -8,44 +8,40 @@ type: "reference"
 
 # Tactical Goals
 
-Active strategic goal: **SG6 — Return the active wave to core product/runtime evidence surfaces after SG5 closure**
+Active strategic goal: **SG7 — Re-test adoption-facing operator paths against the richer SG6 legitimacy surface**
 
-SG5 is now closed. The next unfinished repo-local concern is a native legitimacy/operator-artifact gap: `authorize` already depends on exact run-bound attestations and exposes additive evidence context, but that authorization surface still compresses attestation verification detail more than the dedicated attestation review path does.
+SG6 is now complete. The next unfinished repo-local concern is adoption-facing truth: the repo's public operator/release surfaces and packaged proof path were aligned before the richer SG6 authorize/amend outputs landed, so the next tactical wave should revalidate those surfaces before assuming outside-repo operators will infer the new behavior from generic legitimacy wording.
 
 ## Active tactical goals
 
-### TG17 — Surface attestation verification outcomes in authorization artifacts and bundle surfaces
-- **Why this is active:** `attest verify` already exposes exact subject/run/artifact review detail, and legitimacy decisions can require those attestations, but the authorization artifact/bundle story still does not carry that verification outcome with the same additive continuity. That makes the next truthful SG6 slice a product-native legitimacy projection pass rather than more queue/control-plane work.
-- **Completion target:** authorization decision artifacts and bundle-facing surfaces project additive attestation verification outcomes for the exact evaluated run without inventing a second legitimacy authority outside the existing verification record.
-- **Materialized through:** repo-local AK task `task:1766`.
+### TG19 — Refresh public operator and release surfaces for the richer SG6 legitimacy outputs
+- **Why this is active:** README, publish guidance, and release surfaces already describe the staged-package path, but they still frame legitimacy/operator behavior mostly at the pre-SG6 granularity. The next truthful SG7 slice is to point those adoption-facing surfaces at the run-bound authorization evidence and human-readable amendment summary that now exist, using reviewed artifacts instead of hand-wavy claims.
+- **Completion target:** adoption-facing docs and release guidance describe the richer SG6 legitimacy outputs and their reviewed sample anchors truthfully, without inventing a second authority beyond `run.json`, authorization artifacts, or the amendment decision JSON/text pair.
+- **Materialized through:** repo-local AK tasks `task:1791-1793`.
 - **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `2`
 
-### TG18 — Project amendment evaluation context into human-readable outputs and reviewed sample artifacts
-- **Why this is next:** amendment JSON already carries additive `proposalContext`, but the human-readable/sample story still needs the same context continuity so operators do not have to fall back to raw JSON to understand rule/action/evidence posture.
-- **Completion target:** human-readable amendment outputs and reviewed samples carry proposal/rule context that stays aligned with the additive amendment result artifact.
-- **Promotion trigger:** promote after TG17 completes through `task:1766-1767`.
-- **Eisenhower-3D:** importance `2`, urgency `1`, difficulty `2`
+### TG20 — Re-prove the staged-package operator path with a representative SG6 review flow
+- **Why this is next:** the current packaging smoke path proves staging/install/load/init/materialize/API/types, but not a representative `check` / governance / legitimacy flow from the shipped package. Once TG19 refreshes the public operator story, the next truthful SG7 follow-through is to prove that richer path from a fresh installed package rather than leaving it as implied capability.
+- **Completion target:** a deterministic fresh-install proof exercises a representative SG6 review/legitimacy workflow from the packaged surface and keeps that proof inside the repo's normal validation contract.
+- **Promotion trigger:** promote after TG19 completes through `task:1791-1793`.
+- **Eisenhower-3D:** importance `2`, urgency `1`, difficulty `3`
 
 ## Recently completed tactical history
+
+### TG18 — Project amendment evaluation context into human-readable outputs and reviewed sample artifacts
+- **Completed by:** repo-local AK task `task:1767`.
+- **What landed:** amendment evaluation now persists `.result.txt` alongside the authoritative JSON result, the reviewed sample bundle includes `amend.txt`, and the README documents that additive human-readable contract.
+
+### TG17 — Surface attestation verification outcomes in authorization artifacts and bundle surfaces
+- **Completed by:** repo-local AK task `task:1766`.
+- **What landed:** authorization artifacts and bundles now project run-scoped attestation verification outcomes in additive form instead of forcing operators to cross-reference a separate attestation review path manually.
 
 ### TG16 — Close SG5 or materialize one last concrete SG5 follow-through
 - **Completed by:** repo-local AK task `task:1765`.
 - **What landed:** SG5 retired cleanly, the ladder rolled forward into SG6, and the next product-native follow-through queue was materialized as `task:1766-1767` instead of leaving the repo with a stale finished wave.
 
-### TG15 — Align operator-facing docs and handoff surfaces with the settled SG5 automation/guard contract
-- **Completed by:** repo-local AK tasks `task:1763-1764`.
-- **What landed:** README plus the active direction/handoff surfaces now describe the settled handoff-sync and verification-artifact guard contract without depending on hidden session memory.
-
-### TG14 — Implement the settled projection and verification artifact contracts
-- **Completed by:** repo-local AK tasks `task:190-191`.
-- **What landed:** the repo now has a local `handoff:sync` / `handoff:check` automation surface, `verify:ci` enforces the stabilized verification-artifact contract, and the tracked verification log stays canonical across full and skip-install verification paths.
-
-### TG13 — Record explicit authority contracts for repo-local projections and verification artifacts
-- **Completed by:** repo-local AK tasks `task:1760-1761`.
-- **What landed:** the repo now has ADRs for the hybrid projection-authority contract and for keeping verification artifacts as checked-in generated reference surfaces.
-
 ## Tactical guardrails
-- keep AK authoritative for live queue truth even while SG6 work returns to shipped runtime/docs/tests
-- keep authorization and amendment surfaces downstream of exact run-bound evidence/verification truth rather than inventing a second legitimacy authority
-- keep additive-first contract growth in `evidenceContext`, reviewed samples, and operator docs
-- do not reopen SG5 or generic control-plane cleanup unless SG6 surfaces reveal a concrete contract failure
+- keep adoption-facing operator surfaces downstream of exact SG6 artifacts rather than marketing generic legitimacy claims
+- keep README/release/checklist guidance aligned to reviewed sample artifacts and current shipped commands
+- keep additive-first contract growth intact: SG7 should restate current truth, not invent a new report model
+- do not reopen SG6 or generic control-plane cleanup unless the SG7 revalidation work finds a concrete contract contradiction
