@@ -267,15 +267,39 @@ npm run verify
 
 ## Repo task workflow (AK)
 
-This repo includes the same repo-local Agent Kernel launcher pattern used in related quality repos.
-Use `./scripts/ak.sh` as the canonical entrypoint and `./scripts/ak-v2.sh` as the compatibility alias.
+Live repo task state stays in Agent Kernel (`ak`).
+Use `ak` as the canonical entrypoint for readiness, claims, dependencies, and completion state.
 
 ```bash
-./scripts/ak.sh --doctor
-./scripts/ak.sh task ready --format json | jq '.[] | select(.repo == env.PWD)'
-./scripts/ak.sh task list --format json --verbose | jq '.[] | select(.repo == env.PWD and (.id == 181 or .id == 182))'
-./scripts/ak.sh task claim 182 --agent pi
+ak --doctor
+ak task ready --format json | jq '.[] | select(.repo == env.PWD)'
+ak task list --format json --verbose | jq '.[] | select(.repo == env.PWD and (.id == 181 or .id == 182))'
+ak task claim 182 --agent pi
 ```
+
+## Repo-local handoff sync
+
+`governance/work-items.json` is an exported AK projection, while `docs/project/*` and `next_session_prompt.md` remain manually curated downstream handoff surfaces.
+Use the handoff helper to keep those repo-local projections reconciled against AK without treating them as the live queue.
+
+```bash
+npm run handoff:sync
+npm run handoff:check
+```
+
+`npm run handoff:sync` exports `governance/work-items.json` and runs the direction reconciliation flow (`ak direction import`, `ak direction check`, `ak direction export`).
+`npm run handoff:check` fails closed when the checked-in work-items projection or downstream handoff docs drift from AK, but it is only a repo-local drift check: it does **not** replace `ak task *` for live queue truth or CI/job status for live automation truth.
+
+## Verification artifacts and guardrails
+
+```bash
+npm run verify
+npm run verify:ci
+```
+
+`npm run verify` is the repo-root verification gate and refreshes the generator-owned verification artifacts.
+`npm run verify:ci` reruns that gate without reinstalling dependencies and fails if `VERIFICATION.md` or `verification/verification.log` drift from what `scripts/verify.mjs` would emit.
+Those files are deterministic checked-in reference artifacts for the latest recorded successful verification snapshot, not a replacement for rerunning verify or checking live CI/job status when current correctness matters.
 
 ## Sample artifacts
 
