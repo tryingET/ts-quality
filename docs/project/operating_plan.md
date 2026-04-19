@@ -1,5 +1,5 @@
 ---
-summary: "Operating plan with SG4/TG13 active: the projection-authority decision is live, the verification-artifact contract is sequenced behind it, and the SG3 release-story wave is complete."
+summary: "Operating plan with SG5/TG14 active: projection-sync implementation is the preferred next slice, verification-artifact stabilization is the sibling follow-on, and the authority-decision wave is complete."
 read_when:
   - "When deciding the next bounded implementation slice in ts-quality"
   - "When translating the current tactical state into the repo-local queue"
@@ -8,35 +8,35 @@ type: "reference"
 
 # Operating Plan
 
-Active strategic goal: **SG4 — Settle repo-local projection and verification artifact authority without drifting from AK**
+Active strategic goal: **SG5 — Implement the settled projection and verification artifact contracts**
 
-Active tactical goal: **TG13 — Record explicit authority contracts for repo-local projections and verification artifacts**
+Active tactical goal: **TG14 — Implement the settled projection and verification artifact contracts**
 
 ## Current state
 
-The first-release staged-package wave is complete through `task:1755-1758`, but the repo handoff still points at done SG3 tasks. The next truthful step is to record the explicit authority decisions that were previously deferred before resuming automation/cleanup work for repo-local projection files and verification artifacts.
+The SG4 authority decisions landed through `task:1760-1761`, and the earlier deferrals on `task:190-191` have now been released. The next truthful step is implementing those chosen contracts in repo-local automation and artifact handling rather than leaving the decisions purely declarative.
 
 ## Active operating slices
 
-### OP1 — Record the repo-local projection authority contract
-- **AK task:** `task:1760`
+### OP1 — Implement projection sync under the hybrid authority contract
+- **AK task:** `task:190`
 - **State:** active
-- **Deliverable:** `docs/decisions/2026-04-19-projection-authority-contract.md` records which repo-local handoff/projection surfaces are generated, which stay manual, and how they remain downstream of AK.
-- **Guardrails:** do not silently turn narrative handoff docs into generated runtime authority; keep the contract explicit about AK, `docs/project/*`, `next_session_prompt.md`, and `governance/work-items.json`.
+- **Deliverable:** repo-local projection automation/export workflow respects the hybrid contract: AK stays authoritative, `governance/work-items.json` stays exported, and handoff docs stay manually curated but reconciled.
+- **Guardrails:** automate export/check/scaffolding without turning `docs/project/*` or `next_session_prompt.md` into generated runtime authority.
 
-### OP2 — Record the verification artifact contract
-- **AK task:** `task:1761`
-- **State:** staged behind OP1
-- **Deliverable:** `docs/decisions/2026-04-19-verification-artifact-contract.md` records whether `VERIFICATION.md` and `verification/verification.log` stay checked-in reference artifacts or move to an ephemeral output contract.
-- **Guardrails:** decide from deterministic reviewability and operator truth, not from convenience or churn-fatigue alone.
+### OP2 — Stabilize checked-in verification artifacts under the chosen contract
+- **AK task:** `task:191`
+- **State:** next handoff slice (AK also shows it as ready)
+- **Deliverable:** verification artifact handling is tightened under the checked-in reference-artifact contract without collapsing those files into ephemeral-only output.
+- **Guardrails:** keep `VERIFICATION.md` and `verification/verification.log` generator-owned, sanitized, and reviewable; do not treat them as live CI/runtime authority.
 
 ## Recently completed operating history
 
-- **Release-draft reflection (`task:1758`):** `docs/releases/2026-03-20-v0.1.0-github-release-draft.md` now reflects the explicit post-rehearsal go decision instead of staying at rehearsal-only language.
-- **First-release decision record (`task:1756`):** `docs/releases/2026-04-19-first-release-decision.md` records the explicit first public release go decision from the staged-package rehearsal evidence.
+- **Projection-authority decision (`task:1760`):** `docs/decisions/2026-04-19-projection-authority-contract.md` records the hybrid contract for AK, handoff docs, and `governance/work-items.json`.
+- **Verification-artifact decision (`task:1761`):** `docs/decisions/2026-04-19-verification-artifact-contract.md` keeps `VERIFICATION.md` and `verification/verification.log` as checked-in generated reference artifacts.
 
 ## Queue discipline
-- `task:1760` is the live ready slice for TG13
-- `task:1761` depends on `task:1760`
-- deferred implementation tasks `task:190-191` stay deferred until the corresponding SG4 decision records exist
+- `task:190` is the preferred starting slice for TG14
+- `task:191` is also ready in AK after its deferral release, but the handoff keeps it as the sibling follow-on behind `task:190`
+- completed SG4 decision tasks `task:1760-1761` stay closed unless the contracts need explicit supersession
 - completed SG3 release-story tasks `task:1755-1758` stay closed unless the staged-package story drifts again
