@@ -81,10 +81,10 @@ This go decision does **not** change the operator contract:
 
 No publish-blocking defect was identified by the rehearsal evidence.
 
-The following remain follow-through items, not blockers:
+The remaining follow-through items are operational, not blockers:
 
-- reflect this decision into the public release draft (`task:1758`)
 - rerun the standard publish-time proof from a clean repo state when the operator is ready to perform the real publish
+- publish from the staged package root and cut the public release using the updated draft + decision record
 
 ## Consequences
 
@@ -93,6 +93,7 @@ The following remain follow-through items, not blockers:
 - the repo now has an explicit first-release posture instead of an implied one
 - the first public publish decision is anchored to recorded rehearsal evidence
 - downstream release copy can now reference a canonical repo-local decision record
+- public release surfaces can now point at exact SG6 legitimacy artifacts instead of relying on generic legitimacy wording
 
 ### Risks / constraints that still matter
 
@@ -100,11 +101,23 @@ The following remain follow-through items, not blockers:
 - any late change to package metadata, built outputs, `README.md`, `LICENSE`, or shipped runtime files requires rerunning the packaging proof before publish
 - this record authorizes the first release posture, but it does not replace the normal publish-time preflight
 
+## Post-decision release-copy alignment
+
+The public release docs now explicitly point at the shipped SG6 legitimacy outputs:
+
+- run-bound authorization decisions: `.ts-quality/runs/<run-id>/authorize.<agent>.<action>.json`
+- paired authorization bundles: `.ts-quality/runs/<run-id>/bundle.<agent>.<action>.json`
+- human-readable attestation verification attached to the evaluated run: `.ts-quality/runs/<run-id>/attestation-verify.txt`
+- amendment results in authoritative JSON plus concise reviewed text: `.ts-quality/amendments/<proposal-id>.result.json` and `.ts-quality/amendments/<proposal-id>.result.txt`
+- reviewed sample anchors under `examples/artifacts/governed-app/`
+
+Those additions do not change release authority.
+`run.json`, the authorization decision + bundle artifacts, and amendment JSON remain authoritative; release-facing sample outputs are there to make the shipped operator path inspectable.
+
 ## Next steps
 
-1. Update the public release draft so it reflects this go decision (`task:1758`).
-2. When ready to publish for real, rerun:
+1. When ready to publish for real, rerun:
    - `npm run build`
    - `npm run smoke:packaging`
-3. Publish from `.ts-quality/npm/ts-quality/package` with `npm publish --access public`.
-4. Cut the public release using the updated draft and the proven staged-package path.
+2. Publish from `.ts-quality/npm/ts-quality/package` with `npm publish --access public`.
+3. Cut the public release using the updated draft, the explicit go decision, and the proven staged-package path.
