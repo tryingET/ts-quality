@@ -1,5 +1,5 @@
 ---
-summary: "Strategic handoff with SG3 still active: package-contract hardening landed, release-surface alignment is now the live SG3 wave, and SG4 remains the next contract-first follow-on."
+summary: "Strategic handoff with SG3 still active: release-surface alignment landed, staged-release rehearsal is now the live SG3 wave, and SG4 remains the next contract-first follow-on."
 read_when:
   - "When deciding the next major bets for ts-quality"
   - "When reconciling vision.md with the current repo-local direction posture"
@@ -11,14 +11,14 @@ type: "reference"
 ## Active strategic goal
 
 ### SG3 — Prove first outside-repo adoption through deterministic packaging and release ergonomics
-- **Why now:** TG9's package-contract hardening is now materially complete through `task:1731-1733`, so SG3's next unfinished repo-local bet is no longer proving or constraining the package boundary itself. The repo can now stage, validate, pack, install, and exercise the shipped package under repo-local verification. What still needs work is the downstream operator story: release and install surfaces must now describe that proven staged-package path instead of depending on repo-local knowledge or accidental memory.
-- **Success signal:** `ts-quality` keeps a deterministic staged-package proof path, validates the public package contract it is proving, and aligns downstream release/operator surfaces with that exact shipped package truth instead of depending on release-memory or accidental file layout.
+- **Why now:** TG10's public-surface alignment is now materially complete through `task:1751-1753`, so SG3's next unfinished repo-local bet is no longer aligning the words around the staged-package path. The repo now proves the package boundary and describes that path consistently in public-facing docs. What still needs work is rehearsing that aligned operator path as one coherent first-release story and making the first-release disposition explicit instead of implied.
+- **Success signal:** `ts-quality` keeps a deterministic staged-package proof path, validates the public package contract it is proving, aligns downstream release/operator surfaces with that shipped package truth, rehearses the first public operator path from those aligned surfaces, and records an explicit first-release disposition.
 - **Eisenhower-3D:** importance `4`, urgency `3`, difficulty `3`
 
 ## Next strategic goal
 
 ### SG4 — Settle repo-local projection and verification artifact authority without drifting from AK
-- **Why next:** deferred tasks `task:190-191` still show real unfinished repo-local process work around whether `next_session_prompt.md`, `docs/project/*`, `governance/work-items.json`, `VERIFICATION.md`, and `verification/verification.log` are manually synchronized projections or generated artifacts. That work remains real, but it is still contract-first and should not displace the active SG3 release-surface wave while the first public package story remains unfinished.
+- **Why next:** deferred tasks `task:190-191` still show real unfinished repo-local process work around whether `next_session_prompt.md`, `docs/project/*`, `governance/work-items.json`, `VERIFICATION.md`, and `verification/verification.log` are manually synchronized projections or generated artifacts. That work remains real, but it is still contract-first and should not displace the active SG3 staged-release rehearsal wave while the first public package story remains unfinished.
 - **Success signal:** repo-local handoff and verification artifacts have explicit ownership/generation contracts, so deferred automation or cleanup can be promoted later without accidentally changing authority boundaries or live source-of-truth rules.
 - **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `3`
 
