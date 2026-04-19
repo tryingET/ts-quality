@@ -1,5 +1,5 @@
 ---
-summary: "Active handoff: TG11 staged-release rehearsal is still live, with task 1756 ready to record the first-release decision after the successful rehearsal."
+summary: "Active handoff: SG4 authority-decision wave is live, with task 1760 ready to record the projection authority contract before verification-artifact contract work proceeds."
 read_when:
   - "At the start of every work session"
   - "When resuming work in ts-quality after a pause"
@@ -13,9 +13,9 @@ Reading this file is authorization to begin immediately.
 Do not ask for permission to start.
 
 ## ACTIVE GOAL STACK
-- **Strategic goal:** SG3 — prove first outside-repo adoption through deterministic packaging and release ergonomics
-- **Tactical goal:** TG11 — rehearse the first public staged-package operator path from the aligned surfaces
-- **Operating slice:** OP2 — record the first-release decision after the successful rehearsal (`task:1756`)
+- **Strategic goal:** SG4 — settle repo-local projection and verification artifact authority without drifting from AK
+- **Tactical goal:** TG13 — record explicit authority contracts for repo-local projections and verification artifacts
+- **Operating slice:** OP1 — record the repo-local projection authority contract (`task:1760`)
 
 ## START HERE
 1. Run `ak --doctor`
@@ -25,26 +25,28 @@ Do not ask for permission to start.
    ak direction check
    ak direction export
    ```
-3. Confirm repo-local readiness:
+3. Refresh the checked-in AK projection:
+   ```bash
+   ak work-items export
+   ```
+4. Confirm repo-local readiness:
    ```bash
    ak task ready --format json | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality")'
    ```
-4. If `task:1756` is ready, record the explicit first-release decision from the rehearsal evidence before changing the package path again.
+5. If `task:1760` is ready, record the explicit projection-authority contract before resuming `task:190` or changing the handoff surfaces.
 
 ## CURRENT QUEUE TRUTH
 Ready now:
-- `#1756` — record first-release decision after staged-package rehearsal
+- `#1760` — record repo-local projection authority contract
 
 Sequenced behind it:
-- `#1758` — reflect first-release decision in release draft
+- `#1761` — record verification artifact contract
 
 Just completed:
-- `#1757` — point handoff at first-release decision after rehearsal
+- `#1759` — promote SG4 authority-decision wave after release-story completion
+- `#1758` — reflect first-release decision in release draft
+- `#1756` — record first-release decision after staged-package rehearsal
 - `#1755` — capture first staged-package release rehearsal
-- `#1754` — promote TG11 after release-surface alignment completes
-- `#1751` — align npm publishing checklist with staged-package proof path
-- `#1752` — align release draft with staged-package publish path
-- `#1753` — align README package-operator quickstart with staged-package path
 
 Still deferred with AK binding:
 - `#190` — automate AK-to-handoff projection sync
@@ -57,18 +59,17 @@ Still deferred with AK binding:
 4. `docs/project/strategic_goals.md`
 5. `docs/project/tactical_goals.md`
 6. `docs/project/operating_plan.md`
-7. `docs/releases/2026-04-19-staged-package-release-rehearsal.md`
-8. `docs/npm-publishing-checklist.md`
-9. `docs/releases/2026-03-20-v0.1.0-github-release-draft.md`
-10. `scripts/pack-ts-quality.mjs`
-11. `scripts/packaging-smoke.mjs`
-12. `scripts/verify.mjs`
+7. `docs/decisions/README.md`
+8. `governance/README.md`
+9. `VERIFICATION.md`
+10. `scripts/verify.mjs`
+11. `governance/work-items.json`
 
 ## EXECUTION RULES
-- Keep the staged package downstream of the repo-root build; do not invent a second hidden build topology.
-- Keep the first-release decision explicit and evidence-bound.
-- Avoid letting local working-tree residue accidentally redefine what the package contains.
-- Update `docs/project/*`, `next_session_prompt.md`, diary, and `governance/work-items.json` when queue truth changes.
+- Keep AK authoritative for live task state.
+- Keep `docs/project/*` and `next_session_prompt.md` downstream of that truth rather than pretending they are the runtime queue.
+- Record authority decisions explicitly before resuming deferred implementation tasks `#190-191`.
+- When queue truth changes, refresh `docs/project/*`, `next_session_prompt.md`, and `governance/work-items.json` together.
 - If docs change, run `node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict`.
 
 ## END-OF-SESSION

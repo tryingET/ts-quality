@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-18",
+  "updated_at": "2026-04-19",
   "owner": "@tryinget",
   "project_name": "ts-quality",
   "milestones": [
@@ -355,34 +355,190 @@
         {
           "id": "AK-TASK-1731",
           "title": "ts-quality: assert staged package manifest contract",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: assert staged package manifest contract (task #1731)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-18"
         },
         {
           "id": "AK-TASK-1732",
           "title": "ts-quality: assert staged package file-boundary contract",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: assert staged package file-boundary contract (task #1732)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1733",
+          "title": "ts-quality: assert packed tarball file-set contract",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: assert packed tarball file-set contract (task #1733)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1744",
+          "title": "ts-quality: promote TG10 in direction and handoff docs",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: promote TG10 in direction and handoff docs (task #1744)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1751",
+          "title": "ts-quality: align npm publishing checklist with staged-package proof path",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: align npm publishing checklist with staged-package proof path (task #1751)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1752",
+          "title": "ts-quality: align release draft with staged-package publish path",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: align release draft with staged-package publish path (task #1752)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1753",
+          "title": "ts-quality: align README package-operator quickstart with staged-package path",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: align README package-operator quickstart with staged-package path (task #1753)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1754",
+          "title": "ts-quality: promote TG11 after release-surface alignment completes",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: promote TG11 after release-surface alignment completes (task #1754)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1755",
+          "title": "ts-quality: capture first staged-package release rehearsal",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: capture first staged-package release rehearsal (task #1755)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1756",
+          "title": "ts-quality: record first-release decision after staged-package rehearsal",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: record first-release decision after staged-package rehearsal (task #1756)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1757",
+          "title": "ts-quality: point handoff at first-release decision after rehearsal",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: point handoff at first-release decision after rehearsal (task #1757)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1758",
+          "title": "ts-quality: reflect first-release decision in release draft",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: reflect first-release decision in release draft (task #1758)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1759",
+          "title": "ts-quality: promote SG4 authority-decision wave after release-story completion",
+          "state": "doing",
+          "tasks": [
+            {
+              "text": "ts-quality: promote SG4 authority-decision wave after release-story completion (task #1759)",
               "done": false
             }
           ],
           "dod": "Task reaches done in society.db with evidence recorded."
         },
         {
-          "id": "AK-TASK-1733",
-          "title": "ts-quality: assert packed tarball file-set contract",
+          "id": "AK-TASK-1760",
+          "title": "ts-quality: record repo-local projection authority contract",
           "state": "queued",
           "tasks": [
             {
-              "text": "ts-quality: assert packed tarball file-set contract (task #1733)",
+              "text": "ts-quality: record repo-local projection authority contract (task #1760)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        },
+        {
+          "id": "AK-TASK-1761",
+          "title": "ts-quality: record verification artifact contract",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: record verification artifact contract (task #1761)",
               "done": false
             }
           ],
