@@ -1,5 +1,5 @@
 ---
-summary: "Strategic handoff with SG5 still active: first-pass SG5 implementation landed, remaining operator-surface follow-through is now the live concern, and SG6 waits behind it."
+summary: "Strategic handoff with SG6 active: SG5 is complete, the next live wave returns to native legitimacy/evidence surfaces, and SG7 keeps adoption-facing validation on the horizon."
 read_when:
   - "When deciding the next major bets for ts-quality"
   - "When reconciling vision.md with the current repo-local direction posture"
@@ -10,19 +10,23 @@ type: "reference"
 
 ## Active strategic goal
 
-### SG5 — Implement the settled projection and verification artifact contracts
-- **Why now:** the first SG5 implementation pass landed through `task:190-191`, but the repo still has unfinished SG5 follow-through: `ak direction` now fails because the active operating nodes point at completed tasks, and the operator-facing docs still do not fully carry the new handoff-sync / verification-guard truth. The next unfinished repo-local concern is closing that last follow-through so the settled contracts are reflected in durable operator surfaces instead of session memory.
-- **Success signal:** the repo's direction/handoff surfaces and operator docs truthfully reflect the settled SG5 automation/guard contract, and SG5 can then either retire cleanly or materialize one exact remaining follow-on instead of staying active by inertia.
+### SG6 — Return the active wave to core product/runtime evidence surfaces after SG5 closure
+- **Why now:** SG5 closed cleanly through `task:1763-1765`: the projection/verification contracts are implemented, the README plus handoff surfaces now carry that truth, and the repo no longer needs another control-plane-only wave to stay coherent. The next unfinished repo-local concern is back on the shipped product surface: `authorize` already projects additive run-bound evidence context and legitimacy flows already depend on exact attestations, but the authorization artifacts still do not project attestation verification outcomes with the same explicit run/subject continuity that `attest verify` already exposes.
+- **Success signal:** the next active wave lands shipped runtime/docs/tests that deepen legitimacy/evidence continuity on exact run-bound artifacts instead of reopening queue/control-plane cleanup.
 - **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `2`
 
 ## Next strategic goal
 
-### SG6 — Return the active wave to core product/runtime evidence surfaces after SG5 closes
-- **Why next:** SG3 through SG5 concentrated on release posture plus repo-local control-plane authority. Once SG5's remaining follow-through is closed, the next truthful major bet is to move active execution back toward the repo's native product surface — deterministic evidence, operator-facing artifacts, governance, and legitimacy semantics — rather than spending another wave on control-plane cleanup.
-- **Success signal:** the next active repo-local wave changes shipped `ts-quality` runtime/docs/tests/contracts in service of the evidence-native trust model rather than only release/process/bootstrap plumbing.
-- **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `3`
+### SG7 — Re-test adoption-facing operator paths after the next SG6 native-surface wave lands
+- **Why next:** once SG6 improves a native product/runtime surface again, the repo should re-check outside-repo operator and release guidance against that richer surface rather than assuming the earlier SG3 rehearsal stays current forever.
+- **Success signal:** adoption-facing docs, examples, and release guidance are revalidated against the richer SG6 product surface without turning that validation into another authority/control-plane detour.
+- **Eisenhower-3D:** importance `2`, urgency `1`, difficulty `2`
 
 ## Recently completed strategic history
+
+### SG5 — Implement the settled projection and verification artifact contracts
+- **Completed by:** repo-local AK tasks `task:1763-1765`.
+- **What landed:** the repo refreshed the active ladder after the first SG5 implementation pass, aligned README operator guidance with the settled handoff-sync / verification-artifact guard contract, then retired SG5 cleanly while promoting the next native product wave into AK-backed SG6 follow-through tasks `task:1766-1767`.
 
 ### SG4 — Settle repo-local projection and verification artifact authority without drifting from AK
 - **Completed by:** repo-local AK tasks `task:1760-1761`.
@@ -41,7 +45,7 @@ The earlier SG1 concise operator-surface parity wave remains complete through re
 ## Not current strategic goals
 
 These matter, but they are not the top repo-level bets right now:
-- reopening the SG4 authority decisions without a concrete supersession trigger
-- another packaging/release-story pass unless the staged-package operator surfaces drift again
+- reopening SG5 unless the settled projection/verification contracts prove insufficient in live use
+- another control-plane/handoff cleanup wave when the remaining visible gap is now on shipped runtime legitimacy surfaces
 - treating checked-in projection or verification artifacts as if they outrank AK or live verification commands
-- generic cleanup that does not materially close SG5 or advance the repo's native evidence surface
+- generic cleanup that does not materially advance SG6 or the repo's native evidence surface

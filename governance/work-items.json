@@ -557,34 +557,61 @@
         {
           "id": "AK-TASK-1763",
           "title": "ts-quality: promote TG15 after SG5 first-pass implementation lands",
-          "state": "doing",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: promote TG15 after SG5 first-pass implementation lands (task #1763)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
         },
         {
           "id": "AK-TASK-1764",
           "title": "ts-quality: align README operator guidance with handoff sync and verification guard surfaces",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: align README operator guidance with handoff sync and verification guard surfaces (task #1764)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1765",
+          "title": "ts-quality: close SG5 or materialize the last SG5 follow-through",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: close SG5 or materialize the last SG5 follow-through (task #1765)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1766",
+          "title": "ts-quality: surface attestation verification outcomes inside authorize evidence context and bundle artifacts",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: surface attestation verification outcomes inside authorize evidence context and bundle artifacts (task #1766)",
               "done": false
             }
           ],
           "dod": "Task reaches done in society.db with evidence recorded."
         },
         {
-          "id": "AK-TASK-1765",
-          "title": "ts-quality: close SG5 or materialize the last SG5 follow-through",
+          "id": "AK-TASK-1767",
+          "title": "ts-quality: project amendment evaluation context into human-readable outputs and sample artifacts",
           "state": "queued",
           "tasks": [
             {
-              "text": "ts-quality: close SG5 or materialize the last SG5 follow-through (task #1765)",
+              "text": "ts-quality: project amendment evaluation context into human-readable outputs and sample artifacts (task #1767)",
               "done": false
             }
           ],

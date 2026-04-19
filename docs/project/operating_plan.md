@@ -1,5 +1,5 @@
 ---
-summary: "Operating plan with SG5/TG15 active: direction/handoff refresh is the live slice, README operator guidance alignment is next, and explicit SG5 closure/promotion is staged behind it."
+summary: "Operating plan with SG6/TG17 active: attestation-to-authorization continuity is the live slice, amendment-output continuity is staged behind it, and SG5 closure is complete history."
 read_when:
   - "When deciding the next bounded implementation slice in ts-quality"
   - "When translating the current tactical state into the repo-local queue"
@@ -8,42 +8,36 @@ type: "reference"
 
 # Operating Plan
 
-Active strategic goal: **SG5 — Implement the settled projection and verification artifact contracts**
+Active strategic goal: **SG6 — Return the active wave to core product/runtime evidence surfaces after SG5 closure**
 
-Active tactical goal: **TG15 — Align operator-facing docs and handoff surfaces with the settled SG5 automation/guard contract**
+Active tactical goal: **TG17 — Surface attestation verification outcomes in authorization artifacts and bundle surfaces**
 
 ## Current state
 
-The first SG5 implementation pass landed through `task:190-191`, but the repo's active direction/handoff surfaces still point at those finished tasks and the operator docs have not yet fully absorbed the new helper/guard truth. The next truthful step is a narrow SG5 follow-through wave: refresh the active ladder, align the README operator guidance, then close SG5 explicitly or materialize one last exact follow-on if the docs pass reveals it.
+SG5 is now complete: the repo's projection/verification contracts are settled, the README and handoff surfaces carry that truth, and the queue no longer needs another control-plane-only rollover pass. The next truthful move is back on the shipped product surface: close the legitimacy continuity gap between `attest verify` and `authorize`, then carry the same additive-context discipline into amendment-facing human-readable/sample outputs.
 
 ## Active operating slices
 
-### OP1 — Promote TG15 after TG14 completion and refresh direction/handoff truth
-- **AK task:** `task:1763`
+### OP1 — Surface attestation verification outcomes inside authorize evidence context and bundle artifacts
+- **AK task:** `task:1766`
 - **State:** active
-- **Deliverable:** `docs/project/*`, `next_session_prompt.md`, `governance/work-items.json`, and the diary are refreshed so the active ladder points at TG15 and its live follow-on tasks instead of the completed TG14 implementation tasks.
-- **Guardrails:** keep the handoff surfaces downstream of AK and avoid front-running SG6 before TG15 actually lands.
+- **Deliverable:** shipped authorization artifacts, docs, and tests project exact attestation verification outcomes for the evaluated run in an additive form that stays downstream of the existing attestation verification record.
+- **Guardrails:** reuse the exact run/subject verification truth that already exists; do not invent a parallel legitimacy authority or opaque summary path.
 
-### OP2 — Align README operator guidance with handoff sync and verification guard surfaces
-- **AK task:** `task:1764`
-- **State:** next handoff slice
-- **Deliverable:** `README.md` truthfully describes the settled SG5 operator surfaces — including the local handoff-sync workflow and the verification-artifact guard — without implying those surfaces are the live authority.
-- **Guardrails:** do not claim `handoff:check` is a CI/runtime authority surface; keep the README aligned to the actual local-vs-live contract.
-
-### OP3 — Close SG5 or materialize the last SG5 follow-through after README alignment
-- **AK task:** `task:1765`
-- **State:** staged behind OP2
-- **Deliverable:** once README alignment lands, the repo refreshes the ladder again so SG5 either retires cleanly in favor of SG6 or names one exact remaining SG5 follow-on with authoritative AK coverage.
-- **Guardrails:** fail closed on empty queue vs actual completion; do not leave the active ladder pointing at finished SG5 slices by inertia.
+### OP2 — Project amendment evaluation context into human-readable outputs and reviewed sample artifacts
+- **AK task:** `task:1767`
+- **State:** next
+- **Deliverable:** amendment-facing human-readable outputs and reviewed samples carry the same proposal/rule context already present in the additive amendment result artifact.
+- **Guardrails:** extend the current amendment contract additively, and keep the JSON amendment result authoritative when a concise surface needs to stay short.
 
 ## Recently completed operating history
 
-- **Projection sync helper (`task:190`):** `scripts/handoff-sync.mjs` plus `handoff:sync` / `handoff:check` now provide the narrow SG5 automation surface allowed by the projection-authority ADR.
-- **Verification artifact stabilization (`task:191`):** `verify:ci` now enforces the tracked verification-artifact contract, and `scripts/verify.mjs` keeps `verification/verification.log` canonical across full and skip-install verification runs.
+- **SG5 closure/promotion (`task:1765`):** the repo retired SG5 cleanly, materialized `task:1766-1767`, and refreshed the handoff ladder so active direction points at a native product/runtime wave again.
+- **README operator guidance alignment (`task:1764`):** the repo documented `ak` as live task authority plus the settled `handoff:sync` / `handoff:check` and `verify` / `verify:ci` guard contract.
+- **Direction/handoff refresh (`task:1763`):** the repo promoted TG15 after the first SG5 implementation pass and removed the stale references to completed `task:190-191` as active work.
 
 ## Queue discipline
-- `task:1763` is the live ready slice for TG15
-- `task:1764` is the next TG15 execution slice once `task:1763` lands
-- `task:1765` depends on `task:1764`
-- completed TG14 implementation tasks `task:190-191` stay closed unless the settled SG5 contracts prove insufficient in practice
-- SG6 stays horizon-only until TG15/TG16 finish and SG5 is explicitly retired or extended
+- `task:1766` is the live ready slice for SG6/TG17
+- `task:1767` depends on `task:1766`
+- completed SG5 tasks `task:1763-1765` stay closed unless the settled contracts prove insufficient in practice
+- SG7 stays horizon-only until TG17/TG18 materially land
