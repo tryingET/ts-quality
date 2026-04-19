@@ -60,6 +60,86 @@ export const stagedManifestKeys = Object.freeze([
   'publishConfig'
 ]);
 
+export const stagedTopLevelEntries = Object.freeze([
+  'LICENSE',
+  'README.md',
+  'dist',
+  'package.json'
+].sort((left, right) => left.localeCompare(right)));
+
+export const stagedRuntimeFilesByPackage = Object.freeze({
+  crap4ts: Object.freeze([
+    'src/cli.d.ts',
+    'src/cli.js',
+    'src/cli.js.map',
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ]),
+  'evidence-model': Object.freeze([
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ]),
+  governance: Object.freeze([
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ]),
+  invariants: Object.freeze([
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ]),
+  legitimacy: Object.freeze([
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ]),
+  'policy-engine': Object.freeze([
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ]),
+  'ts-mutate': Object.freeze([
+    'src/cli.d.ts',
+    'src/cli.js',
+    'src/cli.js.map',
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ]),
+  'ts-quality': Object.freeze([
+    'src/cli.d.ts',
+    'src/cli.js',
+    'src/cli.js.map',
+    'src/config.d.ts',
+    'src/config.js',
+    'src/config.js.map',
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ])
+});
+
+export const stagedRuntimePackageNames = Object.freeze(Object.keys(stagedRuntimeFilesByPackage).sort((left, right) => left.localeCompare(right)));
+
+export const stagedPackageDirectories = Object.freeze([
+  'dist',
+  'dist/packages',
+  ...stagedRuntimePackageNames.flatMap((packageName) => [
+    `dist/packages/${packageName}`,
+    `dist/packages/${packageName}/src`
+  ])
+].sort((left, right) => left.localeCompare(right)));
+
+export const stagedPackageFiles = Object.freeze([
+  'LICENSE',
+  'README.md',
+  'package.json',
+  ...stagedRuntimePackageNames.flatMap((packageName) => stagedRuntimeFilesByPackage[packageName].map((relativePath) => `dist/packages/${packageName}/${relativePath}`))
+].sort((left, right) => left.localeCompare(right)));
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -107,6 +187,47 @@ function copyDirectory(sourceDir, destinationDir) {
   }
 }
 
+function formatPathContractMessage(label, expected, actual) {
+  const expectedSet = new Set(expected);
+  const actualSet = new Set(actual);
+  const missing = expected.filter((value) => !actualSet.has(value));
+  const extra = actual.filter((value) => !expectedSet.has(value));
+  return [
+    `${label} drifted.`,
+    missing.length > 0 ? `missing: ${missing.join(', ')}` : null,
+    extra.length > 0 ? `extra: ${extra.join(', ')}` : null,
+    `expected (${expected.length}): ${expected.join(', ')}`,
+    `actual (${actual.length}): ${actual.join(', ')}`
+  ].filter(Boolean).join('\n');
+}
+
+function collectStagePaths(rootDir) {
+  const directories = [];
+  const files = [];
+
+  function walk(currentDir, relativeDir = '') {
+    const entries = fs.readdirSync(currentDir, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name));
+    for (const entry of entries) {
+      const relativePath = relativeDir ? `${relativeDir}/${entry.name}` : entry.name;
+      const absolutePath = path.join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        directories.push(relativePath);
+        walk(absolutePath, relativePath);
+      } else if (entry.isFile()) {
+        files.push(relativePath);
+      }
+    }
+  }
+
+  walk(rootDir);
+
+  return {
+    topLevelEntries: fs.readdirSync(rootDir).sort((left, right) => left.localeCompare(right)),
+    directories: directories.sort((left, right) => left.localeCompare(right)),
+    files: files.sort((left, right) => left.localeCompare(right))
+  };
+}
+
 export function buildStagedPackageManifest(publicPackage, workspacePackage) {
   return {
     name: requireManifestField(publicPackage, 'name', 'public package'),
@@ -131,8 +252,8 @@ export function buildStagedPackageManifest(publicPackage, workspacePackage) {
 }
 
 export function assertStagedPackageManifestContract(stagedPackage, publicPackage, workspacePackage) {
-  const expectedKeys = [...stagedManifestKeys].sort();
-  const actualKeys = Object.keys(stagedPackage).sort();
+  const expectedKeys = [...stagedManifestKeys].sort((left, right) => left.localeCompare(right));
+  const actualKeys = Object.keys(stagedPackage).sort((left, right) => left.localeCompare(right));
   assert.deepEqual(actualKeys, expectedKeys, `Staged package manifest keys drifted: expected ${expectedKeys.join(', ')}, got ${actualKeys.join(', ')}`);
 
   assert.equal(stagedPackage.name, requireManifestField(publicPackage, 'name', 'public package'));
@@ -151,6 +272,29 @@ export function assertStagedPackageManifestContract(stagedPackage, publicPackage
   assert.deepEqual(stagedPackage.bin, { 'ts-quality': stagedEntrypoints.bin });
   assert.deepEqual(stagedPackage.files, stagedFiles);
   assert.deepEqual(stagedPackage.publishConfig, stagedPublishConfig);
+}
+
+export function assertStagedPackageFileBoundaryContract(stageRootDir) {
+  ensureFile(stageRootDir, `Missing staged package directory: ${stageRootDir}`);
+  const actual = collectStagePaths(stageRootDir);
+
+  assert.deepEqual(
+    actual.topLevelEntries,
+    [...stagedTopLevelEntries],
+    formatPathContractMessage('Staged package top-level entries', [...stagedTopLevelEntries], actual.topLevelEntries)
+  );
+  assert.deepEqual(
+    actual.directories,
+    [...stagedPackageDirectories],
+    formatPathContractMessage('Staged package directory set', [...stagedPackageDirectories], actual.directories)
+  );
+  assert.deepEqual(
+    actual.files,
+    [...stagedPackageFiles],
+    formatPathContractMessage('Staged package file set', [...stagedPackageFiles], actual.files)
+  );
+
+  return actual;
 }
 
 export function packTsQuality() {
@@ -188,6 +332,8 @@ export function packTsQuality() {
     ensureFile(path.join(stageDir, normalizedRelativePath), `Missing staged ${label} entrypoint: ${relativePath}`);
   }
 
+  const stagedBoundary = assertStagedPackageFileBoundaryContract(stageDir);
+
   const tarballStdout = execFileSync('npm', ['pack', '--pack-destination', tarballDir], {
     cwd: stageDir,
     encoding: 'utf8'
@@ -204,7 +350,10 @@ export function packTsQuality() {
     packageJson: path.relative(root, path.join(stageDir, 'package.json')),
     tarball: path.relative(root, path.join(tarballDir, tarballName)),
     entrypoints: stagedEntrypointFiles,
-    manifest: stagedPackage
+    manifest: stagedPackage,
+    topLevelEntries: stagedBoundary.topLevelEntries,
+    directories: stagedBoundary.directories,
+    stagedFiles: stagedBoundary.files
   };
 
   return summary;

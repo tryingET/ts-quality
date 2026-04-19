@@ -32,6 +32,86 @@ const expectedManifestKeys = [
   'publishConfig'
 ];
 
+const expectedTopLevelEntries = [
+  'LICENSE',
+  'README.md',
+  'dist',
+  'package.json'
+].sort((left, right) => left.localeCompare(right));
+
+const expectedStageRuntimeFilesByPackage = {
+  crap4ts: [
+    'src/cli.d.ts',
+    'src/cli.js',
+    'src/cli.js.map',
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ],
+  'evidence-model': [
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ],
+  governance: [
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ],
+  invariants: [
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ],
+  legitimacy: [
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ],
+  'policy-engine': [
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ],
+  'ts-mutate': [
+    'src/cli.d.ts',
+    'src/cli.js',
+    'src/cli.js.map',
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ],
+  'ts-quality': [
+    'src/cli.d.ts',
+    'src/cli.js',
+    'src/cli.js.map',
+    'src/config.d.ts',
+    'src/config.js',
+    'src/config.js.map',
+    'src/index.d.ts',
+    'src/index.js',
+    'src/index.js.map'
+  ]
+};
+
+const expectedStagePackageNames = Object.keys(expectedStageRuntimeFilesByPackage).sort();
+
+const expectedStageDirectories = [
+  'dist',
+  'dist/packages',
+  ...expectedStagePackageNames.flatMap((packageName) => [
+    `dist/packages/${packageName}`,
+    `dist/packages/${packageName}/src`
+  ])
+].sort((left, right) => left.localeCompare(right));
+
+const expectedStageFiles = [
+  'LICENSE',
+  'README.md',
+  'package.json',
+  ...expectedStagePackageNames.flatMap((packageName) => expectedStageRuntimeFilesByPackage[packageName].map((relativePath) => `dist/packages/${packageName}/${relativePath}`))
+].sort((left, right) => left.localeCompare(right));
+
 const expectedInitFiles = [
   'ts-quality.config.ts',
   '.ts-quality/invariants.ts',
@@ -95,7 +175,7 @@ function expectedManifestContract() {
   };
 }
 
-test('staged tarball smoke hardens packaged CLI and API proof points from a fresh temp project', () => {
+test('staged tarball smoke hardens staged manifest and file-boundary contract plus packaged CLI/API proof points from a fresh temp project', () => {
   const result = spawnSync('npm', ['run', 'smoke:packaging', '--silent'], { cwd: repoRoot, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
 
@@ -109,6 +189,9 @@ test('staged tarball smoke hardens packaged CLI and API proof points from a fres
   assert.deepEqual(Object.keys(summary.manifest).sort(), [...expectedManifestKeys].sort());
   assert.deepEqual(summary.manifest, manifestContract);
   assert.deepEqual(readJson(`${summary.stageDir}/package.json`), manifestContract);
+  assert.deepEqual(summary.topLevelEntries, expectedTopLevelEntries);
+  assert.deepEqual(summary.directories, expectedStageDirectories);
+  assert.deepEqual(summary.stagedFiles, expectedStageFiles);
   assert.equal(summary.cli.helpIncludes, 'ts-quality commands:');
   assert.deepEqual(summary.cli.initCreated, expectedInitFiles);
   assert.equal(summary.cli.materializedConfig, '.ts-quality/materialized/ts-quality.config.json');

@@ -1,9 +1,8 @@
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { assertStagedPackageManifestContract } from './pack-ts-quality.mjs';
+import { assertStagedPackageFileBoundaryContract, assertStagedPackageManifestContract } from './pack-ts-quality.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -52,6 +51,10 @@ function normalizePackageRelative(relativePath) {
   return relativePath.replace(/^\.\//u, '');
 }
 
+function installedBinPath(baseDir, binName) {
+  return path.join(baseDir, 'node_modules', '.bin', process.platform === 'win32' ? `${binName}.cmd` : binName);
+}
+
 function ensureRelativeFiles(baseDir, relativePaths, label) {
   for (const relativePath of relativePaths) {
     ensureFile(path.join(baseDir, relativePath), `${label} file`);
@@ -78,20 +81,27 @@ export function runPackagingSmoke() {
     throw new Error(`Staged package version drifted: expected ${packSummary.version}, got ${stagedPackage.version}`);
   }
   assertStagedPackageManifestContract(stagedPackage, publicPackage, workspacePackage);
+  const stagedBoundary = assertStagedPackageFileBoundaryContract(stageDirPath);
 
   for (const [label, relativePath] of Object.entries(packSummary.entrypoints)) {
     ensureFile(path.join(stageDirPath, normalizePackageRelative(relativePath)), `Staged ${label} entrypoint`);
   }
 
-  const installRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'tsq-packaging-smoke-'));
+  const scratchRoot = path.join(root, '.ts-quality', 'tmp');
+  fs.mkdirSync(scratchRoot, { recursive: true });
+  const installRoot = fs.mkdtempSync(path.join(scratchRoot, 'tsq-packaging-smoke-'));
   try {
     fs.writeFileSync(path.join(installRoot, 'package.json'), `${JSON.stringify({ name: 'ts-quality-packaging-smoke', private: true }, null, 2)}\n`, 'utf8');
     run('npm', ['install', tarballPath, '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false'], installRoot);
 
     const installedPackageDir = path.join(installRoot, 'node_modules', packSummary.packageName);
     const installedPackageJsonPath = path.join(installedPackageDir, 'package.json');
+    const installedCliBinPath = installedBinPath(installRoot, 'ts-quality');
+    const installedTscBinPath = installedBinPath(installRoot, 'tsc');
     ensureFile(installedPackageJsonPath, 'Installed package manifest');
     const installedPackage = JSON.parse(fs.readFileSync(installedPackageJsonPath, 'utf8'));
+    ensureFile(installedCliBinPath, 'Installed ts-quality bin');
+    ensureFile(installedTscBinPath, 'Installed tsc bin');
 
     if (installedPackage.main !== packSummary.entrypoints.main) {
       throw new Error(`Installed main entrypoint drifted: expected ${packSummary.entrypoints.main}, got ${installedPackage.main}`);
@@ -113,20 +123,20 @@ export function runPackagingSmoke() {
       ensureFile(path.join(installedPackageDir, normalizePackageRelative(relativePath)), `Installed ${label} entrypoint`);
     }
 
-    const cliHelp = run('npx', ['--no-install', 'ts-quality', '--help'], installRoot);
+    const cliHelp = run(installedCliBinPath, ['--help'], installRoot);
     if (!cliHelp.includes('ts-quality commands:')) {
       throw new Error(`Unexpected ts-quality --help output:\n${cliHelp}`);
     }
 
     const cliProjectRoot = path.join(installRoot, 'cli-project');
     fs.mkdirSync(cliProjectRoot, { recursive: true });
-    const cliInit = run('npx', ['--no-install', 'ts-quality', 'init', '--root', cliProjectRoot], installRoot);
+    const cliInit = run(installedCliBinPath, ['init', '--root', cliProjectRoot], installRoot);
     if (!cliInit.includes(`Initialized ts-quality in ${cliProjectRoot}`)) {
       throw new Error(`Unexpected ts-quality init output:\n${cliInit}`);
     }
     ensureRelativeFiles(cliProjectRoot, expectedInitFiles, 'CLI init');
 
-    const cliMaterialize = run('npx', ['--no-install', 'ts-quality', 'materialize', '--root', cliProjectRoot], installRoot);
+    const cliMaterialize = run(installedCliBinPath, ['materialize', '--root', cliProjectRoot], installRoot);
     if (!cliMaterialize.includes('Materialized runtime config: .ts-quality/materialized/ts-quality.config.json')) {
       throw new Error(`Unexpected ts-quality materialize output:\n${cliMaterialize}`);
     }
@@ -158,7 +168,7 @@ export function runPackagingSmoke() {
       'const materializeCheck: typeof materializeProject = materializeProject;',
       'console.log(typeof initCheck, typeof materializeCheck);'
     ].join('\n'), 'utf8');
-    run('npx', ['--no-install', 'tsc', '--module', 'commonjs', '--moduleResolution', 'node', '--target', 'ES2022', '--esModuleInterop', '--noEmit', path.basename(typeSmokePath)], installRoot);
+    run(installedTscBinPath, ['--module', 'commonjs', '--moduleResolution', 'node', '--target', 'ES2022', '--esModuleInterop', '--noEmit', path.basename(typeSmokePath)], installRoot);
 
     return {
       packageName: packSummary.packageName,
@@ -167,6 +177,9 @@ export function runPackagingSmoke() {
       tarball: packSummary.tarball,
       entrypoints: packSummary.entrypoints,
       manifest: stagedPackage,
+      topLevelEntries: stagedBoundary.topLevelEntries,
+      directories: stagedBoundary.directories,
+      stagedFiles: stagedBoundary.files,
       cli: {
         helpIncludes: 'ts-quality commands:',
         initCreated: [...expectedInitFiles],

@@ -5,10 +5,14 @@ import { spawnSync } from 'child_process';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const cli = path.join(root, 'dist', 'packages', 'ts-quality', 'src', 'cli.js');
+const cacheRoot = process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), '.cache');
+const smokeTempRoot = path.join(cacheRoot, 'ts-quality', 'smoke');
+
+fs.mkdirSync(smokeTempRoot, { recursive: true });
 
 function tempCopy(name) {
   const source = path.join(root, 'fixtures', name);
-  const target = fs.mkdtempSync(path.join(os.tmpdir(), `tsq-smoke-${name}-`));
+  const target = fs.mkdtempSync(path.join(smokeTempRoot, `tsq-smoke-${name}-`));
   fs.cpSync(source, target, { recursive: true });
   return target;
 }
