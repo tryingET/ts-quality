@@ -21,6 +21,11 @@ test('authorize projects run-bound governance and invariant evidence into the de
   assert.equal(denied.evidenceContext.artifactPaths.run, `.ts-quality/runs/${runId}/run.json`);
   assert.equal(denied.evidenceContext.artifactPaths.bundle, `.ts-quality/runs/${runId}/bundle.release-bot.merge.json`);
   assert.equal(denied.evidenceContext.governanceErrors.some((item) => item.ruleId === 'auth-risk-budget'), true);
+  assert.deepEqual(denied.evidenceContext.attestationVerification, {
+    verifiedCount: 0,
+    failedCount: 0,
+    records: []
+  });
   assert.equal(denied.evidenceContext.riskyInvariant.invariantId, 'auth.refresh.validity');
   assert.deepEqual(denied.evidenceContext.riskyInvariant.evidenceProvenance, { explicit: 3, inferred: 1, missing: 1 });
   assert.equal(denied.evidenceContext.riskyInvariant.signals.some((item) => item.signalId === 'scenario-support' && item.mode === 'missing'), true);
@@ -57,6 +62,11 @@ test('authorize writes bundle digests that match the run artifact file digests',
     const runFile = run.files.find((item) => item.filePath === filePath);
     assert.equal(bundle.fileDigests[filePath], runFile?.digest, filePath);
   }
+  assert.deepEqual(bundle.attestationVerification, {
+    verifiedCount: 0,
+    failedCount: 0,
+    records: []
+  });
 });
 
 test('attest sign and verify produce a valid signed claim with exact subject context', () => {
@@ -225,6 +235,24 @@ test('authorize accepts rollback evidence that is bound to the exact evaluated r
   decision = JSON.parse(result.stdout);
   assert.equal(decision.outcome, 'approve');
   assert.deepEqual(decision.evidenceContext.governanceErrors, []);
+  assert.deepEqual(decision.evidenceContext.attestationVerification, {
+    verifiedCount: 1,
+    failedCount: 0,
+    records: [
+      {
+        version: '1',
+        source: 'ci.tests.passed.json',
+        issuer: 'ci.verify',
+        ok: true,
+        reason: 'verified',
+        subjectFile: `.ts-quality/runs/${runId}/verdict.json`,
+        runId,
+        artifactName: 'verdict.json'
+      }
+    ]
+  });
+  const bundle = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', runId, 'bundle.maintainer.merge.json'), 'utf8'));
+  assert.deepEqual(bundle.attestationVerification, decision.evidenceContext.attestationVerification);
 });
 
 test('authorize denies repository drift after the evaluated run', () => {

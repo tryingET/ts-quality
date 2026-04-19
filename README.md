@@ -202,7 +202,7 @@ A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<ru
 
 Each impacted invariant also carries a structured `behaviorClaims[].evidenceSummary` in `run.json`, exposing the invariant-scoped evidence basis directly: impacted files, focused tests, changed functions, coverage pressure, mutation counts, per-scenario support, and named deterministic sub-signals such as `focused-test-alignment`, `scenario-support`, `coverage-pressure`, `mutation-pressure`, and `changed-function-pressure`. Every sub-signal is also labeled as `explicit`, `inferred`, or `missing` so reviewers can tell whether support came from direct configured/artifact evidence or deterministic alignment heuristics.
 
-Authorization artifacts written by `ts-quality authorize` add an additive `evidenceContext` that points back to the exact evaluated run (`runId`, artifact paths, blocking governance findings, and the first at-risk invariant provenance summary). This keeps legitimacy decisions traceable without inventing a second evidence authority beyond `run.json`.
+Authorization artifacts written by `ts-quality authorize` add an additive `evidenceContext` that points back to the exact evaluated run (`runId`, artifact paths, blocking governance findings, run-scoped attestation verification outcomes, and the first at-risk invariant provenance summary). The paired `bundle.<agent>.<action>.json` artifact carries the same run-scoped attestation verification summary so legitimacy inputs remain inspectable at the exact authorization boundary without inventing a second evidence authority beyond `run.json`.
 
 ## What makes a run meaningful
 

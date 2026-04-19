@@ -133,7 +133,7 @@ function authorizationRiskSignals(claim) {
         summary: signalSummary
     }));
 }
-function buildAuthorizationEvidenceContext(run, agentId, action) {
+function buildAuthorizationEvidenceContext(run, agentId, action, attestationVerification) {
     const riskyInvariant = (0, index_5.findFirstRiskyInvariantClaim)(run);
     const riskySummary = riskyInvariant?.evidenceSummary;
     const evidenceProvenance = riskySummary?.subSignals.reduce((counts, item) => {
@@ -154,6 +154,7 @@ function buildAuthorizationEvidenceContext(run, agentId, action) {
         governanceErrors: run.governance
             .filter((item) => item.level === 'error')
             .map(({ ruleId, message, evidence, scope }) => ({ ruleId, message, evidence, scope })),
+        attestationVerification,
         riskyInvariant: riskyInvariant && evidenceProvenance
             ? {
                 invariantId: riskyInvariant.invariantId,
@@ -344,8 +345,9 @@ function projectedRunForDecision(rootDir, run, options) {
     const waivers = (0, config_1.loadWaivers)(rootDir, snapshot?.waiversPath ?? loaded?.config.waiversPath ?? '.ts-quality/waivers.json');
     const constitution = snapshot?.constitution ?? (0, config_1.loadConstitution)(rootDir, loaded?.config.constitutionPath ?? '.ts-quality/constitution.ts');
     const agents = snapshot?.agents ?? (0, config_1.loadAgents)(rootDir, loaded?.config.agentsPath ?? '.ts-quality/agents.ts');
-    const { attestations } = loadVerifiedAttestations(rootDir, snapshot?.attestationsDir ?? loaded?.config.attestationsDir ?? '.ts-quality/attestations', snapshot?.trustedKeysDir ?? loaded?.config.trustedKeysDir ?? '.ts-quality/keys');
+    const { attestations, verification } = loadVerifiedAttestations(rootDir, snapshot?.attestationsDir ?? loaded?.config.attestationsDir ?? '.ts-quality/attestations', snapshot?.trustedKeysDir ?? loaded?.config.trustedKeysDir ?? '.ts-quality/keys');
     const runAttestations = attestations.filter((attestation) => attestationAppliesToRun(attestation, run.runId));
+    const runAttestationVerification = verification.filter((record) => attestationVerificationAppliesToRun(record, run.runId));
     const policy = snapshot ? policyConfigFromSnapshot(snapshot) : policyConfigFromLoadedContext(loaded);
     const preliminary = (0, index_5.evaluatePolicy)({
         nowIso: (0, index_1.nowIso)(),
@@ -398,6 +400,7 @@ function projectedRunForDecision(rootDir, run, options) {
         agents,
         constitution,
         runAttestations,
+        runAttestationVerification,
         drift: detectRunDrift(rootDir, run)
     };
 }
@@ -560,6 +563,23 @@ function attestationAppliesToRun(attestation, runId) {
     }
     const payloadRunId = typeof attestation.payload?.runId === 'string' ? attestation.payload.runId : undefined;
     return payloadRunId === undefined || payloadRunId === runId;
+}
+function attestationVerificationAppliesToRun(record, runId) {
+    if (record.runId) {
+        return record.runId === runId;
+    }
+    if (!record.subjectFile || path_1.default.isAbsolute(record.subjectFile)) {
+        return false;
+    }
+    const scopedSubject = (0, index_7.runScopedArtifactReference)(record.subjectFile);
+    return scopedSubject?.runId === runId;
+}
+function buildAuthorizationAttestationVerification(records) {
+    return {
+        verifiedCount: records.filter((record) => record.ok).length,
+        failedCount: records.filter((record) => !record.ok).length,
+        records: records.map((record) => ({ ...record }))
+    };
 }
 function writeModuleExport(filePath, value) {
     if (filePath.endsWith('.json')) {
@@ -948,6 +968,7 @@ function renderPlan(rootDir, options) {
 function runAuthorize(rootDir, agentId, action, options) {
     const context = projectedRunForDecision(rootDir, (0, index_1.readLatestRun)(rootDir), options);
     const bundle = (0, index_7.buildChangeBundle)(rootDir, context.run, agentId, action);
+    const attestationVerification = buildAuthorizationAttestationVerification(context.runAttestationVerification);
     const baseDecision = context.drift.length > 0
         ? {
             id: `${context.run.runId}:${agentId}:${action}`,
@@ -963,12 +984,15 @@ function runAuthorize(rootDir, agentId, action, options) {
         : (0, index_7.authorizeChange)(agentId, action, bundle, context.projectedRun, context.agents, context.constitution, context.runAttestations, context.overrides);
     const decision = {
         ...baseDecision,
-        evidenceContext: buildAuthorizationEvidenceContext(context.projectedRun, agentId, action)
+        evidenceContext: buildAuthorizationEvidenceContext(context.projectedRun, agentId, action, attestationVerification)
     };
     const artifactDir = path_1.default.join(rootDir, '.ts-quality', 'runs', context.run.runId);
     const bundlePath = path_1.default.join(artifactDir, `bundle.${agentId}.${action}.json`);
     const decisionPath = path_1.default.join(artifactDir, `authorize.${agentId}.${action}.json`);
-    (0, index_1.writeJson)(bundlePath, bundle);
+    (0, index_1.writeJson)(bundlePath, {
+        ...bundle,
+        attestationVerification
+    });
     (0, index_1.writeJson)(decisionPath, decision);
     return { decisionPath, output: `${(0, index_1.stableStringify)(decision)}\n` };
 }

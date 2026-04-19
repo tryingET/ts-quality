@@ -352,6 +352,12 @@ export interface AuthorizationRiskyInvariantSummary {
   obligation?: string | undefined;
 }
 
+export interface AuthorizationAttestationVerificationSummary {
+  verifiedCount: number;
+  failedCount: number;
+  records: AttestationVerificationRecord[];
+}
+
 export interface AuthorizationEvidenceContext {
   runId: string;
   runOutcome: Outcome;
@@ -359,6 +365,7 @@ export interface AuthorizationEvidenceContext {
   bestNextAction?: string | undefined;
   artifactPaths: AuthorizationEvidenceArtifactPaths;
   governanceErrors: Array<Pick<GovernanceFinding, 'ruleId' | 'message' | 'evidence' | 'scope'>>;
+  attestationVerification?: AuthorizationAttestationVerificationSummary | undefined;
   riskyInvariant?: AuthorizationRiskyInvariantSummary | undefined;
 }
 

@@ -11,6 +11,22 @@
       "run": ".ts-quality/runs/sample-governed-app-run/run.json",
       "verdict": ".ts-quality/runs/sample-governed-app-run/verdict.json"
     },
+    "attestationVerification": {
+      "failedCount": 0,
+      "records": [
+        {
+          "artifactName": "verdict.json",
+          "issuer": "ci.verify",
+          "ok": true,
+          "reason": "verified",
+          "runId": "sample-governed-app-run",
+          "source": "ci.tests.passed.json",
+          "subjectFile": ".ts-quality/runs/sample-governed-app-run/verdict.json",
+          "version": "1"
+        }
+      ],
+      "verifiedCount": 1
+    },
     "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
     "governanceErrors": [
       {

@@ -7,6 +7,7 @@ import {
   type Approval,
   type Attestation,
   type AttestationVerificationRecord,
+  type AuthorizationAttestationVerificationSummary,
   type AuthorizationDecision,
   type ConstitutionRule,
   type ControlPlaneSnapshot,
@@ -77,6 +78,7 @@ interface RunDecisionContext {
   agents: ReturnType<typeof loadAgents>;
   constitution: ReturnType<typeof loadConstitution>;
   runAttestations: Attestation[];
+  runAttestationVerification: AttestationVerificationRecord[];
   drift: RunDriftEntry[];
 }
 
@@ -201,7 +203,8 @@ function authorizationRiskSignals(claim: RunArtifact['behaviorClaims'][number]):
 function buildAuthorizationEvidenceContext(
   run: Pick<RunArtifact, 'runId' | 'behaviorClaims' | 'governance' | 'verdict'>,
   agentId: string,
-  action: string
+  action: string,
+  attestationVerification: AuthorizationAttestationVerificationSummary
 ): NonNullable<AuthorizationDecision['evidenceContext']> {
   const riskyInvariant = findFirstRiskyInvariantClaim(run);
   const riskySummary = riskyInvariant?.evidenceSummary;
@@ -226,6 +229,7 @@ function buildAuthorizationEvidenceContext(
     governanceErrors: run.governance
       .filter((item) => item.level === 'error')
       .map(({ ruleId, message, evidence, scope }) => ({ ruleId, message, evidence, scope })),
+    attestationVerification,
     riskyInvariant: riskyInvariant && evidenceProvenance
       ? {
           invariantId: riskyInvariant.invariantId,
@@ -444,12 +448,13 @@ function projectedRunForDecision(rootDir: string, run: RunArtifact, options?: { 
   const waivers = loadWaivers(rootDir, snapshot?.waiversPath ?? loaded?.config.waiversPath ?? '.ts-quality/waivers.json');
   const constitution = snapshot?.constitution ?? loadConstitution(rootDir, loaded?.config.constitutionPath ?? '.ts-quality/constitution.ts');
   const agents = snapshot?.agents ?? loadAgents(rootDir, loaded?.config.agentsPath ?? '.ts-quality/agents.ts');
-  const { attestations } = loadVerifiedAttestations(
+  const { attestations, verification } = loadVerifiedAttestations(
     rootDir,
     snapshot?.attestationsDir ?? loaded?.config.attestationsDir ?? '.ts-quality/attestations',
     snapshot?.trustedKeysDir ?? loaded?.config.trustedKeysDir ?? '.ts-quality/keys'
   );
   const runAttestations = attestations.filter((attestation) => attestationAppliesToRun(attestation, run.runId));
+  const runAttestationVerification = verification.filter((record) => attestationVerificationAppliesToRun(record, run.runId));
   const policy = snapshot ? policyConfigFromSnapshot(snapshot) : policyConfigFromLoadedContext(loaded!);
   const preliminary = evaluatePolicy({
     nowIso: nowIso(),
@@ -502,6 +507,7 @@ function projectedRunForDecision(rootDir: string, run: RunArtifact, options?: { 
     agents,
     constitution,
     runAttestations,
+    runAttestationVerification,
     drift: detectRunDrift(rootDir, run)
   };
 }
@@ -675,6 +681,25 @@ function attestationAppliesToRun(attestation: Attestation, runId: string): boole
   }
   const payloadRunId = typeof attestation.payload?.runId === 'string' ? attestation.payload.runId : undefined;
   return payloadRunId === undefined || payloadRunId === runId;
+}
+
+function attestationVerificationAppliesToRun(record: AttestationVerificationRecord, runId: string): boolean {
+  if (record.runId) {
+    return record.runId === runId;
+  }
+  if (!record.subjectFile || path.isAbsolute(record.subjectFile)) {
+    return false;
+  }
+  const scopedSubject = runScopedArtifactReference(record.subjectFile);
+  return scopedSubject?.runId === runId;
+}
+
+function buildAuthorizationAttestationVerification(records: AttestationVerificationRecord[]): AuthorizationAttestationVerificationSummary {
+  return {
+    verifiedCount: records.filter((record) => record.ok).length,
+    failedCount: records.filter((record) => !record.ok).length,
+    records: records.map((record) => ({ ...record }))
+  };
 }
 
 function writeModuleExport(filePath: string, value: unknown): void {
@@ -1115,6 +1140,7 @@ export function renderPlan(rootDir: string, options?: { configPath?: string }): 
 export function runAuthorize(rootDir: string, agentId: string, action: string, options?: { configPath?: string }): { decisionPath: string; output: string } {
   const context = projectedRunForDecision(rootDir, readLatestRun(rootDir), options);
   const bundle = buildChangeBundle(rootDir, context.run, agentId, action);
+  const attestationVerification = buildAuthorizationAttestationVerification(context.runAttestationVerification);
   const baseDecision = context.drift.length > 0
     ? {
         id: `${context.run.runId}:${agentId}:${action}`,
@@ -1130,12 +1156,15 @@ export function runAuthorize(rootDir: string, agentId: string, action: string, o
     : authorizeChange(agentId, action, bundle, context.projectedRun, context.agents, context.constitution, context.runAttestations, context.overrides);
   const decision: AuthorizationDecision = {
     ...baseDecision,
-    evidenceContext: buildAuthorizationEvidenceContext(context.projectedRun, agentId, action)
+    evidenceContext: buildAuthorizationEvidenceContext(context.projectedRun, agentId, action, attestationVerification)
   };
   const artifactDir = path.join(rootDir, '.ts-quality', 'runs', context.run.runId);
   const bundlePath = path.join(artifactDir, `bundle.${agentId}.${action}.json`);
   const decisionPath = path.join(artifactDir, `authorize.${agentId}.${action}.json`);
-  writeJson(bundlePath, bundle);
+  writeJson(bundlePath, {
+    ...bundle,
+    attestationVerification
+  });
   writeJson(decisionPath, decision);
   return { decisionPath, output: `${stableStringify(decision)}\n` };
 }

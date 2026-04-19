@@ -9,6 +9,11 @@
       "run": ".ts-quality/runs/sample-governed-app-run/run.json",
       "verdict": ".ts-quality/runs/sample-governed-app-run/verdict.json"
     },
+    "attestationVerification": {
+      "failedCount": 0,
+      "records": [],
+      "verifiedCount": 0
+    },
     "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
     "governanceErrors": [
       {
