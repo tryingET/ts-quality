@@ -102,18 +102,30 @@ That matters a lot in agent-heavy workflows, where generated artifacts and suppo
 
 ## Try it now
 
-The fastest way to try the repo is to run it against the included governed fixture and inspect the generated artifacts.
+There are two truthful ways to start with `ts-quality`: prove the package-operator path the repo can now ship, or evaluate the project directly from source.
 
-### 1) Build the workspace
+### 1) Prove the package-operator path
 
 ```bash
 npm install
 npm run build
+npm run smoke:packaging
 ```
 
-### 2) Run the end-to-end verifier
+This stages the package under `.ts-quality/npm/ts-quality/package`, validates the staged manifest contract, validates staged and packed file boundaries, installs the tarball into a fresh temp project, and proves the shipped CLI/API/types surfaces.
+
+If you are preparing the first public publish, publish from the staged package root after that proof passes:
 
 ```bash
+cd .ts-quality/npm/ts-quality/package
+npm publish --access public
+```
+
+### 2) Evaluate the repo from source
+
+```bash
+npm install
+npm run build
 npm run verify
 ```
 
