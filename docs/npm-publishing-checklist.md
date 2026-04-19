@@ -1,5 +1,5 @@
 ---
-summary: "Checklist for publishing the ts-quality package to npm without breaking the repo's current monorepo build assumptions."
+summary: "Checklist for publishing ts-quality through the repo's proven staged-package path."
 read_when:
   - "When preparing the first public npm release for ts-quality"
   - "When deciding whether the current package layout is publish-ready"
@@ -8,38 +8,52 @@ type: "how-to"
 
 # npm publishing checklist
 
-This repo already has a public GitHub repository and a public package name candidate (`ts-quality`), but **the package is not publish-ready by accident**.
-Use this checklist before the first npm release.
+This repo now has a deterministic staged-package publish path.
+Use this checklist to publish `ts-quality` through that proven path instead of relying on repo-memory or a naive `npm publish` from `packages/ts-quality/`.
 
 ## Current state snapshot
 
 Good:
 
 - `packages/ts-quality/package.json` exists with the intended public package name: `ts-quality`
-- the CLI entrypoint exists in built output: `dist/packages/ts-quality/src/cli.js`
-- the repo ships a public README, MIT license, examples, and verification workflow
+- `npm run pack:ts-quality` creates a clean staged package under `.ts-quality/npm/ts-quality/package`
+- the staged helper writes a publish-ready `package.json`, asserts the staged manifest contract, asserts the staged file-boundary contract, and runs `npm pack`
+- `npm run smoke:packaging` asserts the packed tarball file set, installs the tarball into a fresh temp project, and exercises the shipped CLI/API/types surface
+- `npm run verify` gates the packaging proof path from repo root
 - `npm view ts-quality` currently returns no published package for this name from this environment
 
 Important current constraint:
 
-- the monorepo build writes compiled files to the **repo-root** `dist/` tree
-- `packages/ts-quality/package.json` currently points at repo-root-style paths such as `dist/packages/ts-quality/src/index.js`
-- that means a naive `npm publish` from `packages/ts-quality/` is **not** correct yet, because npm packages cannot rely on files outside the published package root
+- the monorepo build still writes compiled files to the **repo-root** `dist/` tree
+- the publishable package is therefore a **staged package**, not the raw `packages/ts-quality/` directory
+- a naive `npm publish` from `packages/ts-quality/` is still **not** the truthful operator path
 
 ## Release decision checklist
 
-### 1) Confirm package strategy
+### 1) Confirm the current package strategy
 
-Choose one explicit strategy before publishing:
+Current repo truth is:
 
-- **A. Staged package publish** — build at repo root, then copy the public package into a temporary/staged directory with publish-correct relative paths
-- **B. Package-local dist** — change the build/output layout so `packages/ts-quality/` contains its own publishable `dist/`
+- **Staged package publish** — build at repo root, create the publishable staged package, prove the tarball from that staged package, and only then publish from the staged directory
 
-Until one of those strategies exists, do **not** run `npm publish`.
+This is the current operator path:
+
+```bash
+npm run build
+npm run pack:ts-quality
+npm run smoke:packaging
+```
+
+Keep these guardrails in mind:
+
+- do **not** publish directly from `packages/ts-quality/`
+- do **not** assume the repo-root `dist/` layout is itself the published package root
+- treat package-local dist as a possible future architecture change, not the current release path
 
 ### 2) Confirm package metadata
 
-Before publish, ensure the public package manifest includes at least:
+Before publish, ensure the staged public manifest still carries the intended package contract.
+The current staged helper already validates this contract, but release prep should still treat these fields as intentional:
 
 - `name`
 - `version`
@@ -49,58 +63,70 @@ Before publish, ensure the public package manifest includes at least:
 - `homepage`
 - `bugs`
 - `keywords`
+- `dependencies`
+- `engines`
 - correct `main`
 - correct `types`
 - correct `bin`
-
-Optional but recommended:
-
 - `exports`
 - `files`
-- `engines`
 - `publishConfig`
 
-### 3) Confirm packaged file set
+### 3) Confirm staged and packed file boundaries
 
-The published tarball should contain only what users need:
+The repo now proves **two separate file-boundary layers**:
 
-- built JS
+1. the staged package directory contains only the intended publish surface
+2. the final `.tgz` contains only the intended packed file set
+
+That means release prep should fail closed if the package accidentally:
+
+- drops required runtime assets
+- broadens into tests, fixtures, workspace-only scripts, or `node_modules`
+- relinks manifest entrypoints away from the actual shipped files
+
+Expected packaged content remains intentionally narrow:
+
+- built JS under `dist/`
 - `.d.ts` files
-- source maps if you want debuggability
-- README
-- LICENSE
-- any runtime assets required by the CLI
+- source maps for the shipped runtime files
+- `README.md`
+- `LICENSE`
+- the publish-ready `package.json`
 
-It should **not** accidentally include:
+### 4) Run the deterministic packaging proof path
 
-- tests
-- fixtures used only for repo validation
-- large reviewed sample artifacts unless they are intentionally part of the package
-- workspace-only scripts
-- `node_modules`
+Use the proven helper and smoke path instead of a hand-assembled shell sequence.
 
-### 4) Verify install experience from a tarball
-
-Before any public publish, test with `npm pack` and install the tarball into a fresh temp project.
-
-Minimum checks:
+Recommended release-prep commands:
 
 ```bash
 npm run build
-npm pack <staged-package-dir>
-mkdir -p /tmp/ts-quality-pack-test
-cd /tmp/ts-quality-pack-test
-npm init -y
-npm install /path/to/ts-quality-<version>.tgz
-npx ts-quality --help
+npm run pack:ts-quality
+npm run smoke:packaging
 ```
 
-The tarball test should prove that:
+What they prove:
 
-- the CLI resolves correctly
-- Node can load the published `main`
-- type declarations resolve correctly for consumers
-- no file path points outside the installed package
+- `npm run pack:ts-quality`
+  - creates the staged package
+  - writes the publish-ready manifest
+  - checks staged manifest + staged file boundaries
+  - produces the `.tgz`
+- `npm run smoke:packaging`
+  - re-runs the staged packaging path
+  - checks the packed tarball file set
+  - installs the tarball into a fresh temp project
+  - proves `ts-quality --help`
+  - proves the shipped API exports
+  - proves consumer type resolution with `tsc`
+
+Optional manual inspection after packing:
+
+```bash
+cat .ts-quality/npm/ts-quality/package/package.json
+tar -tzf .ts-quality/npm/ts-quality/tarballs/ts-quality-<version>.tgz
+```
 
 ### 5) Verify repo truth before release
 
@@ -116,6 +142,8 @@ npm run smoke
 npm run verify
 ```
 
+`npm run verify` is the repo-root gate and already includes the packaging smoke path, but the explicit command list above is still useful when you want stepwise release confidence.
+
 If docs changed during release prep, also run:
 
 ```bash
@@ -127,7 +155,7 @@ node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict
 Before publishing, make sure the public surfaces are coherent:
 
 - GitHub description matches the npm description closely
-- README quickstart works from a fresh clone
+- README quickstart and package-operator guidance match the staged-package path
 - GitHub topics are set
 - social preview image is uploaded in repo settings
 - CHANGELOG documents anything alpha-breaking or release-relevant
@@ -140,49 +168,53 @@ Prepare a short release note answering:
 - who it is for
 - what a first-time user should run
 - what is still alpha / intentionally unstable before 1.0
+- how the staged-package path relates to the first public publish
 
-### 8) Publish only after tarball proof
+### 8) Publish only after staged-package proof
 
-For the first release, prefer this sequence:
+For the first release, prefer this exact sequence:
 
 ```bash
 npm run build
-# create staged package dir with publish-correct paths
-# run npm pack against staged dir
-# install tarball in a fresh temp project
-# only then publish
-```
-
-If using a staged directory:
-
-```bash
-cd <staged-package-dir>
+npm run smoke:packaging
+cd .ts-quality/npm/ts-quality/package
 npm publish --access public
 ```
 
-## Deterministic packaging helper
+If anything that affects the package changes after the smoke pass — version, manifest inputs, built output, README, LICENSE, or shipped runtime files — rerun the build and packaging proof before publishing.
 
-This repo now includes a deterministic helper:
+## Deterministic packaging helpers
+
+This repo now includes two packaging operators:
 
 - `npm run pack:ts-quality`
+- `npm run smoke:packaging`
 
-It performs the current staged-package strategy by:
+`npm run pack:ts-quality` performs the staged-package build/publish preparation by:
 
 1. creating a clean staging directory under `.ts-quality/npm/ts-quality/package`
 2. copying built files into publish-correct relative paths
 3. writing a publish-ready `package.json`
-4. copying `README.md` and `LICENSE`
-5. running `npm pack`
-6. writing the tarball to `.ts-quality/npm/ts-quality/tarballs/`
+4. asserting the staged manifest contract
+5. asserting the staged file-boundary contract
+6. copying `README.md` and `LICENSE`
+7. running `npm pack`
+8. writing the tarball to `.ts-quality/npm/ts-quality/tarballs/`
 
-Use that helper as the default local proof step before any public publish.
+`npm run smoke:packaging` is the stronger end-to-end proof step layered on top of that helper.
+It additionally validates the packed tarball file set and proves install/load behavior from a fresh temp project.
+
+Use `npm run smoke:packaging` as the default release-proof step before any public publish.
 
 ## Definition of done for “npm-publishable”
 
 `ts-quality` is ready for npm when all of the following are true:
 
+- the staged-package helper produces a publish-ready package deterministically
+- staged manifest metadata, staged file boundaries, and packed tarball contents all fail closed against the intended package contract
 - a fresh machine can install the packed tarball without repo-relative path breakage
 - `./node_modules/.bin/ts-quality --help` works from the installed tarball
-- published metadata is complete and public-facing surfaces look intentional
+- shipped API exports and type declarations resolve for consumers
+- public metadata and release surfaces look intentional
 - release validation passes from repo root
-- the packaging path is deterministic and documented, not a one-off manual shell ritual
+- public operator docs point at the same staged-package path the repo actually proves
