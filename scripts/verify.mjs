@@ -82,6 +82,20 @@ export function verificationMarkdownLines(skipInstall = false) {
   ];
 }
 
+export function verificationArtifactMarkdownLines() {
+  return [
+    installStep.markdown,
+    buildStep.markdown,
+    typecheckStep.markdown,
+    lintStep.markdown,
+    testStep.markdown,
+    sampleArtifactsStep.markdown,
+    sampleArtifactsIdempotenceMarkdown,
+    smokeStep.markdown,
+    packagingSmokeStep.markdown
+  ];
+}
+
 function sanitizeLogLine(line) {
   return line
     .replace(/(\baudited \d+ packages in )\d+(?:\.\d+)?ms\b/, '$1<duration-ms>')
@@ -143,8 +157,36 @@ function assertVerifiedSampleAttestation(sampleArtifactsDir) {
   }
 }
 
+function canonicalInstallLogLines() {
+  return [
+    `$ ${installStep.command} ${installStep.args.join(' ')}`,
+    '',
+    '',
+    'exit=0'
+  ];
+}
+
+function assertVerificationArtifactsInSync(pathsToCheck) {
+  const relativePaths = pathsToCheck.map((artifactPath) => path.relative(root, artifactPath).replace(/\\/g, '/'));
+  const result = spawnSync('git', ['diff', '--exit-code', '--', ...relativePaths], {
+    cwd: root,
+    encoding: 'utf8'
+  });
+  if (result.status === 0) {
+    return;
+  }
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
+  }
+  if (result.stderr) {
+    process.stderr.write(result.stderr);
+  }
+  throw new Error(`Verification step failed: tracked verification artifacts drifted (${relativePaths.join(', ')})`);
+}
+
 export function runVerification(options = {}) {
   const skipInstall = options.skipInstall === true;
+  const checkArtifacts = options.checkArtifacts === true;
   fs.mkdirSync(verificationDir, { recursive: true });
   const lines = [];
 
@@ -160,8 +202,25 @@ export function runVerification(options = {}) {
     }
   }
 
-  if (!skipInstall) {
-    run(installStep.command, installStep.args);
+  function runInstall() {
+    const result = spawnSync(installStep.command, installStep.args, { cwd: root, encoding: 'utf8' });
+    if (result.status !== 0) {
+      lines.push(`$ ${installStep.command} ${installStep.args.join(' ')}`);
+      lines.push(sanitizeLogFragment(result.stdout || ''));
+      lines.push(sanitizeLogFragment(result.stderr || ''));
+      lines.push(`exit=${result.status}`);
+      fs.writeFileSync(logPath, lines.join('\n'), 'utf8');
+      throw new Error(`Verification step failed: ${installStep.command} ${installStep.args.join(' ')}`);
+    }
+    lines.push(...canonicalInstallLogLines());
+    fs.writeFileSync(logPath, lines.join('\n'), 'utf8');
+  }
+
+  if (skipInstall) {
+    lines.push(...canonicalInstallLogLines());
+    fs.writeFileSync(logPath, lines.join('\n'), 'utf8');
+  } else {
+    runInstall();
   }
   run(buildStep.command, buildStep.args);
   run(typecheckStep.command, typecheckStep.args);
@@ -194,21 +253,29 @@ export function runVerification(options = {}) {
     '',
     'The following commands were executed successfully:',
     '',
-    ...verificationMarkdownLines(skipInstall),
+    ...verificationArtifactMarkdownLines(),
     '',
     `Log: \`${path.relative(root, logPath).replace(/\\/g, '/')}\``
   ].join('\n');
   const verificationMdPath = path.join(root, 'VERIFICATION.md');
   fs.writeFileSync(verificationMdPath, `${verificationMd}\n`, 'utf8');
 
+  if (checkArtifacts) {
+    assertVerificationArtifactsInSync([verificationMdPath, logPath]);
+  }
+
   return {
     skipInstall,
+    checkArtifacts,
     logPath,
     verificationMdPath
   };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
-  runVerification({ skipInstall: process.argv.includes('--skip-install') });
+  runVerification({
+    skipInstall: process.argv.includes('--skip-install'),
+    checkArtifacts: process.argv.includes('--check-artifacts')
+  });
   console.log('verify: ok');
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'assert/strict';
-import { verificationCommands, verificationMarkdownLines } from '../scripts/verify.mjs';
+import { verificationArtifactMarkdownLines, verificationCommands, verificationMarkdownLines } from '../scripts/verify.mjs';
 
 test('verification plan gates staged packaging smoke after repo smoke', () => {
   const commands = verificationCommands(true).map((step) => `${step.command} ${step.args.join(' ')}`);
@@ -21,4 +21,12 @@ test('verification plan only includes npm ci when install is not skipped', () =>
 
   assert.equal(withInstall[0], 'npm ci --ignore-scripts --no-audit --no-fund');
   assert.equal(withoutInstall.includes('npm ci --ignore-scripts --no-audit --no-fund'), false);
+});
+
+test('verification artifacts keep the canonical npm ci step even when execution skips install', () => {
+  const artifactLines = verificationArtifactMarkdownLines();
+  const executionLines = verificationMarkdownLines(true);
+
+  assert.equal(artifactLines[0], '- `npm ci --ignore-scripts --no-audit --no-fund`');
+  assert.equal(executionLines.includes('- `npm ci --ignore-scripts --no-audit --no-fund`'), false);
 });

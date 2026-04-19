@@ -16,183 +16,6 @@ lint: ok
 
 exit=0
 $ npm test --silent
-✔ amend evaluates sensitive proposal with duplicate approvals as needing more approval (<duration-ms>)
-✔ amend --apply writes a loadable constitution module (<duration-ms>)
-✔ amend --apply preserves json constitution format when configured (<duration-ms>)
-✔ amend --apply preserves commonjs constitution modules when configured (<duration-ms>)
-✔ amend denies invalid action values instead of silently ignoring them (<duration-ms>)
-✔ amend denies duplicate constitution rule ids instead of silently applying them (<duration-ms>)
-✔ amend denies replace operations that target no existing rule (<duration-ms>)
-✔ authorize projects run-bound governance and invariant evidence into the decision artifact (<duration-ms>)
-✔ authorize writes bundle digests that match the run artifact file digests (<duration-ms>)
-✔ attest sign and verify produce a valid signed claim with exact subject context (<duration-ms>)
-✔ attest sign rejects subjects outside the repository root (<duration-ms>)
-✔ authorize ignores attestations that target an older run (<duration-ms>)
-✔ authorize accepts rollback evidence that is bound to the exact evaluated run (<duration-ms>)
-✔ authorize denies repository drift after the evaluated run (<duration-ms>)
-✔ authorize denies control-plane drift after the evaluated run (<duration-ms>)
-✔ authorize denies empty authorization scope instead of matching grants vacuously (<duration-ms>)
-✔ init creates starter files in an empty repo (<duration-ms>)
-✔ check treats empty init changeSet.files as all discovered source files (<duration-ms>)
-✔ check fails closed when changed scope has no measurable mutation pressure (<duration-ms>)
-✔ check, report, explain, plan, and govern produce aligned artifacts (<duration-ms>)
-✔ check persists analysis context, mutation baseline receipts, and a run-bound control plane snapshot (<duration-ms>)
-✔ plan, govern, and authorize reject unsupported control-plane snapshot schemas (<duration-ms>)
-✔ plan, govern, and authorize reject malformed control-plane snapshots instead of falling back (<duration-ms>)
-✔ plan, govern, and authorize reject malformed control-plane schemaVersion types (<duration-ms>)
-✔ plan, govern, and authorize reject malformed control-plane array elements (<duration-ms>)
-✔ plan, govern, and authorize reject out-of-range control-plane policy values (<duration-ms>)
-✔ plan, govern, and authorize fall back to live context for legacy runs without controlPlane (<duration-ms>)
-✔ trend keeps deltas visible while surfacing the latest risky invariant provenance (<duration-ms>)
-✔ trend orders runs by createdAt rather than lexical run id sort (<duration-ms>)
-✔ check, plan, govern, and authorize accept --config for a nonstandard config file name (<duration-ms>)
-✔ materialize exports runtime JSON artifacts and check can run from them with matching verdicts (<duration-ms>)
-✔ materialize keeps copied diff inputs in a reserved subdirectory so they cannot overwrite canonical artifacts (<duration-ms>)
-✔ check rejects trust directories that escape the repository root (<duration-ms>)
-✔ check rejects changeSet files that escape the repository root (<duration-ms>)
-✔ check rejects coverage paths that escape the repository root (<duration-ms>)
-✔ check accepts a caller-supplied run id for exact approval binding (<duration-ms>)
-✔ govern reprojects latest run governance with exact run-bound approvals (<duration-ms>)
-✔ plan and govern surface run drift after check (<duration-ms>)
-✔ plan and govern surface control-plane drift after check (<duration-ms>)
-✔ check assigns nested package files to the deepest matching package (<duration-ms>)
-✔ check rejects unsafe run ids (<duration-ms>)
-✔ check rejects changed file overrides that escape the repository root (<duration-ms>)
-✔ check --help renders usage instead of executing analysis (<duration-ms>)
-✔ check rejects missing values for value options instead of silently continuing (<duration-ms>)
-✔ attest sign accepts cwd-relative paths even when --root is also set (<duration-ms>)
-✔ attest sign rejects blank issuer metadata before signing (<duration-ms>)
-✔ attest sign routes an explicit empty issuer through metadata validation (<duration-ms>)
-✔ attest sign rejects zero-width issuer spoofing before signing (<duration-ms>)
-✔ attest sign rejects missing values for required options before another known flag (<duration-ms>)
-✔ attest sign accepts issuer values that begin with dashes via --option=value syntax (<duration-ms>)
-✔ attest sign rejects unknown flags instead of swallowing them as option values (<duration-ms>)
-✔ attest sign rejects verify-only flags instead of silently ignoring them (<duration-ms>)
-✔ attest sign rejects unexpected positional arguments (<duration-ms>)
-✔ attest sign escapes unsafe subject paths in operator-facing errors (<duration-ms>)
-✔ attest sign rejects symlinked subjects that resolve outside --root (<duration-ms>)
-✔ attest sign reports missing repo-local subjects as missing input (<duration-ms>)
-✔ attest verify detects byte-level subject drift for non-utf8 files (<duration-ms>)
-✔ attest verify keeps signed subject context visible when verification fails (<duration-ms>)
-✔ attest verify rejects symlinked signed subjects that resolve outside --root (<duration-ms>)
-✔ attest verify prioritizes subject escapes before missing trusted keys (<duration-ms>)
-✔ check writes the same attestation verification framing used by the CLI verify path (<duration-ms>)
-✔ attest verify rejects signed artifactName drift instead of masking it with the subject path (<duration-ms>)
-✔ attest verify keeps run-scoped context for nested artifacts under a run directory (<duration-ms>)
-✔ attest verify supports machine-readable json output (<duration-ms>)
-✔ attest verify reports malformed input through the canonical record instead of a raw syntax error (<duration-ms>)
-✔ attest verify fails fast when the requested attestation file is unreadable (<duration-ms>)
-✔ attest verify escapes unsafe unreadable attestation paths in operator-facing errors (<duration-ms>)
-✔ attest verify rejects run metadata on non-run-scoped subjects (<duration-ms>)
-✔ attest verify rejects control characters in signed subject metadata instead of rendering forged lines (<duration-ms>)
-✔ attest verify prioritizes attestation contract failures before missing trusted keys (<duration-ms>)
-✔ attest verify rejects control characters in signed issuer metadata instead of rendering forged lines (<duration-ms>)
-✔ attest verify rejects empty signed issuer metadata instead of rendering an anonymous label (<duration-ms>)
-✔ attest verify rejects Unicode line separators in signed metadata instead of rendering forged lines (<duration-ms>)
-✔ attest verify rejects Unicode next-line separators in signed metadata instead of rendering forged lines (<duration-ms>)
-✔ attest verify rejects bidi override characters in signed metadata instead of rendering spoofed paths (<duration-ms>)
-✔ attest verify rejects zero-width spoofing characters in signed metadata (<duration-ms>)
-✔ attest verify escapes unsafe attestation source filenames before rendering fallback labels (<duration-ms>)
-✔ check escapes unsafe attestation source filenames in persisted verification artifacts (<duration-ms>)
-✔ check quarantines malformed attestation files instead of crashing (<duration-ms>)
-✔ check quarantines unreadable attestation files instead of crashing (<duration-ms>)
-✔ check quarantines schema-invalid attestation files instead of crashing (<duration-ms>)
-✔ loadContext accepts ts-quality.config.mjs (<duration-ms>)
-✔ loadContext applies expanded default test discovery patterns (<duration-ms>)
-✔ loadContext accepts custom mutation runtime mirror roots (<duration-ms>)
-✔ loadContext reads data-only cjs config without executing it (<duration-ms>)
-✔ loadContext accepts computed property names backed by top-level const bindings (<duration-ms>)
-✔ loadContext rejects executable ts config expressions (<duration-ms>)
-✔ loadInvariants rejects executable module bodies (<duration-ms>)
-✔ loadContext rejects coverage paths that escape the repository root (<duration-ms>)
-✔ loadContext rejects changeSet files that escape the repository root (<duration-ms>)
-✔ loadContext rejects runtime mirror roots that escape the repository root (<duration-ms>)
-✔ loadContext rejects an empty mutation test command (<duration-ms>)
-✔ loadContext rejects out-of-range policy values (<duration-ms>)
-✔ parseLcov reads coverage entries (<duration-ms>)
-✔ crapScore increases with lower coverage (<duration-ms>)
-✔ analyzeCrap marks changed functions (<duration-ms>)
-✔ analyzeSource narrows changed functions to diff hunks within a changed file (<duration-ms>)
-✔ analyzeSource prefers exact LCOV matches over suffix collisions (<duration-ms>)
-✔ normalizePath is idempotent and slash-stable (<duration-ms>)
-✔ matchPattern supports path prefixes and globs (<duration-ms>)
-✔ stableStringify sorts object keys deterministically (<duration-ms>)
-✔ attestation metadata helpers flag and render unsafe Unicode deterministically (<duration-ms>)
-✔ parseUnifiedDiff returns changed regions (<duration-ms>)
-✔ collectSourceFiles includes mjs and cjs inputs (<duration-ms>)
-✔ assertSafeRunId rejects path-like values (<duration-ms>)
-✔ resolveRepoLocalPath rejects symlink escapes outside the repository root (<duration-ms>)
-✔ concise operator outputs keep stable provenance framing (<duration-ms>)
-✔ authorization sample keeps exact run-bound evidence context (<duration-ms>)
-✔ amendment sample keeps exact proposal-context output parity (<duration-ms>)
-✔ attestation verification sample keeps exact signed subject context (<duration-ms>)
-✔ evaluateGovernance catches extensionless forbidden imports (<duration-ms>)
-✔ evaluateGovernance catches forbidden imports resolved through tsconfig path aliases (<duration-ms>)
-✔ evaluateGovernance resolves aliases from the nearest package tsconfig in nested repos (<duration-ms>)
-✔ evaluateGovernance catches forbidden dynamic imports (<duration-ms>)
-✔ evaluateGovernance catches forbidden dynamic imports expressed as no-substitution template literals (<duration-ms>)
-✔ evaluateGovernance catches forbidden require calls that flow through local aliases (<duration-ms>)
-✔ evaluateGovernance catches forbidden require calls that flow through chained assignments (<duration-ms>)
-✔ evaluateGovernance catches forbidden require calls that flow through destructuring (<duration-ms>)
-✔ evaluateGovernance catches forbidden require calls that flow through aliased destructuring containers (<duration-ms>)
-✔ evaluateGovernance catches forbidden require calls that flow through destructured parameter defaults (<duration-ms>)
-✔ evaluateGovernance catches forbidden require calls that flow through property and element access on tracked containers (<duration-ms>)
-✔ evaluateGovernance catches forbidden require calls that flow through rest bindings on tracked containers (<duration-ms>)
-✔ evaluateGovernance does not treat unreachable conditional require aliases as active imports (<duration-ms>)
-✔ evaluateGovernance does not mistake shadowed require parameters for the global loader (<duration-ms>)
-✔ evaluateGovernance fails closed on non-literal dynamic imports in boundary-scoped files (<duration-ms>)
-✔ approval rules count only unique targeted approvals (<duration-ms>)
-✔ approval rules accept exact run-targeted approvals when runId is provided (<duration-ms>)
-✔ ownership rules require owner approval or an allowed agent approval (<duration-ms>)
-✔ evaluateInvariants produces obligations for missing failure-path tests (<duration-ms>)
-✔ evaluateInvariants ignores unrelated mjs tests even if they contain the right keywords (<duration-ms>)
-✔ evaluateInvariants accepts focused mjs tests aligned to the impacted file (<duration-ms>)
-✔ evaluateInvariants requires a single focused test witness for a scenario (<duration-ms>)
-✔ evaluateInvariants marks requiredTestPatterns evidence as explicit (<duration-ms>)
-✔ signAttestation and verifyAttestation round-trip (<duration-ms>)
-✔ signAttestation rejects blank, spoofed, or inconsistent rendered metadata (<duration-ms>)
-✔ authorizeChange requires override grants to match the overridden scope (<duration-ms>)
-✔ evaluateAmendment enforces maintainer approvals and evidence (<duration-ms>)
-✔ evaluateAmendment counts only unique approvers targeting the proposal id (<duration-ms>)
-✔ evaluateAmendment denies invalid runtime action values (<duration-ms>)
-✔ staged tarball smoke hardens packaged CLI and API proof points from a fresh temp project (<duration-ms>)
-✔ evaluatePolicy reduces confidence for survivors and low mutation score (<duration-ms>)
-✔ evaluatePolicy blocks when mutation pressure is missing instead of scoring it as perfect (<duration-ms>)
-✔ evaluatePolicy applies active waivers (<duration-ms>)
-✔ evaluatePolicy blocks when the mutation baseline is not green (<duration-ms>)
-✔ renderPrSummary projects concise invariant evidence provenance for the risky claim (<duration-ms>)
-✔ normalizePath property seed 1 (<duration-ms>)
-✔ normalizePath property seed 2 (<duration-ms>)
-✔ normalizePath property seed 3 (<duration-ms>)
-✔ normalizePath property seed 4 (<duration-ms>)
-✔ normalizePath property seed 5 (<duration-ms>)
-✔ normalizePath property seed 6 (<duration-ms>)
-✔ normalizePath property seed 7 (<duration-ms>)
-✔ normalizePath property seed 8 (<duration-ms>)
-✔ stableStringify round-trips random objects (<duration-ms>)
-✔ discoverMutationSites finds boolean and operator mutations (<duration-ms>)
-✔ applyMutation replaces exact span instead of first matching line fragment (<duration-ms>)
-✔ runMutations writes manifest and reuses cached results (<duration-ms>)
-✔ discoverMutationSites honors diff hunks within changed files (<duration-ms>)
-✔ discoverMutationSites skips lines without coverage evidence when coveredOnly is true (<duration-ms>)
-✔ runMutations requires a passing baseline before trusting mutation results (<duration-ms>)
-✔ runMutations invalidates manifest entries when the test corpus changes (<duration-ms>)
-✔ runMutations mutates mirrored dist runtime files so dist-backed tests observe the mutant (<duration-ms>)
-✔ runMutations transpiles mutated ts sources into mirrored runtime roots for dist-backed tests (<duration-ms>)
-✔ runMutations supports custom runtime mirror roots for built output outside dist (<duration-ms>)
-✔ runMutations mirrors root-level sources into configured built runtime roots (<duration-ms>)
-✔ runMutations ignores inherited NODE_TEST_CONTEXT and keeps mutation outcomes deterministic (<duration-ms>)
-✔ runMutations invalidates cached results when arbitrary execution environment changes (<duration-ms>)
-✔ verification plan gates staged packaging smoke after repo smoke (<duration-ms>)
-✔ verification plan only includes npm ci when install is not skipped (<duration-ms>)
-ℹ tests 169
-ℹ suites 0
-ℹ pass 169
-ℹ fail 0
-ℹ cancelled 0
-ℹ skipped 0
-ℹ todo 0
-ℹ duration_ms <duration-ms>
 
 
 exit=0
@@ -224,6 +47,165 @@ $ npm run smoke:packaging --silent
     "exportDefault": "./dist/packages/ts-quality/src/index.js",
     "exportTypes": "./dist/packages/ts-quality/src/index.d.ts"
   },
+  "manifest": {
+    "name": "ts-quality",
+    "version": "0.1.0",
+    "description": "Deterministic trust for TypeScript changes in agent-built systems: mutation testing, invariants, governance, and attestable authorization.",
+    "license": "MIT",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/tryingET/ts-quality.git"
+    },
+    "homepage": "https://github.com/tryingET/ts-quality#readme",
+    "bugs": {
+      "url": "https://github.com/tryingET/ts-quality/issues"
+    },
+    "keywords": [
+      "typescript",
+      "code-quality",
+      "mutation-testing",
+      "static-analysis",
+      "ai-agents",
+      "agentic-systems",
+      "governance",
+      "attestation",
+      "developer-tools"
+    ],
+    "dependencies": {
+      "typescript": "^5.8.3"
+    },
+    "engines": {
+      "node": ">=20"
+    },
+    "main": "dist/packages/ts-quality/src/index.js",
+    "types": "dist/packages/ts-quality/src/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/packages/ts-quality/src/index.d.ts",
+        "default": "./dist/packages/ts-quality/src/index.js"
+      },
+      "./package.json": "./package.json"
+    },
+    "bin": {
+      "ts-quality": "dist/packages/ts-quality/src/cli.js"
+    },
+    "files": [
+      "dist/**/*",
+      "README.md",
+      "LICENSE"
+    ],
+    "publishConfig": {
+      "access": "public"
+    }
+  },
+  "topLevelEntries": [
+    "dist",
+    "LICENSE",
+    "package.json",
+    "README.md"
+  ],
+  "directories": [
+    "dist",
+    "dist/packages",
+    "dist/packages/crap4ts",
+    "dist/packages/crap4ts/src",
+    "dist/packages/evidence-model",
+    "dist/packages/evidence-model/src",
+    "dist/packages/governance",
+    "dist/packages/governance/src",
+    "dist/packages/invariants",
+    "dist/packages/invariants/src",
+    "dist/packages/legitimacy",
+    "dist/packages/legitimacy/src",
+    "dist/packages/policy-engine",
+    "dist/packages/policy-engine/src",
+    "dist/packages/ts-mutate",
+    "dist/packages/ts-mutate/src",
+    "dist/packages/ts-quality",
+    "dist/packages/ts-quality/src"
+  ],
+  "stagedFiles": [
+    "dist/packages/crap4ts/src/cli.d.ts",
+    "dist/packages/crap4ts/src/cli.js",
+    "dist/packages/crap4ts/src/cli.js.map",
+    "dist/packages/crap4ts/src/index.d.ts",
+    "dist/packages/crap4ts/src/index.js",
+    "dist/packages/crap4ts/src/index.js.map",
+    "dist/packages/evidence-model/src/index.d.ts",
+    "dist/packages/evidence-model/src/index.js",
+    "dist/packages/evidence-model/src/index.js.map",
+    "dist/packages/governance/src/index.d.ts",
+    "dist/packages/governance/src/index.js",
+    "dist/packages/governance/src/index.js.map",
+    "dist/packages/invariants/src/index.d.ts",
+    "dist/packages/invariants/src/index.js",
+    "dist/packages/invariants/src/index.js.map",
+    "dist/packages/legitimacy/src/index.d.ts",
+    "dist/packages/legitimacy/src/index.js",
+    "dist/packages/legitimacy/src/index.js.map",
+    "dist/packages/policy-engine/src/index.d.ts",
+    "dist/packages/policy-engine/src/index.js",
+    "dist/packages/policy-engine/src/index.js.map",
+    "dist/packages/ts-mutate/src/cli.d.ts",
+    "dist/packages/ts-mutate/src/cli.js",
+    "dist/packages/ts-mutate/src/cli.js.map",
+    "dist/packages/ts-mutate/src/index.d.ts",
+    "dist/packages/ts-mutate/src/index.js",
+    "dist/packages/ts-mutate/src/index.js.map",
+    "dist/packages/ts-quality/src/cli.d.ts",
+    "dist/packages/ts-quality/src/cli.js",
+    "dist/packages/ts-quality/src/cli.js.map",
+    "dist/packages/ts-quality/src/config.d.ts",
+    "dist/packages/ts-quality/src/config.js",
+    "dist/packages/ts-quality/src/config.js.map",
+    "dist/packages/ts-quality/src/index.d.ts",
+    "dist/packages/ts-quality/src/index.js",
+    "dist/packages/ts-quality/src/index.js.map",
+    "LICENSE",
+    "package.json",
+    "README.md"
+  ],
+  "tarballFiles": [
+    "package/dist/packages/crap4ts/src/cli.d.ts",
+    "package/dist/packages/crap4ts/src/cli.js",
+    "package/dist/packages/crap4ts/src/cli.js.map",
+    "package/dist/packages/crap4ts/src/index.d.ts",
+    "package/dist/packages/crap4ts/src/index.js",
+    "package/dist/packages/crap4ts/src/index.js.map",
+    "package/dist/packages/evidence-model/src/index.d.ts",
+    "package/dist/packages/evidence-model/src/index.js",
+    "package/dist/packages/evidence-model/src/index.js.map",
+    "package/dist/packages/governance/src/index.d.ts",
+    "package/dist/packages/governance/src/index.js",
+    "package/dist/packages/governance/src/index.js.map",
+    "package/dist/packages/invariants/src/index.d.ts",
+    "package/dist/packages/invariants/src/index.js",
+    "package/dist/packages/invariants/src/index.js.map",
+    "package/dist/packages/legitimacy/src/index.d.ts",
+    "package/dist/packages/legitimacy/src/index.js",
+    "package/dist/packages/legitimacy/src/index.js.map",
+    "package/dist/packages/policy-engine/src/index.d.ts",
+    "package/dist/packages/policy-engine/src/index.js",
+    "package/dist/packages/policy-engine/src/index.js.map",
+    "package/dist/packages/ts-mutate/src/cli.d.ts",
+    "package/dist/packages/ts-mutate/src/cli.js",
+    "package/dist/packages/ts-mutate/src/cli.js.map",
+    "package/dist/packages/ts-mutate/src/index.d.ts",
+    "package/dist/packages/ts-mutate/src/index.js",
+    "package/dist/packages/ts-mutate/src/index.js.map",
+    "package/dist/packages/ts-quality/src/cli.d.ts",
+    "package/dist/packages/ts-quality/src/cli.js",
+    "package/dist/packages/ts-quality/src/cli.js.map",
+    "package/dist/packages/ts-quality/src/config.d.ts",
+    "package/dist/packages/ts-quality/src/config.js",
+    "package/dist/packages/ts-quality/src/config.js.map",
+    "package/dist/packages/ts-quality/src/index.d.ts",
+    "package/dist/packages/ts-quality/src/index.js",
+    "package/dist/packages/ts-quality/src/index.js.map",
+    "package/LICENSE",
+    "package/package.json",
+    "package/README.md"
+  ],
   "cli": {
     "helpIncludes": "ts-quality commands:",
     "initCreated": [
