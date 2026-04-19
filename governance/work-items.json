@@ -154,26 +154,28 @@
         {
           "id": "AK-TASK-0190",
           "title": "ts-quality: automate AK-to-handoff projection sync",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: automate AK-to-handoff projection sync (task #190)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
         },
         {
           "id": "AK-TASK-0191",
           "title": "ts-quality: stabilize or untrack volatile verification artifacts",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: stabilize or untrack volatile verification artifacts (task #191)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
         },
         {
           "id": "AK-TASK-0192",
@@ -542,10 +544,47 @@
         {
           "id": "AK-TASK-1762",
           "title": "ts-quality: promote SG5 implementation wave after authority decisions land",
-          "state": "doing",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: promote SG5 implementation wave after authority decisions land (task #1762)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1763",
+          "title": "ts-quality: promote TG15 after SG5 first-pass implementation lands",
+          "state": "doing",
+          "tasks": [
+            {
+              "text": "ts-quality: promote TG15 after SG5 first-pass implementation lands (task #1763)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        },
+        {
+          "id": "AK-TASK-1764",
+          "title": "ts-quality: align README operator guidance with handoff sync and verification guard surfaces",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: align README operator guidance with handoff sync and verification guard surfaces (task #1764)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        },
+        {
+          "id": "AK-TASK-1765",
+          "title": "ts-quality: close SG5 or materialize the last SG5 follow-through",
+          "state": "queued",
+          "tasks": [
+            {
+              "text": "ts-quality: close SG5 or materialize the last SG5 follow-through (task #1765)",
               "done": false
             }
           ],

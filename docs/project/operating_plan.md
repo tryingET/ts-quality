@@ -1,5 +1,5 @@
 ---
-summary: "Operating plan with SG5/TG14 active: projection-sync implementation is the preferred next slice, verification-artifact stabilization is the sibling follow-on, and the authority-decision wave is complete."
+summary: "Operating plan with SG5/TG15 active: direction/handoff refresh is the live slice, README operator guidance alignment is next, and explicit SG5 closure/promotion is staged behind it."
 read_when:
   - "When deciding the next bounded implementation slice in ts-quality"
   - "When translating the current tactical state into the repo-local queue"
@@ -10,33 +10,40 @@ type: "reference"
 
 Active strategic goal: **SG5 — Implement the settled projection and verification artifact contracts**
 
-Active tactical goal: **TG14 — Implement the settled projection and verification artifact contracts**
+Active tactical goal: **TG15 — Align operator-facing docs and handoff surfaces with the settled SG5 automation/guard contract**
 
 ## Current state
 
-The SG4 authority decisions landed through `task:1760-1761`, and the earlier deferrals on `task:190-191` have now been released. The next truthful step is implementing those chosen contracts in repo-local automation and artifact handling rather than leaving the decisions purely declarative.
+The first SG5 implementation pass landed through `task:190-191`, but the repo's active direction/handoff surfaces still point at those finished tasks and the operator docs have not yet fully absorbed the new helper/guard truth. The next truthful step is a narrow SG5 follow-through wave: refresh the active ladder, align the README operator guidance, then close SG5 explicitly or materialize one last exact follow-on if the docs pass reveals it.
 
 ## Active operating slices
 
-### OP1 — Implement projection sync under the hybrid authority contract
-- **AK task:** `task:190`
+### OP1 — Promote TG15 after TG14 completion and refresh direction/handoff truth
+- **AK task:** `task:1763`
 - **State:** active
-- **Deliverable:** repo-local projection automation/export workflow respects the hybrid contract: AK stays authoritative, `governance/work-items.json` stays exported, and handoff docs stay manually curated but reconciled.
-- **Guardrails:** automate export/check/scaffolding without turning `docs/project/*` or `next_session_prompt.md` into generated runtime authority.
+- **Deliverable:** `docs/project/*`, `next_session_prompt.md`, `governance/work-items.json`, and the diary are refreshed so the active ladder points at TG15 and its live follow-on tasks instead of the completed TG14 implementation tasks.
+- **Guardrails:** keep the handoff surfaces downstream of AK and avoid front-running SG6 before TG15 actually lands.
 
-### OP2 — Stabilize checked-in verification artifacts under the chosen contract
-- **AK task:** `task:191`
-- **State:** next handoff slice (AK also shows it as ready)
-- **Deliverable:** verification artifact handling is tightened under the checked-in reference-artifact contract without collapsing those files into ephemeral-only output.
-- **Guardrails:** keep `VERIFICATION.md` and `verification/verification.log` generator-owned, sanitized, and reviewable; do not treat them as live CI/runtime authority.
+### OP2 — Align README operator guidance with handoff sync and verification guard surfaces
+- **AK task:** `task:1764`
+- **State:** next handoff slice
+- **Deliverable:** `README.md` truthfully describes the settled SG5 operator surfaces — including the local handoff-sync workflow and the verification-artifact guard — without implying those surfaces are the live authority.
+- **Guardrails:** do not claim `handoff:check` is a CI/runtime authority surface; keep the README aligned to the actual local-vs-live contract.
+
+### OP3 — Close SG5 or materialize the last SG5 follow-through after README alignment
+- **AK task:** `task:1765`
+- **State:** staged behind OP2
+- **Deliverable:** once README alignment lands, the repo refreshes the ladder again so SG5 either retires cleanly in favor of SG6 or names one exact remaining SG5 follow-on with authoritative AK coverage.
+- **Guardrails:** fail closed on empty queue vs actual completion; do not leave the active ladder pointing at finished SG5 slices by inertia.
 
 ## Recently completed operating history
 
-- **Projection-authority decision (`task:1760`):** `docs/decisions/2026-04-19-projection-authority-contract.md` records the hybrid contract for AK, handoff docs, and `governance/work-items.json`.
-- **Verification-artifact decision (`task:1761`):** `docs/decisions/2026-04-19-verification-artifact-contract.md` keeps `VERIFICATION.md` and `verification/verification.log` as checked-in generated reference artifacts.
+- **Projection sync helper (`task:190`):** `scripts/handoff-sync.mjs` plus `handoff:sync` / `handoff:check` now provide the narrow SG5 automation surface allowed by the projection-authority ADR.
+- **Verification artifact stabilization (`task:191`):** `verify:ci` now enforces the tracked verification-artifact contract, and `scripts/verify.mjs` keeps `verification/verification.log` canonical across full and skip-install verification runs.
 
 ## Queue discipline
-- `task:190` is the preferred starting slice for TG14
-- `task:191` is also ready in AK after its deferral release, but the handoff keeps it as the sibling follow-on behind `task:190`
-- completed SG4 decision tasks `task:1760-1761` stay closed unless the contracts need explicit supersession
-- completed SG3 release-story tasks `task:1755-1758` stay closed unless the staged-package story drifts again
+- `task:1763` is the live ready slice for TG15
+- `task:1764` is the next TG15 execution slice once `task:1763` lands
+- `task:1765` depends on `task:1764`
+- completed TG14 implementation tasks `task:190-191` stay closed unless the settled SG5 contracts prove insufficient in practice
+- SG6 stays horizon-only until TG15/TG16 finish and SG5 is explicitly retired or extended

@@ -1,5 +1,5 @@
 ---
-summary: "Strategic handoff with SG5 active: SG4's authority decisions are complete, the implementation wave is now live, and earlier release-story work remains complete history."
+summary: "Strategic handoff with SG5 still active: first-pass SG5 implementation landed, remaining operator-surface follow-through is now the live concern, and SG6 waits behind it."
 read_when:
   - "When deciding the next major bets for ts-quality"
   - "When reconciling vision.md with the current repo-local direction posture"
@@ -11,8 +11,15 @@ type: "reference"
 ## Active strategic goal
 
 ### SG5 — Implement the settled projection and verification artifact contracts
-- **Why now:** SG4's contract decisions landed through `task:1760-1761`, which means the earlier deferrals on `task:190-191` are no longer blocked on missing repo-level decisions. The next unfinished repo-local concern is implementing those chosen contracts so the handoff and verification surfaces follow them in practice rather than only in ADR text.
-- **Success signal:** repo-local handoff projections and verification artifacts follow the chosen contracts deterministically, generated surfaces stay generator-owned, manually curated surfaces stay downstream of AK, and no checked-in artifact is mistaken for live runtime authority.
+- **Why now:** the first SG5 implementation pass landed through `task:190-191`, but the repo still has unfinished SG5 follow-through: `ak direction` now fails because the active operating nodes point at completed tasks, and the operator-facing docs still do not fully carry the new handoff-sync / verification-guard truth. The next unfinished repo-local concern is closing that last follow-through so the settled contracts are reflected in durable operator surfaces instead of session memory.
+- **Success signal:** the repo's direction/handoff surfaces and operator docs truthfully reflect the settled SG5 automation/guard contract, and SG5 can then either retire cleanly or materialize one exact remaining follow-on instead of staying active by inertia.
+- **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `2`
+
+## Next strategic goal
+
+### SG6 — Return the active wave to core product/runtime evidence surfaces after SG5 closes
+- **Why next:** SG3 through SG5 concentrated on release posture plus repo-local control-plane authority. Once SG5's remaining follow-through is closed, the next truthful major bet is to move active execution back toward the repo's native product surface — deterministic evidence, operator-facing artifacts, governance, and legitimacy semantics — rather than spending another wave on control-plane cleanup.
+- **Success signal:** the next active repo-local wave changes shipped `ts-quality` runtime/docs/tests/contracts in service of the evidence-native trust model rather than only release/process/bootstrap plumbing.
 - **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `3`
 
 ## Recently completed strategic history
@@ -34,7 +41,7 @@ The earlier SG1 concise operator-surface parity wave remains complete through re
 ## Not current strategic goals
 
 These matter, but they are not the top repo-level bets right now:
-- revisiting the SG4 authority decision itself without a concrete supersession need
+- reopening the SG4 authority decisions without a concrete supersession trigger
 - another packaging/release-story pass unless the staged-package operator surfaces drift again
 - treating checked-in projection or verification artifacts as if they outrank AK or live verification commands
-- cleanup that changes generated/manual boundaries without a new explicit decision
+- generic cleanup that does not materially close SG5 or advance the repo's native evidence surface
