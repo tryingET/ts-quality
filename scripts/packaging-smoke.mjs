@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { assertStagedPackageFileBoundaryContract, assertStagedPackageManifestContract } from './pack-ts-quality.mjs';
+import { assertPackedTarballFileSetContract, assertStagedPackageFileBoundaryContract, assertStagedPackageManifestContract } from './pack-ts-quality.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -82,6 +82,7 @@ export function runPackagingSmoke() {
   }
   assertStagedPackageManifestContract(stagedPackage, publicPackage, workspacePackage);
   const stagedBoundary = assertStagedPackageFileBoundaryContract(stageDirPath);
+  const tarballBoundary = assertPackedTarballFileSetContract(tarballPath);
 
   for (const [label, relativePath] of Object.entries(packSummary.entrypoints)) {
     ensureFile(path.join(stageDirPath, normalizePackageRelative(relativePath)), `Staged ${label} entrypoint`);
@@ -180,6 +181,7 @@ export function runPackagingSmoke() {
       topLevelEntries: stagedBoundary.topLevelEntries,
       directories: stagedBoundary.directories,
       stagedFiles: stagedBoundary.files,
+      tarballFiles: tarballBoundary.files,
       cli: {
         helpIncludes: 'ts-quality commands:',
         initCreated: [...expectedInitFiles],

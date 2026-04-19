@@ -112,6 +112,8 @@ const expectedStageFiles = [
   ...expectedStagePackageNames.flatMap((packageName) => expectedStageRuntimeFilesByPackage[packageName].map((relativePath) => `dist/packages/${packageName}/${relativePath}`))
 ].sort((left, right) => left.localeCompare(right));
 
+const expectedTarballFiles = expectedStageFiles.map((relativePath) => `package/${relativePath}`).sort((left, right) => left.localeCompare(right));
+
 const expectedInitFiles = [
   'ts-quality.config.ts',
   '.ts-quality/invariants.ts',
@@ -192,6 +194,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.topLevelEntries, expectedTopLevelEntries);
   assert.deepEqual(summary.directories, expectedStageDirectories);
   assert.deepEqual(summary.stagedFiles, expectedStageFiles);
+  assert.deepEqual(summary.tarballFiles, expectedTarballFiles);
   assert.equal(summary.cli.helpIncludes, 'ts-quality commands:');
   assert.deepEqual(summary.cli.initCreated, expectedInitFiles);
   assert.equal(summary.cli.materializedConfig, '.ts-quality/materialized/ts-quality.config.json');

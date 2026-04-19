@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
+import { gunzipSync } from 'node:zlib';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -140,6 +141,8 @@ export const stagedPackageFiles = Object.freeze([
   ...stagedRuntimePackageNames.flatMap((packageName) => stagedRuntimeFilesByPackage[packageName].map((relativePath) => `dist/packages/${packageName}/${relativePath}`))
 ].sort((left, right) => left.localeCompare(right)));
 
+export const packedTarballFiles = Object.freeze(stagedPackageFiles.map((relativePath) => `package/${relativePath}`).sort((left, right) => left.localeCompare(right)));
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -226,6 +229,92 @@ function collectStagePaths(rootDir) {
     directories: directories.sort((left, right) => left.localeCompare(right)),
     files: files.sort((left, right) => left.localeCompare(right))
   };
+}
+
+function isZeroBlock(block) {
+  for (const byte of block) {
+    if (byte !== 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function readTarHeaderString(header, start, length) {
+  return header.toString('utf8', start, start + length).replace(/\0.*$/su, '').trim();
+}
+
+function readTarTypeFlag(header) {
+  const value = header.toString('utf8', 156, 157);
+  if (!value || value === '\0') {
+    return '0';
+  }
+  return value.trim() || '0';
+}
+
+function parseTarOctal(header, start, length) {
+  const value = header.toString('utf8', start, start + length).replace(/\0.*$/su, '').trim();
+  return value === '' ? 0 : Number.parseInt(value, 8);
+}
+
+function collectTarballPaths(tarballPath) {
+  const archive = gunzipSync(fs.readFileSync(tarballPath));
+  const files = [];
+  const nonRegularEntries = [];
+  let offset = 0;
+
+  while (offset + 512 <= archive.length) {
+    const header = archive.subarray(offset, offset + 512);
+    if (isZeroBlock(header)) {
+      break;
+    }
+
+    const name = readTarHeaderString(header, 0, 100);
+    const prefix = readTarHeaderString(header, 345, 155);
+    const typeFlag = readTarTypeFlag(header);
+    const size = parseTarOctal(header, 124, 12);
+    const relativePath = prefix ? `${prefix}/${name}` : name;
+    const normalizedPath = relativePath.replace(/\/$/u, '');
+
+    if (normalizedPath) {
+      if (typeFlag === '0') {
+        files.push(normalizedPath);
+      } else if (typeFlag !== '5' && typeFlag !== 'x' && typeFlag !== 'g') {
+        nonRegularEntries.push({
+          path: normalizedPath,
+          typeFlag
+        });
+      }
+    }
+
+    offset += 512 + Math.ceil(size / 512) * 512;
+  }
+
+  return {
+    files: files.sort((left, right) => left.localeCompare(right)),
+    nonRegularEntries: nonRegularEntries.sort((left, right) => left.path.localeCompare(right.path) || left.typeFlag.localeCompare(right.typeFlag))
+  };
+}
+
+export function assertPackedTarballFileSetContract(tarballPath) {
+  ensureFile(tarballPath, `Missing packed tarball: ${tarballPath}`);
+  const actual = collectTarballPaths(tarballPath);
+
+  assert.deepEqual(
+    actual.nonRegularEntries,
+    [],
+    [
+      'Packed tarball contains non-regular entries.',
+      ...actual.nonRegularEntries.map(({ path: entryPath, typeFlag }) => `${entryPath} (${typeFlag})`)
+    ].join('\n')
+  );
+  assert.deepEqual(
+    actual.files,
+    [...packedTarballFiles],
+    formatPathContractMessage('Packed tarball file set', [...packedTarballFiles], actual.files)
+  );
+
+  return actual;
 }
 
 export function buildStagedPackageManifest(publicPackage, workspacePackage) {
@@ -342,18 +431,21 @@ export function packTsQuality() {
   if (!tarballName) {
     throw new Error('npm pack did not report a tarball name.');
   }
+  const tarballPath = path.join(tarballDir, tarballName);
+  const tarballBoundary = assertPackedTarballFileSetContract(tarballPath);
 
   const summary = {
     packageName: stagedPackage.name,
     version: stagedPackage.version,
     stageDir: path.relative(root, stageDir),
     packageJson: path.relative(root, path.join(stageDir, 'package.json')),
-    tarball: path.relative(root, path.join(tarballDir, tarballName)),
+    tarball: path.relative(root, tarballPath),
     entrypoints: stagedEntrypointFiles,
     manifest: stagedPackage,
     topLevelEntries: stagedBoundary.topLevelEntries,
     directories: stagedBoundary.directories,
-    stagedFiles: stagedBoundary.files
+    stagedFiles: stagedBoundary.files,
+    tarballFiles: tarballBoundary.files
   };
 
   return summary;
