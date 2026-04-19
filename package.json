@@ -20,6 +20,8 @@
     "smoke:packaging": "node scripts/packaging-smoke.mjs",
     "verify": "node scripts/verify.mjs",
     "verify:ci": "node scripts/verify.mjs --skip-install",
+    "handoff:sync": "node scripts/handoff-sync.mjs",
+    "handoff:check": "node scripts/handoff-sync.mjs --check",
     "clean": "node scripts/clean.mjs",
     "pack:ts-quality": "node scripts/pack-ts-quality.mjs"
   },
