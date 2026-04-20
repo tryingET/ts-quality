@@ -31,6 +31,7 @@ const expectedMaterializedFiles = [
 
 const reviewFixtureName = 'governed-app';
 const reviewRunId = 'packaging-installed-review-run';
+const reviewTrendRunId = 'packaging-installed-review-trend-run';
 const reviewProposalId = 'packaging-installed-amendment';
 const expectedReviewRunArtifacts = [
   '.ts-quality/runs/packaging-installed-review-run/run.json',
@@ -355,6 +356,22 @@ export function runPackagingSmoke() {
     ensureFile(path.join(reviewProjectRoot, '.ts-quality', 'amendments', `${reviewProposalId}.result.json`), 'Installed amendment decision');
     ensureFile(amendTextPath, 'Installed amendment text summary');
 
+    run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewTrendRunId], installRoot);
+    const trendText = run(installedCliBinPath, ['trend', '--root', reviewProjectRoot], installRoot);
+    assertTextIncludes(trendText, 'trend', [
+      `Current run: ${reviewTrendRunId}`,
+      `Previous run: ${reviewRunId}`,
+      'Invariant evidence at risk: auth.refresh.validity',
+      'Evidence provenance: explicit 3, inferred 1, missing 1',
+      'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support'
+    ]);
+    if (!/Merge confidence delta: -?\d+/u.test(trendText)) {
+      throw new Error(`Installed trend output is missing a merge confidence delta:\n${trendText}`);
+    }
+    if (/^Obligation:/mu.test(trendText)) {
+      throw new Error(`Installed trend output should not include obligations:\n${trendText}`);
+    }
+
     return {
       packageName: packSummary.packageName,
       version: packSummary.version,
@@ -406,6 +423,18 @@ export function runPackagingSmoke() {
             'Invariant evidence at risk: auth.refresh.validity',
             '1. [test] Tighten tests around surviving mutants'
           ]
+        },
+        trend: {
+          currentRun: reviewTrendRunId,
+          previousRun: reviewRunId,
+          stdoutIncludes: [
+            `Current run: ${reviewTrendRunId}`,
+            `Previous run: ${reviewRunId}`,
+            'Invariant evidence at risk: auth.refresh.validity',
+            'Evidence provenance: explicit 3, inferred 1, missing 1',
+            'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support'
+          ],
+          omitsObligation: true
         },
         governIncludes: 'auth-risk-budget',
         attestation: {

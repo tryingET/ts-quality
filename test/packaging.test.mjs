@@ -169,6 +169,18 @@ const expectedInstalledReviewSurfaceProofs = {
       'Invariant evidence at risk: auth.refresh.validity',
       '1. [test] Tighten tests around surviving mutants'
     ]
+  },
+  trend: {
+    currentRun: 'packaging-installed-review-trend-run',
+    previousRun: 'packaging-installed-review-run',
+    stdoutIncludes: [
+      'Current run: packaging-installed-review-trend-run',
+      'Previous run: packaging-installed-review-run',
+      'Invariant evidence at risk: auth.refresh.validity',
+      'Evidence provenance: explicit 3, inferred 1, missing 1',
+      'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support'
+    ],
+    omitsObligation: true
   }
 };
 
@@ -252,6 +264,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.reviewFlow.report, expectedInstalledReviewSurfaceProofs.report);
   assert.deepEqual(summary.reviewFlow.explain, expectedInstalledReviewSurfaceProofs.explain);
   assert.deepEqual(summary.reviewFlow.plan, expectedInstalledReviewSurfaceProofs.plan);
+  assert.deepEqual(summary.reviewFlow.trend, expectedInstalledReviewSurfaceProofs.trend);
   assert.equal(summary.reviewFlow.governIncludes, 'auth-risk-budget');
   assert.deepEqual(summary.reviewFlow.attestation, {
     subject: '.ts-quality/runs/packaging-installed-review-run/verdict.json',
