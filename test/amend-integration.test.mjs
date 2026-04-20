@@ -242,6 +242,47 @@ test('amend --apply preserves commonjs constitution modules when configured', ()
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('amend rejects proposal paths outside --root', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const outsideRoot = fs.mkdtempSync(path.join(path.dirname(target), 'ts-quality-amend-outside-'));
+  const proposalPath = path.join(outsideRoot, 'proposal-outside.json');
+  fs.writeFileSync(proposalPath, JSON.stringify({
+    id: 'amend-outside-proposal',
+    title: 'Outside proposal',
+    rationale: 'adversarial regression',
+    evidence: ['validated'],
+    changes: [],
+    approvals: []
+  }, null, 2));
+
+  const result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^amendment proposal must be inside --root: /);
+  assert.equal(result.stdout, '');
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'amendments')), false);
+});
+
+test('amend rejects proposal symlinks that escape --root', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const outsideRoot = fs.mkdtempSync(path.join(path.dirname(target), 'ts-quality-amend-symlink-'));
+  const outsideProposalPath = path.join(outsideRoot, 'proposal-outside.json');
+  fs.writeFileSync(outsideProposalPath, JSON.stringify({
+    id: 'amend-symlink-proposal',
+    title: 'Symlinked outside proposal',
+    rationale: 'adversarial regression',
+    evidence: ['validated'],
+    changes: [],
+    approvals: []
+  }, null, 2));
+  fs.symlinkSync(outsideProposalPath, path.join(target, 'proposal-link.json'));
+
+  const result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', 'proposal-link.json'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^amendment proposal must be inside --root: proposal-link\.json\n$/);
+  assert.equal(result.stdout, '');
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'amendments')), false);
+});
+
 test('amend rejects malformed proposal JSON with a clear input error', () => {
   const target = tempCopyOfFixture('governed-app');
   const proposalPath = path.join(target, 'proposal-malformed.json');
