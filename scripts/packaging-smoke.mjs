@@ -29,6 +29,88 @@ const expectedMaterializedFiles = [
   '.ts-quality/materialized/ts-quality.config.json'
 ];
 
+const reviewFixtureName = 'governed-app';
+const reviewRunId = 'packaging-installed-review-run';
+const reviewProposalId = 'packaging-installed-amendment';
+const expectedReviewRunArtifacts = [
+  '.ts-quality/runs/packaging-installed-review-run/run.json',
+  '.ts-quality/runs/packaging-installed-review-run/verdict.json',
+  '.ts-quality/runs/packaging-installed-review-run/report.md',
+  '.ts-quality/runs/packaging-installed-review-run/pr-summary.md',
+  '.ts-quality/runs/packaging-installed-review-run/check-summary.txt',
+  '.ts-quality/runs/packaging-installed-review-run/explain.txt',
+  '.ts-quality/runs/packaging-installed-review-run/plan.txt',
+  '.ts-quality/runs/packaging-installed-review-run/govern.txt',
+  '.ts-quality/runs/packaging-installed-review-run/attestation-verify.txt'
+];
+
+function resetRuntimeState(rootDir) {
+  for (const runtimeRoot of [
+    path.join(rootDir, '.ts-quality', 'attestations'),
+    path.join(rootDir, '.ts-quality', 'materialized'),
+    path.join(rootDir, '.ts-quality', 'runs'),
+    path.join(rootDir, '.ts-quality', 'tmp-mutants')
+  ]) {
+    fs.rmSync(runtimeRoot, { recursive: true, force: true });
+  }
+  for (const runtimeFile of [
+    path.join(rootDir, '.ts-quality', 'latest.json'),
+    path.join(rootDir, '.ts-quality', 'mutation-manifest.json')
+  ]) {
+    fs.rmSync(runtimeFile, { force: true });
+  }
+}
+
+function prepareInstalledReviewProject(baseDir) {
+  const source = path.join(root, 'fixtures', reviewFixtureName);
+  const target = path.join(baseDir, 'review-project');
+  fs.rmSync(target, { recursive: true, force: true });
+  fs.cpSync(source, target, { recursive: true });
+  resetRuntimeState(target);
+  return target;
+}
+
+function writeInstalledReviewProposal(rootDir) {
+  const proposalPath = path.join(rootDir, 'proposal.json');
+  fs.writeFileSync(proposalPath, `${JSON.stringify({
+    id: reviewProposalId,
+    title: 'Installed package amendment smoke',
+    rationale: 'Exercise the shipped amendment surface from an installed package.',
+    evidence: ['packaged amendment path exercised'],
+    changes: [{
+      action: 'replace',
+      ruleId: 'auth-risk-budget',
+      rule: {
+        kind: 'risk',
+        id: 'auth-risk-budget',
+        paths: ['src/auth/**'],
+        message: 'Adjusted during packaging smoke.',
+        maxCrap: 20,
+        minMutationScore: 0.7,
+        minMergeConfidence: 60
+      }
+    }],
+    approvals: [
+      {
+        by: 'maintainer',
+        role: 'maintainer',
+        rationale: 'packaging smoke approval',
+        createdAt: '2026-01-01T00:15:00.000Z',
+        targetId: reviewProposalId
+      },
+      {
+        by: 'maintainer',
+        role: 'maintainer',
+        rationale: 'duplicate packaging smoke approval',
+        createdAt: '2026-01-01T00:15:00.000Z',
+        targetId: reviewProposalId
+      }
+    ]
+  }, null, 2)}
+`, 'utf8');
+  return proposalPath;
+}
+
 function run(command, args, cwd) {
   const result = spawnSync(command, args, { cwd, encoding: 'utf8' });
   if (result.status !== 0) {
@@ -171,6 +253,65 @@ export function runPackagingSmoke() {
     ].join('\n'), 'utf8');
     run(installedTscBinPath, ['--module', 'commonjs', '--moduleResolution', 'node', '--target', 'ES2022', '--esModuleInterop', '--noEmit', path.basename(typeSmokePath)], installRoot);
 
+    const reviewProjectRoot = prepareInstalledReviewProject(installRoot);
+    run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewRunId], installRoot);
+    ensureRelativeFiles(reviewProjectRoot, expectedReviewRunArtifacts, 'Installed review flow');
+    const governText = run(installedCliBinPath, ['govern', '--root', reviewProjectRoot], installRoot);
+    if (!governText.includes('auth-risk-budget')) {
+      throw new Error(`Unexpected ts-quality govern output from installed package:\n${governText}`);
+    }
+
+    run(installedCliBinPath, [
+      'attest',
+      'sign',
+      '--root', reviewProjectRoot,
+      '--issuer', 'ci.verify',
+      '--key-id', 'sample',
+      '--private-key', '.ts-quality/keys/sample.pem',
+      '--subject', `.ts-quality/runs/${reviewRunId}/verdict.json`,
+      '--claims', 'ci.tests.passed',
+      '--out', '.ts-quality/attestations/ci.tests.passed.json'
+    ], installRoot);
+    const verifyText = run(installedCliBinPath, [
+      'attest',
+      'verify',
+      '--root', reviewProjectRoot,
+      '--attestation', '.ts-quality/attestations/ci.tests.passed.json',
+      '--trusted-keys', '.ts-quality/keys'
+    ], installRoot);
+    if (!verifyText.includes('ci.verify: verified (verified)')) {
+      throw new Error(`Unexpected ts-quality attest verify output from installed package:\n${verifyText}`);
+    }
+
+    run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewRunId], installRoot);
+    const runtimeAttestationVerify = fs.readFileSync(path.join(reviewProjectRoot, '.ts-quality', 'runs', reviewRunId, 'attestation-verify.txt'), 'utf8').trim();
+    if (runtimeAttestationVerify !== verifyText) {
+      throw new Error(`Run-bound attestation verification drifted from CLI verify output.\nexpected:\n${verifyText}\nactual:\n${runtimeAttestationVerify}`);
+    }
+
+    const overridesPath = path.join(reviewProjectRoot, '.ts-quality', 'overrides.json');
+    fs.writeFileSync(overridesPath, `${JSON.stringify([
+      {
+        kind: 'override',
+        by: 'maintainer',
+        role: 'maintainer',
+        rationale: 'Installed packaging smoke override.',
+        createdAt: '2026-01-01T00:10:00.000Z',
+        targetId: `${reviewRunId}:maintainer:merge`
+      }
+    ], null, 2)}
+`, 'utf8');
+    const authorizeDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'maintainer'], installRoot));
+    if (authorizeDecision.outcome !== 'approve') {
+      throw new Error(`Unexpected ts-quality authorize output from installed package:\n${JSON.stringify(authorizeDecision, null, 2)}`);
+    }
+
+    writeInstalledReviewProposal(reviewProjectRoot);
+    const amendDecision = JSON.parse(run(installedCliBinPath, ['amend', '--root', reviewProjectRoot, '--proposal', 'proposal.json'], installRoot));
+    const amendTextPath = path.join(reviewProjectRoot, '.ts-quality', 'amendments', `${reviewProposalId}.result.txt`);
+    ensureFile(path.join(reviewProjectRoot, '.ts-quality', 'amendments', `${reviewProposalId}.result.json`), 'Installed amendment decision');
+    ensureFile(amendTextPath, 'Installed amendment text summary');
+
     return {
       packageName: packSummary.packageName,
       version: packSummary.version,
@@ -197,6 +338,31 @@ export function runPackagingSmoke() {
         compiler: 'tsc',
         passed: true,
         importStatement: "import { initProject, materializeProject } from 'ts-quality';"
+      },
+      reviewFlow: {
+        fixture: reviewFixtureName,
+        runId: reviewRunId,
+        runArtifacts: [...expectedReviewRunArtifacts],
+        governIncludes: 'auth-risk-budget',
+        attestation: {
+          subject: `.ts-quality/runs/${reviewRunId}/verdict.json`,
+          runId: reviewRunId,
+          artifact: 'verdict.json',
+          verified: true
+        },
+        authorize: {
+          agent: 'maintainer',
+          outcome: authorizeDecision.outcome,
+          overrideUsed: authorizeDecision.overrideUsed,
+          runId: authorizeDecision.evidenceContext?.runId,
+          bundlePath: authorizeDecision.evidenceContext?.artifactPaths?.bundle,
+          verifiedAttestations: authorizeDecision.evidenceContext?.attestationVerification?.verifiedCount
+        },
+        amend: {
+          proposalId: amendDecision.proposalId,
+          outcome: amendDecision.outcome,
+          textArtifact: `.ts-quality/amendments/${reviewProposalId}.result.txt`
+        }
       }
     };
   } finally {

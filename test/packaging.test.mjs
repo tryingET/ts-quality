@@ -136,6 +136,18 @@ const expectedMaterializedFiles = [
   '.ts-quality/materialized/ts-quality.config.json'
 ];
 
+const expectedInstalledReviewRunArtifacts = [
+  '.ts-quality/runs/packaging-installed-review-run/run.json',
+  '.ts-quality/runs/packaging-installed-review-run/verdict.json',
+  '.ts-quality/runs/packaging-installed-review-run/report.md',
+  '.ts-quality/runs/packaging-installed-review-run/pr-summary.md',
+  '.ts-quality/runs/packaging-installed-review-run/check-summary.txt',
+  '.ts-quality/runs/packaging-installed-review-run/explain.txt',
+  '.ts-quality/runs/packaging-installed-review-run/plan.txt',
+  '.ts-quality/runs/packaging-installed-review-run/govern.txt',
+  '.ts-quality/runs/packaging-installed-review-run/attestation-verify.txt'
+];
+
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
 }
@@ -209,5 +221,28 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
     compiler: 'tsc',
     passed: true,
     importStatement: "import { initProject, materializeProject } from 'ts-quality';"
+  });
+  assert.equal(summary.reviewFlow.fixture, 'governed-app');
+  assert.equal(summary.reviewFlow.runId, 'packaging-installed-review-run');
+  assert.deepEqual(summary.reviewFlow.runArtifacts, expectedInstalledReviewRunArtifacts);
+  assert.equal(summary.reviewFlow.governIncludes, 'auth-risk-budget');
+  assert.deepEqual(summary.reviewFlow.attestation, {
+    subject: '.ts-quality/runs/packaging-installed-review-run/verdict.json',
+    runId: 'packaging-installed-review-run',
+    artifact: 'verdict.json',
+    verified: true
+  });
+  assert.deepEqual(summary.reviewFlow.authorize, {
+    agent: 'maintainer',
+    outcome: 'approve',
+    overrideUsed: 'maintainer',
+    runId: 'packaging-installed-review-run',
+    bundlePath: '.ts-quality/runs/packaging-installed-review-run/bundle.maintainer.merge.json',
+    verifiedAttestations: 1
+  });
+  assert.deepEqual(summary.reviewFlow.amend, {
+    proposalId: 'packaging-installed-amendment',
+    outcome: 'needs-approvals',
+    textArtifact: '.ts-quality/amendments/packaging-installed-amendment.result.txt'
   });
 });
