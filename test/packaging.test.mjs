@@ -211,6 +211,26 @@ const expectedInstalledReviewSurfaceProofs = {
       'Invariant evidence at risk: auth.refresh.validity'
     ]
   },
+  driftDetection: {
+    runId: 'packaging-installed-drift-run',
+    mutatedFile: 'src/auth/token.js',
+    planIncludes: [
+      'Run drift detected for packaging-installed-drift-run.',
+      'changed file src/auth/token.js:'
+    ],
+    governIncludes: [
+      'Run drift detected for packaging-installed-drift-run.',
+      'changed file src/auth/token.js:'
+    ],
+    authorize: {
+      agent: 'maintainer',
+      outcome: 'deny',
+      runId: 'packaging-installed-drift-run',
+      reasonIncludes: 'Repository changed since run',
+      bundlePath: '.ts-quality/runs/packaging-installed-drift-run/bundle.maintainer.merge.json',
+      decisionPath: '.ts-quality/runs/packaging-installed-drift-run/authorize.maintainer.merge.json'
+    }
+  },
   releaseBotAuthorize: {
     deniedWithoutOverride: {
       outcome: 'deny',
@@ -312,6 +332,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.reviewFlow.plan, expectedInstalledReviewSurfaceProofs.plan);
   assert.deepEqual(summary.reviewFlow.trend, expectedInstalledReviewSurfaceProofs.trend);
   assert.deepEqual(summary.reviewFlow.materializedConfig, expectedInstalledReviewSurfaceProofs.materializedConfig);
+  assert.deepEqual(summary.reviewFlow.driftDetection, expectedInstalledReviewSurfaceProofs.driftDetection);
   assert.equal(summary.reviewFlow.governIncludes, 'auth-risk-budget');
   assert.deepEqual(summary.reviewFlow.attestation, {
     subject: '.ts-quality/runs/packaging-installed-review-run/verdict.json',

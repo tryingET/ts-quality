@@ -34,6 +34,7 @@ const reviewRunId = 'packaging-installed-review-run';
 const reviewTrendRunId = 'packaging-installed-review-trend-run';
 const reviewMaterializedSourceRunId = 'packaging-installed-materialized-source-run';
 const reviewMaterializedRunId = 'packaging-installed-materialized-config-run';
+const reviewDriftRunId = 'packaging-installed-drift-run';
 const keygenRunId = 'packaging-installed-keygen-run';
 const keygenOutDir = '.ts-quality/generated-keys';
 const keygenKeyId = 'packaging-generated';
@@ -482,6 +483,32 @@ export function runPackagingSmoke() {
       'Invariant evidence at risk: auth.refresh.validity'
     ]);
 
+    const driftReviewProjectRoot = prepareInstalledReviewProject(installRoot, 'drift-review-project');
+    run(installedCliBinPath, ['check', '--root', driftReviewProjectRoot, '--run-id', reviewDriftRunId], installRoot);
+    fs.appendFileSync(path.join(driftReviewProjectRoot, 'src', 'auth', 'token.js'), '\n// installed packaging drift after check\n', 'utf8');
+
+    const driftPlanText = run(installedCliBinPath, ['plan', '--root', driftReviewProjectRoot], installRoot);
+    assertTextIncludes(driftPlanText, 'drift plan', [
+      `Run drift detected for ${reviewDriftRunId}.`,
+      'changed file src/auth/token.js:'
+    ]);
+
+    const driftGovernText = run(installedCliBinPath, ['govern', '--root', driftReviewProjectRoot], installRoot);
+    assertTextIncludes(driftGovernText, 'drift govern', [
+      `Run drift detected for ${reviewDriftRunId}.`,
+      'changed file src/auth/token.js:'
+    ]);
+
+    const driftAuthorizeDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', driftReviewProjectRoot, '--agent', 'maintainer'], installRoot));
+    if (driftAuthorizeDecision.outcome !== 'deny') {
+      throw new Error(`Unexpected ts-quality drift authorize output from installed package:\n${JSON.stringify(driftAuthorizeDecision, null, 2)}`);
+    }
+    if (!(driftAuthorizeDecision.reasons ?? []).some((reason) => reason.includes('Repository changed since run'))) {
+      throw new Error(`Expected installed drift authorize output to mention repository drift:\n${JSON.stringify(driftAuthorizeDecision, null, 2)}`);
+    }
+    ensureFile(path.join(driftReviewProjectRoot, '.ts-quality', 'runs', reviewDriftRunId, 'bundle.maintainer.merge.json'), 'Installed drift authorization bundle');
+    ensureFile(path.join(driftReviewProjectRoot, '.ts-quality', 'runs', reviewDriftRunId, 'authorize.maintainer.merge.json'), 'Installed drift authorization decision');
+
     return {
       packageName: packSummary.packageName,
       version: packSummary.version,
@@ -571,6 +598,26 @@ export function runPackagingSmoke() {
             'auth-risk-budget',
             'Invariant evidence at risk: auth.refresh.validity'
           ]
+        },
+        driftDetection: {
+          runId: reviewDriftRunId,
+          mutatedFile: 'src/auth/token.js',
+          planIncludes: [
+            `Run drift detected for ${reviewDriftRunId}.`,
+            'changed file src/auth/token.js:'
+          ],
+          governIncludes: [
+            `Run drift detected for ${reviewDriftRunId}.`,
+            'changed file src/auth/token.js:'
+          ],
+          authorize: {
+            agent: 'maintainer',
+            outcome: driftAuthorizeDecision.outcome,
+            runId: driftAuthorizeDecision.evidenceContext?.runId,
+            reasonIncludes: 'Repository changed since run',
+            bundlePath: driftAuthorizeDecision.evidenceContext?.artifactPaths?.bundle,
+            decisionPath: `.ts-quality/runs/${reviewDriftRunId}/authorize.maintainer.merge.json`
+          }
         },
         governIncludes: 'auth-risk-budget',
         attestation: {
