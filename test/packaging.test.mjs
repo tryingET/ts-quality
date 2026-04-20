@@ -195,6 +195,22 @@ const expectedInstalledReviewSurfaceProofs = {
       'auth-risk-budget',
       'Invariant evidence at risk: auth.refresh.validity'
     ]
+  },
+  releaseBotAuthorize: {
+    deniedWithoutOverride: {
+      outcome: 'deny',
+      missingProof: [],
+      verifiedAttestations: 1,
+      governIncludes: 'auth-risk-budget'
+    },
+    approved: {
+      agent: 'release-bot',
+      outcome: 'approve',
+      overrideUsed: 'maintainer',
+      runId: 'packaging-installed-review-run',
+      bundlePath: '.ts-quality/runs/packaging-installed-review-run/bundle.release-bot.merge.json',
+      verifiedAttestations: 1
+    }
   }
 };
 
@@ -295,6 +311,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
     bundlePath: '.ts-quality/runs/packaging-installed-review-run/bundle.maintainer.merge.json',
     verifiedAttestations: 1
   });
+  assert.deepEqual(summary.reviewFlow.releaseBotAuthorize, expectedInstalledReviewSurfaceProofs.releaseBotAuthorize);
   assert.deepEqual(summary.reviewFlow.amend, {
     proposalId: 'packaging-installed-amendment',
     outcome: 'needs-approvals',

@@ -335,6 +335,17 @@ export function runPackagingSmoke() {
       throw new Error(`Run-bound attestation verification drifted from CLI verify output.\nexpected:\n${verifyText}\nactual:\n${runtimeAttestationVerify}`);
     }
 
+    const releaseBotDeniedDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'release-bot'], installRoot));
+    if (releaseBotDeniedDecision.outcome !== 'deny') {
+      throw new Error(`Expected release-bot authorization without override to deny, got:\n${JSON.stringify(releaseBotDeniedDecision, null, 2)}`);
+    }
+    if ((releaseBotDeniedDecision.evidenceContext?.attestationVerification?.verifiedCount ?? 0) !== 1) {
+      throw new Error(`Expected release-bot denial to keep one verified attestation, got:\n${JSON.stringify(releaseBotDeniedDecision, null, 2)}`);
+    }
+    if ((releaseBotDeniedDecision.missingProof ?? []).length !== 0) {
+      throw new Error(`Expected release-bot denial to have no missing proof after attestation, got:\n${JSON.stringify(releaseBotDeniedDecision, null, 2)}`);
+    }
+
     const overridesPath = path.join(reviewProjectRoot, '.ts-quality', 'overrides.json');
     fs.writeFileSync(overridesPath, `${JSON.stringify([
       {
@@ -344,6 +355,14 @@ export function runPackagingSmoke() {
         rationale: 'Installed packaging smoke override.',
         createdAt: '2026-01-01T00:10:00.000Z',
         targetId: `${reviewRunId}:maintainer:merge`
+      },
+      {
+        kind: 'override',
+        by: 'maintainer',
+        role: 'maintainer',
+        rationale: 'Installed packaging smoke release-bot override.',
+        createdAt: '2026-01-01T00:11:00.000Z',
+        targetId: `${reviewRunId}:release-bot:merge`
       }
     ], null, 2)}
 `, 'utf8');
@@ -351,6 +370,14 @@ export function runPackagingSmoke() {
     if (authorizeDecision.outcome !== 'approve') {
       throw new Error(`Unexpected ts-quality authorize output from installed package:\n${JSON.stringify(authorizeDecision, null, 2)}`);
     }
+    const releaseBotAuthorizeDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'release-bot'], installRoot));
+    if (releaseBotAuthorizeDecision.outcome !== 'approve') {
+      throw new Error(`Unexpected ts-quality release-bot authorize output from installed package:\n${JSON.stringify(releaseBotAuthorizeDecision, null, 2)}`);
+    }
+    if (releaseBotAuthorizeDecision.overrideUsed !== 'maintainer') {
+      throw new Error(`Expected release-bot authorization to use maintainer override, got:\n${JSON.stringify(releaseBotAuthorizeDecision, null, 2)}`);
+    }
+    ensureFile(path.join(reviewProjectRoot, '.ts-quality', 'runs', reviewRunId, 'bundle.release-bot.merge.json'), 'Installed release-bot bundle');
 
     writeInstalledReviewProposal(reviewProjectRoot);
     const amendDecision = JSON.parse(run(installedCliBinPath, ['amend', '--root', reviewProjectRoot, '--proposal', 'proposal.json'], installRoot));
@@ -511,6 +538,22 @@ export function runPackagingSmoke() {
           runId: authorizeDecision.evidenceContext?.runId,
           bundlePath: authorizeDecision.evidenceContext?.artifactPaths?.bundle,
           verifiedAttestations: authorizeDecision.evidenceContext?.attestationVerification?.verifiedCount
+        },
+        releaseBotAuthorize: {
+          deniedWithoutOverride: {
+            outcome: releaseBotDeniedDecision.outcome,
+            missingProof: releaseBotDeniedDecision.missingProof,
+            verifiedAttestations: releaseBotDeniedDecision.evidenceContext?.attestationVerification?.verifiedCount,
+            governIncludes: 'auth-risk-budget'
+          },
+          approved: {
+            agent: 'release-bot',
+            outcome: releaseBotAuthorizeDecision.outcome,
+            overrideUsed: releaseBotAuthorizeDecision.overrideUsed,
+            runId: releaseBotAuthorizeDecision.evidenceContext?.runId,
+            bundlePath: releaseBotAuthorizeDecision.evidenceContext?.artifactPaths?.bundle,
+            verifiedAttestations: releaseBotAuthorizeDecision.evidenceContext?.attestationVerification?.verifiedCount
+          }
         },
         amend: {
           proposalId: amendDecision.proposalId,
