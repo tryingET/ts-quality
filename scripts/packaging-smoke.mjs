@@ -143,6 +143,26 @@ function ensureRelativeFiles(baseDir, relativePaths, label) {
   }
 }
 
+function normalizeText(text) {
+  return text.replace(/\r\n/g, '\n').trim();
+}
+
+function assertOutputMatchesArtifact(commandOutput, artifactPath, label) {
+  const normalizedOutput = normalizeText(commandOutput);
+  const normalizedArtifact = normalizeText(fs.readFileSync(artifactPath, 'utf8'));
+  if (normalizedOutput !== normalizedArtifact) {
+    throw new Error(`Installed ${label} output drifted from persisted artifact.\nexpected:\n${normalizedArtifact}\nactual:\n${normalizedOutput}`);
+  }
+}
+
+function assertTextIncludes(text, label, fragments) {
+  for (const fragment of fragments) {
+    if (!text.includes(fragment)) {
+      throw new Error(`Installed ${label} text is missing expected fragment '${fragment}':\n${text}`);
+    }
+  }
+}
+
 export function runPackagingSmoke() {
   const packSummary = JSON.parse(run('node', ['scripts/pack-ts-quality.mjs'], root));
   const tarballPath = path.join(root, packSummary.tarball);
@@ -256,6 +276,29 @@ export function runPackagingSmoke() {
     const reviewProjectRoot = prepareInstalledReviewProject(installRoot);
     run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewRunId], installRoot);
     ensureRelativeFiles(reviewProjectRoot, expectedReviewRunArtifacts, 'Installed review flow');
+
+    const reportArtifactPath = path.join(reviewProjectRoot, '.ts-quality', 'runs', reviewRunId, 'report.md');
+    const explainArtifactPath = path.join(reviewProjectRoot, '.ts-quality', 'runs', reviewRunId, 'explain.txt');
+    const planArtifactPath = path.join(reviewProjectRoot, '.ts-quality', 'runs', reviewRunId, 'plan.txt');
+
+    const reportText = run(installedCliBinPath, ['report', '--root', reviewProjectRoot], installRoot);
+    assertOutputMatchesArtifact(reportText, reportArtifactPath, 'report');
+    assertTextIncludes(reportText, 'report', ['# ts-quality report']);
+
+    const explainText = run(installedCliBinPath, ['explain', '--root', reviewProjectRoot], installRoot);
+    assertOutputMatchesArtifact(explainText, explainArtifactPath, 'explain');
+    assertTextIncludes(explainText, 'explain', ['Reasons:']);
+
+    const planText = run(installedCliBinPath, ['plan', '--root', reviewProjectRoot], installRoot);
+    assertTextIncludes(planText, 'plan', [
+      'Invariant evidence at risk: auth.refresh.validity',
+      '1. Tighten tests around surviving mutants'
+    ]);
+    assertTextIncludes(fs.readFileSync(planArtifactPath, 'utf8'), 'plan artifact', [
+      'Invariant evidence at risk: auth.refresh.validity',
+      '1. [test] Tighten tests around surviving mutants'
+    ]);
+
     const governText = run(installedCliBinPath, ['govern', '--root', reviewProjectRoot], installRoot);
     if (!governText.includes('auth-risk-budget')) {
       throw new Error(`Unexpected ts-quality govern output from installed package:\n${governText}`);
@@ -343,6 +386,27 @@ export function runPackagingSmoke() {
         fixture: reviewFixtureName,
         runId: reviewRunId,
         runArtifacts: [...expectedReviewRunArtifacts],
+        report: {
+          artifact: `.ts-quality/runs/${reviewRunId}/report.md`,
+          stdoutMatchesArtifact: true,
+          stdoutIncludes: ['# ts-quality report']
+        },
+        explain: {
+          artifact: `.ts-quality/runs/${reviewRunId}/explain.txt`,
+          stdoutMatchesArtifact: true,
+          stdoutIncludes: ['Reasons:']
+        },
+        plan: {
+          artifact: `.ts-quality/runs/${reviewRunId}/plan.txt`,
+          stdoutIncludes: [
+            'Invariant evidence at risk: auth.refresh.validity',
+            '1. Tighten tests around surviving mutants'
+          ],
+          artifactIncludes: [
+            'Invariant evidence at risk: auth.refresh.validity',
+            '1. [test] Tighten tests around surviving mutants'
+          ]
+        },
         governIncludes: 'auth-risk-budget',
         attestation: {
           subject: `.ts-quality/runs/${reviewRunId}/verdict.json`,

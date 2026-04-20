@@ -148,6 +148,30 @@ const expectedInstalledReviewRunArtifacts = [
   '.ts-quality/runs/packaging-installed-review-run/attestation-verify.txt'
 ];
 
+const expectedInstalledReviewSurfaceProofs = {
+  report: {
+    artifact: '.ts-quality/runs/packaging-installed-review-run/report.md',
+    stdoutMatchesArtifact: true,
+    stdoutIncludes: ['# ts-quality report']
+  },
+  explain: {
+    artifact: '.ts-quality/runs/packaging-installed-review-run/explain.txt',
+    stdoutMatchesArtifact: true,
+    stdoutIncludes: ['Reasons:']
+  },
+  plan: {
+    artifact: '.ts-quality/runs/packaging-installed-review-run/plan.txt',
+    stdoutIncludes: [
+      'Invariant evidence at risk: auth.refresh.validity',
+      '1. Tighten tests around surviving mutants'
+    ],
+    artifactIncludes: [
+      'Invariant evidence at risk: auth.refresh.validity',
+      '1. [test] Tighten tests around surviving mutants'
+    ]
+  }
+};
+
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
 }
@@ -225,6 +249,9 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.equal(summary.reviewFlow.fixture, 'governed-app');
   assert.equal(summary.reviewFlow.runId, 'packaging-installed-review-run');
   assert.deepEqual(summary.reviewFlow.runArtifacts, expectedInstalledReviewRunArtifacts);
+  assert.deepEqual(summary.reviewFlow.report, expectedInstalledReviewSurfaceProofs.report);
+  assert.deepEqual(summary.reviewFlow.explain, expectedInstalledReviewSurfaceProofs.explain);
+  assert.deepEqual(summary.reviewFlow.plan, expectedInstalledReviewSurfaceProofs.plan);
   assert.equal(summary.reviewFlow.governIncludes, 'auth-risk-budget');
   assert.deepEqual(summary.reviewFlow.attestation, {
     subject: '.ts-quality/runs/packaging-installed-review-run/verdict.json',
