@@ -181,6 +181,20 @@ const expectedInstalledReviewSurfaceProofs = {
       'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support'
     ],
     omitsObligation: true
+  },
+  materializedConfig: {
+    configPath: '.ts-quality/materialized/ts-quality.config.json',
+    sourceRunId: 'packaging-installed-materialized-source-run',
+    runId: 'packaging-installed-materialized-config-run',
+    analysisConfigPath: '.ts-quality/materialized/ts-quality.config.json',
+    controlPlaneConfigPath: '.ts-quality/materialized/ts-quality.config.json',
+    matchesSourceVerdict: true,
+    matchesSourceChangedFiles: true,
+    matchesSourceGovernance: true,
+    governIncludes: [
+      'auth-risk-budget',
+      'Invariant evidence at risk: auth.refresh.validity'
+    ]
   }
 };
 
@@ -265,6 +279,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.reviewFlow.explain, expectedInstalledReviewSurfaceProofs.explain);
   assert.deepEqual(summary.reviewFlow.plan, expectedInstalledReviewSurfaceProofs.plan);
   assert.deepEqual(summary.reviewFlow.trend, expectedInstalledReviewSurfaceProofs.trend);
+  assert.deepEqual(summary.reviewFlow.materializedConfig, expectedInstalledReviewSurfaceProofs.materializedConfig);
   assert.equal(summary.reviewFlow.governIncludes, 'auth-risk-budget');
   assert.deepEqual(summary.reviewFlow.attestation, {
     subject: '.ts-quality/runs/packaging-installed-review-run/verdict.json',

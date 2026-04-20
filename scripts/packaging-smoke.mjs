@@ -32,6 +32,8 @@ const expectedMaterializedFiles = [
 const reviewFixtureName = 'governed-app';
 const reviewRunId = 'packaging-installed-review-run';
 const reviewTrendRunId = 'packaging-installed-review-trend-run';
+const reviewMaterializedSourceRunId = 'packaging-installed-materialized-source-run';
+const reviewMaterializedRunId = 'packaging-installed-materialized-config-run';
 const reviewProposalId = 'packaging-installed-amendment';
 const expectedReviewRunArtifacts = [
   '.ts-quality/runs/packaging-installed-review-run/run.json',
@@ -62,9 +64,9 @@ function resetRuntimeState(rootDir) {
   }
 }
 
-function prepareInstalledReviewProject(baseDir) {
+function prepareInstalledReviewProject(baseDir, projectDirName = 'review-project') {
   const source = path.join(root, 'fixtures', reviewFixtureName);
-  const target = path.join(baseDir, 'review-project');
+  const target = path.join(baseDir, projectDirName);
   fs.rmSync(target, { recursive: true, force: true });
   fs.cpSync(source, target, { recursive: true });
   resetRuntimeState(target);
@@ -372,6 +374,51 @@ export function runPackagingSmoke() {
       throw new Error(`Installed trend output should not include obligations:\n${trendText}`);
     }
 
+    const materializedReviewProjectRoot = prepareInstalledReviewProject(installRoot, 'materialized-review-project');
+    const materializedConfigPath = '.ts-quality/materialized/ts-quality.config.json';
+    const materializedReviewMaterialize = run(installedCliBinPath, ['materialize', '--root', materializedReviewProjectRoot], installRoot);
+    if (!materializedReviewMaterialize.includes(`Materialized runtime config: ${materializedConfigPath}`)) {
+      throw new Error(`Unexpected installed review materialize output:\n${materializedReviewMaterialize}`);
+    }
+    ensureRelativeFiles(materializedReviewProjectRoot, expectedMaterializedFiles, 'Installed review materialize');
+
+    run(installedCliBinPath, ['check', '--root', materializedReviewProjectRoot, '--run-id', reviewMaterializedSourceRunId], installRoot);
+    run(installedCliBinPath, ['check', '--root', materializedReviewProjectRoot, '--config', materializedConfigPath, '--run-id', reviewMaterializedRunId], installRoot);
+
+    const materializedRunPath = path.join(materializedReviewProjectRoot, '.ts-quality', 'runs', reviewMaterializedRunId, 'run.json');
+    const materializedGovernArtifactPath = path.join(materializedReviewProjectRoot, '.ts-quality', 'runs', reviewMaterializedRunId, 'govern.txt');
+    ensureFile(materializedRunPath, 'Installed materialized-config run');
+    ensureFile(materializedGovernArtifactPath, 'Installed materialized-config govern artifact');
+
+    const materializedSourceRun = readJson(path.join(materializedReviewProjectRoot, '.ts-quality', 'runs', reviewMaterializedSourceRunId, 'run.json'));
+    const materializedRun = readJson(materializedRunPath);
+    if (materializedRun.verdict?.mergeConfidence !== materializedSourceRun.verdict?.mergeConfidence) {
+      throw new Error(`Installed materialized-config merge confidence drifted from source config. expected ${materializedSourceRun.verdict?.mergeConfidence}, got ${materializedRun.verdict?.mergeConfidence}`);
+    }
+    if (materializedRun.verdict?.outcome !== materializedSourceRun.verdict?.outcome) {
+      throw new Error(`Installed materialized-config outcome drifted from source config. expected ${materializedSourceRun.verdict?.outcome}, got ${materializedRun.verdict?.outcome}`);
+    }
+    if (JSON.stringify(materializedRun.changedFiles) !== JSON.stringify(materializedSourceRun.changedFiles)) {
+      throw new Error(`Installed materialized-config changed files drifted from source config.\nexpected: ${JSON.stringify(materializedSourceRun.changedFiles)}\nactual: ${JSON.stringify(materializedRun.changedFiles)}`);
+    }
+    const materializedGovernanceSummary = materializedRun.governance.map(({ ruleId, message }) => ({ ruleId, message }));
+    const materializedSourceGovernanceSummary = materializedSourceRun.governance.map(({ ruleId, message }) => ({ ruleId, message }));
+    if (JSON.stringify(materializedGovernanceSummary) !== JSON.stringify(materializedSourceGovernanceSummary)) {
+      throw new Error(`Installed materialized-config governance drifted from source config.\nexpected: ${JSON.stringify(materializedSourceGovernanceSummary)}\nactual: ${JSON.stringify(materializedGovernanceSummary)}`);
+    }
+    if (materializedRun.analysis?.configPath !== materializedConfigPath) {
+      throw new Error(`Installed materialized-config analysis path drifted. expected ${materializedConfigPath}, got ${materializedRun.analysis?.configPath}`);
+    }
+    if (materializedRun.controlPlane?.configPath !== materializedConfigPath) {
+      throw new Error(`Installed materialized-config control-plane path drifted. expected ${materializedConfigPath}, got ${materializedRun.controlPlane?.configPath}`);
+    }
+
+    const materializedGovernText = run(installedCliBinPath, ['govern', '--root', materializedReviewProjectRoot, '--config', materializedConfigPath], installRoot);
+    assertTextIncludes(materializedGovernText, 'materialized-config govern', [
+      'auth-risk-budget',
+      'Invariant evidence at risk: auth.refresh.validity'
+    ]);
+
     return {
       packageName: packSummary.packageName,
       version: packSummary.version,
@@ -435,6 +482,20 @@ export function runPackagingSmoke() {
             'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support'
           ],
           omitsObligation: true
+        },
+        materializedConfig: {
+          configPath: materializedConfigPath,
+          sourceRunId: reviewMaterializedSourceRunId,
+          runId: reviewMaterializedRunId,
+          analysisConfigPath: materializedRun.analysis?.configPath,
+          controlPlaneConfigPath: materializedRun.controlPlane?.configPath,
+          matchesSourceVerdict: true,
+          matchesSourceChangedFiles: true,
+          matchesSourceGovernance: true,
+          governIncludes: [
+            'auth-risk-budget',
+            'Invariant evidence at risk: auth.refresh.validity'
+          ]
         },
         governIncludes: 'auth-risk-budget',
         attestation: {
