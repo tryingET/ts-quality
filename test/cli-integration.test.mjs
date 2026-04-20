@@ -318,6 +318,99 @@ test('materialize exports runtime JSON artifacts and check can run from them wit
   assert.equal(materializedRun.governance.length, sourceRun.governance.length);
 });
 
+test('materialized config keeps authorize output parity with source config', () => {
+  const sourceTarget = tempCopyOfFixture('governed-app');
+  const materializedTarget = tempCopyOfFixture('governed-app');
+  const runId = 'materialized-authorize-parity-run';
+  const overrideRecord = [
+    {
+      kind: 'override',
+      by: 'maintainer',
+      role: 'maintainer',
+      rationale: 'Parity override after human review.',
+      createdAt: '2026-01-01T00:10:00.000Z',
+      targetId: `${runId}:release-bot:merge`
+    }
+  ];
+  for (const target of [sourceTarget, materializedTarget]) {
+    fs.writeFileSync(path.join(target, '.ts-quality', 'overrides.json'), `${JSON.stringify(overrideRecord, null, 2)}\n`, 'utf8');
+  }
+
+  let result = spawnSync('node', [cli, 'materialize', '--root', materializedTarget], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  result = spawnSync('node', [cli, 'check', '--root', sourceTarget, '--run-id', runId], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'check', '--root', materializedTarget, '--config', '.ts-quality/materialized/ts-quality.config.json', '--run-id', runId], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  for (const target of [sourceTarget, materializedTarget]) {
+    result = spawnSync('node', [cli, 'attest', 'sign', '--root', target, '--issuer', 'ci.verify', '--key-id', 'sample', '--private-key', '.ts-quality/keys/sample.pem', '--subject', `.ts-quality/runs/${runId}/verdict.json`, '--claims', 'ci.tests.passed', '--out', '.ts-quality/attestations/ci.tests.passed.json'], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+  }
+
+  const sourceAuthorize = spawnSync('node', [cli, 'authorize', '--root', sourceTarget, '--agent', 'release-bot'], { encoding: 'utf8' });
+  const materializedAuthorize = spawnSync('node', [cli, 'authorize', '--root', materializedTarget, '--config', '.ts-quality/materialized/ts-quality.config.json', '--agent', 'release-bot'], { encoding: 'utf8' });
+  assert.equal(sourceAuthorize.status, 0, sourceAuthorize.stderr);
+  assert.equal(materializedAuthorize.status, 0, materializedAuthorize.stderr);
+
+  const sourceDecision = JSON.parse(sourceAuthorize.stdout);
+  const materializedDecision = JSON.parse(materializedAuthorize.stdout);
+  assert.equal(sourceDecision.outcome, 'approve');
+  assert.equal(sourceDecision.overrideUsed, 'maintainer');
+  assert.deepEqual(materializedDecision, sourceDecision);
+});
+
+test('materialized config keeps amend output parity with source config', () => {
+  const sourceTarget = tempCopyOfFixture('governed-app');
+  const materializedTarget = tempCopyOfFixture('governed-app');
+  const proposal = {
+    id: 'materialized-amend-parity',
+    title: 'Clarify payment approval wording',
+    rationale: 'Non-sensitive wording update.',
+    evidence: ['docs updated'],
+    changes: [{
+      action: 'replace',
+      ruleId: 'payments-maintainer-approval',
+      rule: {
+        kind: 'approval',
+        id: 'payments-maintainer-approval',
+        paths: ['src/payments/**'],
+        message: 'Payment changes require explicit maintainer review.',
+        minApprovals: 1,
+        roles: ['maintainer']
+      }
+    }],
+    approvals: [
+      { by: 'maintainer', role: 'maintainer', rationale: 'wording ok', createdAt: '2026-01-01T00:15:00.000Z', targetId: 'materialized-amend-parity' }
+    ]
+  };
+  for (const target of [sourceTarget, materializedTarget]) {
+    fs.writeFileSync(path.join(target, 'proposal.json'), `${JSON.stringify(proposal, null, 2)}\n`, 'utf8');
+  }
+
+  let result = spawnSync('node', [cli, 'materialize', '--root', materializedTarget], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  const sourceAmend = spawnSync('node', [cli, 'amend', '--root', sourceTarget, '--proposal', 'proposal.json'], { encoding: 'utf8' });
+  const materializedAmend = spawnSync('node', [cli, 'amend', '--root', materializedTarget, '--config', '.ts-quality/materialized/ts-quality.config.json', '--proposal', 'proposal.json'], { encoding: 'utf8' });
+  assert.equal(sourceAmend.status, 0, sourceAmend.stderr);
+  assert.equal(materializedAmend.status, 0, materializedAmend.stderr);
+
+  const sourceDecision = JSON.parse(sourceAmend.stdout);
+  const materializedDecision = JSON.parse(materializedAmend.stdout);
+  assert.equal(sourceDecision.outcome, 'approved');
+  assert.deepEqual(materializedDecision, sourceDecision);
+  assert.equal(
+    fs.readFileSync(path.join(materializedTarget, '.ts-quality', 'amendments', 'materialized-amend-parity.result.json'), 'utf8'),
+    fs.readFileSync(path.join(sourceTarget, '.ts-quality', 'amendments', 'materialized-amend-parity.result.json'), 'utf8')
+  );
+  assert.equal(
+    fs.readFileSync(path.join(materializedTarget, '.ts-quality', 'amendments', 'materialized-amend-parity.result.txt'), 'utf8'),
+    fs.readFileSync(path.join(sourceTarget, '.ts-quality', 'amendments', 'materialized-amend-parity.result.txt'), 'utf8')
+  );
+});
+
 test('materialize keeps copied diff inputs in a reserved subdirectory so they cannot overwrite canonical artifacts', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.mkdirSync(path.join(target, 'diffs'), { recursive: true });
