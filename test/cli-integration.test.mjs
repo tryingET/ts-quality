@@ -94,6 +94,20 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.match(governText, /Evidence provenance: explicit 3, inferred 1, missing 1/);
 });
 
+
+test('report --json keeps exact parity with the persisted run artifact', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const check = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(check.status, 0, check.stderr);
+  const runId = latestRunId(target);
+  const runPath = path.join(target, '.ts-quality', 'runs', runId, 'run.json');
+  const report = spawnSync('node', [cli, 'report', '--root', target, '--json'], { encoding: 'utf8' });
+  assert.equal(report.status, 0, report.stderr);
+  const persistedRun = fs.readFileSync(runPath, 'utf8');
+  assert.equal(report.stdout, persistedRun);
+  assert.deepEqual(JSON.parse(report.stdout), JSON.parse(persistedRun));
+});
+
 test('check persists analysis context, mutation baseline receipts, and a run-bound control plane snapshot', () => {
   const target = tempCopyOfFixture('governed-app');
   const check = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
