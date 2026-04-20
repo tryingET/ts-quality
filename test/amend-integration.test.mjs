@@ -242,6 +242,37 @@ test('amend --apply preserves commonjs constitution modules when configured', ()
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('amend rejects malformed proposal JSON with a clear input error', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const proposalPath = path.join(target, 'proposal-malformed.json');
+  fs.writeFileSync(proposalPath, '{not json\n', 'utf8');
+
+  const result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^invalid amendment proposal JSON in proposal-malformed\.json: /);
+  assert.equal(result.stdout, '');
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'amendments')), false);
+});
+
+test('amend rejects malformed proposal shape with a clear input error', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const proposalPath = path.join(target, 'proposal-malformed-shape.json');
+  fs.writeFileSync(proposalPath, JSON.stringify({
+    id: 'amend-malformed-shape',
+    title: 'Malformed proposal shape',
+    rationale: 'adversarial regression',
+    evidence: ['validated'],
+    changes: {},
+    approvals: []
+  }, null, 2));
+
+  const result = spawnSync('node', [cli, 'amend', '--root', target, '--proposal', proposalPath], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^invalid amendment proposal in proposal-malformed-shape\.json: field changes must be an array\n$/);
+  assert.equal(result.stdout, '');
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'amendments', 'amend-malformed-shape.result.json')), false);
+});
+
 test('amend denies invalid action values instead of silently ignoring them', () => {
   const target = tempCopyOfFixture('governed-app');
   const proposalPath = path.join(target, 'proposal-invalid-action.json');
