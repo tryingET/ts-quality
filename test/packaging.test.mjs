@@ -148,6 +148,21 @@ const expectedInstalledReviewRunArtifacts = [
   '.ts-quality/runs/packaging-installed-review-run/attestation-verify.txt'
 ];
 
+const expectedInstalledCliProofs = {
+  keygen: {
+    runId: 'packaging-installed-keygen-run',
+    outDir: '.ts-quality/generated-keys',
+    keyId: 'packaging-generated',
+    stdoutMatchesAbsolutePaths: true,
+    created: [
+      '.ts-quality/generated-keys/packaging-generated.pem',
+      '.ts-quality/generated-keys/packaging-generated.pub.pem'
+    ],
+    attestationPath: '.ts-quality/attestations/generated-key.json',
+    verifiedIssuer: 'ci.generated'
+  }
+};
+
 const expectedInstalledReviewSurfaceProofs = {
   report: {
     artifact: '.ts-quality/runs/packaging-installed-review-run/report.md',
@@ -276,6 +291,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.equal(summary.cli.helpIncludes, 'ts-quality commands:');
   assert.deepEqual(summary.cli.initCreated, expectedInitFiles);
   assert.equal(summary.cli.materializedConfig, '.ts-quality/materialized/ts-quality.config.json');
+  assert.deepEqual(summary.cli.keygen, expectedInstalledCliProofs.keygen);
   assert.deepEqual(summary.api.exportTypes, {
     initProject: 'function',
     materializeProject: 'function'

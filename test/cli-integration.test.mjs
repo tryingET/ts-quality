@@ -559,6 +559,30 @@ test('check rejects missing values for value options instead of silently continu
   assert.match(result.stderr, /^--run-id requires a value\n$/);
 });
 
+test('attest keygen creates a usable key pair and reports exact output paths', () => {
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'generated-key-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  const generatedDir = path.join(target, '.ts-quality', 'generated-keys');
+  const privateKeyPath = path.join(generatedDir, 'generated.pem');
+  const publicKeyPath = path.join(generatedDir, 'generated.pub.pem');
+  result = spawnSync('node', [cli, 'attest', 'keygen', '--root', target, '--out-dir', '.ts-quality/generated-keys', '--key-id', 'generated'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, `${privateKeyPath}\n${publicKeyPath}\n`);
+  assert.equal(fs.existsSync(privateKeyPath), true);
+  assert.equal(fs.existsSync(publicKeyPath), true);
+
+  result = spawnSync('node', [cli, 'attest', 'sign', '--root', target, '--issuer', 'ci.generated', '--key-id', 'generated', '--private-key', '.ts-quality/generated-keys/generated.pem', '--subject', '.ts-quality/runs/generated-key-run/verdict.json', '--claims', 'ci.tests.passed', '--out', '.ts-quality/attestations/generated.json'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation', '.ts-quality/attestations/generated.json', '--trusted-keys', '.ts-quality/generated-keys'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^ci\.generated: verified \(verified\)$/m);
+  assert.match(result.stdout, /^Subject: \.ts-quality\/runs\/generated-key-run\/verdict\.json$/m);
+  assert.match(result.stdout, /^Run: generated-key-run$/m);
+  assert.match(result.stdout, /^Artifact: verdict\.json$/m);
+});
+
 test('attest sign accepts cwd-relative paths even when --root is also set', () => {
   const target = tempCopyOfFixture('governed-app');
   const check = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });

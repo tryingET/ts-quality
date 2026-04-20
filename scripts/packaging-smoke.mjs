@@ -34,6 +34,10 @@ const reviewRunId = 'packaging-installed-review-run';
 const reviewTrendRunId = 'packaging-installed-review-trend-run';
 const reviewMaterializedSourceRunId = 'packaging-installed-materialized-source-run';
 const reviewMaterializedRunId = 'packaging-installed-materialized-config-run';
+const keygenRunId = 'packaging-installed-keygen-run';
+const keygenOutDir = '.ts-quality/generated-keys';
+const keygenKeyId = 'packaging-generated';
+const keygenAttestationPath = '.ts-quality/attestations/generated-key.json';
 const reviewProposalId = 'packaging-installed-amendment';
 const expectedReviewRunArtifacts = [
   '.ts-quality/runs/packaging-installed-review-run/run.json',
@@ -248,6 +252,38 @@ export function runPackagingSmoke() {
     }
     ensureRelativeFiles(cliProjectRoot, expectedMaterializedFiles, 'CLI materialize');
 
+    const keygenProjectRoot = prepareInstalledReviewProject(installRoot, 'keygen-project');
+    run(installedCliBinPath, ['check', '--root', keygenProjectRoot, '--run-id', keygenRunId], installRoot);
+    const keygenPrivateKeyPath = path.join(keygenProjectRoot, keygenOutDir, `${keygenKeyId}.pem`);
+    const keygenPublicKeyPath = path.join(keygenProjectRoot, keygenOutDir, `${keygenKeyId}.pub.pem`);
+    const keygenText = run(installedCliBinPath, ['attest', 'keygen', '--root', keygenProjectRoot, '--out-dir', keygenOutDir, '--key-id', keygenKeyId], installRoot);
+    if (normalizeText(keygenText) !== normalizeText(`${keygenPrivateKeyPath}\n${keygenPublicKeyPath}`)) {
+      throw new Error(`Unexpected ts-quality attest keygen output from installed package:\n${keygenText}`);
+    }
+    ensureFile(keygenPrivateKeyPath, 'Installed generated private key');
+    ensureFile(keygenPublicKeyPath, 'Installed generated public key');
+    run(installedCliBinPath, [
+      'attest',
+      'sign',
+      '--root', keygenProjectRoot,
+      '--issuer', 'ci.generated',
+      '--key-id', keygenKeyId,
+      '--private-key', `${keygenOutDir}/${keygenKeyId}.pem`,
+      '--subject', `.ts-quality/runs/${keygenRunId}/verdict.json`,
+      '--claims', 'ci.tests.passed',
+      '--out', keygenAttestationPath
+    ], installRoot);
+    const keygenVerifyText = run(installedCliBinPath, [
+      'attest',
+      'verify',
+      '--root', keygenProjectRoot,
+      '--attestation', keygenAttestationPath,
+      '--trusted-keys', keygenOutDir
+    ], installRoot);
+    if (!keygenVerifyText.includes('ci.generated: verified (verified)')) {
+      throw new Error(`Unexpected ts-quality attest verify output for installed generated keys:\n${keygenVerifyText}`);
+    }
+
     const apiProjectRoot = path.join(installRoot, 'api-project');
     fs.mkdirSync(apiProjectRoot, { recursive: true });
     const apiScript = [
@@ -460,7 +496,19 @@ export function runPackagingSmoke() {
       cli: {
         helpIncludes: 'ts-quality commands:',
         initCreated: [...expectedInitFiles],
-        materializedConfig: '.ts-quality/materialized/ts-quality.config.json'
+        materializedConfig: '.ts-quality/materialized/ts-quality.config.json',
+        keygen: {
+          runId: keygenRunId,
+          outDir: keygenOutDir,
+          keyId: keygenKeyId,
+          stdoutMatchesAbsolutePaths: true,
+          created: [
+            `${keygenOutDir}/${keygenKeyId}.pem`,
+            `${keygenOutDir}/${keygenKeyId}.pub.pem`
+          ],
+          attestationPath: keygenAttestationPath,
+          verifiedIssuer: 'ci.generated'
+        }
       },
       api: {
         exportTypes: apiSummary.exportTypes,
