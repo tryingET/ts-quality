@@ -1,6 +1,0 @@
-/build/
-/dist/
-/src/*.egg-info/
-/src/rocs_cli/__pycache__/
-**/__pycache__/
-*.pyc

@@ -10,7 +10,7 @@ set -euo pipefail
 ROCS_CI_PROFILE="${ROCS_CI_PROFILE:-local-dev}"
 ROCS_REPO="${ROCS_REPO:-.}"
 ROCS_PROFILE="${ROCS_PROFILE:-}"
-ROCS_CMD="${ROCS_CMD:-uv run python -m rocs_cli}"
+ROCS_CMD="${ROCS_CMD:-./scripts/rocs.sh}"
 workspace_root="${ROCS_WORKSPACE_ROOT:-$HOME/ai-society}"
 workspace_ref_mode="${ROCS_WORKSPACE_REF_MODE:-loose}"
 export ROCS_AUTHORITY_AGGREGATE=1

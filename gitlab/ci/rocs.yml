@@ -1,15 +1,6 @@
 stages:
   - validate
 
-rocs:vendored-check:
-  stage: validate
-  image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
-  rules:
-    - when: always
-  allow_failure: true
-  script:
-    - uvx -n --from ./tools/rocs-cli rocs vendored-check --vendored-dir ./tools/rocs-cli
-
 rocs:validate:
   stage: validate
   image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
@@ -19,9 +10,8 @@ rocs:validate:
   script:
     - python --version
     - uv --version
-    - uvx --version
-    - uvx -n --from ./tools/rocs-cli rocs version
-    - ROCS_CMD='uvx -n --from ./tools/rocs-cli rocs' ROCS_CI_PROFILE=branch-ci bash scripts/ci/full.sh
+    - bash scripts/rocs.sh version
+    - ROCS_CI_PROFILE=branch-ci bash scripts/ci/full.sh
   artifacts:
     when: always
     paths:
