@@ -1,0 +1,30 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "36b438412efd810d26d7df34049de1fa6e9aa0be"
+created_at: "2026-04-22T15:40:33Z"
+intent: "update docs, example artifacts, and repo config to reflect execution witness and run selection features"
+files:
+  - "AGENTS.md"
+  - "ARCHITECTURE.md"
+  - "CHANGELOG.md"
+  - "README.md"
+  - "docs"
+  - "examples/artifacts"
+  - "tsconfig.base.json"
+  - "types/node"
+  - "ontology"
+  - "verification"
+  - "next_session_prompt.md"
+validation:
+  fast_gate:
+    command: "npm run typecheck"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 3
+  total: 3
+  rationale: "docs and artifacts regenerate from source changes in group 2"
