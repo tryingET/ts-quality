@@ -3,7 +3,7 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "dc92f62971a8ab489645e58e0b6730f8d8ed30d8"
-created_at: "2026-04-22T19:03:02Z"
+created_at: "2026-04-22T19:05:07Z"
 intent: "add adoption guides, screening catalog artifacts, and README links for cross-repo ts-quality rollout"
 files:
   - "README.md"
@@ -22,7 +22,7 @@ validation:
     status: "pass"
   full_gate:
     command: "npm run verify"
-    status: "pending"
+    status: "pass"
 group:
   index: 2
   total: 2
