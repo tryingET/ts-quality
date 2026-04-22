@@ -16,7 +16,7 @@ import {
   resolveRepoImport,
   summarizeMutationScore
 } from '../../evidence-model/src/index';
-import { type ImportReference, collectImportReferences } from './import-collector';
+import { collectImportReferences } from './import-collector';
 
 export interface GovernanceEvaluationOptions {
   rootDir: string;

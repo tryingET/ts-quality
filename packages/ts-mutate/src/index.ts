@@ -63,6 +63,13 @@ interface MutationWorkspace {
   snapshot: Map<string, string>;
 }
 
+interface MutationSourceSpan {
+  startLine: number;
+  endLine: number;
+  startOffset: number;
+  endOffset: number;
+}
+
 const MUTATION_RUNTIME_VERSION = '5';
 const SANITIZED_MUTATION_ENV_KEYS = ['NODE_TEST_CONTEXT'];
 const MUTATION_WORKSPACE_EXCLUDES = ['.git', 'node_modules', '.ts-quality'];
@@ -84,11 +91,11 @@ function mutationEnvFingerprint(env: Record<string, string | undefined>): Record
   ) as Record<string, string>;
 }
 
-function lineOf(node: any, sourceFile: any): number {
+function lineOf(node: ts.Node, sourceFile: ts.SourceFile): number {
   return sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
 }
 
-function spanFor(node: any, sourceFile: any) {
+function spanFor(node: ts.Node, sourceFile: ts.SourceFile): MutationSourceSpan {
   const startLine = lineOf(node, sourceFile);
   const endLine = sourceFile.getLineAndCharacterOfPosition(node.end).line + 1;
   return { startLine, endLine, startOffset: node.getStart(sourceFile), endOffset: node.end };
@@ -112,7 +119,7 @@ export function discoverMutationSites(sourceText: string, filePath: string, cove
   const changed = changedFileSet(changedFiles, changedRegions);
   const fileRegions = changedRegions.filter((item) => normalizePath(item.filePath) === normalizePath(filePath));
 
-  function consider(node: any, replacement: string, operator: string, description: string): void {
+  function consider(node: ts.Node, replacement: string, operator: string, description: string): void {
     const span = spanFor(node, sourceFile);
     const line = span.startLine;
     const inChangedRegion = fileRegions.some((region) => spanOverlaps(line, region.span));
@@ -139,7 +146,7 @@ export function discoverMutationSites(sourceText: string, filePath: string, cove
     });
   }
 
-  function visit(node: any): void {
+  function visit(node: ts.Node): void {
     if (ts.isBinaryExpression(node)) {
       const token = node.operatorToken.kind;
       const text = node.operatorToken.getText(sourceFile);

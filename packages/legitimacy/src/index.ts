@@ -15,7 +15,6 @@ import {
   type RunArtifact,
   digestObject,
   fileDigest,
-  matchPattern,
   matchesAny,
   normalizePath,
   stableStringify,
@@ -48,21 +47,29 @@ export function parseAttestationRecord(value: unknown): { ok: true; attestation:
     return { ok: false, reason: 'invalid attestation shape: expected object' };
   }
   const candidate = value as Record<string, unknown>;
-  const signature = candidate.signature;
-  if (candidate.version !== '1' || candidate.kind !== 'attestation') {
+  const signature = candidate['signature'];
+  const version = candidate['version'];
+  const kind = candidate['kind'];
+  const issuer = candidate['issuer'];
+  const subjectType = candidate['subjectType'];
+  const subjectDigest = candidate['subjectDigest'];
+  const claims = candidate['claims'];
+  const issuedAt = candidate['issuedAt'];
+  const payload = candidate['payload'];
+  if (version !== '1' || kind !== 'attestation') {
     return { ok: false, reason: 'invalid attestation shape: version/kind mismatch' };
   }
-  if (typeof candidate.issuer !== 'string' || typeof candidate.subjectType !== 'string' || typeof candidate.subjectDigest !== 'string' || !isStringArray(candidate.claims) || typeof candidate.issuedAt !== 'string') {
+  if (typeof issuer !== 'string' || typeof subjectType !== 'string' || typeof subjectDigest !== 'string' || !isStringArray(claims) || typeof issuedAt !== 'string') {
     return { ok: false, reason: 'invalid attestation shape: missing issuer, subject, claims, or issuedAt' };
   }
   if (!signature || typeof signature !== 'object') {
     return { ok: false, reason: 'invalid attestation shape: missing signature' };
   }
   const signatureRecord = signature as Record<string, unknown>;
-  if (signatureRecord.algorithm !== 'ed25519' || typeof signatureRecord.keyId !== 'string' || typeof signatureRecord.value !== 'string') {
+  if (signatureRecord['algorithm'] !== 'ed25519' || typeof signatureRecord['keyId'] !== 'string' || typeof signatureRecord['value'] !== 'string') {
     return { ok: false, reason: 'invalid attestation shape: malformed signature' };
   }
-  if (candidate.payload !== undefined && (typeof candidate.payload !== 'object' || candidate.payload === null || Array.isArray(candidate.payload))) {
+  if (payload !== undefined && (typeof payload !== 'object' || payload === null || Array.isArray(payload))) {
     return { ok: false, reason: 'invalid attestation shape: payload must be an object when present' };
   }
   return { ok: true, attestation: candidate as unknown as Attestation };
@@ -100,9 +107,9 @@ export function validateRenderableAttestationContract(attestation: { issuer: str
   const hasArtifactName = Object.prototype.hasOwnProperty.call(payload, 'artifactName');
   const requireSubjectFile = options?.requireSubjectFile ?? false;
 
-  const rawSubjectFile = payload.subjectFile;
-  const rawRunId = payload.runId;
-  const rawArtifactName = payload.artifactName;
+  const rawSubjectFile = payload['subjectFile'];
+  const rawRunId = payload['runId'];
+  const rawArtifactName = payload['artifactName'];
 
   let subjectIssue: string | undefined;
   let normalizedSubject: string | undefined;

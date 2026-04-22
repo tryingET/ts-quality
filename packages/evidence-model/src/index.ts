@@ -1084,7 +1084,7 @@ export function listRunIds(rootDir: string): string[] {
   if (!fs.existsSync(runsDir)) {
     return [];
   }
-  return fs.readdirSync(runsDir, { withFileTypes: true }).filter((entry: any) => entry.isDirectory()).map((entry: any) => entry.name).sort();
+  return fs.readdirSync(runsDir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
 }
 
 export function loadRun(rootDir: string, runId: string): RunArtifact {

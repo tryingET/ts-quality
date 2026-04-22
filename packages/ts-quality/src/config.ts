@@ -42,7 +42,9 @@ export interface LoadedContext {
   config: Required<TsQualityConfig>;
 }
 
-function parsePropertyName(name: any, sourceFile: any, bindings: Map<string, unknown>): string {
+type DataBindings = Map<string, unknown>;
+
+function parsePropertyName(name: ts.PropertyName, sourceFile: ts.SourceFile, bindings: DataBindings): string {
   if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) {
     return name.text;
   }
@@ -55,7 +57,7 @@ function parsePropertyName(name: any, sourceFile: any, bindings: Map<string, unk
   throw new Error(`Unsupported property name in data-only module: ${name.getText(sourceFile)}`);
 }
 
-function evaluateDataExpression(expression: any, sourceFile: any, bindings: Map<string, unknown>): unknown {
+function evaluateDataExpression(expression: ts.Expression, sourceFile: ts.SourceFile, bindings: DataBindings): unknown {
   if (ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression) || ts.isSatisfiesExpression(expression) || ts.isTypeAssertionExpression(expression)) {
     return evaluateDataExpression(expression.expression, sourceFile, bindings);
   }
@@ -87,7 +89,7 @@ function evaluateDataExpression(expression: any, sourceFile: any, bindings: Map<
     }
   }
   if (ts.isArrayLiteralExpression(expression)) {
-    return expression.elements.map((element: any) => {
+    return expression.elements.map((element: ts.Expression) => {
       if (ts.isSpreadElement(element)) {
         const spreadValue = evaluateDataExpression(element.expression, sourceFile, bindings);
         if (!Array.isArray(spreadValue)) {
@@ -137,7 +139,7 @@ function evaluateDataExpression(expression: any, sourceFile: any, bindings: Map<
   throw new Error(`Unsupported expression in data-only module: ${expression.getText(sourceFile)}`);
 }
 
-function exportsAssignment(statement: any, sourceFile: any): any {
+function exportsAssignment(statement: ts.Statement, sourceFile: ts.SourceFile): ts.Expression | undefined {
   if (!ts.isExpressionStatement(statement) || !ts.isBinaryExpression(statement.expression)) {
     return undefined;
   }

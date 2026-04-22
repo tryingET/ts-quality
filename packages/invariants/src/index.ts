@@ -89,6 +89,8 @@ interface ScenarioLexicalSupport {
   supportGap?: InvariantScenarioResult['supportGap'];
 }
 
+type TestCaseCallback = ts.FunctionExpression | ts.ArrowFunction;
+
 const INVARIANT_EVIDENCE_SEMANTICS: InvariantEvidenceSemantics = 'deterministic-lexical';
 const INVARIANT_EVIDENCE_SEMANTICS_SUMMARY = 'deterministic lexical alignment over focused tests; not execution-backed behavioral proof';
 const EXECUTION_BACKED_EVIDENCE_SEMANTICS_SUMMARY = 'execution-backed witness artifacts matched the invariant scenario scope';
@@ -102,39 +104,47 @@ function baselineInvariantStatus(evidenceSemantics: InvariantEvidenceSemantics):
 function parseExecutionWitnessRecord(rootDir: string, filePath: string): ExecutionWitnessRecord {
   const absolutePath = path.join(rootDir, filePath);
   const raw = readJson<Record<string, unknown>>(absolutePath);
-  if (raw.version !== '1') {
+  const version = raw['version'];
+  const kind = raw['kind'];
+  const invariantId = raw['invariantId'];
+  const scenarioId = raw['scenarioId'];
+  const status = raw['status'];
+  const sourceFiles = raw['sourceFiles'];
+  const testFiles = raw['testFiles'];
+  const observedAt = raw['observedAt'];
+  if (version !== '1') {
     throw new Error(`Execution witness ${filePath} must declare version '1'`);
   }
-  if (raw.kind !== 'execution-witness') {
+  if (kind !== 'execution-witness') {
     throw new Error(`Execution witness ${filePath} must declare kind 'execution-witness'`);
   }
-  if (typeof raw.invariantId !== 'string' || raw.invariantId.length === 0) {
+  if (typeof invariantId !== 'string' || invariantId.length === 0) {
     throw new Error(`Execution witness ${filePath} must declare a non-empty invariantId`);
   }
-  if (typeof raw.scenarioId !== 'string' || raw.scenarioId.length === 0) {
+  if (typeof scenarioId !== 'string' || scenarioId.length === 0) {
     throw new Error(`Execution witness ${filePath} must declare a non-empty scenarioId`);
   }
-  if (raw.status !== 'pass' && raw.status !== 'fail') {
+  if (status !== 'pass' && status !== 'fail') {
     throw new Error(`Execution witness ${filePath} must declare status 'pass' or 'fail'`);
   }
-  if (!Array.isArray(raw.sourceFiles) || raw.sourceFiles.some((item) => typeof item !== 'string')) {
+  if (!Array.isArray(sourceFiles) || sourceFiles.some((item) => typeof item !== 'string')) {
     throw new Error(`Execution witness ${filePath} must declare sourceFiles as an array of strings`);
   }
-  if (raw.testFiles !== undefined && (!Array.isArray(raw.testFiles) || raw.testFiles.some((item) => typeof item !== 'string'))) {
+  if (testFiles !== undefined && (!Array.isArray(testFiles) || testFiles.some((item) => typeof item !== 'string'))) {
     throw new Error(`Execution witness ${filePath} must declare testFiles as an array of strings when present`);
   }
-  if (raw.observedAt !== undefined && typeof raw.observedAt !== 'string') {
+  if (observedAt !== undefined && typeof observedAt !== 'string') {
     throw new Error(`Execution witness ${filePath} must declare observedAt as a string when present`);
   }
   return {
     version: '1',
     kind: 'execution-witness',
-    invariantId: raw.invariantId,
-    scenarioId: raw.scenarioId,
-    status: raw.status,
-    sourceFiles: raw.sourceFiles.map((item) => normalizePath(item)),
-    ...(raw.testFiles ? { testFiles: raw.testFiles.map((item) => normalizePath(item)) } : {}),
-    ...(raw.observedAt ? { observedAt: raw.observedAt } : {})
+    invariantId,
+    scenarioId,
+    status,
+    sourceFiles: sourceFiles.map((item) => normalizePath(item)),
+    ...(testFiles ? { testFiles: testFiles.map((item) => normalizePath(item)) } : {}),
+    ...(observedAt ? { observedAt } : {})
   };
 }
 
@@ -254,8 +264,8 @@ export function collectExecutionWitnessPlans(options: Pick<InvariantEvaluationOp
   return collectExecutionWitnessPlanSummary(options).autoRun;
 }
 
-function requireSpecifier(node: any, sourceFile: any): string | undefined {
-  if (!ts.isCallExpression(node) || node.expression?.getText(sourceFile) !== 'require' || node.arguments.length !== 1) {
+function requireSpecifier(node: ts.Node, sourceFile: ts.SourceFile): string | undefined {
+  if (!ts.isCallExpression(node) || node.expression.getText(sourceFile) !== 'require' || node.arguments.length !== 1) {
     return undefined;
   }
   const argument = node.arguments[0];
@@ -273,7 +283,7 @@ function importHintsForDocument(filePath: string, contents: string): string[] {
     hints.push(...lexicalVariants(specifier));
   }
 
-  function visit(node: any): void {
+  function visit(node: ts.Node): void {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       pushSpecifier(node.moduleSpecifier.text);
     }
@@ -288,7 +298,7 @@ function importHintsForDocument(filePath: string, contents: string): string[] {
   return unique(hints.map((hint) => hint.toLowerCase()));
 }
 
-function calleeChain(expression: any): string[] {
+function calleeChain(expression: ts.Expression): string[] {
   if (ts.isCallExpression(expression)) {
     return calleeChain(expression.expression);
   }
@@ -298,17 +308,17 @@ function calleeChain(expression: any): string[] {
   if (ts.isPropertyAccessExpression(expression)) {
     return [...calleeChain(expression.expression), expression.name.text];
   }
-  if (ts.isElementAccessExpression(expression) && ts.isStringLiteral(expression.argumentExpression)) {
+  if (ts.isElementAccessExpression(expression) && expression.argumentExpression && ts.isStringLiteral(expression.argumentExpression)) {
     return [...calleeChain(expression.expression), expression.argumentExpression.text];
   }
   return [];
 }
 
-function collectAssertionAliases(sourceFile: any): AssertionAliasSet {
+function collectAssertionAliases(sourceFile: ts.SourceFile): AssertionAliasSet {
   const objectAliases = new Set<string>();
   const functionAliases = new Set<string>(['expect']);
 
-  function visit(node: any): void {
+  function visit(node: ts.Node): void {
     if (ts.isImportDeclaration(node) && node.importClause && ts.isStringLiteral(node.moduleSpecifier) && ASSERTION_MODULE_SPECIFIERS.has(node.moduleSpecifier.text)) {
       if (node.importClause.name) {
         objectAliases.add(node.importClause.name.text);
@@ -346,7 +356,7 @@ function collectAssertionAliases(sourceFile: any): AssertionAliasSet {
   return { objectAliases, functionAliases };
 }
 
-function isTestCaseCall(expression: any): boolean {
+function isTestCaseCall(expression: ts.Expression): boolean {
   const chain = calleeChain(expression);
   if (chain.length === 0) {
     return false;
@@ -355,7 +365,7 @@ function isTestCaseCall(expression: any): boolean {
   return head === 'test' || head === 'it' || head === 'specify';
 }
 
-function testCaseLabel(node: any): string {
+function testCaseLabel(node: ts.CallExpression): string {
   const candidate = node.arguments[0];
   if (candidate && (ts.isStringLiteral(candidate) || ts.isNoSubstitutionTemplateLiteral(candidate))) {
     return candidate.text;
@@ -363,7 +373,7 @@ function testCaseLabel(node: any): string {
   return 'anonymous test case';
 }
 
-function testContextAliases(callback: any): Set<string> {
+function testContextAliases(callback: TestCaseCallback): Set<string> {
   const aliases = new Set<string>();
   for (const parameter of callback.parameters) {
     if (ts.isIdentifier(parameter.name)) {
@@ -373,7 +383,7 @@ function testContextAliases(callback: any): Set<string> {
   return aliases;
 }
 
-function isAssertionLikeCall(expression: any, assertionAliases: AssertionAliasSet, contextAliases: Set<string>): boolean {
+function isAssertionLikeCall(expression: ts.Expression, assertionAliases: AssertionAliasSet, contextAliases: Set<string>): boolean {
   const chain = calleeChain(expression);
   const head = chain[0];
   if (!head) {
@@ -392,10 +402,10 @@ function isAssertionLikeCall(expression: any, assertionAliases: AssertionAliasSe
   return method === 'assert' || TEST_CONTEXT_ASSERTION_METHOD_NAMES.has(method);
 }
 
-function nodeHasAssertion(rootNode: any, assertionAliases: AssertionAliasSet, contextAliases: Set<string> = new Set<string>()): boolean {
+function nodeHasAssertion(rootNode: ts.Node, assertionAliases: AssertionAliasSet, contextAliases: Set<string> = new Set<string>()): boolean {
   let found = false;
 
-  function visit(node: any): void {
+  function visit(node: ts.Node): void {
     if (found) {
       return;
     }
@@ -415,10 +425,10 @@ function witnessScopesForDocument(filePath: string, contents: string): TestWitne
   const assertionAliases = collectAssertionAliases(sourceFile);
   const scopes: TestWitnessScope[] = [];
 
-  function visit(node: any): void {
+  function visit(node: ts.Node): void {
     if (ts.isCallExpression(node) && isTestCaseCall(node.expression)) {
-      const callback = node.arguments.find((argument: any) => ts.isArrowFunction(argument) || ts.isFunctionExpression(argument));
-      if (callback && (ts.isArrowFunction(callback) || ts.isFunctionExpression(callback))) {
+      const callback = node.arguments.find((argument): argument is TestCaseCallback => ts.isArrowFunction(argument) || ts.isFunctionExpression(argument));
+      if (callback) {
         const label = testCaseLabel(node);
         scopes.push({
           label,

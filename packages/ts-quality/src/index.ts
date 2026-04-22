@@ -20,7 +20,6 @@ import {
   type ExecutionWitnessRunSummary,
   type ExecutionWitnessSkippedRecord,
   type FileEntity,
-  type OverrideRecord,
   type RunArtifact,
   type SymbolEntity,
   CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION,
@@ -214,7 +213,7 @@ function renderGovernanceText(run: RunArtifact, plan: ReturnType<typeof generate
   return `${lines.join('\n')}\n`;
 }
 
-function renderGovernanceArtifactText(run: RunArtifact, plan: ReturnType<typeof generateGovernancePlan>): string {
+function renderGovernanceArtifactText(run: RunArtifact, _plan: ReturnType<typeof generateGovernancePlan>): string {
   const lines = run.governance.flatMap((item) => [`${item.ruleId}: ${item.message}`, ...item.evidence.map((evidence) => `- ${evidence}`)]);
   const provenance = renderInvariantProvenanceBlock(run, { linePrefix: '- ' });
   if (provenance.length > 0) {
@@ -448,25 +447,31 @@ function snapshotObjectArrayField<T extends object>(
 }
 
 function validateSnapshotConstitutionRule(rule: Record<string, unknown>, index: number, runId: string): void {
-  if (typeof rule.id !== 'string' || rule.id.length === 0) {
+  const ruleId = rule['id'];
+  const kind = rule['kind'];
+  if (typeof ruleId !== 'string' || ruleId.length === 0) {
     throw malformedSnapshotError(runId, `field constitution[${index}].id must be a non-empty string`);
   }
-  if (typeof rule.kind !== 'string' || rule.kind.length === 0) {
+  if (typeof kind !== 'string' || kind.length === 0) {
     throw malformedSnapshotError(runId, `field constitution[${index}].kind must be a non-empty string`);
   }
 }
 
 function validateSnapshotAgent(agent: Record<string, unknown>, index: number, runId: string): void {
-  if (typeof agent.id !== 'string' || agent.id.length === 0) {
+  const agentId = agent['id'];
+  const kind = agent['kind'];
+  const roles = agent['roles'];
+  const grants = agent['grants'];
+  if (typeof agentId !== 'string' || agentId.length === 0) {
     throw malformedSnapshotError(runId, `field agents[${index}].id must be a non-empty string`);
   }
-  if (typeof agent.kind !== 'string' || agent.kind.length === 0) {
+  if (typeof kind !== 'string' || kind.length === 0) {
     throw malformedSnapshotError(runId, `field agents[${index}].kind must be a non-empty string`);
   }
-  if (!Array.isArray(agent.roles) || agent.roles.some((item) => typeof item !== 'string')) {
+  if (!Array.isArray(roles) || roles.some((item) => typeof item !== 'string')) {
     throw malformedSnapshotError(runId, `field agents[${index}].roles must be an array of strings`);
   }
-  if (!Array.isArray(agent.grants)) {
+  if (!Array.isArray(grants)) {
     throw malformedSnapshotError(runId, `field agents[${index}].grants must be an array`);
   }
 }
@@ -477,17 +482,19 @@ function validatedControlPlaneSnapshot(run: RunArtifact): ControlPlaneSnapshot |
     return undefined;
   }
   const record = snapshot as unknown as Record<string, unknown>;
-  if (typeof record.schemaVersion !== 'number' || !Number.isInteger(record.schemaVersion)) {
+  const schemaVersion = record['schemaVersion'];
+  if (typeof schemaVersion !== 'number' || !Number.isInteger(schemaVersion)) {
     throw malformedSnapshotError(run.runId, `field schemaVersion must be integer ${CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}`);
   }
-  if (record.schemaVersion !== CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION) {
+  if (schemaVersion !== CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION) {
     throw new Error(
-      `Run ${run.runId} carries unsupported control-plane snapshot schema ${String(record.schemaVersion)}. `
+      `Run ${run.runId} carries unsupported control-plane snapshot schema ${String(schemaVersion)}. `
       + `Expected ${CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION}. Re-run ts-quality check before trusting downstream decision surfaces.`
     );
   }
-  const policy = (typeof record.policy === 'object' && record.policy !== null)
-    ? record.policy as Record<string, unknown>
+  const recordPolicy = record['policy'];
+  const policy = (typeof recordPolicy === 'object' && recordPolicy !== null)
+    ? recordPolicy as Record<string, unknown>
     : undefined;
   if (!policy) {
     throw malformedSnapshotError(run.runId, 'field policy must be an object');
@@ -874,7 +881,8 @@ function renderAmendmentDecisionText(decision: AmendmentDecision): string {
 }
 
 function attestationAppliesToRun(attestation: Attestation, runId: string): boolean {
-  const subjectFile = typeof attestation.payload?.subjectFile === 'string' ? attestation.payload.subjectFile : undefined;
+  const payload = attestation.payload;
+  const subjectFile = typeof payload?.['subjectFile'] === 'string' ? payload['subjectFile'] : undefined;
   if (!subjectFile || path.isAbsolute(subjectFile)) {
     return false;
   }
@@ -882,7 +890,7 @@ function attestationAppliesToRun(attestation: Attestation, runId: string): boole
   if (!scopedSubject || scopedSubject.runId !== runId) {
     return false;
   }
-  const payloadRunId = typeof attestation.payload?.runId === 'string' ? attestation.payload.runId : undefined;
+  const payloadRunId = typeof payload?.['runId'] === 'string' ? payload['runId'] : undefined;
   return payloadRunId === undefined || payloadRunId === runId;
 }
 
@@ -1265,7 +1273,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
   const verifiedAttestations = loadVerifiedAttestations(rootDir, loaded.config.attestationsDir, loaded.config.trustedKeysDir);
   const runAttestations = verifiedAttestations.attestations.filter((attestation) => attestationAppliesToRun(attestation, runId));
 
-  const preliminaryInput: any = {
+  const preliminaryInput: PolicyInput = {
     nowIso: nowIso(),
     policy: policyConfigFromLoadedContext(loaded),
     changedComplexity: crapReport.hotspots.filter((item) => item.changed),
@@ -1733,7 +1741,7 @@ function readAmendmentProposal(proposalPath: string): AmendmentProposal {
     }
     const action = amendmentStringField(item, 'action', sourceLabel) as AmendmentProposal['changes'][number]['action'];
     const ruleId = amendmentStringField(item, 'ruleId', sourceLabel) as string;
-    const ruleValue = item.rule;
+    const ruleValue = item['rule'];
     if (ruleValue !== undefined && !isPlainRecord(ruleValue)) {
       throw invalidAmendmentProposal(sourceLabel, `field changes[${index}].rule must be an object when provided`);
     }

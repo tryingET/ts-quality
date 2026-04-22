@@ -21,39 +21,47 @@ function baselineInvariantStatus(evidenceSemantics) {
 function parseExecutionWitnessRecord(rootDir, filePath) {
     const absolutePath = path_1.default.join(rootDir, filePath);
     const raw = (0, index_1.readJson)(absolutePath);
-    if (raw.version !== '1') {
+    const version = raw['version'];
+    const kind = raw['kind'];
+    const invariantId = raw['invariantId'];
+    const scenarioId = raw['scenarioId'];
+    const status = raw['status'];
+    const sourceFiles = raw['sourceFiles'];
+    const testFiles = raw['testFiles'];
+    const observedAt = raw['observedAt'];
+    if (version !== '1') {
         throw new Error(`Execution witness ${filePath} must declare version '1'`);
     }
-    if (raw.kind !== 'execution-witness') {
+    if (kind !== 'execution-witness') {
         throw new Error(`Execution witness ${filePath} must declare kind 'execution-witness'`);
     }
-    if (typeof raw.invariantId !== 'string' || raw.invariantId.length === 0) {
+    if (typeof invariantId !== 'string' || invariantId.length === 0) {
         throw new Error(`Execution witness ${filePath} must declare a non-empty invariantId`);
     }
-    if (typeof raw.scenarioId !== 'string' || raw.scenarioId.length === 0) {
+    if (typeof scenarioId !== 'string' || scenarioId.length === 0) {
         throw new Error(`Execution witness ${filePath} must declare a non-empty scenarioId`);
     }
-    if (raw.status !== 'pass' && raw.status !== 'fail') {
+    if (status !== 'pass' && status !== 'fail') {
         throw new Error(`Execution witness ${filePath} must declare status 'pass' or 'fail'`);
     }
-    if (!Array.isArray(raw.sourceFiles) || raw.sourceFiles.some((item) => typeof item !== 'string')) {
+    if (!Array.isArray(sourceFiles) || sourceFiles.some((item) => typeof item !== 'string')) {
         throw new Error(`Execution witness ${filePath} must declare sourceFiles as an array of strings`);
     }
-    if (raw.testFiles !== undefined && (!Array.isArray(raw.testFiles) || raw.testFiles.some((item) => typeof item !== 'string'))) {
+    if (testFiles !== undefined && (!Array.isArray(testFiles) || testFiles.some((item) => typeof item !== 'string'))) {
         throw new Error(`Execution witness ${filePath} must declare testFiles as an array of strings when present`);
     }
-    if (raw.observedAt !== undefined && typeof raw.observedAt !== 'string') {
+    if (observedAt !== undefined && typeof observedAt !== 'string') {
         throw new Error(`Execution witness ${filePath} must declare observedAt as a string when present`);
     }
     return {
         version: '1',
         kind: 'execution-witness',
-        invariantId: raw.invariantId,
-        scenarioId: raw.scenarioId,
-        status: raw.status,
-        sourceFiles: raw.sourceFiles.map((item) => (0, index_1.normalizePath)(item)),
-        ...(raw.testFiles ? { testFiles: raw.testFiles.map((item) => (0, index_1.normalizePath)(item)) } : {}),
-        ...(raw.observedAt ? { observedAt: raw.observedAt } : {})
+        invariantId,
+        scenarioId,
+        status,
+        sourceFiles: sourceFiles.map((item) => (0, index_1.normalizePath)(item)),
+        ...(testFiles ? { testFiles: testFiles.map((item) => (0, index_1.normalizePath)(item)) } : {}),
+        ...(observedAt ? { observedAt } : {})
     };
 }
 function executionWitnessSelection(rootDir, invariant, scenario, files) {
@@ -160,7 +168,7 @@ function collectExecutionWitnessPlans(options) {
     return collectExecutionWitnessPlanSummary(options).autoRun;
 }
 function requireSpecifier(node, sourceFile) {
-    if (!typescript_1.default.isCallExpression(node) || node.expression?.getText(sourceFile) !== 'require' || node.arguments.length !== 1) {
+    if (!typescript_1.default.isCallExpression(node) || node.expression.getText(sourceFile) !== 'require' || node.arguments.length !== 1) {
         return undefined;
     }
     const argument = node.arguments[0];
@@ -198,7 +206,7 @@ function calleeChain(expression) {
     if (typescript_1.default.isPropertyAccessExpression(expression)) {
         return [...calleeChain(expression.expression), expression.name.text];
     }
-    if (typescript_1.default.isElementAccessExpression(expression) && typescript_1.default.isStringLiteral(expression.argumentExpression)) {
+    if (typescript_1.default.isElementAccessExpression(expression) && expression.argumentExpression && typescript_1.default.isStringLiteral(expression.argumentExpression)) {
         return [...calleeChain(expression.expression), expression.argumentExpression.text];
     }
     return [];
@@ -306,7 +314,7 @@ function witnessScopesForDocument(filePath, contents) {
     function visit(node) {
         if (typescript_1.default.isCallExpression(node) && isTestCaseCall(node.expression)) {
             const callback = node.arguments.find((argument) => typescript_1.default.isArrowFunction(argument) || typescript_1.default.isFunctionExpression(argument));
-            if (callback && (typescript_1.default.isArrowFunction(callback) || typescript_1.default.isFunctionExpression(callback))) {
+            if (callback) {
                 const label = testCaseLabel(node);
                 scopes.push({
                     label,

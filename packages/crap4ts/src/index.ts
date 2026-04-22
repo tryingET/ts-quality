@@ -37,6 +37,9 @@ export interface CrapAnalysis {
   };
 }
 
+type ComplexitySubjectNode = ts.FunctionDeclaration | ts.MethodDeclaration | ts.ArrowFunction | ts.FunctionExpression;
+type MaybeNamedNode = ts.Node & { name?: ts.Node };
+
 export function parseLcov(lcovText: string): CoverageEvidence[] {
   const output: CoverageEvidence[] = [];
   let currentFile: string | undefined;
@@ -118,9 +121,9 @@ export function crapScore(complexity: number, coveragePct: number): number {
   return Number((complexity * complexity * Math.pow(uncovered, 3) + complexity).toFixed(2));
 }
 
-function computeComplexity(node: any): number {
+function computeComplexity(node: ComplexitySubjectNode): number {
   let complexity = 1;
-  function visit(inner: any): void {
+  function visit(inner: ts.Node): void {
     if (
       ts.isIfStatement(inner) ||
       ts.isForStatement(inner) ||
@@ -156,14 +159,14 @@ function findCoverage(filePath: string, coverage: CoverageEvidence[]): CoverageE
   return findCoverageEvidence(filePath, coverage);
 }
 
-function nodeLineSpan(node: any, sourceFile: any): LineSpan {
+function nodeLineSpan(node: ts.Node, sourceFile: ts.SourceFile): LineSpan {
   const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
   const end = sourceFile.getLineAndCharacterOfPosition(node.end).line + 1;
   return { startLine: start, endLine: end };
 }
 
-function symbolName(node: any, sourceFile: any): string {
-  if (node.name && typeof node.name.getText === 'function') {
+function symbolName(node: MaybeNamedNode, sourceFile: ts.SourceFile): string {
+  if (node.name) {
     return node.name.getText(sourceFile);
   }
   const span = nodeLineSpan(node, sourceFile);
@@ -176,7 +179,7 @@ export function analyzeSource(filePath: string, sourceText: string, coverage: Co
   const results: ComplexityEvidence[] = [];
   const fileRegions = changedRegions.filter((region) => normalizePath(region.filePath) === normalizePath(filePath));
 
-  function pushFunction(node: any, kind: string): void {
+  function pushFunction(node: ComplexitySubjectNode, kind: string): void {
     const span = nodeLineSpan(node, sourceFile);
     const coveragePct = coverageForFile ? lineCoverage(coverageForFile.lines, span, sourceText) : 0;
     const complexity = computeComplexity(node);
@@ -205,7 +208,7 @@ export function analyzeSource(filePath: string, sourceText: string, coverage: Co
     });
   }
 
-  function visit(node: any): void {
+  function visit(node: ts.Node): void {
     if (ts.isFunctionDeclaration(node)) {
       pushFunction(node, 'function');
     } else if (ts.isMethodDeclaration(node)) {

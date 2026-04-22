@@ -1,8 +1,5 @@
 import ts = require('typescript');
 
-type AstNode = ts.Node;
-type AstNodeLike = ts.Node | undefined;
-type AstNodeList = Iterable<ts.Node>;
 type BindingNameNode = ts.BindingName | undefined;
 type BindingTargetNode = ts.Expression;
 

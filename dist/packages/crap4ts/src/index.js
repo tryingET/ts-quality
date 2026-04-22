@@ -127,7 +127,7 @@ function nodeLineSpan(node, sourceFile) {
     return { startLine: start, endLine: end };
 }
 function symbolName(node, sourceFile) {
-    if (node.name && typeof node.name.getText === 'function') {
+    if (node.name) {
         return node.name.getText(sourceFile);
     }
     const span = nodeLineSpan(node, sourceFile);
