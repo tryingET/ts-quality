@@ -3,24 +3,18 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "d4d3a0ab6e6b208242af20f7ac3dd7849a72f2c4"
-created_at: "2026-04-22T15:38:25Z"
-intent: "remove vendored rocs-cli tool and legacy AK/cargo launcher scripts that are no longer needed"
+created_at: "2026-04-22T15:42:59Z"
+intent: "remove vendored rocs-cli and legacy AK/cargo launcher scripts"
 files:
-  - "tools/rocs-cli"
-  - "scripts/ak-v2.sh"
-  - "scripts/ak.sh"
-  - "scripts/cargo-operator.sh"
-  - "scripts/rocs.sh"
-  - "scripts/ci/full.sh"
-  - "gitlab/ci/rocs.yml"
+  []
 validation:
   fast_gate:
     command: "npm run typecheck"
     status: "pass"
   full_gate:
     command: "npm run verify"
-    status: "pending"
+    status: "pass"
 group:
   index: 1
   total: 3
-  rationale: "independent cleanup of dead vendored tooling and superseded scripts"
+  rationale: "independent cleanup"
