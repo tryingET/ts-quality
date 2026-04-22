@@ -48,6 +48,19 @@ test('loadContext accepts custom mutation runtime mirror roots', () => {
   assert.deepEqual(Array.from(loaded.config.mutations.runtimeMirrorRoots), ['lib', 'build/output']);
 });
 
+test('loadContext canonicalizes duplicate mutation runtime mirror roots', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-config-runtime-mirrors-dedupe-'));
+  fs.writeFileSync(path.join(rootDir, 'ts-quality.config.json'), JSON.stringify({
+    mutations: {
+      testCommand: ['node', '--test'],
+      runtimeMirrorRoots: ['dist', './dist', 'lib/', 'lib']
+    }
+  }, null, 2));
+
+  const loaded = config.loadContext(rootDir);
+  assert.deepEqual(Array.from(loaded.config.mutations.runtimeMirrorRoots), ['dist', 'lib']);
+});
+
 test('loadContext reads data-only cjs config without executing it', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-config-cjs-'));
   fs.writeFileSync(path.join(rootDir, 'ts-quality.config.cjs'), `const mirrors = ['lib'];
@@ -102,6 +115,60 @@ export default [{
 `, 'utf8');
 
   assert.throws(() => config.loadInvariants(rootDir, '.ts-quality/invariants.ts'), /Unsupported expression in data-only module|Unsupported statement in data-only module/);
+});
+
+test('loadInvariants canonicalizes execution witness fields and defaults patterns from output', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-invariants-witness-config-'));
+  fs.mkdirSync(path.join(rootDir, '.ts-quality'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'test'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, '.ts-quality', 'invariants.ts'), `export default [{
+  id: 'demo',
+  title: 'demo',
+  description: 'demo',
+  severity: 'low',
+  selectors: ['path:src/**'],
+  scenarios: [{
+    id: 's',
+    description: 'x',
+    keywords: ['a'],
+    executionWitnessCommand: ['node', '--test', 'test/demo.test.js'],
+    executionWitnessOutput: './.ts-quality/witnesses/demo.json',
+    executionWitnessTestFiles: ['./test/demo.test.js'],
+    executionWitnessTimeoutMs: 2500,
+    expected: 'a'
+  }]
+}];
+`, 'utf8');
+
+  const invariants = config.loadInvariants(rootDir, '.ts-quality/invariants.ts');
+  assert.deepEqual(invariants[0]?.scenarios[0]?.executionWitnessPatterns, ['.ts-quality/witnesses/demo.json']);
+  assert.deepEqual(invariants[0]?.scenarios[0]?.executionWitnessCommand, ['node', '--test', 'test/demo.test.js']);
+  assert.equal(invariants[0]?.scenarios[0]?.executionWitnessOutput, '.ts-quality/witnesses/demo.json');
+  assert.deepEqual(invariants[0]?.scenarios[0]?.executionWitnessTestFiles, ['test/demo.test.js']);
+  assert.equal(invariants[0]?.scenarios[0]?.executionWitnessTimeoutMs, 2500);
+});
+
+test('loadInvariants rejects execution witness outputs that escape the repository root', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-invariants-witness-escape-'));
+  fs.mkdirSync(path.join(rootDir, '.ts-quality'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, '.ts-quality', 'invariants.ts'), `export default [{
+  id: 'demo',
+  title: 'demo',
+  description: 'demo',
+  severity: 'low',
+  selectors: ['path:src/**'],
+  scenarios: [{
+    id: 's',
+    description: 'x',
+    keywords: ['a'],
+    executionWitnessCommand: ['node', '--test'],
+    executionWitnessOutput: '../outside/demo.json',
+    expected: 'a'
+  }]
+}];
+`, 'utf8');
+
+  assert.throws(() => config.loadInvariants(rootDir, '.ts-quality/invariants.ts'), /executionWitnessOutput must stay inside repository root/);
 });
 
 test('loadContext rejects coverage paths that escape the repository root', () => {

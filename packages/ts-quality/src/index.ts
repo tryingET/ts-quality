@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { spawnSync } from 'child_process';
 import {
   type Agent,
   type AmendmentDecision,
@@ -12,6 +13,12 @@ import {
   type AuthorizationDecision,
   type ConstitutionRule,
   type ControlPlaneSnapshot,
+  type ExecutionReceipt,
+  type ExecutionWitnessRecord,
+  type ExecutionWitnessReceiptArtifact,
+  type ExecutionWitnessRunRecord,
+  type ExecutionWitnessRunSummary,
+  type ExecutionWitnessSkippedRecord,
   type FileEntity,
   type OverrideRecord,
   type RunArtifact,
@@ -39,7 +46,7 @@ import {
 } from '../../evidence-model/src/index';
 import { analyzeCrap, parseLcov } from '../../crap4ts/src/index';
 import { runMutations } from '../../ts-mutate/src/index';
-import { evaluateInvariants } from '../../invariants/src/index';
+import { collectExecutionWitnessPlanSummary, evaluateInvariants } from '../../invariants/src/index';
 import {
   type PolicyInput,
   defaultPolicy,
@@ -81,6 +88,36 @@ interface RunDecisionContext {
   runAttestations: Attestation[];
   runAttestationVerification: AttestationVerificationRecord[];
   drift: RunDriftEntry[];
+}
+
+interface ReportDecisionContext {
+  projection: 'persisted' | 'projected';
+  drift: RunDriftEntry[];
+}
+
+interface ReportJsonArtifact extends RunArtifact {
+  decisionContext: ReportDecisionContext;
+}
+
+interface TrendComparableRun {
+  runId: string;
+  changedFiles: string[];
+  changedRegions: RunArtifact['changedRegions'];
+  controlPlane?: ControlPlaneSnapshot | undefined;
+  invariants: RunArtifact['invariants'];
+}
+
+interface TrendComparabilityAssessment {
+  comparable: boolean;
+  reasons: string[];
+}
+
+interface RunSelectionOptions {
+  runId?: string;
+}
+
+interface RunDecisionOptions extends RunSelectionOptions {
+  configPath?: string;
 }
 
 function fileEntities(rootDir: string, filePaths: string[]): FileEntity[] {
@@ -127,12 +164,15 @@ function renderInvariantProvenanceBlock(
   return lines;
 }
 
-function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdict'>): string {
+function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdict' | 'executionWitnesses'>): string {
   const lines = [
     `Merge confidence: ${run.verdict.mergeConfidence}/100`,
     `Outcome: ${run.verdict.outcome}`,
     `Best next action: ${run.verdict.bestNextAction ?? 'none'}`
   ];
+  if (run.executionWitnesses) {
+    lines.push('', ...renderExecutionWitnessSummaryText(run.executionWitnesses).trimEnd().split('\n'));
+  }
   const provenance = renderInvariantProvenanceBlock(run, { includeObligation: false });
   if (provenance.length > 0) {
     lines.push('', ...provenance);
@@ -235,6 +275,8 @@ function buildAuthorizationEvidenceContext(
       ? {
           invariantId: riskyInvariant.invariantId,
           description: riskyInvariant.description,
+          ...(riskySummary?.evidenceSemantics ? { evidenceSemantics: riskySummary.evidenceSemantics } : {}),
+          ...(riskySummary?.evidenceSemanticsSummary ? { evidenceSemanticsSummary: riskySummary.evidenceSemanticsSummary } : {}),
           evidenceProvenance,
           signals: authorizationRiskSignals(riskyInvariant),
           obligation: riskyInvariant.obligations[0]?.description
@@ -243,12 +285,67 @@ function buildAuthorizationEvidenceContext(
   };
 }
 
-function latestRunOrUndefined(rootDir: string): RunArtifact | undefined {
-  try {
-    return readLatestRun(rootDir);
-  } catch {
-    return undefined;
+function orderedRuns(rootDir: string): RunArtifact[] {
+  return listRunIds(rootDir)
+    .map((runId) => loadRun(rootDir, runId))
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.runId.localeCompare(right.runId));
+}
+
+function sortedUniqueNormalized(values: string[]): string[] {
+  return [...new Set(values.map((item) => normalizePath(item)).filter(Boolean))].sort((left, right) => left.localeCompare(right));
+}
+
+function changedRegionSignatures(regions: RunArtifact['changedRegions']): string[] {
+  return [...new Set(regions.map((region) => `${normalizePath(region.filePath)}:${region.span.startLine}-${region.span.endLine}`))]
+    .sort((left, right) => left.localeCompare(right));
+}
+
+function equalStringLists(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((item, index) => item === right[index]);
+}
+
+function assessTrendComparability(current: TrendComparableRun, previous: TrendComparableRun): TrendComparabilityAssessment {
+  const reasons: string[] = [];
+  if (!equalStringLists(sortedUniqueNormalized(current.changedFiles), sortedUniqueNormalized(previous.changedFiles))) {
+    reasons.push('changed file scope differs');
   }
+  const currentRegions = changedRegionSignatures(current.changedRegions);
+  const previousRegions = changedRegionSignatures(previous.changedRegions);
+  if ((currentRegions.length > 0 || previousRegions.length > 0) && !equalStringLists(currentRegions, previousRegions)) {
+    reasons.push('changed hunk scope differs');
+  }
+  if (stableStringify(current.invariants) !== stableStringify(previous.invariants)) {
+    reasons.push('invariant baseline differs');
+  }
+  if (current.controlPlane && previous.controlPlane) {
+    if (stableStringify(current.controlPlane.policy) !== stableStringify(previous.controlPlane.policy)) {
+      reasons.push('policy baseline differs');
+    }
+    if (current.controlPlane.constitutionDigest !== previous.controlPlane.constitutionDigest) {
+      reasons.push('constitution baseline differs');
+    }
+  } else if (Boolean(current.controlPlane) !== Boolean(previous.controlPlane)) {
+    reasons.push('control-plane snapshot availability differs');
+  }
+  return {
+    comparable: reasons.length === 0,
+    reasons
+  };
+}
+
+function latestComparableRunOrUndefined(rootDir: string, current: TrendComparableRun): RunArtifact | undefined {
+  const runs = orderedRuns(rootDir);
+  for (let index = runs.length - 1; index >= 0; index -= 1) {
+    const candidate = runs[index];
+    if (candidate && assessTrendComparability(current, candidate).comparable) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function selectedRun(rootDir: string, options?: RunSelectionOptions): RunArtifact {
+  return options?.runId ? loadRun(rootDir, options.runId) : readLatestRun(rootDir);
 }
 
 function expectedRunFileDigest(run: RunArtifact, filePath: string): string | undefined {
@@ -521,6 +618,33 @@ function renderRunDriftNotice(run: Pick<RunArtifact, 'runId'>, drift: RunDriftEn
   return `${lines.join('\n')}\n`;
 }
 
+function renderRunDriftMarkdownNotice(run: Pick<RunArtifact, 'runId'>, drift: RunDriftEntry[]): string {
+  const lines = [
+    `> **Run drift detected for \`${renderSafeText(run.runId)}\`.** Re-run \`ts-quality check\` before trusting this projected report.`,
+    ...drift.map((item) => `> - ${renderSafeText(item.subject)}: expected ${renderSafeText(item.expected)}, actual ${renderSafeText(item.actual)}`)
+  ];
+  return lines.join('\n');
+}
+
+function injectMarkdownNotice(markdown: string, notice: string): string {
+  const frontmatter = markdown.match(/^---\n[\s\S]*?\n---\n\n?/u);
+  if (!frontmatter) {
+    return `${notice}\n\n${markdown}`;
+  }
+  const insertAt = frontmatter[0].length;
+  return `${markdown.slice(0, insertAt)}${notice}\n\n${markdown.slice(insertAt)}`;
+}
+
+function buildReportJsonArtifact(run: RunArtifact, decisionContext: ReportDecisionContext): ReportJsonArtifact {
+  return {
+    ...run,
+    decisionContext: {
+      projection: decisionContext.projection,
+      drift: decisionContext.drift.map((item) => ({ ...item }))
+    }
+  };
+}
+
 function portablePath(value: string): string {
   return value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/\/$/, '');
 }
@@ -596,6 +720,49 @@ function resolveCliAttestationSubject(rootDir: string, candidate: string, option
 
 function renderVerificationText(value: string): string {
   return renderSafeText(value);
+}
+
+const SANITIZED_WITNESS_ENV_KEYS = ['NODE_TEST_CONTEXT'];
+
+function executionWitnessCommandEnv(baseEnv: Record<string, string | undefined> = process.env): Record<string, string | undefined> {
+  const env = { ...baseEnv };
+  for (const key of SANITIZED_WITNESS_ENV_KEYS) {
+    delete env[key];
+  }
+  return env;
+}
+
+function stdioText(value: string | Buffer | undefined): string {
+  return typeof value === 'string' ? value : value ? value.toString('utf8') : '';
+}
+
+function executionWitnessCommandDetails(result: ReturnType<typeof spawnSync>): string {
+  return `${stdioText(result.stdout).trim()}\n${stdioText(result.stderr).trim()}`.trim().slice(0, 280);
+}
+
+function executionWitnessReceiptPath(relativeWitnessPath: string): string {
+  return relativeWitnessPath.endsWith('.json')
+    ? relativeWitnessPath.replace(/\.json$/u, '.receipt.json')
+    : `${relativeWitnessPath}.receipt.json`;
+}
+
+function executionWitnessSkipReasonText(reason: ExecutionWitnessSkippedRecord['reason']): string {
+  return reason === 'invariant-not-impacted'
+    ? 'invariant not impacted by changed scope'
+    : reason;
+}
+
+function renderExecutionWitnessSummaryText(summary: ExecutionWitnessRunSummary): string {
+  const lines = [`Execution witnesses: auto-ran ${summary.autoRan.length}, skipped ${summary.skipped.length}`];
+  if (summary.autoRan.length > 0) {
+    lines.push('Ran:');
+    lines.push(...summary.autoRan.map((item) => `- ${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.receipt.status}; receipt=${item.receiptPath})`));
+  }
+  if (summary.skipped.length > 0) {
+    lines.push('Skipped:');
+    lines.push(...summary.skipped.map((item) => `- ${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${executionWitnessSkipReasonText(item.reason)})`));
+  }
+  return `${lines.join('\n')}\n`;
 }
 
 function verifyAttestationRecordAtRoot(rootDir: string, source: string, attestation: Attestation, trustedKeys: Record<string, string>): AttestationVerificationRecord {
@@ -881,8 +1048,32 @@ interface AnalysisManifest {
   runtimeMirrorRoots: string[];
 }
 
+export interface ExecutionWitnessRefreshResult extends ExecutionWitnessRunRecord {}
+export interface ExecutionWitnessRefreshSkipped extends ExecutionWitnessSkippedRecord {}
+export interface ExecutionWitnessRefreshSummary extends ExecutionWitnessRunSummary {}
+
 function resolveChangedFileOverride(rootDir: string, filePath: string): string {
   return resolveRepoLocalPath(rootDir, filePath, { allowMissing: true, kind: 'changed file override' }).relativePath;
+}
+
+function uniquePaths(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values.map((item) => normalizePath(item)).filter(Boolean)) {
+    if (seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+}
+
+function missingChangeScopeError(diffFile?: string): Error {
+  const detail = diffFile
+    ? ` Configured diff file ${diffFile} did not contribute any changed hunks.`
+    : '';
+  return new Error(`Changed scope is required.${detail} Provide --changed <a,b,c> or configure changeSet.files / changeSet.diffFile with at least one changed file or hunk before running ts-quality check.`);
 }
 
 function buildAnalysisManifest(rootDir: string, options?: { changedFiles?: string[]; configPath?: string }): AnalysisManifest {
@@ -890,11 +1081,13 @@ function buildAnalysisManifest(rootDir: string, options?: { changedFiles?: strin
   const sourceFiles = collectSourceFiles(rootDir, loaded.config.sourcePatterns);
   const changedRegions = loaded.config.changeSet.diffFile ? loadChangedRegions(rootDir, loaded.config.changeSet.diffFile) : [];
   const configuredChangedFiles = loaded.config.changeSet.files ?? [];
-  const changedFiles = options?.changedFiles
+  const baseChangedFiles = options?.changedFiles
     ? options.changedFiles.map((item) => resolveChangedFileOverride(rootDir, item))
-    : configuredChangedFiles.length > 0
-      ? [...configuredChangedFiles]
-      : sourceFiles;
+    : [...configuredChangedFiles];
+  const changedFiles = uniquePaths([...baseChangedFiles, ...changedRegions.map((item) => item.filePath)]);
+  if (changedFiles.length === 0) {
+    throw missingChangeScopeError(loaded.config.changeSet.diffFile || undefined);
+  }
   const coveragePath = loaded.config.coverage.lcovPath ?? 'coverage/lcov.info';
   const coverageAbsolutePath = path.join(rootDir, coveragePath);
   const coverage = fs.existsSync(coverageAbsolutePath) ? parseLcov(fs.readFileSync(coverageAbsolutePath, 'utf8')) : [];
@@ -907,6 +1100,62 @@ function buildAnalysisManifest(rootDir: string, options?: { changedFiles?: strin
     coverage,
     runtimeMirrorRoots: [...(loaded.config.mutations.runtimeMirrorRoots ?? ['dist'])]
   };
+}
+
+function refreshExecutionWitnessPlans(rootDir: string, input: {
+  sourceFiles: string[];
+  changedFiles: string[];
+  changedRegions: RunArtifact['changedRegions'];
+  coverage: RunArtifact['coverage'];
+  invariants: ReturnType<typeof loadInvariants>;
+  observedAt: string;
+}): ExecutionWitnessRefreshSummary {
+  const crapReport = analyzeCrap({
+    rootDir,
+    sourceFiles: input.sourceFiles,
+    coverage: input.coverage,
+    changedFiles: input.changedFiles,
+    changedRegions: input.changedRegions
+  });
+  const planSummary = collectExecutionWitnessPlanSummary({
+    invariants: input.invariants,
+    changedFiles: input.changedFiles,
+    changedRegions: input.changedRegions,
+    complexity: crapReport.hotspots
+  });
+  const autoRan: ExecutionWitnessRefreshResult[] = [];
+  for (const witnessPlan of planSummary.autoRun) {
+    const witnessResult = runExecutionWitnessCommand(rootDir, {
+      invariantId: witnessPlan.invariantId,
+      scenarioId: witnessPlan.scenarioId,
+      sourceFiles: witnessPlan.sourceFiles,
+      ...(witnessPlan.testFiles.length > 0 ? { testFiles: witnessPlan.testFiles } : {}),
+      outputPath: witnessPlan.outputPath,
+      command: witnessPlan.command,
+      ...(witnessPlan.timeoutMs !== undefined ? { timeoutMs: witnessPlan.timeoutMs } : {}),
+      observedAt: input.observedAt
+    });
+    autoRan.push({
+      invariantId: witnessPlan.invariantId,
+      scenarioId: witnessPlan.scenarioId,
+      outputPath: witnessResult.recordedOutputPath,
+      receiptPath: witnessResult.recordedReceiptPath,
+      command: [...witnessPlan.command],
+      sourceFiles: [...witnessPlan.sourceFiles],
+      ...(witnessPlan.testFiles.length > 0 ? { testFiles: [...witnessPlan.testFiles] } : {}),
+      observedAt: input.observedAt,
+      receipt: witnessResult.receipt
+    });
+  }
+  const skipped: ExecutionWitnessRefreshSkipped[] = planSummary.skipped.map((item) => ({
+    invariantId: item.invariantId,
+    scenarioId: item.scenarioId,
+    outputPath: item.outputPath,
+    command: [...item.command],
+    ...(item.testFiles.length > 0 ? { testFiles: [...item.testFiles] } : {}),
+    reason: item.reason
+  }));
+  return { autoRan, skipped };
 }
 
 function buildAnalysisContext(input: {
@@ -933,6 +1182,19 @@ function buildAnalysisContext(input: {
   };
 }
 
+export function refreshExecutionWitnesses(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; observedAt?: string }): ExecutionWitnessRefreshSummary {
+  const manifest = buildAnalysisManifest(rootDir, options);
+  const invariants = loadInvariants(rootDir, manifest.loaded.config.invariantsPath);
+  return refreshExecutionWitnessPlans(rootDir, {
+    sourceFiles: manifest.sourceFiles,
+    changedFiles: manifest.changedFiles.map((item) => normalizePath(item)),
+    changedRegions: manifest.changedRegions,
+    coverage: manifest.coverage,
+    invariants,
+    observedAt: options?.observedAt ?? nowIso()
+  });
+}
+
 export function runCheck(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; runId?: string }): CheckResult {
   const manifest = buildAnalysisManifest(rootDir, options);
   const loaded = manifest.loaded;
@@ -948,7 +1210,14 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
   const invariants = loadInvariants(rootDir, loaded.config.invariantsPath);
   const constitution = loadConstitution(rootDir, loaded.config.constitutionPath);
   const agents = loadAgents(rootDir, loaded.config.agentsPath);
-  const previousRun = latestRunOrUndefined(rootDir);
+  const controlPlane = buildControlPlaneSnapshot(rootDir, loaded, constitution, agents);
+  const previousRun = latestComparableRunOrUndefined(rootDir, {
+    runId,
+    changedFiles,
+    changedRegions,
+    controlPlane,
+    invariants
+  });
 
   const crapReport = analyzeCrap({
     rootDir,
@@ -956,6 +1225,16 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     coverage,
     changedFiles,
     changedRegions
+  });
+
+  const refreshObservedAt = createdAt;
+  const executionWitnessSummary = refreshExecutionWitnessPlans(rootDir, {
+    sourceFiles,
+    changedFiles,
+    changedRegions,
+    coverage,
+    invariants,
+    observedAt: refreshObservedAt
   });
 
   const mutationRun = runMutations({
@@ -1041,7 +1320,6 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     changedRegions,
     executionFingerprint: mutationRun.executionFingerprint
   });
-  const controlPlane = buildControlPlaneSnapshot(rootDir, loaded, constitution, agents);
   const run: RunArtifact = {
     version: '0.1.0',
     runId,
@@ -1051,6 +1329,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     changedRegions,
     analysis,
     controlPlane,
+    ...(executionWitnessSummary.autoRan.length > 0 || executionWitnessSummary.skipped.length > 0 ? { executionWitnesses: executionWitnessSummary } : {}),
     files: fileEntities(rootDir, sourceFiles),
     symbols: symbolEntities(crapReport.hotspots),
     coverage,
@@ -1071,11 +1350,15 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
   }
 
   const artifactDir = writeRunArtifact(rootDir, run);
-  writeJson(path.join(artifactDir, 'report.json'), run);
+  writeJson(path.join(artifactDir, 'report.json'), buildReportJsonArtifact(run, { projection: 'persisted', drift: [] }));
   fs.writeFileSync(path.join(artifactDir, 'report.md'), `${renderMarkdownReport(run)}\n`, 'utf8');
   fs.writeFileSync(path.join(artifactDir, 'pr-summary.md'), `${renderPrSummary(run)}\n`, 'utf8');
   fs.writeFileSync(path.join(artifactDir, 'explain.txt'), `${renderExplainText(run)}\n`, 'utf8');
   fs.writeFileSync(path.join(artifactDir, 'attestation-verify.txt'), renderAttestationVerificationReport(verifiedAttestations.verification), 'utf8');
+  if (run.executionWitnesses) {
+    writeJson(path.join(artifactDir, 'execution-witnesses.json'), run.executionWitnesses);
+    fs.writeFileSync(path.join(artifactDir, 'execution-witnesses.txt'), renderExecutionWitnessSummaryText(run.executionWitnesses), 'utf8');
+  }
   fs.writeFileSync(path.join(artifactDir, 'check-summary.txt'), renderCheckSummaryText(run), 'utf8');
   const plan = generateGovernancePlan(run, constitution, agents);
   fs.writeFileSync(path.join(artifactDir, 'plan.txt'), renderPlanArtifactText(run, plan), 'utf8');
@@ -1086,13 +1369,14 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
 export function initProject(rootDir: string): void {
   ensureDir(path.join(rootDir, '.ts-quality', 'attestations'));
   ensureDir(path.join(rootDir, '.ts-quality', 'keys'));
+  ensureDir(path.join(rootDir, '.ts-quality', 'witnesses'));
   const configPath = path.join(rootDir, 'ts-quality.config.ts');
   if (!fs.existsSync(configPath)) {
-    fs.writeFileSync(configPath, `export default {\n  sourcePatterns: ${stableStringify([...DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${stableStringify([...DEFAULT_TEST_PATTERNS])},\n  coverage: { lcovPath: 'coverage/lcov.info' },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
+    fs.writeFileSync(configPath, `export default {\n  sourcePatterns: ${stableStringify([...DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${stableStringify([...DEFAULT_TEST_PATTERNS])},\n  coverage: { lcovPath: 'coverage/lcov.info' },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  // Provide --changed <a,b,c> or set changeSet.files / changeSet.diffFile before running check.\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
   }
   const invariantsPath = path.join(rootDir, '.ts-quality', 'invariants.ts');
   if (!fs.existsSync(invariantsPath)) {
-    fs.writeFileSync(invariantsPath, `export default [\n  {\n    id: 'auth.refresh.validity',\n    title: 'Refresh token validity',\n    description: 'Expired refresh tokens must never authorize access.',\n    severity: 'high',\n    selectors: ['path:src/auth/**', 'symbol:isRefreshExpired'],\n    scenarios: [\n      { id: 'expired', description: 'expired token is denied', keywords: ['expired', 'deny'], failurePathKeywords: ['boundary', 'expiry'], expected: 'deny' }\n    ]\n  }\n];\n`, 'utf8');
+    fs.writeFileSync(invariantsPath, `export default [\n  {\n    id: 'auth.refresh.validity',\n    title: 'Refresh token validity',\n    description: 'Expired refresh tokens must never authorize access.',\n    severity: 'high',\n    selectors: ['path:src/auth/**', 'symbol:isRefreshExpired'],\n    scenarios: [\n      {\n        id: 'expired',\n        description: 'expired token is denied',\n        keywords: ['expired', 'deny'],\n        failurePathKeywords: ['boundary', 'expiry'],\n        // Optional execution-backed witness generation during \`ts-quality check\`:\n        // executionWitnessCommand: ['node', '--test', 'test/token.test.js'],\n        // executionWitnessOutput: '.ts-quality/witnesses/auth-refresh-expired.json',\n        // executionWitnessTestFiles: ['test/token.test.js'],\n        // executionWitnessTimeoutMs: 5000,\n        expected: 'deny'\n      }\n    ]\n  }\n];\n`, 'utf8');
   }
   const constitutionPath = path.join(rootDir, '.ts-quality', 'constitution.ts');
   if (!fs.existsSync(constitutionPath)) {
@@ -1116,26 +1400,64 @@ export function initProject(rootDir: string): void {
   }
 }
 
-export function renderLatestReport(rootDir: string, format: 'markdown' | 'json'): string {
-  const run = readLatestRun(rootDir);
-  return format === 'json' ? `${stableStringify(run)}\n` : `${renderMarkdownReport(run)}\n`;
+export function renderLatestReport(rootDir: string, format: 'markdown' | 'json', options?: RunDecisionOptions): string {
+  const context = projectedRunForDecision(rootDir, selectedRun(rootDir, options), options);
+  if (format === 'json') {
+    return `${stableStringify(buildReportJsonArtifact(context.projectedRun, { projection: 'projected', drift: context.drift }))}\n`;
+  }
+  const body = renderMarkdownReport(context.projectedRun);
+  const rendered = context.drift.length === 0
+    ? body
+    : injectMarkdownNotice(body, renderRunDriftMarkdownNotice(context.run, context.drift));
+  return `${rendered}\n`;
 }
 
-export function renderLatestExplain(rootDir: string): string {
-  return `${renderExplainText(readLatestRun(rootDir))}\n`;
+export function renderLatestExplain(rootDir: string, options?: RunDecisionOptions): string {
+  const context = projectedRunForDecision(rootDir, selectedRun(rootDir, options), options);
+  const body = renderExplainText(context.projectedRun);
+  if (context.drift.length === 0) {
+    return `${body}\n`;
+  }
+  return `${renderRunDriftNotice(context.run, context.drift)}\n${body}\n`;
 }
 
 export function renderTrend(rootDir: string): string {
-  const runs = listRunIds(rootDir)
-    .map((runId) => loadRun(rootDir, runId))
-    .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.runId.localeCompare(right.runId));
+  const runs = orderedRuns(rootDir);
   if (runs.length < 2) {
     return 'Not enough runs for trend analysis.\n';
   }
   const current = runs[runs.length - 1];
-  const previous = runs[runs.length - 2];
-  if (!current || !previous) {
+  if (!current) {
     return 'Not enough runs for trend analysis.\n';
+  }
+  let previous: RunArtifact | undefined;
+  let nearestAssessment: { run: RunArtifact; assessment: TrendComparabilityAssessment } | undefined;
+  for (let index = runs.length - 2; index >= 0; index -= 1) {
+    const candidate = runs[index];
+    if (!candidate) {
+      continue;
+    }
+    const assessment = assessTrendComparability(current, candidate);
+    if (!nearestAssessment) {
+      nearestAssessment = { run: candidate, assessment };
+    }
+    if (!assessment.comparable) {
+      continue;
+    }
+    previous = candidate;
+    break;
+  }
+  if (!previous) {
+    const lines = [
+      `Current run: ${current.runId}`,
+      'No comparable prior run for trend analysis.',
+      'Trend comparisons require the same changed scope and invariant/policy baseline.'
+    ];
+    if (nearestAssessment) {
+      lines.push(`Nearest earlier run: ${nearestAssessment.run.runId}`);
+      lines.push(...nearestAssessment.assessment.reasons.map((reason) => `- ${reason}`));
+    }
+    return `${lines.join('\n')}\n`;
   }
   const survivingCurrent = current.mutations.filter((item) => item.status === 'survived').length;
   const survivingPrevious = previous.mutations.filter((item) => item.status === 'survived').length;
@@ -1153,8 +1475,8 @@ export function renderTrend(rootDir: string): string {
   return `${lines.join('\n')}\n`;
 }
 
-export function renderGovernance(rootDir: string, options?: { configPath?: string }): string {
-  const context = projectedRunForDecision(rootDir, readLatestRun(rootDir), options);
+export function renderGovernance(rootDir: string, options?: RunDecisionOptions): string {
+  const context = projectedRunForDecision(rootDir, selectedRun(rootDir, options), options);
   const plan = generateGovernancePlan(context.projectedRun, context.constitution, context.agents);
   const body = renderGovernanceText(context.projectedRun, plan);
   if (context.drift.length === 0) {
@@ -1163,8 +1485,8 @@ export function renderGovernance(rootDir: string, options?: { configPath?: strin
   return `${renderRunDriftNotice(context.run, context.drift)}\n${body}`;
 }
 
-export function renderPlan(rootDir: string, options?: { configPath?: string }): string {
-  const context = projectedRunForDecision(rootDir, readLatestRun(rootDir), options);
+export function renderPlan(rootDir: string, options?: RunDecisionOptions): string {
+  const context = projectedRunForDecision(rootDir, selectedRun(rootDir, options), options);
   const plan = generateGovernancePlan(context.projectedRun, context.constitution, context.agents);
   const body = renderPlanText(context.projectedRun, plan);
   if (context.drift.length === 0) {
@@ -1173,8 +1495,8 @@ export function renderPlan(rootDir: string, options?: { configPath?: string }): 
   return `${renderRunDriftNotice(context.run, context.drift)}\n${body}`;
 }
 
-export function runAuthorize(rootDir: string, agentId: string, action: string, options?: { configPath?: string }): { decisionPath: string; output: string } {
-  const context = projectedRunForDecision(rootDir, readLatestRun(rootDir), options);
+export function runAuthorize(rootDir: string, agentId: string, action: string, options?: RunDecisionOptions): { decisionPath: string; output: string } {
+  const context = projectedRunForDecision(rootDir, selectedRun(rootDir, options), options);
   const bundle = buildChangeBundle(rootDir, context.run, agentId, action);
   const attestationVerification = buildAuthorizationAttestationVerification(context.runAttestationVerification);
   const baseDecision = context.drift.length > 0
@@ -1203,6 +1525,90 @@ export function runAuthorize(rootDir: string, agentId: string, action: string, o
   });
   writeJson(decisionPath, decision);
   return { decisionPath, output: `${stableStringify(decision)}\n` };
+}
+
+export function runExecutionWitnessCommand(rootDir: string, input: {
+  invariantId: string;
+  scenarioId: string;
+  sourceFiles: string[];
+  testFiles?: string[];
+  outputPath: string;
+  command: string[];
+  timeoutMs?: number;
+  observedAt?: string;
+}): { outputPath: string; recordedOutputPath: string; receiptPath: string; recordedReceiptPath: string; witness: ExecutionWitnessRecord; receipt: ExecutionReceipt } {
+  const command = input.command.filter((item) => item.length > 0);
+  if (command.length === 0) {
+    throw new Error('execution witness command requires an executable and arguments');
+  }
+  const sourceFiles = [...new Set(input.sourceFiles.map((candidate) => resolveCliRepoLocalPath(rootDir, candidate, { kind: 'execution witness source file' }).relativePath))];
+  if (sourceFiles.length === 0) {
+    throw new Error('execution witness command requires at least one --source-files entry');
+  }
+  const testFiles = [...new Set((input.testFiles ?? []).map((candidate) => resolveCliRepoLocalPath(rootDir, candidate, { kind: 'execution witness test file' }).relativePath))];
+  const outputResolution = resolveCliRepoLocalPath(rootDir, input.outputPath, { allowMissing: true, kind: 'execution witness output' });
+  const recordedReceiptPath = executionWitnessReceiptPath(outputResolution.relativePath);
+  const receiptResolution = resolveCliRepoLocalPath(rootDir, recordedReceiptPath, { allowMissing: true, kind: 'execution witness receipt output' });
+  ensureDir(path.dirname(outputResolution.absolutePath));
+  ensureDir(path.dirname(receiptResolution.absolutePath));
+  const executable = command[0];
+  if (!executable) {
+    throw new Error('execution witness command requires an executable argument');
+  }
+  const started = Date.now();
+  const result = spawnSync(executable, command.slice(1), {
+    cwd: rootDir,
+    encoding: 'utf8',
+    timeout: input.timeoutMs,
+    shell: process.platform === 'win32',
+    env: executionWitnessCommandEnv()
+  });
+  const durationMs = Date.now() - started;
+  const receipt: ExecutionReceipt = result.error
+    ? {
+        status: (result.error as { code?: string }).code === 'ETIMEDOUT' ? 'timeout' : 'error',
+        exitCode: typeof result.status === 'number' ? result.status : undefined,
+        durationMs,
+        details: (result.error as { message?: string }).message ?? 'unknown execution witness command error'
+      }
+    : {
+        status: result.status === 0 ? 'pass' : 'fail',
+        exitCode: typeof result.status === 'number' ? result.status : undefined,
+        durationMs,
+        details: executionWitnessCommandDetails(result)
+      };
+  const witness: ExecutionWitnessRecord = {
+    version: '1',
+    kind: 'execution-witness',
+    invariantId: input.invariantId,
+    scenarioId: input.scenarioId,
+    status: receipt.status === 'pass' ? 'pass' : 'fail',
+    sourceFiles,
+    ...(testFiles.length > 0 ? { testFiles } : {}),
+    ...(input.observedAt ? { observedAt: input.observedAt } : {})
+  };
+  const receiptArtifact: ExecutionWitnessReceiptArtifact = {
+    version: '1',
+    kind: 'execution-witness-receipt',
+    invariantId: input.invariantId,
+    scenarioId: input.scenarioId,
+    witnessPath: outputResolution.relativePath,
+    command: [...command],
+    sourceFiles,
+    ...(testFiles.length > 0 ? { testFiles } : {}),
+    ...(input.observedAt ? { observedAt: input.observedAt } : {}),
+    receipt
+  };
+  writeJson(outputResolution.absolutePath, witness);
+  writeJson(receiptResolution.absolutePath, receiptArtifact);
+  return {
+    outputPath: outputResolution.absolutePath,
+    recordedOutputPath: outputResolution.relativePath,
+    receiptPath: receiptResolution.absolutePath,
+    recordedReceiptPath,
+    witness,
+    receipt
+  };
 }
 
 export function attestSign(rootDir: string, issuer: string, keyId: string, privateKeyPath: string, subjectFile: string, claims: string[], outputPath: string): string {

@@ -394,7 +394,7 @@ function authorizeChange(agentId, action, bundle, run, agents, constitution, att
             agentId,
             action,
             outcome: 'deny',
-            reasons: ['No changed files were bound to this authorization request. Re-run check with explicit changes or allow it to default to discovered source files.'],
+            reasons: ['No changed files were bound to this authorization request. Re-run check with explicit changes.'],
             scope: bundle.changedFiles,
             missingProof: [],
             requiredApprovers: [],

@@ -24,19 +24,22 @@ test('concise operator outputs keep stable provenance framing', () => {
   assert.match(summary, /Surviving mutants:/);
   assert.match(summary, /Evidence provenance: explicit [0-9]+, inferred [0-9]+, missing [0-9]+/);
   assert.match(summary, /focused-test-alignment \[clear; mode=inferred\]: 1 focused test file aligned to invariant scope/);
-  assert.match(summary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(summary, /Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
+  assert.match(summary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.match(checkSummary, /^Merge confidence: [0-9]+\/100/);
   assert.match(checkSummary, /Best next action:/);
   assert.match(checkSummary, /Invariant evidence at risk: auth\.refresh\.validity/);
   assert.match(checkSummary, /Evidence provenance: explicit [0-9]+, inferred [0-9]+, missing [0-9]+/);
-  assert.match(checkSummary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(checkSummary, /Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
+  assert.match(checkSummary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.doesNotMatch(checkSummary, /^Obligation:/m);
   assert.equal(checkSummary, expectedCheckSummary);
   assert.match(plan, /Invariant evidence at risk: auth\.refresh\.validity/);
   assert.match(plan, /Evidence provenance: explicit [0-9]+, inferred [0-9]+, missing [0-9]+/);
   assert.match(plan, /mutation-pressure \[warning; mode=explicit\]: [0-9]+ surviving mutants across [0-9]+ mutation sites/);
   assert.match(govern, /Invariant evidence at risk: auth\.refresh\.validity/);
-  assert.match(govern, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(govern, /Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
+  assert.match(govern, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
 });
 
 test('authorization sample keeps exact run-bound evidence context', () => {

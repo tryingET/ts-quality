@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const scriptPath = fileURLToPath(import.meta.url);
+const root = path.resolve(path.dirname(scriptPath), '..');
 const banned = [
   new RegExp(['TO', 'DO'].join(''), 'i'),
   new RegExp(['FIX', 'ME'].join(''), 'i'),
@@ -12,38 +14,65 @@ const banned = [
   new RegExp(['fake ', 'success'].join(''), 'i')
 ];
 const includeExt = /\.(ts|js|mjs|md|json)$/;
-const excludeDirs = new Set(['dist', 'node_modules', '.git', 'examples/artifacts', 'verification', '.ts-quality/runs']);
-const issues = [];
+const excludeDirNames = new Set(['dist', 'node_modules', 'verification']);
+const excludeDirPaths = ['examples/artifacts'];
 
-function visit(currentDir) {
-  for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
-    const absolute = path.join(currentDir, entry.name);
-    const relative = path.relative(root, absolute).replace(/\\/g, '/');
-    if (entry.isDirectory()) {
-      if (excludeDirs.has(relative) || excludeDirs.has(entry.name) || relative.includes('examples/artifacts') || relative.includes('/.ts-quality/runs')) {
+function isWithin(relativePath, parentPath) {
+  return relativePath === parentPath || relativePath.startsWith(`${parentPath}/`);
+}
+
+function shouldSkipDirectory(relativePath, entryName) {
+  if (entryName.startsWith('.')) {
+    return true;
+  }
+  if (excludeDirNames.has(entryName) || excludeDirNames.has(relativePath)) {
+    return true;
+  }
+  return excludeDirPaths.some((excludedPath) => isWithin(relativePath, excludedPath));
+}
+
+export function collectLintIssues(scanRoot = root) {
+  const issues = [];
+
+  function visit(currentDir) {
+    for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+      const absolute = path.join(currentDir, entry.name);
+      const relative = path.relative(scanRoot, absolute).replace(/\\/g, '/');
+      if (entry.isDirectory()) {
+        if (shouldSkipDirectory(relative, entry.name)) {
+          continue;
+        }
+        visit(absolute);
         continue;
       }
-      visit(absolute);
-      continue;
-    }
-    if (relative === 'scripts/lint.mjs') {
-      continue;
-    }
-    if (!includeExt.test(relative)) {
-      continue;
-    }
-    const text = fs.readFileSync(absolute, 'utf8');
-    for (const pattern of banned) {
-      if (pattern.test(text)) {
-        issues.push(`${relative}: matched ${pattern}`);
+      if (relative === 'scripts/lint.mjs') {
+        continue;
+      }
+      if (!includeExt.test(relative)) {
+        continue;
+      }
+      const text = fs.readFileSync(absolute, 'utf8');
+      for (const pattern of banned) {
+        if (pattern.test(text)) {
+          issues.push(`${relative}: matched ${pattern}`);
+        }
       }
     }
   }
+
+  visit(scanRoot);
+  return issues;
 }
 
-visit(root);
-if (issues.length > 0) {
-  console.error(issues.join('\n'));
-  process.exit(1);
+export function runLint(scanRoot = root) {
+  const issues = collectLintIssues(scanRoot);
+  if (issues.length > 0) {
+    console.error(issues.join('\n'));
+    process.exit(1);
+  }
+  console.log('lint: ok');
 }
-console.log('lint: ok');
+
+if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
+  runLint();
+}

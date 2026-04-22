@@ -145,6 +145,47 @@ test('runMutations invalidates manifest entries when the test corpus changes', (
   assert.equal(second.results.every((result) => result.status === 'error'), true);
 });
 
+test('runMutations resets reusable workspace state between mutant executions', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-workspace-reset-'));
+  fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'flag.js'), [
+    'function flag(value) {',
+    '  return value === 1 && true;',
+    '}',
+    'module.exports = { flag };',
+    ''
+  ].join('\n'), 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'check.js'), [
+    "const fs = require('fs');",
+    "const path = require('path');",
+    "const { flag } = require('./src/flag.js');",
+    "const inMutationWorkspace = process.cwd().includes(`${path.sep}.ts-quality${path.sep}tmp-mutants${path.sep}`);",
+    "if (inMutationWorkspace) {",
+    "  const contaminationPath = 'side-effect.txt';",
+    "  const existed = fs.existsSync(contaminationPath);",
+    "  fs.writeFileSync(contaminationPath, 'x');",
+    "  if (existed) { console.error('workspace contamination detected'); process.exit(1); }",
+    "}",
+    "process.exit(flag(1) === true && flag(2) === false ? 0 : 1);",
+    ''
+  ].join('\n'), 'utf8');
+
+  const run = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['src/flag.js'],
+    changedFiles: ['src/flag.js'],
+    testCommand: ['node', 'check.js'],
+    coveredOnly: false,
+    maxSites: 3,
+    timeoutMs: 5_000
+  });
+
+  assert.equal(run.baseline.status, 'pass');
+  assert.equal(run.results.length >= 2, true);
+  assert.equal(run.results.some((result) => (result.details ?? '').includes('workspace contamination detected')), false, JSON.stringify(run.results, null, 2));
+  assert.equal(fs.existsSync(path.join(rootDir, 'side-effect.txt')), false);
+});
+
 test('runMutations mutates mirrored dist runtime files so dist-backed tests observe the mutant', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-dist-mirror-'));
   fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
@@ -217,6 +258,42 @@ test('runMutations supports custom runtime mirror roots for built output outside
 
   assert.equal(run.baseline.status, 'pass');
   assert.equal(run.results.some((result) => result.status === 'killed'), true, JSON.stringify(run.results, null, 2));
+});
+
+test('runMutations canonicalizes duplicate runtime mirror roots before fingerprinting', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-runtime-mirror-fingerprint-'));
+  fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'dist'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'test'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'flag.js'), 'function flag() { return true; }\nmodule.exports = { flag };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'dist', 'flag.js'), 'function flag() { return true; }\nmodule.exports = { flag };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'test', 'flag.test.js'), "const test = require('node:test'); const assert = require('node:assert/strict'); const { flag } = require('../dist/flag.js'); test('flag', () => assert.equal(flag(), true));\n", 'utf8');
+
+  const canonical = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['src/flag.js'],
+    changedFiles: ['src/flag.js'],
+    testCommand: ['node', '--test'],
+    coveredOnly: false,
+    runtimeMirrorRoots: ['dist'],
+    maxSites: 5,
+    timeoutMs: 5_000
+  });
+  const duplicated = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['src/flag.js'],
+    changedFiles: ['src/flag.js'],
+    testCommand: ['node', '--test'],
+    coveredOnly: false,
+    runtimeMirrorRoots: ['dist', './dist', 'dist/'],
+    maxSites: 5,
+    timeoutMs: 5_000
+  });
+
+  assert.equal(canonical.baseline.status, 'pass');
+  assert.equal(duplicated.baseline.status, 'pass');
+  assert.equal(duplicated.executionFingerprint, canonical.executionFingerprint);
+  assert.deepEqual(duplicated.results.map((result) => result.status), canonical.results.map((result) => result.status));
 });
 
 test('runMutations mirrors root-level sources into configured built runtime roots', () => {

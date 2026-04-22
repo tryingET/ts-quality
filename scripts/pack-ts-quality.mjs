@@ -83,6 +83,12 @@ export const stagedRuntimeFilesByPackage = Object.freeze({
     'src/index.js.map'
   ]),
   governance: Object.freeze([
+    'src/import-collector.d.ts',
+    'src/import-collector.js',
+    'src/import-collector.js.map',
+    'src/import-provenance.d.ts',
+    'src/import-provenance.js',
+    'src/import-provenance.js.map',
     'src/index.d.ts',
     'src/index.js',
     'src/index.js.map'

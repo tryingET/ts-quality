@@ -48,6 +48,14 @@ function finding(id: string, code: string, level: PolicyFinding['level'], messag
   return result;
 }
 
+function isRiskyInvariantClaim(claim: BehaviorClaim): boolean {
+  return claim.status === 'unsupported' || claim.status === 'at-risk';
+}
+
+function isLexicallySupportedInvariantClaim(claim: BehaviorClaim): boolean {
+  return claim.status === 'lexically-supported';
+}
+
 export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: TrendDelta } {
   let mergeConfidence = 100;
   const findings: PolicyFinding[] = [];
@@ -118,7 +126,27 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
     reasons.push(`${survivingMutants.length} surviving mutant(s) remain in changed or covered logic.`);
   }
 
-  const riskyClaims = input.behaviorClaims.filter((claim) => claim.status !== 'supported');
+  const lexicallySupportedClaims = input.behaviorClaims.filter(isLexicallySupportedInvariantClaim);
+  if (lexicallySupportedClaims.length > 0) {
+    mergeConfidence -= Math.min(3 * lexicallySupportedClaims.length, 9);
+    for (const claim of lexicallySupportedClaims) {
+      const modeSummary = invariantModeSummary(claim);
+      findings.push(finding(
+        `policy:invariant:lexical:${claim.invariantId}`,
+        'invariant-lexical-support',
+        'warn',
+        `Invariant ${claim.invariantId} is lexically-supported`,
+        [claim.invariantId],
+        [
+          ...claim.evidence,
+          ...(modeSummary ? [modeSummary] : [])
+        ]
+      ));
+    }
+    warnings.push(`${lexicallySupportedClaims.length} invariant(s) are only lexically-supported and do not yet carry execution-backed witnesses.`);
+  }
+
+  const riskyClaims = input.behaviorClaims.filter(isRiskyInvariantClaim);
   if (riskyClaims.length > 0) {
     mergeConfidence -= Math.min(10 * riskyClaims.length, 20);
     for (const claim of riskyClaims) {
@@ -169,7 +197,10 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
       ? 'Add executable tests or broaden measurable mutation scope so changed code produces explicit mutation pressure.'
       : survivingMutants.length > 0
         ? `Add or tighten an assertion covering ${survivingMutants[0]?.filePath} around the surviving mutant.`
-        : riskyClaims[0]?.obligations[0]?.description ?? (hotspot ? `Refactor or cover ${hotspot.symbol} in ${hotspot.filePath}.` : undefined);
+        : riskyClaims[0]?.obligations[0]?.description
+          ?? (lexicallySupportedClaims[0]
+            ? `Add execution-backed invariant witnesses or explicit runtime mapping for ${lexicallySupportedClaims[0].invariantId} so support can graduate beyond deterministic lexical alignment.`
+            : (hotspot ? `Refactor or cover ${hotspot.symbol} in ${hotspot.filePath}.` : undefined));
 
   const outcome: Verdict['outcome'] = blockedBy.length > 0 ? 'fail' : warnings.length > 0 || mergeConfidence < 85 ? 'warn' : 'pass';
   const verdict: Verdict = {
@@ -198,8 +229,17 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
 }
 
 function scenarioSummaryLabel(result: NonNullable<BehaviorClaim['evidenceSummary']>['scenarioResults'][number]): string {
+  if (result.supported && result.supportKind === 'execution-witness') {
+    return 'execution-backed witness matched';
+  }
   if (result.supported) {
-    return 'supported';
+    return 'deterministic lexical witness matched';
+  }
+  if (result.supportGap === 'missing-assertion') {
+    return 'matching keywords were present in one focused test case but no assertion-like check anchored them';
+  }
+  if (result.supportGap === 'split-focused-test-cases') {
+    return 'happy-path and failure-path evidence was split across focused test cases';
   }
   const missing: string[] = [];
   if (!result.keywordsMatched) {
@@ -218,7 +258,11 @@ function invariantModeSummary(claim: BehaviorClaim): string | undefined {
   if (!summary || summary.subSignals.length === 0) {
     return undefined;
   }
-  return `Invariant evidence modes: ${summary.subSignals.map((item) => `${item.signalId}=${item.mode}`).join('; ')}`;
+  const parts = [
+    summary.evidenceSemanticsSummary ? `Invariant evidence semantics: ${summary.evidenceSemanticsSummary}` : undefined,
+    `Invariant evidence modes: ${summary.subSignals.map((item) => `${item.signalId}=${item.mode}`).join('; ')}`
+  ].filter((item): item is string => Boolean(item));
+  return parts.join('; ');
 }
 
 function formatInvariantSubSignal(subSignal: BehaviorClaimEvidenceSummary['subSignals'][number]): string {
@@ -226,7 +270,7 @@ function formatInvariantSubSignal(subSignal: BehaviorClaimEvidenceSummary['subSi
 }
 
 export function findFirstRiskyInvariantClaim(run: Pick<RunArtifact, 'behaviorClaims'>): BehaviorClaim | undefined {
-  return run.behaviorClaims.find((claim) => claim.status !== 'supported');
+  return run.behaviorClaims.find((claim) => isRiskyInvariantClaim(claim));
 }
 
 export function renderConciseInvariantProvenance(
@@ -251,6 +295,7 @@ export function renderConciseInvariantProvenance(
     .slice(0, maxSignals);
   const signalsToRender = projectedSignals.length > 0 ? projectedSignals : summary.subSignals.slice(0, Math.min(2, maxSignals));
   return [
+    ...(summary.evidenceSemanticsSummary ? [`${linePrefix}Evidence semantics: ${summary.evidenceSemanticsSummary}`] : []),
     `${linePrefix}Evidence provenance: explicit ${modeCounts.explicit}, inferred ${modeCounts.inferred}, missing ${modeCounts.missing}`,
     ...signalsToRender.map((item) => `${linePrefix}${formatInvariantSubSignal(item)}`)
   ];
@@ -283,6 +328,7 @@ function renderInvariantEvidenceSummary(claim: BehaviorClaim, indent = '  - '): 
     ? summary.scenarioResults.map((item) => `${item.scenarioId}=${scenarioSummaryLabel(item)}`).join('; ')
     : 'none';
   return [
+    ...(summary.evidenceSemanticsSummary ? [`${indent}evidence semantics: ${summary.evidenceSemanticsSummary}`] : []),
     `${indent}impacted files: ${summary.impactedFiles.join(', ') || 'none'}`,
     `${indent}focused tests: ${summary.focusedTests.join(', ') || 'none'}`,
     `${indent}changed functions: ${changedFunctions}`,
@@ -347,7 +393,21 @@ export function renderPrSummary(run: Pick<RunArtifact, 'changedFiles' | 'behavio
   });
 }
 
-export function renderExplainText(run: Pick<RunArtifact, 'runId' | 'changedFiles' | 'behaviorClaims' | 'governance' | 'verdict'>): string {
+function renderExecutionWitnessLines(summary: NonNullable<RunArtifact['executionWitnesses']>, options?: { bulletPrefix?: string }): string[] {
+  const bulletPrefix = options?.bulletPrefix ?? '- ';
+  const lines = [`Execution witnesses: auto-ran ${summary.autoRan.length}, skipped ${summary.skipped.length}`];
+  if (summary.autoRan.length > 0) {
+    lines.push('Auto-ran:');
+    lines.push(...summary.autoRan.map((item) => `${bulletPrefix}${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.receipt.status}; receipt=${item.receiptPath})`));
+  }
+  if (summary.skipped.length > 0) {
+    lines.push('Skipped:');
+    lines.push(...summary.skipped.map((item) => `${bulletPrefix}${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.reason.replace(/-/g, ' ')})`));
+  }
+  return lines;
+}
+
+export function renderExplainText(run: Pick<RunArtifact, 'runId' | 'changedFiles' | 'behaviorClaims' | 'governance' | 'verdict' | 'executionWitnesses'>): string {
   const lines: string[] = [];
   lines.push(`Run ${run.runId}`);
   lines.push(`Changed files: ${run.changedFiles.join(', ') || 'none detected'}`);
@@ -380,6 +440,10 @@ export function renderExplainText(run: Pick<RunArtifact, 'runId' | 'changedFiles
         lines.push(`  - ${evidence}`);
       }
     }
+  }
+  if (run.executionWitnesses) {
+    lines.push('');
+    lines.push(...renderExecutionWitnessLines(run.executionWitnesses));
   }
   return lines.join('\n');
 }
@@ -416,6 +480,11 @@ export function renderMarkdownReport(run: RunArtifact): string {
   lines.push('## Governance');
   for (const item of run.governance) {
     lines.push(`- [${item.level}] ${item.ruleId}: ${item.message}`);
+  }
+  if (run.executionWitnesses) {
+    lines.push('');
+    lines.push('## Execution witnesses');
+    lines.push(...renderExecutionWitnessLines(run.executionWitnesses, { bulletPrefix: '- ' }));
   }
   return withMarkdownMetadata(lines, {
     summary: 'Generated ts-quality report artifact with findings, invariants, and governance outcomes.',

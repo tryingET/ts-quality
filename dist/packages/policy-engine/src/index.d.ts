@@ -26,5 +26,5 @@ export declare function renderConciseInvariantProvenance(claim: BehaviorClaim, o
     maxSignals?: number;
 }): string[];
 export declare function renderPrSummary(run: Pick<RunArtifact, 'changedFiles' | 'behaviorClaims' | 'mutations' | 'complexity' | 'verdict'>): string;
-export declare function renderExplainText(run: Pick<RunArtifact, 'runId' | 'changedFiles' | 'behaviorClaims' | 'governance' | 'verdict'>): string;
+export declare function renderExplainText(run: Pick<RunArtifact, 'runId' | 'changedFiles' | 'behaviorClaims' | 'governance' | 'verdict' | 'executionWitnesses'>): string;
 export declare function renderMarkdownReport(run: RunArtifact): string;

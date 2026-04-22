@@ -222,6 +222,19 @@ function validateStringArray(name: string, value: unknown): string[] | undefined
   return value as string[];
 }
 
+function uniqueStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+}
+
 function validateFiniteNumber(name: string, value: unknown, options: { min?: number; max?: number } = {}): number | undefined {
   if (value === undefined) {
     return undefined;
@@ -292,6 +305,18 @@ function canonicalRepoPathArray(rootDir: string, values: string[], kind: string)
   return values.map((value) => canonicalRepoPath(rootDir, value, kind));
 }
 
+function canonicalRepoPattern(candidate: string, kind: string): string {
+  const normalized = candidate.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/\/$/, '');
+  if (!normalized || normalized === '..' || normalized.startsWith('../') || path.isAbsolute(normalized)) {
+    throw new Error(`${kind} must stay inside repository root: ${candidate}`);
+  }
+  return normalized;
+}
+
+function canonicalRepoPatternArray(values: string[], kind: string): string[] {
+  return uniqueStrings(values.map((value) => canonicalRepoPattern(value, kind)));
+}
+
 function canonicalizeConfigPaths(rootDir: string, config: Required<TsQualityConfig>): Required<TsQualityConfig> {
   const coverageLcovPath = config.coverage.lcovPath ?? 'coverage/lcov.info';
   const runtimeMirrorRoots = config.mutations.runtimeMirrorRoots ?? ['dist'];
@@ -314,7 +339,7 @@ function canonicalizeConfigPaths(rootDir: string, config: Required<TsQualityConf
     },
     mutations: {
       ...config.mutations,
-      runtimeMirrorRoots: canonicalRepoPathArray(rootDir, runtimeMirrorRoots, 'mutation runtime mirror root')
+      runtimeMirrorRoots: uniqueStrings(canonicalRepoPathArray(rootDir, runtimeMirrorRoots, 'mutation runtime mirror root'))
     },
     changeSet: {
       ...config.changeSet,
@@ -355,8 +380,44 @@ function loadOptionalRepoModule<T>(rootDir: string, repoPath: string, kind: stri
   return fs.existsSync(filePath) ? loadModuleFile<T[]>(filePath) : [];
 }
 
+function canonicalizeInvariantScenario(rootDir: string, invariantId: string, scenario: InvariantSpec['scenarios'][number], index: number): InvariantSpec['scenarios'][number] {
+  const executionWitnessPatterns = validateStringArray(`invariants[${invariantId}].scenarios[${index}].executionWitnessPatterns`, scenario.executionWitnessPatterns) ?? [];
+  const executionWitnessCommand = validateStringArray(`invariants[${invariantId}].scenarios[${index}].executionWitnessCommand`, scenario.executionWitnessCommand);
+  if (executionWitnessCommand && executionWitnessCommand.length === 0) {
+    throw new Error(`invariants[${invariantId}].scenarios[${index}].executionWitnessCommand must contain at least one executable argument`);
+  }
+  const executionWitnessTestFiles = validateStringArray(`invariants[${invariantId}].scenarios[${index}].executionWitnessTestFiles`, scenario.executionWitnessTestFiles);
+  const executionWitnessTimeoutMs = validateFiniteNumber(`invariants[${invariantId}].scenarios[${index}].executionWitnessTimeoutMs`, scenario.executionWitnessTimeoutMs, { min: 0 });
+  const executionWitnessOutput = typeof scenario.executionWitnessOutput === 'string'
+    ? canonicalRepoPath(rootDir, scenario.executionWitnessOutput, `invariants[${invariantId}].scenarios[${index}].executionWitnessOutput`)
+    : undefined;
+  if (executionWitnessCommand && !executionWitnessOutput) {
+    throw new Error(`invariants[${invariantId}].scenarios[${index}] requires executionWitnessOutput when executionWitnessCommand is set`);
+  }
+  const normalizedExecutionWitnessPatterns = executionWitnessPatterns.length > 0
+    ? canonicalRepoPatternArray(executionWitnessPatterns, `invariants[${invariantId}].scenarios[${index}].executionWitnessPatterns`)
+    : executionWitnessOutput ? [executionWitnessOutput] : [];
+  return {
+    ...scenario,
+    ...(normalizedExecutionWitnessPatterns.length > 0 ? { executionWitnessPatterns: normalizedExecutionWitnessPatterns } : {}),
+    ...(executionWitnessCommand ? { executionWitnessCommand } : {}),
+    ...(executionWitnessOutput ? { executionWitnessOutput } : {}),
+    ...(executionWitnessTestFiles ? { executionWitnessTestFiles: canonicalRepoPathArray(rootDir, executionWitnessTestFiles, `invariants[${invariantId}].scenarios[${index}].executionWitnessTestFiles`) } : {}),
+    ...(executionWitnessTimeoutMs !== undefined ? { executionWitnessTimeoutMs } : {})
+  };
+}
+
+function canonicalizeInvariantSpec(rootDir: string, invariant: InvariantSpec, index: number): InvariantSpec {
+  const invariantId = typeof invariant.id === 'string' && invariant.id.length > 0 ? invariant.id : String(index);
+  return {
+    ...invariant,
+    scenarios: invariant.scenarios.map((scenario, scenarioIndex) => canonicalizeInvariantScenario(rootDir, invariantId, scenario, scenarioIndex))
+  };
+}
+
 export function loadInvariants(rootDir: string, relativePath: string): InvariantSpec[] {
-  return loadOptionalRepoModule<InvariantSpec>(rootDir, relativePath, 'invariants path');
+  return loadOptionalRepoModule<InvariantSpec>(rootDir, relativePath, 'invariants path')
+    .map((invariant, index) => canonicalizeInvariantSpec(rootDir, invariant, index));
 }
 
 export function loadConstitution(rootDir: string, relativePath: string): ConstitutionRule[] {

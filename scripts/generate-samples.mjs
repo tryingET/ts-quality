@@ -164,6 +164,19 @@ function normalizeRunArtifact(run, target) {
       durationMs: 0,
       details: stableMutationDetail(result)
     })),
+    executionWitnesses: run.executionWitnesses
+      ? {
+          autoRan: run.executionWitnesses.autoRan.map((item) => ({
+            ...item,
+            receipt: {
+              ...item.receipt,
+              durationMs: 0,
+              details: normalizeTimingText(item.receipt.details)
+            }
+          })),
+          skipped: run.executionWitnesses.skipped.map((item) => ({ ...item }))
+        }
+      : run.executionWitnesses,
     verdict: {
       ...run.verdict,
       findings: run.verdict.findings.map((finding) => ({
@@ -176,11 +189,30 @@ function normalizeRunArtifact(run, target) {
 
 function writeNormalizedRunArtifacts(runDir, run) {
   evidenceModel.writeJson(path.join(runDir, 'run.json'), run);
-  evidenceModel.writeJson(path.join(runDir, 'report.json'), run);
+  evidenceModel.writeJson(path.join(runDir, 'report.json'), {
+    ...run,
+    decisionContext: {
+      projection: 'persisted',
+      drift: []
+    }
+  });
   evidenceModel.writeJson(path.join(runDir, 'verdict.json'), run.verdict);
   fs.writeFileSync(path.join(runDir, 'report.md'), `${policyEngine.renderMarkdownReport(run)}\n`, 'utf8');
   fs.writeFileSync(path.join(runDir, 'pr-summary.md'), `${policyEngine.renderPrSummary(run)}\n`, 'utf8');
   fs.writeFileSync(path.join(runDir, 'explain.txt'), `${policyEngine.renderExplainText(run)}\n`, 'utf8');
+  if (run.executionWitnesses) {
+    evidenceModel.writeJson(path.join(runDir, 'execution-witnesses.json'), run.executionWitnesses);
+    const lines = [`Execution witnesses: auto-ran ${run.executionWitnesses.autoRan.length}, skipped ${run.executionWitnesses.skipped.length}`];
+    if (run.executionWitnesses.autoRan.length > 0) {
+      lines.push('Ran:');
+      lines.push(...run.executionWitnesses.autoRan.map((item) => `- ${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.receipt.status}; receipt=${item.receiptPath})`));
+    }
+    if (run.executionWitnesses.skipped.length > 0) {
+      lines.push('Skipped:');
+      lines.push(...run.executionWitnesses.skipped.map((item) => `- ${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.reason.replace(/-/g, ' ')})`));
+    }
+    fs.writeFileSync(path.join(runDir, 'execution-witnesses.txt'), `${lines.join('\n')}\n`, 'utf8');
+  }
 }
 
 function writeStableAttestation(target, runDir) {
@@ -253,8 +285,12 @@ assertSampleAmendmentDecision(persistedAmendDecision);
 const outDir = path.join(root, 'examples', 'artifacts', SAMPLE_FIXTURE);
 fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
-for (const fileName of ['run.json', 'verdict.json', 'report.md', 'report.json', 'pr-summary.md', 'check-summary.txt', 'explain.txt', 'plan.txt', 'govern.txt']) {
-  fs.copyFileSync(path.join(runDir, fileName), path.join(outDir, fileName));
+for (const fileName of ['run.json', 'verdict.json', 'report.md', 'report.json', 'pr-summary.md', 'check-summary.txt', 'explain.txt', 'plan.txt', 'govern.txt', 'execution-witnesses.json', 'execution-witnesses.txt']) {
+  const sourcePath = path.join(runDir, fileName);
+  if (!fs.existsSync(sourcePath)) {
+    continue;
+  }
+  fs.copyFileSync(sourcePath, path.join(outDir, fileName));
 }
 const releaseDecisionPath = path.join(runDir, 'authorize.release-bot.merge.json');
 if (fs.existsSync(releaseDecisionPath)) {

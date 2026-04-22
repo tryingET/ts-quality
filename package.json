@@ -18,6 +18,8 @@
     "sample-artifacts": "node scripts/generate-samples.mjs",
     "smoke": "node scripts/smoke.mjs",
     "smoke:packaging": "node scripts/packaging-smoke.mjs",
+    "witness:refresh": "node dist/packages/ts-quality/src/cli.js witness refresh",
+    "check:with-witnesses": "npm run witness:refresh --silent && node dist/packages/ts-quality/src/cli.js check",
     "verify": "node scripts/verify.mjs",
     "verify:artifacts:check": "node scripts/verify.mjs --skip-install --check-artifacts",
     "verify:ci": "npm run verify:artifacts:check",
@@ -27,6 +29,7 @@
     "pack:ts-quality": "node scripts/pack-ts-quality.mjs"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "typescript": "^5.8.3"
   }
 }

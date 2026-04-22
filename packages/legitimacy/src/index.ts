@@ -434,7 +434,7 @@ export function authorizeChange(agentId: string, action: string, bundle: ChangeB
       agentId,
       action,
       outcome: 'deny',
-      reasons: ['No changed files were bound to this authorization request. Re-run check with explicit changes or allow it to default to discovered source files.'],
+      reasons: ['No changed files were bound to this authorization request. Re-run check with explicit changes.'],
       scope: bundle.changedFiles,
       missingProof: [],
       requiredApprovers: [],

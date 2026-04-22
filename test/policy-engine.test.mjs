@@ -63,6 +63,61 @@ test('evaluatePolicy blocks when the mutation baseline is not green', () => {
   assert.equal(result.verdict.bestNextAction, 'Fix the baseline test command so it passes before trusting mutation evidence.');
 });
 
+test('evaluatePolicy warns when invariant support is only lexical', () => {
+  const result = policy.evaluatePolicy({
+    nowIso: new Date().toISOString(),
+    policy: { maxChangedCrap: 10, minMutationScore: 0.8, minMergeConfidence: 70 },
+    changedComplexity: [{ crap: 5, changed: true, filePath: 'src/auth/token.js', symbol: 'function:x', span: { startLine: 1, endLine: 2 }, complexity: 3, coveragePct: 100, kind: 'complexity' }],
+    mutations: [
+      { kind: 'mutation-result', siteId: '1', filePath: 'src/auth/token.js', status: 'killed', durationMs: 10 }
+    ],
+    behaviorClaims: [{
+      id: 'auth.refresh.validity:claim',
+      invariantId: 'auth.refresh.validity',
+      description: 'Refresh token validity applies to src/auth/token.js',
+      status: 'lexically-supported',
+      evidence: ['Focused tests with deterministic lexical alignment: test/token.test.js'],
+      obligations: [],
+      evidenceSummary: {
+        invariantId: 'auth.refresh.validity',
+        evidenceSemantics: 'deterministic-lexical',
+        evidenceSemanticsSummary: 'deterministic lexical alignment over focused tests; not execution-backed behavioral proof',
+        impactedFiles: ['src/auth/token.js'],
+        focusedTests: ['test/token.test.js'],
+        changedFunctions: [],
+        changedFunctionsUnder80Coverage: 0,
+        maxChangedCrap: 3,
+        mutationSitesInScope: 1,
+        killedMutantsInScope: 1,
+        survivingMutantsInScope: 0,
+        scenarioResults: [{
+          scenarioId: 'expired-boundary',
+          description: 'exact expiry boundary denies access',
+          expected: 'deny',
+          keywordsMatched: true,
+          failurePathKeywordsMatched: true,
+          supported: true
+        }],
+        subSignals: [{
+          signalId: 'scenario-support',
+          label: 'Scenario lexical support',
+          level: 'clear',
+          mode: 'inferred',
+          modeReason: 'deterministic lexical scenario support came from heuristically aligned focused tests',
+          summary: '1/1 scenario(s) have deterministic lexical support',
+          facts: []
+        }]
+      }
+    }],
+    governance: [],
+    waivers: []
+  });
+  assert.equal(result.verdict.outcome, 'warn');
+  assert.equal(result.verdict.findings.some((item) => item.code === 'invariant-lexical-support'), true);
+  assert.equal(result.verdict.blockedBy.length, 0);
+  assert.match(result.verdict.bestNextAction ?? '', /execution-backed invariant witnesses/);
+});
+
 test('renderPrSummary projects concise invariant evidence provenance for the risky claim', () => {
   const summary = policy.renderPrSummary({
     changedFiles: ['src/auth/token.js'],
@@ -81,6 +136,8 @@ test('renderPrSummary projects concise invariant evidence provenance for the ris
         obligations: [],
         evidenceSummary: {
           invariantId: 'auth.refresh.validity',
+          evidenceSemantics: 'deterministic-lexical',
+          evidenceSemanticsSummary: 'deterministic lexical alignment over focused tests; not execution-backed behavioral proof',
           impactedFiles: ['src/auth/token.js'],
           focusedTests: ['test/token.test.js'],
           changedFunctions: [],
@@ -102,11 +159,11 @@ test('renderPrSummary projects concise invariant evidence provenance for the ris
             },
             {
               signalId: 'scenario-support',
-              label: 'Scenario support',
+              label: 'Scenario lexical support',
               level: 'missing',
               mode: 'missing',
-              modeReason: 'no scenario has deterministic support',
-              summary: '0/1 scenario(s) have deterministic support',
+              modeReason: 'no focused tests were available for deterministic lexical scenario evaluation',
+              summary: '0/1 scenario(s) have deterministic lexical support',
               facts: []
             },
             {
@@ -133,8 +190,9 @@ test('renderPrSummary projects concise invariant evidence provenance for the ris
     }
   });
 
+  assert.match(summary, /Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
   assert.match(summary, /Evidence provenance: explicit 1, inferred 1, missing 1/);
   assert.match(summary, /focused-test-alignment \[clear; mode=inferred\]: 1 focused test file aligned to invariant scope/);
-  assert.match(summary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(summary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.match(summary, /mutation-pressure \[warning; mode=explicit\]: 3 surviving mutants across 4 mutation sites/);
 });

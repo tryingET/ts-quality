@@ -53,8 +53,20 @@ export interface MutationRun {
   executionFingerprint: string;
 }
 
-const MUTATION_RUNTIME_VERSION = '4';
+interface RepoFileDigest {
+  filePath: string;
+  digest: string;
+}
+
+interface MutationWorkspace {
+  tempDir: string;
+  snapshot: Map<string, string>;
+}
+
+const MUTATION_RUNTIME_VERSION = '5';
 const SANITIZED_MUTATION_ENV_KEYS = ['NODE_TEST_CONTEXT'];
+const MUTATION_WORKSPACE_EXCLUDES = ['.git', 'node_modules', '.ts-quality'];
+const MUTATION_WORKSPACE_EXCLUDE_SET = new Set(MUTATION_WORKSPACE_EXCLUDES);
 
 function mutationCommandEnv(baseEnv: Record<string, string | undefined> = process.env): Record<string, string | undefined> {
   const env = { ...baseEnv };
@@ -188,17 +200,37 @@ function copyRecursive(sourceDir: string, destinationDir: string, exclude: Set<s
 }
 
 function hasSyntaxErrors(filePath: string, sourceText: string): boolean {
-  const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true);
-  return sourceFile.parseDiagnostics.length > 0;
+  const transpileResult = ts.transpileModule(sourceText, {
+    fileName: filePath,
+    compilerOptions: {
+      allowJs: true,
+      target: ts.ScriptTarget.ES2020,
+      module: ts.ModuleKind.CommonJS
+    },
+    reportDiagnostics: true
+  });
+  return (transpileResult.diagnostics ?? []).some((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error);
+}
+
+function stdioText(value: string | Buffer | undefined): string {
+  return typeof value === 'string' ? value : value ? value.toString('utf8') : '';
 }
 
 function commandDetails(result: ReturnType<typeof spawnSync>): string {
-  return `${(result.stdout ?? '').trim()}\n${(result.stderr ?? '').trim()}`.trim().slice(0, 280);
+  return `${stdioText(result.stdout).trim()}\n${stdioText(result.stderr).trim()}`.trim().slice(0, 280);
+}
+
+function requiredExecutable(command: string[]): string {
+  const executable = command[0];
+  if (!executable) {
+    throw new Error('Mutation test command must contain an executable argument.');
+  }
+  return executable;
 }
 
 function runCommandReceipt(cwd: string, testCommand: string[], timeoutMs: number): ExecutionReceipt {
   const started = Date.now();
-  const result = spawnSync(testCommand[0], testCommand.slice(1), {
+  const result = spawnSync(requiredExecutable(testCommand), testCommand.slice(1), {
     cwd,
     encoding: 'utf8',
     timeout: timeoutMs,
@@ -224,9 +256,26 @@ function runCommandReceipt(cwd: string, testCommand: string[], timeoutMs: number
   };
 }
 
-function buildExecutionFingerprint(repoRoot: string, testCommand: string[], runtimeMirrorRoots: string[]): string {
-  const repoFiles = listFiles(repoRoot, { excludeDirs: ['.git', 'node_modules', '.ts-quality'] })
+function canonicalRuntimeMirrorRoots(runtimeMirrorRoots: string[] | undefined): string[] {
+  const seen = new Set<string>();
+  const roots: string[] = [];
+  for (const candidate of runtimeMirrorRoots ?? ['dist']) {
+    const normalized = normalizePath(candidate);
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    roots.push(normalized);
+  }
+  return roots.length > 0 ? roots : ['dist'];
+}
+
+function repoFileDigests(repoRoot: string): RepoFileDigest[] {
+  return listFiles(repoRoot, { excludeDirs: MUTATION_WORKSPACE_EXCLUDES })
     .map((filePath) => ({ filePath, digest: fileDigest(path.join(repoRoot, filePath)) }));
+}
+
+function buildExecutionFingerprint(testCommand: string[], runtimeMirrorRoots: string[], repoFiles: RepoFileDigest[]): string {
   const effectiveEnv = mutationCommandEnv();
   return digestObject({
     mutationRuntimeVersion: MUTATION_RUNTIME_VERSION,
@@ -273,6 +322,114 @@ function hydrateTempRuntime(repoRoot: string, tempDir: string): void {
   linkSharedPath(path.join(repoRoot, 'node_modules'), path.join(tempDir, 'node_modules'));
 }
 
+function clearExcludedWorkspaceEntries(rootDir: string, currentDir: string): void {
+  for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+    const absolutePath = path.join(currentDir, entry.name);
+    const relativePath = normalizePath(path.relative(rootDir, absolutePath));
+    const excluded = MUTATION_WORKSPACE_EXCLUDE_SET.has(entry.name) || MUTATION_WORKSPACE_EXCLUDE_SET.has(relativePath);
+    if (excluded) {
+      if (entry.name === 'node_modules' || relativePath === 'node_modules') {
+        continue;
+      }
+      fs.rmSync(absolutePath, { recursive: true, force: true });
+      continue;
+    }
+    if (entry.isDirectory()) {
+      clearExcludedWorkspaceEntries(rootDir, absolutePath);
+    }
+  }
+}
+
+function walkMutationWorkspace(rootDir: string, currentDir: string, visit: (absolutePath: string, relativePath: string, kind: 'file' | 'symlink') => void): void {
+  for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+    const absolutePath = path.join(currentDir, entry.name);
+    const relativePath = normalizePath(path.relative(rootDir, absolutePath));
+    if (entry.isDirectory()) {
+      if (MUTATION_WORKSPACE_EXCLUDE_SET.has(entry.name) || MUTATION_WORKSPACE_EXCLUDE_SET.has(relativePath)) {
+        continue;
+      }
+      walkMutationWorkspace(rootDir, absolutePath, visit);
+      continue;
+    }
+    if (entry.isSymbolicLink() && (MUTATION_WORKSPACE_EXCLUDE_SET.has(entry.name) || MUTATION_WORKSPACE_EXCLUDE_SET.has(relativePath))) {
+      continue;
+    }
+    visit(absolutePath, relativePath, entry.isSymbolicLink() ? 'symlink' : 'file');
+  }
+}
+
+function restoreWorkspaceFile(repoRoot: string, tempDir: string, relativePath: string): void {
+  const sourcePath = path.join(repoRoot, relativePath);
+  const destinationPath = path.join(tempDir, relativePath);
+  ensureDir(path.dirname(destinationPath));
+  fs.rmSync(destinationPath, { recursive: true, force: true });
+  fs.copyFileSync(sourcePath, destinationPath);
+}
+
+function pruneEmptyDirectories(rootDir: string, currentDir: string): boolean {
+  let empty = true;
+  for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+    const absolutePath = path.join(currentDir, entry.name);
+    const relativePath = normalizePath(path.relative(rootDir, absolutePath));
+    if (entry.isDirectory()) {
+      if (MUTATION_WORKSPACE_EXCLUDE_SET.has(entry.name) || MUTATION_WORKSPACE_EXCLUDE_SET.has(relativePath)) {
+        empty = false;
+        continue;
+      }
+      if (pruneEmptyDirectories(rootDir, absolutePath)) {
+        fs.rmdirSync(absolutePath);
+        continue;
+      }
+      empty = false;
+      continue;
+    }
+    empty = false;
+  }
+  return currentDir !== rootDir && empty;
+}
+
+function prepareMutationWorkspace(repoRoot: string, repoFiles: RepoFileDigest[]): MutationWorkspace {
+  const tempRoot = path.join(repoRoot, '.ts-quality', 'tmp-mutants');
+  ensureDir(tempRoot);
+  const tempDir = fs.mkdtempSync(path.join(tempRoot, 'mutant-'));
+  copyRecursive(repoRoot, tempDir, MUTATION_WORKSPACE_EXCLUDE_SET);
+  hydrateTempRuntime(repoRoot, tempDir);
+  return {
+    tempDir,
+    snapshot: new Map(repoFiles.map(({ filePath, digest }) => [normalizePath(filePath), digest]))
+  };
+}
+
+function resetMutationWorkspace(repoRoot: string, workspace: MutationWorkspace): void {
+  clearExcludedWorkspaceEntries(workspace.tempDir, workspace.tempDir);
+  const seen = new Set<string>();
+  walkMutationWorkspace(workspace.tempDir, workspace.tempDir, (absolutePath, relativePath, kind) => {
+    const normalizedPath = normalizePath(relativePath);
+    seen.add(normalizedPath);
+    const expectedDigest = workspace.snapshot.get(normalizedPath);
+    if (!expectedDigest) {
+      fs.rmSync(absolutePath, { recursive: true, force: true });
+      return;
+    }
+    if (kind === 'symlink' || fileDigest(absolutePath) !== expectedDigest) {
+      restoreWorkspaceFile(repoRoot, workspace.tempDir, normalizedPath);
+    }
+  });
+  for (const relativePath of workspace.snapshot.keys()) {
+    if (!seen.has(relativePath)) {
+      restoreWorkspaceFile(repoRoot, workspace.tempDir, relativePath);
+    }
+  }
+  pruneEmptyDirectories(workspace.tempDir, workspace.tempDir);
+}
+
+function disposeMutationWorkspace(workspace: MutationWorkspace | undefined): void {
+  if (!workspace) {
+    return;
+  }
+  fs.rmSync(workspace.tempDir, { recursive: true, force: true });
+}
+
 function transpileRuntimeMirrorSource(repoRoot: string, site: MutationSite, mutatedSource: string): string {
   const compilerOptions = compilerOptionsForRepoFile(repoRoot, site.filePath) ?? {};
   const transpiled = ts.transpileModule(mutatedSource, {
@@ -307,7 +464,7 @@ function writeRuntimeMirrors(repoRoot: string, tempDir: string, site: MutationSi
   }
 }
 
-function runSingleMutation(repoRoot: string, site: MutationSite, mutatedSource: string, testCommand: string[], timeoutMs: number, runtimeMirrorRoots: string[]): MutationResult {
+function runSingleMutation(repoRoot: string, workspace: MutationWorkspace, site: MutationSite, mutatedSource: string, testCommand: string[], timeoutMs: number, runtimeMirrorRoots: string[]): MutationResult {
   if (hasSyntaxErrors(site.filePath, mutatedSource)) {
     return {
       kind: 'mutation-result',
@@ -319,17 +476,12 @@ function runSingleMutation(repoRoot: string, site: MutationSite, mutatedSource: 
     };
   }
 
-  const tempRoot = path.join(repoRoot, '.ts-quality', 'tmp-mutants');
-  ensureDir(tempRoot);
-  const tempDir = fs.mkdtempSync(path.join(tempRoot, 'mutant-'));
   try {
-    copyRecursive(repoRoot, tempDir, new Set(['.git', 'node_modules', '.ts-quality']));
-    hydrateTempRuntime(repoRoot, tempDir);
-    const targetPath = path.join(tempDir, site.filePath);
+    const targetPath = path.join(workspace.tempDir, site.filePath);
     ensureDir(path.dirname(targetPath));
     fs.writeFileSync(targetPath, mutatedSource, 'utf8');
-    writeRuntimeMirrors(repoRoot, tempDir, site, mutatedSource, runtimeMirrorRoots);
-    const receipt = runCommandReceipt(tempDir, testCommand, timeoutMs);
+    writeRuntimeMirrors(repoRoot, workspace.tempDir, site, mutatedSource, runtimeMirrorRoots);
+    const receipt = runCommandReceipt(workspace.tempDir, testCommand, timeoutMs);
     return {
       kind: 'mutation-result',
       siteId: site.id,
@@ -339,7 +491,7 @@ function runSingleMutation(repoRoot: string, site: MutationSite, mutatedSource: 
       details: receipt.status === 'timeout' ? `test command timed out: ${receipt.details}` : receipt.details
     };
   } finally {
-    fs.rmSync(tempDir, { recursive: true, force: true });
+    resetMutationWorkspace(repoRoot, workspace);
   }
 }
 
@@ -355,9 +507,10 @@ export function runMutations(options: MutationOptions): MutationRun {
   });
   const limitedSites = typeof options.maxSites === 'number' ? sites.slice(0, options.maxSites) : sites;
   const timeoutMs = options.timeoutMs ?? 15_000;
-  const runtimeMirrorRoots = options.runtimeMirrorRoots ?? ['dist'];
-  const executionFingerprint = buildExecutionFingerprint(options.repoRoot, options.testCommand, runtimeMirrorRoots);
+  const runtimeMirrorRoots = canonicalRuntimeMirrorRoots(options.runtimeMirrorRoots);
   const baseline = runCommandReceipt(options.repoRoot, options.testCommand, timeoutMs);
+  const repoFiles = repoFileDigests(options.repoRoot);
+  const executionFingerprint = buildExecutionFingerprint(options.testCommand, runtimeMirrorRoots, repoFiles);
   if (baseline.status !== 'pass') {
     const results = limitedSites.map((site) => ({
       kind: 'mutation-result' as const,
@@ -380,19 +533,25 @@ export function runMutations(options: MutationOptions): MutationRun {
 
   const manifest = loadManifest(options.manifestPath);
   const results: MutationResult[] = [];
+  let workspace: MutationWorkspace | undefined;
 
-  for (const site of limitedSites) {
-    const key = manifestKey(options.repoRoot, site, executionFingerprint);
-    const cached = manifest.entries[key];
-    if (cached) {
-      results.push(cached);
-      continue;
+  try {
+    for (const site of limitedSites) {
+      const key = manifestKey(options.repoRoot, site, executionFingerprint);
+      const cached = manifest.entries[key];
+      if (cached) {
+        results.push(cached);
+        continue;
+      }
+      workspace ??= prepareMutationWorkspace(options.repoRoot, repoFiles);
+      const sourceText = fs.readFileSync(path.join(options.repoRoot, site.filePath), 'utf8');
+      const mutatedSource = applyMutation(sourceText, site);
+      const result = runSingleMutation(options.repoRoot, workspace, site, mutatedSource, options.testCommand, timeoutMs, runtimeMirrorRoots);
+      results.push(result);
+      manifest.entries[key] = result;
     }
-    const sourceText = fs.readFileSync(path.join(options.repoRoot, site.filePath), 'utf8');
-    const mutatedSource = applyMutation(sourceText, site);
-    const result = runSingleMutation(options.repoRoot, site, mutatedSource, options.testCommand, timeoutMs, runtimeMirrorRoots);
-    results.push(result);
-    manifest.entries[key] = result;
+  } finally {
+    disposeMutationWorkspace(workspace);
   }
 
   saveManifest(options.manifestPath, manifest);

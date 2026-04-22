@@ -188,6 +188,18 @@ function validateStringArray(name, value) {
     }
     return value;
 }
+function uniqueStrings(values) {
+    const seen = new Set();
+    const result = [];
+    for (const value of values) {
+        if (seen.has(value)) {
+            continue;
+        }
+        seen.add(value);
+        result.push(value);
+    }
+    return result;
+}
 function validateFiniteNumber(name, value, options = {}) {
     if (value === undefined) {
         return undefined;
@@ -254,6 +266,16 @@ function canonicalRepoPath(rootDir, candidate, kind) {
 function canonicalRepoPathArray(rootDir, values, kind) {
     return values.map((value) => canonicalRepoPath(rootDir, value, kind));
 }
+function canonicalRepoPattern(candidate, kind) {
+    const normalized = candidate.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/\/$/, '');
+    if (!normalized || normalized === '..' || normalized.startsWith('../') || path_1.default.isAbsolute(normalized)) {
+        throw new Error(`${kind} must stay inside repository root: ${candidate}`);
+    }
+    return normalized;
+}
+function canonicalRepoPatternArray(values, kind) {
+    return uniqueStrings(values.map((value) => canonicalRepoPattern(value, kind)));
+}
 function canonicalizeConfigPaths(rootDir, config) {
     const coverageLcovPath = config.coverage.lcovPath ?? 'coverage/lcov.info';
     const runtimeMirrorRoots = config.mutations.runtimeMirrorRoots ?? ['dist'];
@@ -275,7 +297,7 @@ function canonicalizeConfigPaths(rootDir, config) {
         },
         mutations: {
             ...config.mutations,
-            runtimeMirrorRoots: canonicalRepoPathArray(rootDir, runtimeMirrorRoots, 'mutation runtime mirror root')
+            runtimeMirrorRoots: uniqueStrings(canonicalRepoPathArray(rootDir, runtimeMirrorRoots, 'mutation runtime mirror root'))
         },
         changeSet: {
             ...config.changeSet,
@@ -312,8 +334,42 @@ function loadOptionalRepoModule(rootDir, repoPath, kind) {
     const filePath = (0, index_1.resolveRepoLocalPath)(rootDir, repoPath, { allowMissing: true, kind }).absolutePath;
     return fs_1.default.existsSync(filePath) ? loadModuleFile(filePath) : [];
 }
+function canonicalizeInvariantScenario(rootDir, invariantId, scenario, index) {
+    const executionWitnessPatterns = validateStringArray(`invariants[${invariantId}].scenarios[${index}].executionWitnessPatterns`, scenario.executionWitnessPatterns) ?? [];
+    const executionWitnessCommand = validateStringArray(`invariants[${invariantId}].scenarios[${index}].executionWitnessCommand`, scenario.executionWitnessCommand);
+    if (executionWitnessCommand && executionWitnessCommand.length === 0) {
+        throw new Error(`invariants[${invariantId}].scenarios[${index}].executionWitnessCommand must contain at least one executable argument`);
+    }
+    const executionWitnessTestFiles = validateStringArray(`invariants[${invariantId}].scenarios[${index}].executionWitnessTestFiles`, scenario.executionWitnessTestFiles);
+    const executionWitnessTimeoutMs = validateFiniteNumber(`invariants[${invariantId}].scenarios[${index}].executionWitnessTimeoutMs`, scenario.executionWitnessTimeoutMs, { min: 0 });
+    const executionWitnessOutput = typeof scenario.executionWitnessOutput === 'string'
+        ? canonicalRepoPath(rootDir, scenario.executionWitnessOutput, `invariants[${invariantId}].scenarios[${index}].executionWitnessOutput`)
+        : undefined;
+    if (executionWitnessCommand && !executionWitnessOutput) {
+        throw new Error(`invariants[${invariantId}].scenarios[${index}] requires executionWitnessOutput when executionWitnessCommand is set`);
+    }
+    const normalizedExecutionWitnessPatterns = executionWitnessPatterns.length > 0
+        ? canonicalRepoPatternArray(executionWitnessPatterns, `invariants[${invariantId}].scenarios[${index}].executionWitnessPatterns`)
+        : executionWitnessOutput ? [executionWitnessOutput] : [];
+    return {
+        ...scenario,
+        ...(normalizedExecutionWitnessPatterns.length > 0 ? { executionWitnessPatterns: normalizedExecutionWitnessPatterns } : {}),
+        ...(executionWitnessCommand ? { executionWitnessCommand } : {}),
+        ...(executionWitnessOutput ? { executionWitnessOutput } : {}),
+        ...(executionWitnessTestFiles ? { executionWitnessTestFiles: canonicalRepoPathArray(rootDir, executionWitnessTestFiles, `invariants[${invariantId}].scenarios[${index}].executionWitnessTestFiles`) } : {}),
+        ...(executionWitnessTimeoutMs !== undefined ? { executionWitnessTimeoutMs } : {})
+    };
+}
+function canonicalizeInvariantSpec(rootDir, invariant, index) {
+    const invariantId = typeof invariant.id === 'string' && invariant.id.length > 0 ? invariant.id : String(index);
+    return {
+        ...invariant,
+        scenarios: invariant.scenarios.map((scenario, scenarioIndex) => canonicalizeInvariantScenario(rootDir, invariantId, scenario, scenarioIndex))
+    };
+}
 function loadInvariants(rootDir, relativePath) {
-    return loadOptionalRepoModule(rootDir, relativePath, 'invariants path');
+    return loadOptionalRepoModule(rootDir, relativePath, 'invariants path')
+        .map((invariant, index) => canonicalizeInvariantSpec(rootDir, invariant, index));
 }
 function loadConstitution(rootDir, relativePath) {
     return loadOptionalRepoModule(rootDir, relativePath, 'constitution path');

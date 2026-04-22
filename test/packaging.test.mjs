@@ -54,6 +54,12 @@ const expectedStageRuntimeFilesByPackage = {
     'src/index.js.map'
   ],
   governance: [
+    'src/import-collector.d.ts',
+    'src/import-collector.js',
+    'src/import-collector.js.map',
+    'src/import-provenance.d.ts',
+    'src/import-provenance.js',
+    'src/import-provenance.js.map',
     'src/index.d.ts',
     'src/index.js',
     'src/index.js.map'
@@ -149,6 +155,10 @@ const expectedInstalledReviewRunArtifacts = [
 ];
 
 const expectedInstalledCliProofs = {
+  checkRequiresScope: {
+    outcome: 'fail',
+    stderrIncludes: 'Changed scope is required.'
+  },
   keygen: {
     runId: 'packaging-installed-keygen-run',
     outDir: '.ts-quality/generated-keys',
@@ -160,6 +170,21 @@ const expectedInstalledCliProofs = {
     ],
     attestationPath: '.ts-quality/attestations/generated-key.json',
     verifiedIssuer: 'ci.generated'
+  }
+};
+
+const expectedInstalledFixtureBreadth = {
+  monorepoBoundary: {
+    fixture: 'mini-monorepo',
+    runId: 'packaging-installed-mini-monorepo-run',
+    changedFiles: ['packages/api/src/consumer.js'],
+    outcome: 'fail',
+    packageName: 'api-pkg',
+    governanceRuleId: 'api-cannot-import-identity',
+    governIncludes: [
+      'api-cannot-import-identity',
+      'API code may not import identity state directly.'
+    ]
   }
 };
 
@@ -192,10 +217,20 @@ const expectedInstalledReviewSurfaceProofs = {
       'Current run: packaging-installed-review-trend-run',
       'Previous run: packaging-installed-review-run',
       'Invariant evidence at risk: auth.refresh.validity',
+      'Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof',
       'Evidence provenance: explicit 3, inferred 1, missing 1',
-      'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support'
+      'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic lexical support'
     ],
     omitsObligation: true
+  },
+  runSelection: {
+    latestReportRunId: 'packaging-installed-review-trend-run',
+    selectedReportRunId: 'packaging-installed-review-run',
+    latestAuthorizeOutcome: 'deny',
+    latestAuthorizeRunId: 'packaging-installed-review-trend-run',
+    selectedAuthorizeOutcome: 'approve',
+    selectedAuthorizeRunId: 'packaging-installed-review-run',
+    selectedAuthorizeOverride: 'maintainer'
   },
   materializedConfig: {
     configPath: '.ts-quality/materialized/ts-quality.config.json',
@@ -311,6 +346,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.equal(summary.cli.helpIncludes, 'ts-quality commands:');
   assert.deepEqual(summary.cli.initCreated, expectedInitFiles);
   assert.equal(summary.cli.materializedConfig, '.ts-quality/materialized/ts-quality.config.json');
+  assert.deepEqual(summary.cli.checkRequiresScope, expectedInstalledCliProofs.checkRequiresScope);
   assert.deepEqual(summary.cli.keygen, expectedInstalledCliProofs.keygen);
   assert.deepEqual(summary.api.exportTypes, {
     initProject: 'function',
@@ -324,6 +360,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
     passed: true,
     importStatement: "import { initProject, materializeProject } from 'ts-quality';"
   });
+  assert.deepEqual(summary.fixtureBreadth, expectedInstalledFixtureBreadth);
   assert.equal(summary.reviewFlow.fixture, 'governed-app');
   assert.equal(summary.reviewFlow.runId, 'packaging-installed-review-run');
   assert.deepEqual(summary.reviewFlow.runArtifacts, expectedInstalledReviewRunArtifacts);
@@ -331,6 +368,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.reviewFlow.explain, expectedInstalledReviewSurfaceProofs.explain);
   assert.deepEqual(summary.reviewFlow.plan, expectedInstalledReviewSurfaceProofs.plan);
   assert.deepEqual(summary.reviewFlow.trend, expectedInstalledReviewSurfaceProofs.trend);
+  assert.deepEqual(summary.reviewFlow.runSelection, expectedInstalledReviewSurfaceProofs.runSelection);
   assert.deepEqual(summary.reviewFlow.materializedConfig, expectedInstalledReviewSurfaceProofs.materializedConfig);
   assert.deepEqual(summary.reviewFlow.driftDetection, expectedInstalledReviewSurfaceProofs.driftDetection);
   assert.equal(summary.reviewFlow.governIncludes, 'auth-risk-budget');

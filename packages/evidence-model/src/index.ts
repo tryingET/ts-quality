@@ -102,7 +102,23 @@ export interface InvariantScenario {
   description: string;
   keywords: string[];
   failurePathKeywords?: string[] | undefined;
+  executionWitnessPatterns?: string[] | undefined;
+  executionWitnessCommand?: string[] | undefined;
+  executionWitnessOutput?: string | undefined;
+  executionWitnessTestFiles?: string[] | undefined;
+  executionWitnessTimeoutMs?: number | undefined;
   expected: string;
+}
+
+export interface ExecutionWitnessRecord {
+  version: '1';
+  kind: 'execution-witness';
+  invariantId: string;
+  scenarioId: string;
+  status: 'pass' | 'fail';
+  sourceFiles: string[];
+  testFiles?: string[] | undefined;
+  observedAt?: string | undefined;
 }
 
 export interface InvariantChangedFunctionSummary {
@@ -118,12 +134,18 @@ export interface InvariantScenarioResult {
   expected: string;
   keywordsMatched: boolean;
   failurePathKeywordsMatched: boolean;
+  assertionMatched?: boolean | undefined;
   supported: boolean;
+  supportGap?: 'split-focused-test-cases' | 'missing-assertion' | undefined;
+  supportKind?: 'execution-witness' | 'deterministic-lexical' | 'missing' | undefined;
 }
+
+export type InvariantEvidenceSemantics = 'deterministic-lexical' | 'execution-backed';
 
 export type InvariantEvidenceSignalId =
   | 'focused-test-alignment'
   | 'scenario-support'
+  | 'execution-witness'
   | 'coverage-pressure'
   | 'mutation-pressure'
   | 'changed-function-pressure';
@@ -143,8 +165,11 @@ export interface InvariantEvidenceSubSignal {
 
 export interface InvariantEvidenceSummary {
   invariantId: string;
+  evidenceSemantics?: InvariantEvidenceSemantics | undefined;
+  evidenceSemanticsSummary?: string | undefined;
   impactedFiles: string[];
   focusedTests: string[];
+  executionWitnessFiles?: string[] | undefined;
   changedFunctions: InvariantChangedFunctionSummary[];
   changedFunctionsUnder80Coverage: number;
   maxChangedCrap: number;
@@ -159,7 +184,7 @@ export interface BehaviorClaim {
   id: string;
   invariantId: string;
   description: string;
-  status: 'supported' | 'unsupported' | 'at-risk';
+  status: 'supported' | 'lexically-supported' | 'unsupported' | 'at-risk';
   evidence: string[];
   obligations: TestObligation[];
   evidenceSummary?: InvariantEvidenceSummary | undefined;
@@ -343,6 +368,8 @@ export interface AuthorizationEvidenceArtifactPaths {
 export interface AuthorizationRiskyInvariantSummary {
   invariantId: string;
   description: string;
+  evidenceSemantics?: InvariantEvidenceSemantics | undefined;
+  evidenceSemanticsSummary?: string | undefined;
   evidenceProvenance: {
     explicit: number;
     inferred: number;
@@ -438,6 +465,45 @@ export interface ExecutionReceipt {
   details: string;
 }
 
+export interface ExecutionWitnessReceiptArtifact {
+  version: '1';
+  kind: 'execution-witness-receipt';
+  invariantId: string;
+  scenarioId: string;
+  witnessPath: string;
+  command: string[];
+  sourceFiles: string[];
+  testFiles?: string[] | undefined;
+  observedAt?: string | undefined;
+  receipt: ExecutionReceipt;
+}
+
+export interface ExecutionWitnessRunRecord {
+  invariantId: string;
+  scenarioId: string;
+  outputPath: string;
+  receiptPath: string;
+  command: string[];
+  sourceFiles: string[];
+  testFiles?: string[] | undefined;
+  observedAt?: string | undefined;
+  receipt: ExecutionReceipt;
+}
+
+export interface ExecutionWitnessSkippedRecord {
+  invariantId: string;
+  scenarioId: string;
+  outputPath: string;
+  command: string[];
+  testFiles?: string[] | undefined;
+  reason: 'invariant-not-impacted';
+}
+
+export interface ExecutionWitnessRunSummary {
+  autoRan: ExecutionWitnessRunRecord[];
+  skipped: ExecutionWitnessSkippedRecord[];
+}
+
 export interface AnalysisContext {
   runId: string;
   createdAt: string;
@@ -493,6 +559,7 @@ export interface RunArtifact {
   changedRegions: ChangedRegion[];
   analysis?: AnalysisContext | undefined;
   controlPlane?: ControlPlaneSnapshot | undefined;
+  executionWitnesses?: ExecutionWitnessRunSummary | undefined;
   files: FileEntity[];
   symbols: SymbolEntity[];
   coverage: CoverageEvidence[];

@@ -30,11 +30,13 @@ const expectedMaterializedFiles = [
 ];
 
 const reviewFixtureName = 'governed-app';
+const monorepoFixtureName = 'mini-monorepo';
 const reviewRunId = 'packaging-installed-review-run';
 const reviewTrendRunId = 'packaging-installed-review-trend-run';
 const reviewMaterializedSourceRunId = 'packaging-installed-materialized-source-run';
 const reviewMaterializedRunId = 'packaging-installed-materialized-config-run';
 const reviewDriftRunId = 'packaging-installed-drift-run';
+const monorepoRunId = 'packaging-installed-mini-monorepo-run';
 const keygenRunId = 'packaging-installed-keygen-run';
 const keygenOutDir = '.ts-quality/generated-keys';
 const keygenKeyId = 'packaging-generated';
@@ -69,12 +71,22 @@ function resetRuntimeState(rootDir) {
   }
 }
 
-function prepareInstalledReviewProject(baseDir, projectDirName = 'review-project') {
-  const source = path.join(root, 'fixtures', reviewFixtureName);
+function prepareInstalledFixtureProject(baseDir, fixtureName, projectDirName) {
+  const source = path.join(root, 'fixtures', fixtureName);
   const target = path.join(baseDir, projectDirName);
   fs.rmSync(target, { recursive: true, force: true });
   fs.cpSync(source, target, { recursive: true });
   resetRuntimeState(target);
+  return target;
+}
+
+function prepareInstalledReviewProject(baseDir, projectDirName = 'review-project') {
+  return prepareInstalledFixtureProject(baseDir, reviewFixtureName, projectDirName);
+}
+
+function prepareInstalledMonorepoProject(baseDir, projectDirName = 'monorepo-project') {
+  const target = prepareInstalledFixtureProject(baseDir, monorepoFixtureName, projectDirName);
+  fs.writeFileSync(path.join(target, 'packages', 'api', 'package.json'), `${JSON.stringify({ name: 'api-pkg', private: true }, null, 2)}\n`, 'utf8');
   return target;
 }
 
@@ -253,6 +265,14 @@ export function runPackagingSmoke() {
     }
     ensureRelativeFiles(cliProjectRoot, expectedMaterializedFiles, 'CLI materialize');
 
+    const cliCheckWithoutScope = spawnSync(installedCliBinPath, ['check', '--root', cliProjectRoot], { cwd: installRoot, encoding: 'utf8' });
+    if (cliCheckWithoutScope.status === 0) {
+      throw new Error(`Expected init-generated installed project check to fail closed without changed scope, got:\n${cliCheckWithoutScope.stdout}`);
+    }
+    if (!(cliCheckWithoutScope.stderr ?? '').includes('Changed scope is required.')) {
+      throw new Error(`Expected init-generated installed project check to explain missing changed scope, got:\n${cliCheckWithoutScope.stderr}`);
+    }
+
     const keygenProjectRoot = prepareInstalledReviewProject(installRoot, 'keygen-project');
     run(installedCliBinPath, ['check', '--root', keygenProjectRoot, '--run-id', keygenRunId], installRoot);
     const keygenPrivateKeyPath = path.join(keygenProjectRoot, keygenOutDir, `${keygenKeyId}.pem`);
@@ -428,14 +448,32 @@ export function runPackagingSmoke() {
       `Current run: ${reviewTrendRunId}`,
       `Previous run: ${reviewRunId}`,
       'Invariant evidence at risk: auth.refresh.validity',
+      'Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof',
       'Evidence provenance: explicit 3, inferred 1, missing 1',
-      'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support'
+      'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic lexical support'
     ]);
     if (!/Merge confidence delta: -?\d+/u.test(trendText)) {
       throw new Error(`Installed trend output is missing a merge confidence delta:\n${trendText}`);
     }
     if (/^Obligation:/mu.test(trendText)) {
       throw new Error(`Installed trend output should not include obligations:\n${trendText}`);
+    }
+
+    const latestReportJson = JSON.parse(run(installedCliBinPath, ['report', '--root', reviewProjectRoot, '--json'], installRoot));
+    const selectedReportJson = JSON.parse(run(installedCliBinPath, ['report', '--root', reviewProjectRoot, '--json', '--run-id', reviewRunId], installRoot));
+    if (latestReportJson.runId !== reviewTrendRunId) {
+      throw new Error(`Expected latest installed report to use ${reviewTrendRunId}, got ${latestReportJson.runId}`);
+    }
+    if (selectedReportJson.runId !== reviewRunId) {
+      throw new Error(`Expected explicit installed report to use ${reviewRunId}, got ${selectedReportJson.runId}`);
+    }
+    const latestAuthorizeAfterTrendDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'maintainer'], installRoot));
+    if (latestAuthorizeAfterTrendDecision.outcome !== 'deny') {
+      throw new Error(`Expected latest installed authorize after trend run to deny without a matching override, got:\n${JSON.stringify(latestAuthorizeAfterTrendDecision, null, 2)}`);
+    }
+    const selectedAuthorizeDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'maintainer', '--run-id', reviewRunId], installRoot));
+    if (selectedAuthorizeDecision.outcome !== 'approve') {
+      throw new Error(`Expected explicit installed authorize for ${reviewRunId} to approve, got:\n${JSON.stringify(selectedAuthorizeDecision, null, 2)}`);
     }
 
     const materializedReviewProjectRoot = prepareInstalledReviewProject(installRoot, 'materialized-review-project');
@@ -509,6 +547,28 @@ export function runPackagingSmoke() {
     ensureFile(path.join(driftReviewProjectRoot, '.ts-quality', 'runs', reviewDriftRunId, 'bundle.maintainer.merge.json'), 'Installed drift authorization bundle');
     ensureFile(path.join(driftReviewProjectRoot, '.ts-quality', 'runs', reviewDriftRunId, 'authorize.maintainer.merge.json'), 'Installed drift authorization decision');
 
+    const monorepoProjectRoot = prepareInstalledMonorepoProject(installRoot);
+    run(installedCliBinPath, ['check', '--root', monorepoProjectRoot, '--run-id', monorepoRunId], installRoot);
+    const monorepoRun = readJson(path.join(monorepoProjectRoot, '.ts-quality', 'runs', monorepoRunId, 'run.json'));
+    const monorepoApiFile = monorepoRun.files.find((file) => file.filePath === 'packages/api/src/consumer.js');
+    if (monorepoRun.verdict?.outcome !== 'fail') {
+      throw new Error(`Expected installed monorepo fixture to fail due to the boundary violation, got:\n${JSON.stringify(monorepoRun.verdict, null, 2)}`);
+    }
+    if (JSON.stringify(monorepoRun.changedFiles) !== JSON.stringify(['packages/api/src/consumer.js'])) {
+      throw new Error(`Installed monorepo changed scope drifted. expected ['packages/api/src/consumer.js'], got ${JSON.stringify(monorepoRun.changedFiles)}`);
+    }
+    if (monorepoApiFile?.packageName !== 'api-pkg') {
+      throw new Error(`Expected installed monorepo api file to resolve to nested package api-pkg, got ${monorepoApiFile?.packageName}`);
+    }
+    if (!(monorepoRun.governance ?? []).some((finding) => finding.ruleId === 'api-cannot-import-identity')) {
+      throw new Error(`Expected installed monorepo fixture to surface api-cannot-import-identity, got:\n${JSON.stringify(monorepoRun.governance, null, 2)}`);
+    }
+    const monorepoGovernText = run(installedCliBinPath, ['govern', '--root', monorepoProjectRoot, '--run-id', monorepoRunId], installRoot);
+    assertTextIncludes(monorepoGovernText, 'monorepo govern', [
+      'api-cannot-import-identity',
+      'API code may not import identity state directly.'
+    ]);
+
     return {
       packageName: packSummary.packageName,
       version: packSummary.version,
@@ -524,6 +584,10 @@ export function runPackagingSmoke() {
         helpIncludes: 'ts-quality commands:',
         initCreated: [...expectedInitFiles],
         materializedConfig: '.ts-quality/materialized/ts-quality.config.json',
+        checkRequiresScope: {
+          outcome: 'fail',
+          stderrIncludes: 'Changed scope is required.'
+        },
         keygen: {
           runId: keygenRunId,
           outDir: keygenOutDir,
@@ -547,6 +611,20 @@ export function runPackagingSmoke() {
         compiler: 'tsc',
         passed: true,
         importStatement: "import { initProject, materializeProject } from 'ts-quality';"
+      },
+      fixtureBreadth: {
+        monorepoBoundary: {
+          fixture: monorepoFixtureName,
+          runId: monorepoRunId,
+          changedFiles: monorepoRun.changedFiles,
+          outcome: monorepoRun.verdict?.outcome,
+          packageName: monorepoApiFile?.packageName,
+          governanceRuleId: 'api-cannot-import-identity',
+          governIncludes: [
+            'api-cannot-import-identity',
+            'API code may not import identity state directly.'
+          ]
+        }
       },
       reviewFlow: {
         fixture: reviewFixtureName,
@@ -580,10 +658,20 @@ export function runPackagingSmoke() {
             `Current run: ${reviewTrendRunId}`,
             `Previous run: ${reviewRunId}`,
             'Invariant evidence at risk: auth.refresh.validity',
+            'Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof',
             'Evidence provenance: explicit 3, inferred 1, missing 1',
-            'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support'
+            'scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic lexical support'
           ],
           omitsObligation: true
+        },
+        runSelection: {
+          latestReportRunId: latestReportJson.runId,
+          selectedReportRunId: selectedReportJson.runId,
+          latestAuthorizeOutcome: latestAuthorizeAfterTrendDecision.outcome,
+          latestAuthorizeRunId: latestAuthorizeAfterTrendDecision.evidenceContext?.runId,
+          selectedAuthorizeOutcome: selectedAuthorizeDecision.outcome,
+          selectedAuthorizeRunId: selectedAuthorizeDecision.evidenceContext?.runId,
+          selectedAuthorizeOverride: selectedAuthorizeDecision.overrideUsed
         },
         materializedConfig: {
           configPath: materializedConfigPath,

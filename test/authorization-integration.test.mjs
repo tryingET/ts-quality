@@ -27,6 +27,8 @@ test('authorize projects run-bound governance and invariant evidence into the de
     records: []
   });
   assert.equal(denied.evidenceContext.riskyInvariant.invariantId, 'auth.refresh.validity');
+  assert.equal(denied.evidenceContext.riskyInvariant.evidenceSemantics, 'deterministic-lexical');
+  assert.match(denied.evidenceContext.riskyInvariant.evidenceSemanticsSummary, /not execution-backed behavioral proof/);
   assert.deepEqual(denied.evidenceContext.riskyInvariant.evidenceProvenance, { explicit: 3, inferred: 1, missing: 1 });
   assert.equal(denied.evidenceContext.riskyInvariant.signals.some((item) => item.signalId === 'scenario-support' && item.mode === 'missing'), true);
 
@@ -333,11 +335,19 @@ test('authorize denies control-plane drift after the evaluated run', () => {
 });
 
 test('authorize denies empty authorization scope instead of matching grants vacuously', () => {
-  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-empty-scope-'));
-  let result = spawnSync('node', [cli, 'init', '--root', target], { encoding: 'utf8' });
+  const target = tempCopyOfFixture('governed-app');
+  let result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr);
+
+  const runId = latestRunId(target);
+  const runPath = path.join(target, '.ts-quality', 'runs', runId, 'run.json');
+  const run = readRun(target);
+  run.changedFiles = [];
+  if (run.analysis) {
+    run.analysis.changedFiles = [];
+  }
+  fs.writeFileSync(runPath, JSON.stringify(run, null, 2));
+
   result = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'maintainer'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const decision = JSON.parse(result.stdout);

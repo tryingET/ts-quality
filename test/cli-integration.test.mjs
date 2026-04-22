@@ -18,16 +18,45 @@ test('init creates starter files in an empty repo', () => {
   assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'invariants.ts')), true);
 });
 
-test('check treats empty init changeSet.files as all discovered source files', () => {
+test('check fails closed when init-generated config has no changed scope', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.rmSync(path.join(target, 'ts-quality.config.ts'), { force: true });
   fs.rmSync(path.join(target, '.ts-quality'), { recursive: true, force: true });
   let result = spawnSync('node', [cli, 'init', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^Changed scope is required\./);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'latest.json')), false);
+});
+
+
+test('check accepts diff-only scope and derives changed files from diff hunks', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.writeFileSync(path.join(target, 'changes.diff'), ['+++ b/src/auth/token.js', '@@ -1,1 +1,1 @@'].join('\n'), 'utf8');
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 4 },
+  policy: { maxChangedCrap: 30, minMutationScore: 0.5, minMergeConfidence: 50 },
+  changeSet: { diffFile: 'changes.diff' },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '.ts-quality/attestations',
+  trustedKeysDir: '.ts-quality/keys'
+};
+`, 'utf8');
+
+  const result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const run = readRun(target);
-  assert.equal(run.changedFiles.includes('src/auth/token.js'), true);
+  assert.deepEqual(run.changedFiles, ['src/auth/token.js']);
+  assert.equal(run.changedRegions.some((item) => item.filePath === 'src/auth/token.js'), true);
   assert.equal(run.behaviorClaims.some((claim) => claim.invariantId === 'auth.refresh.validity'), true);
 });
 
@@ -37,6 +66,18 @@ test('check fails closed when changed scope has no measurable mutation pressure'
   let result = spawnSync('node', [cli, 'init', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   fs.writeFileSync(path.join(target, 'src', 'id.js'), 'export const id = (value) => value;\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },
+  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },
+  changeSet: { files: ['src/id.js'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts'
+};
+`, 'utf8');
   result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const run = readRun(target);
@@ -71,11 +112,13 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.match(fs.readFileSync(reportPath, 'utf8'), /^---\nsummary:/);
   assert.match(prSummary, /^---\nsummary:/);
   assert.match(prSummary, /Evidence provenance: explicit 3, inferred 1, missing 1/);
-  assert.match(prSummary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(prSummary, /Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
+  assert.match(prSummary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.match(checkSummary, /Merge confidence: [0-9]+\/100/);
   assert.match(checkSummary, /Invariant evidence at risk: auth\.refresh\.validity/);
   assert.match(checkSummary, /Evidence provenance: explicit 3, inferred 1, missing 1/);
-  assert.match(checkSummary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(checkSummary, /Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
+  assert.match(checkSummary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.doesNotMatch(checkSummary, /^Obligation:/m);
   assert.match(report.stdout, /Merge confidence/);
   assert.match(report.stdout, /mutation scope: [0-9]+ site\(s\), [0-9]+ killed, [0-9]+ survived/);
@@ -83,11 +126,13 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.match(report.stdout, /mutation-pressure \[warning; mode=explicit\]: [0-9]+ surviving mutants? across [0-9]+ mutation sites?/);
   assert.match(explain.stdout, /Reasons:/);
   assert.match(explain.stdout, /focused tests: test\/token.test.js/);
-  assert.match(explain.stdout, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(explain.stdout, /evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
+  assert.match(explain.stdout, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.match(plan.stdout, /Invariant evidence at risk: auth\.refresh\.validity/);
   assert.match(plan.stdout, /Evidence provenance: explicit 3, inferred 1, missing 1/);
   assert.match(planText, /Invariant evidence at risk: auth\.refresh\.validity/);
-  assert.match(planText, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(planText, /Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
+  assert.match(planText, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.match(govern.stdout, /Invariant evidence at risk: auth\.refresh\.validity/);
   assert.match(govern.stdout, /mutation-pressure \[warning; mode=explicit\]: [0-9]+ surviving mutants across [0-9]+ mutation sites/);
   assert.match(governText, /Invariant evidence at risk: auth\.refresh\.validity/);
@@ -95,17 +140,126 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
 });
 
 
-test('report --json keeps exact parity with the persisted run artifact', () => {
+test('report and explain project the current decision context for the selected run', () => {
   const target = tempCopyOfFixture('governed-app');
-  const check = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 8 },
+  policy: { maxChangedCrap: 15, minMutationScore: 0.75, minMergeConfidence: 65 },
+  changeSet: { files: ['src/payments/ledger.js'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '.ts-quality/attestations',
+  trustedKeysDir: '.ts-quality/keys'
+};
+`, 'utf8');
+
+  const check = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'payments-run'], { encoding: 'utf8' });
   assert.equal(check.status, 0, check.stderr);
-  const runId = latestRunId(target);
-  const runPath = path.join(target, '.ts-quality', 'runs', runId, 'run.json');
-  const report = spawnSync('node', [cli, 'report', '--root', target, '--json'], { encoding: 'utf8' });
+
+  const runPath = path.join(target, '.ts-quality', 'runs', 'payments-run', 'run.json');
+  const reportPath = path.join(target, '.ts-quality', 'runs', 'payments-run', 'report.json');
+  const persistedRun = JSON.parse(fs.readFileSync(runPath, 'utf8'));
+  const persistedReport = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  assert.equal(persistedRun.governance.some((item) => item.ruleId === 'payments-maintainer-approval'), true);
+  assert.equal(persistedReport.decisionContext.projection, 'persisted');
+  assert.deepEqual(persistedReport.decisionContext.drift, []);
+
+  fs.writeFileSync(path.join(target, '.ts-quality', 'approvals.json'), `${JSON.stringify([
+    {
+      by: 'maintainer',
+      role: 'maintainer',
+      rationale: 'reviewed payments run',
+      createdAt: '2026-01-01T00:15:00.000Z',
+      targetId: 'payments-run'
+    }
+  ], null, 2)}\n`, 'utf8');
+
+  const report = spawnSync('node', [cli, 'report', '--root', target, '--json', '--run-id', 'payments-run'], { encoding: 'utf8' });
   assert.equal(report.status, 0, report.stderr);
-  const persistedRun = fs.readFileSync(runPath, 'utf8');
-  assert.equal(report.stdout, persistedRun);
-  assert.deepEqual(JSON.parse(report.stdout), JSON.parse(persistedRun));
+  const projectedReport = JSON.parse(report.stdout);
+  assert.equal(projectedReport.runId, 'payments-run');
+  assert.equal(projectedReport.decisionContext.projection, 'projected');
+  assert.deepEqual(projectedReport.decisionContext.drift, []);
+  assert.equal(projectedReport.governance.some((item) => item.ruleId === 'payments-maintainer-approval'), false);
+  assert.equal(projectedReport.verdict.mergeConfidence > persistedRun.verdict.mergeConfidence, true);
+
+  const explain = spawnSync('node', [cli, 'explain', '--root', target, '--run-id', 'payments-run'], { encoding: 'utf8' });
+  assert.equal(explain.status, 0, explain.stderr);
+  assert.doesNotMatch(explain.stdout, /Payment domain changes require a maintainer approval\./);
+  assert.match(explain.stdout, /Mutation pressure is missing for the evaluated scope/);
+});
+
+test('downstream commands accept --run-id so operators can target a non-latest run explicitly', () => {
+  const target = tempCopyOfFixture('governed-app');
+
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'older-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  fs.appendFileSync(path.join(target, 'src', 'auth', 'token.js'), '\n// explicit run selection anchor\n', 'utf8');
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'newer-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(latestRunId(target), 'newer-run');
+
+  fs.writeFileSync(path.join(target, '.ts-quality', 'overrides.json'), `${JSON.stringify([
+    {
+      kind: 'override',
+      by: 'maintainer',
+      role: 'maintainer',
+      rationale: 'newer run override only',
+      createdAt: '2026-01-01T00:10:00.000Z',
+      targetId: 'newer-run:maintainer:merge'
+    }
+  ], null, 2)}\n`, 'utf8');
+
+  const latestReport = spawnSync('node', [cli, 'report', '--root', target, '--json'], { encoding: 'utf8' });
+  const olderReport = spawnSync('node', [cli, 'report', '--root', target, '--json', '--run-id', 'older-run'], { encoding: 'utf8' });
+  assert.equal(latestReport.status, 0, latestReport.stderr);
+  assert.equal(olderReport.status, 0, olderReport.stderr);
+  const latestReportJson = JSON.parse(latestReport.stdout);
+  const olderReportJson = JSON.parse(olderReport.stdout);
+  assert.equal(latestReportJson.runId, 'newer-run');
+  assert.equal(latestReportJson.decisionContext.projection, 'projected');
+  assert.deepEqual(latestReportJson.decisionContext.drift, []);
+  assert.equal(olderReportJson.runId, 'older-run');
+  assert.equal(olderReportJson.decisionContext.projection, 'projected');
+  assert.equal(olderReportJson.decisionContext.drift.some((item) => item.subject === 'changed file src/auth/token.js'), true);
+
+  const olderExplain = spawnSync('node', [cli, 'explain', '--root', target, '--run-id', 'older-run'], { encoding: 'utf8' });
+  assert.equal(olderExplain.status, 0, olderExplain.stderr);
+  assert.match(olderExplain.stdout, /Run drift detected for older-run\./);
+  assert.match(olderExplain.stdout, /Run older-run/);
+
+  const latestPlan = spawnSync('node', [cli, 'plan', '--root', target], { encoding: 'utf8' });
+  const olderPlan = spawnSync('node', [cli, 'plan', '--root', target, '--run-id', 'older-run'], { encoding: 'utf8' });
+  assert.equal(latestPlan.status, 0, latestPlan.stderr);
+  assert.equal(olderPlan.status, 0, olderPlan.stderr);
+  assert.doesNotMatch(latestPlan.stdout, /Run drift detected for older-run\./);
+  assert.match(olderPlan.stdout, /Run drift detected for older-run\./);
+
+  const olderGovern = spawnSync('node', [cli, 'govern', '--root', target, '--run-id', 'older-run'], { encoding: 'utf8' });
+  assert.equal(olderGovern.status, 0, olderGovern.stderr);
+  assert.match(olderGovern.stdout, /Run drift detected for older-run\./);
+
+  const latestAuthorize = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'maintainer'], { encoding: 'utf8' });
+  const olderAuthorize = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'maintainer', '--run-id', 'older-run'], { encoding: 'utf8' });
+  assert.equal(latestAuthorize.status, 0, latestAuthorize.stderr);
+  assert.equal(olderAuthorize.status, 0, olderAuthorize.stderr);
+
+  const latestDecision = JSON.parse(latestAuthorize.stdout);
+  const olderDecision = JSON.parse(olderAuthorize.stdout);
+  assert.equal(latestDecision.outcome, 'approve');
+  assert.equal(latestDecision.overrideUsed, 'maintainer');
+  assert.equal(latestDecision.evidenceContext?.runId, 'newer-run');
+  assert.equal(olderDecision.outcome, 'deny');
+  assert.equal(olderDecision.evidenceContext?.runId, 'older-run');
+  assert.match((olderDecision.reasons ?? []).join('\n'), /Repository changed since run older-run/);
 });
 
 test('check persists analysis context, mutation baseline receipts, and a run-bound control plane snapshot', () => {
@@ -129,7 +283,7 @@ test('check persists analysis context, mutation baseline receipts, and a run-bou
   assert.equal(Array.isArray(run.controlPlane?.agents), true);
 });
 
-test('plan, govern, and authorize reject unsupported control-plane snapshot schemas', () => {
+test('explain, report, plan, govern, and authorize reject unsupported control-plane snapshot schemas', () => {
   const target = tempCopyOfFixture('governed-app');
   let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'schema-mismatch-run'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
@@ -139,19 +293,25 @@ test('plan, govern, and authorize reject unsupported control-plane snapshot sche
   run.controlPlane.schemaVersion = 999;
   fs.writeFileSync(runPath, JSON.stringify(run, null, 2));
 
+  const explain = spawnSync('node', [cli, 'explain', '--root', target], { encoding: 'utf8' });
+  const report = spawnSync('node', [cli, 'report', '--root', target, '--json'], { encoding: 'utf8' });
   const plan = spawnSync('node', [cli, 'plan', '--root', target], { encoding: 'utf8' });
   const govern = spawnSync('node', [cli, 'govern', '--root', target], { encoding: 'utf8' });
   const authorize = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'release-bot'], { encoding: 'utf8' });
 
+  assert.equal(explain.status, 1);
+  assert.equal(report.status, 1);
   assert.equal(plan.status, 1);
   assert.equal(govern.status, 1);
   assert.equal(authorize.status, 1);
+  assert.match(explain.stderr, /unsupported control-plane snapshot schema 999/);
+  assert.match(report.stderr, /Re-run ts-quality check/);
   assert.match(plan.stderr, /unsupported control-plane snapshot schema 999/);
   assert.match(govern.stderr, /Re-run ts-quality check/);
   assert.match(authorize.stderr, /Expected 1/);
 });
 
-test('plan, govern, and authorize reject malformed control-plane snapshots instead of falling back', () => {
+test('explain, report, plan, govern, and authorize reject malformed control-plane snapshots instead of falling back', () => {
   const target = tempCopyOfFixture('governed-app');
   let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'schema-malformed-run'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
@@ -161,13 +321,19 @@ test('plan, govern, and authorize reject malformed control-plane snapshots inste
   delete run.controlPlane.constitution;
   fs.writeFileSync(runPath, JSON.stringify(run, null, 2));
 
+  const explain = spawnSync('node', [cli, 'explain', '--root', target], { encoding: 'utf8' });
+  const report = spawnSync('node', [cli, 'report', '--root', target, '--json'], { encoding: 'utf8' });
   const plan = spawnSync('node', [cli, 'plan', '--root', target], { encoding: 'utf8' });
   const govern = spawnSync('node', [cli, 'govern', '--root', target], { encoding: 'utf8' });
   const authorize = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'release-bot'], { encoding: 'utf8' });
 
+  assert.equal(explain.status, 1);
+  assert.equal(report.status, 1);
   assert.equal(plan.status, 1);
   assert.equal(govern.status, 1);
   assert.equal(authorize.status, 1);
+  assert.match(explain.stderr, /malformed control-plane snapshot schema 1/);
+  assert.match(report.stderr, /field constitution must be an array/);
   assert.match(plan.stderr, /malformed control-plane snapshot schema 1/);
   assert.match(govern.stderr, /field constitution must be an array/);
   assert.match(authorize.stderr, /Re-run ts-quality check/);
@@ -254,8 +420,90 @@ test('trend keeps deltas visible while surfacing the latest risky invariant prov
   assert.match(trend.stdout, /Merge confidence delta: -?\d+/);
   assert.match(trend.stdout, /Invariant evidence at risk: auth\.refresh\.validity/);
   assert.match(trend.stdout, /Evidence provenance: explicit 3, inferred 1, missing 1/);
-  assert.match(trend.stdout, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic support/);
+  assert.match(trend.stdout, /Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
+  assert.match(trend.stdout, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.doesNotMatch(trend.stdout, /^Obligation:/m);
+});
+
+test('trend skips unrelated runs and uses the nearest comparable prior run', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const defaultConfig = fs.readFileSync(path.join(target, 'ts-quality.config.ts'), 'utf8');
+
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'auth-run-1'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 8 },
+  policy: { maxChangedCrap: 15, minMutationScore: 0.75, minMergeConfidence: 65 },
+  changeSet: { files: ['src/payments/ledger.js'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '.ts-quality/attestations',
+  trustedKeysDir: '.ts-quality/keys'
+};
+`, 'utf8');
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'payments-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), defaultConfig, 'utf8');
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'auth-run-2'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  const latestRun = readRun(target);
+  assert.equal(latestRun.runId, 'auth-run-2');
+  assert.equal(latestRun.trend?.previousRunId, 'auth-run-1');
+
+  const trend = spawnSync('node', [cli, 'trend', '--root', target], { encoding: 'utf8' });
+  assert.equal(trend.status, 0, trend.stderr);
+  assert.match(trend.stdout, /Current run: auth-run-2/);
+  assert.match(trend.stdout, /Previous run: auth-run-1/);
+  assert.doesNotMatch(trend.stdout, /Previous run: payments-run/);
+});
+
+test('trend fails closed when no comparable prior run exists', () => {
+  const target = tempCopyOfFixture('governed-app');
+
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'auth-run-1'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.js'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 10000, maxSites: 8 },
+  policy: { maxChangedCrap: 15, minMutationScore: 0.75, minMergeConfidence: 65 },
+  changeSet: { files: ['src/payments/ledger.js'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts',
+  approvalsPath: '.ts-quality/approvals.json',
+  waiversPath: '.ts-quality/waivers.json',
+  overridesPath: '.ts-quality/overrides.json',
+  attestationsDir: '.ts-quality/attestations',
+  trustedKeysDir: '.ts-quality/keys'
+};
+`, 'utf8');
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'payments-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  const latestRun = readRun(target);
+  assert.equal(latestRun.runId, 'payments-run');
+  assert.equal(latestRun.trend, undefined);
+
+  const trend = spawnSync('node', [cli, 'trend', '--root', target], { encoding: 'utf8' });
+  assert.equal(trend.status, 0, trend.stderr);
+  assert.match(trend.stdout, /Current run: payments-run/);
+  assert.match(trend.stdout, /No comparable prior run for trend analysis\./);
+  assert.match(trend.stdout, /Nearest earlier run: auth-run-1/);
+  assert.match(trend.stdout, /- changed file scope differs/);
+  assert.doesNotMatch(trend.stdout, /Merge confidence delta:/);
 });
 
 test('trend orders runs by createdAt rather than lexical run id sort', () => {
@@ -652,6 +900,27 @@ test('check rejects missing values for value options instead of silently continu
   assert.match(result.stderr, /^--run-id requires a value\n$/);
 });
 
+test('check rejects duplicate value options instead of silently taking the last root', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const result = spawnSync('node', [cli, 'check', '--root', target, '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^--root may only be specified once\n$/);
+});
+
+test('authorize rejects duplicate agent options instead of silently taking the last value', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const result = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'release-bot', '--agent', 'maintainer'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^--agent may only be specified once\n$/);
+});
+
+test('attest verify rejects duplicate attestation options instead of silently taking the last value', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const result = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation=.ts-quality/attestations/first.json', '--attestation', '.ts-quality/attestations/second.json'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^--attestation may only be specified once\n$/);
+});
+
 test('attest keygen creates a usable key pair and reports exact output paths', () => {
   const target = tempCopyOfFixture('governed-app');
   let result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'generated-key-run'], { encoding: 'utf8' });
@@ -674,6 +943,189 @@ test('attest keygen creates a usable key pair and reports exact output paths', (
   assert.match(result.stdout, /^Subject: \.ts-quality\/runs\/generated-key-run\/verdict\.json$/m);
   assert.match(result.stdout, /^Run: generated-key-run$/m);
   assert.match(result.stdout, /^Artifact: verdict\.json$/m);
+});
+
+test('witness test --help renders usage', () => {
+  const result = spawnSync('node', [cli, 'witness', 'test', '--help'], { encoding: 'utf8' });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Usage: ts-quality witness test/);
+  assert.equal(result.stderr, '');
+});
+
+test('witness refresh runs configured impacted witness commands and reports scope skips', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.writeFileSync(path.join(target, '.ts-quality', 'invariants.ts'), `export default [
+  {
+    id: 'auth.refresh.validity',
+    title: 'Refresh token validity',
+    description: 'Expired refresh tokens must never authorize access.',
+    severity: 'high',
+    selectors: ['path:src/auth/**', 'symbol:isRefreshExpired'],
+    scenarios: [
+      {
+        id: 'expired-boundary',
+        description: 'exact expiry boundary denies access',
+        keywords: ['active token before expiry allows access'],
+        failurePathKeywords: ['exact expiry boundary denies access'],
+        executionWitnessCommand: ['node', '--test', 'test/token.test.js'],
+        executionWitnessOutput: '.ts-quality/witnesses/auth-refresh-expired-boundary.json',
+        executionWitnessTestFiles: ['test/token.test.js'],
+        executionWitnessTimeoutMs: 5000,
+        expected: 'deny'
+      }
+    ]
+  },
+  {
+    id: 'payments.exactly-once',
+    title: 'Payment recording is effectively exactly once',
+    description: 'Duplicate payment ids must not be recorded twice.',
+    severity: 'critical',
+    selectors: ['path:src/payments/**'],
+    scenarios: [
+      {
+        id: 'duplicate-payment',
+        description: 'duplicate payment id returns duplicate',
+        keywords: ['duplicate payment id returns duplicate'],
+        executionWitnessCommand: ['node', '--test', 'test/token.test.js'],
+        executionWitnessOutput: '.ts-quality/witnesses/payments-duplicate.json',
+        executionWitnessTestFiles: ['test/token.test.js'],
+        executionWitnessTimeoutMs: 5000,
+        expected: 'duplicate'
+      }
+    ]
+  }
+];
+`, 'utf8');
+
+  const result = spawnSync('node', [cli, 'witness', 'refresh', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /auth\.refresh\.validity:expired-boundary -> .*auth-refresh-expired-boundary\.json \(pass; receipt=.*auth-refresh-expired-boundary\.receipt\.json\)/);
+  assert.match(result.stdout, /skipped payments\.exactly-once:duplicate-payment -> \.ts-quality\/witnesses\/payments-duplicate\.json \(invariant not impacted by changed scope\)/);
+  const witness = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'witnesses', 'auth-refresh-expired-boundary.json'), 'utf8'));
+  assert.equal(witness.status, 'pass');
+  assert.equal(witness.invariantId, 'auth.refresh.validity');
+  assert.equal(witness.scenarioId, 'expired-boundary');
+  const receipt = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'witnesses', 'auth-refresh-expired-boundary.receipt.json'), 'utf8'));
+  assert.equal(receipt.kind, 'execution-witness-receipt');
+  assert.equal(receipt.receipt.status, 'pass');
+  assert.equal(receipt.witnessPath, '.ts-quality/witnesses/auth-refresh-expired-boundary.json');
+});
+
+test('witness test writes a pass execution witness from a passing runtime proof command', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const out = '.ts-quality/witnesses/auth-refresh-expired-boundary.json';
+  const result = spawnSync('node', [
+    cli,
+    'witness',
+    'test',
+    '--root', target,
+    '--invariant', 'auth.refresh.validity',
+    '--scenario', 'expired-boundary',
+    '--source-files', 'src/auth/token.js',
+    '--test-files', 'test/token.test.js',
+    '--out', out,
+    '--',
+    'node', '--test', 'test/token.test.js'
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Wrote execution witness:/);
+  assert.match(result.stdout, /Receipt: .*auth-refresh-expired-boundary\.receipt\.json/);
+  assert.match(result.stdout, /Status: pass/);
+  const witness = JSON.parse(fs.readFileSync(path.join(target, out), 'utf8'));
+  assert.equal(witness.kind, 'execution-witness');
+  assert.equal(witness.invariantId, 'auth.refresh.validity');
+  assert.equal(witness.scenarioId, 'expired-boundary');
+  assert.equal(witness.status, 'pass');
+  assert.deepEqual(witness.sourceFiles, ['src/auth/token.js']);
+  assert.deepEqual(witness.testFiles, ['test/token.test.js']);
+  const receipt = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'witnesses', 'auth-refresh-expired-boundary.receipt.json'), 'utf8'));
+  assert.equal(receipt.kind, 'execution-witness-receipt');
+  assert.equal(receipt.receipt.status, 'pass');
+  assert.deepEqual(receipt.command, ['node', '--test', 'test/token.test.js']);
+});
+
+test('witness test writes a fail execution witness when the runtime proof command fails', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const out = '.ts-quality/witnesses/auth-refresh-expired-boundary.fail.json';
+  const result = spawnSync('node', [
+    cli,
+    'witness',
+    'test',
+    '--root', target,
+    '--invariant', 'auth.refresh.validity',
+    '--scenario', 'expired-boundary',
+    '--source-files', 'src/auth/token.js',
+    '--test-files', 'test/token.test.js',
+    '--out', out,
+    '--',
+    'node', '--eval', 'process.exit(2)'
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /execution witness command fail; wrote fail witness to/);
+  const witness = JSON.parse(fs.readFileSync(path.join(target, out), 'utf8'));
+  assert.equal(witness.status, 'fail');
+  assert.equal(witness.invariantId, 'auth.refresh.validity');
+  assert.equal(witness.scenarioId, 'expired-boundary');
+  const receipt = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'witnesses', 'auth-refresh-expired-boundary.fail.receipt.json'), 'utf8'));
+  assert.equal(receipt.kind, 'execution-witness-receipt');
+  assert.equal(receipt.receipt.status, 'fail');
+});
+
+test('check auto-generates execution witnesses for impacted scenarios with configured witness commands', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.writeFileSync(path.join(target, '.ts-quality', 'invariants.ts'), `export default [
+  {
+    id: 'auth.refresh.validity',
+    title: 'Refresh token validity',
+    description: 'Expired refresh tokens must never authorize access.',
+    severity: 'high',
+    selectors: ['path:src/auth/**', 'symbol:isRefreshExpired'],
+    scenarios: [
+      {
+        id: 'expired-boundary',
+        description: 'exact expiry boundary denies access',
+        keywords: ['active token before expiry allows access'],
+        failurePathKeywords: ['exact expiry boundary denies access'],
+        executionWitnessCommand: ['node', '--test', 'test/token.test.js'],
+        executionWitnessOutput: '.ts-quality/witnesses/auth-refresh-expired-boundary.json',
+        executionWitnessTestFiles: ['test/token.test.js'],
+        executionWitnessTimeoutMs: 5000,
+        expected: 'deny'
+      }
+    ]
+  }
+];
+`, 'utf8');
+
+  const check = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'witness-auto-run'], { encoding: 'utf8' });
+  assert.equal(check.status, 0, check.stderr);
+  assert.match(check.stdout, /Execution witnesses: auto-ran 1, skipped 0/);
+  const witnessPath = path.join(target, '.ts-quality', 'witnesses', 'auth-refresh-expired-boundary.json');
+  assert.equal(fs.existsSync(witnessPath), true);
+  const witness = JSON.parse(fs.readFileSync(witnessPath, 'utf8'));
+  assert.equal(witness.status, 'pass');
+  assert.equal(witness.invariantId, 'auth.refresh.validity');
+  assert.equal(witness.scenarioId, 'expired-boundary');
+  assert.deepEqual(witness.sourceFiles, ['src/auth/token.js']);
+  assert.deepEqual(witness.testFiles, ['test/token.test.js']);
+  const receipt = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'witnesses', 'auth-refresh-expired-boundary.receipt.json'), 'utf8'));
+  assert.equal(receipt.kind, 'execution-witness-receipt');
+  assert.equal(receipt.receipt.status, 'pass');
+  const run = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'witness-auto-run', 'run.json'), 'utf8'));
+  const claim = run.behaviorClaims.find((item) => item.invariantId === 'auth.refresh.validity');
+  assert.ok(claim);
+  assert.equal(claim.evidenceSummary.evidenceSemantics, 'execution-backed');
+  assert.deepEqual(claim.evidenceSummary.executionWitnessFiles, ['.ts-quality/witnesses/auth-refresh-expired-boundary.json']);
+  assert.equal(claim.evidenceSummary.scenarioResults[0].supportKind, 'execution-witness');
+  assert.equal(run.executionWitnesses.autoRan.length, 1);
+  assert.equal(run.executionWitnesses.autoRan[0].receiptPath, '.ts-quality/witnesses/auth-refresh-expired-boundary.receipt.json');
+  assert.equal(run.executionWitnesses.autoRan[0].receipt.status, 'pass');
+  assert.equal(run.executionWitnesses.skipped.length, 0);
+  const witnessSummaryText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'witness-auto-run', 'execution-witnesses.txt'), 'utf8');
+  assert.match(witnessSummaryText, /Execution witnesses: auto-ran 1, skipped 0/);
+  assert.match(witnessSummaryText, /receipt=\.ts-quality\/witnesses\/auth-refresh-expired-boundary\.receipt\.json/);
+  const witnessSummaryJson = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'witness-auto-run', 'execution-witnesses.json'), 'utf8'));
+  assert.equal(witnessSummaryJson.autoRan[0].receiptPath, '.ts-quality/witnesses/auth-refresh-expired-boundary.receipt.json');
 });
 
 test('attest sign accepts cwd-relative paths even when --root is also set', () => {
