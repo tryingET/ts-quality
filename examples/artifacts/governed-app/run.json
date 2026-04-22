@@ -26,7 +26,7 @@
       "description": "Refresh token validity applies to src/auth/token.js",
       "evidence": [
         "3 surviving mutants in impacted invariant scope",
-        "Missing deterministic test evidence for scenario 'exact expiry boundary denies access'"
+        "Missing deterministic lexical test evidence for scenario 'exact expiry boundary denies access'"
       ],
       "evidenceSummary": {
         "changedFunctions": [
@@ -50,6 +50,8 @@
           }
         ],
         "changedFunctionsUnder80Coverage": 0,
+        "evidenceSemantics": "deterministic-lexical",
+        "evidenceSemanticsSummary": "deterministic lexical alignment over focused tests; not execution-backed behavioral proof",
         "focusedTests": [
           "test/token.test.js"
         ],
@@ -62,12 +64,14 @@
         "mutationSitesInScope": 4,
         "scenarioResults": [
           {
+            "assertionMatched": true,
             "description": "exact expiry boundary denies access",
             "expected": "deny",
             "failurePathKeywordsMatched": false,
             "keywordsMatched": true,
             "scenarioId": "expired-boundary",
-            "supported": false
+            "supported": false,
+            "supportKind": "missing"
           }
         ],
         "subSignals": [
@@ -86,15 +90,15 @@
           },
           {
             "facts": [
-              "mode reason: heuristically aligned focused tests were evaluated, but no scenario has full deterministic support",
+              "mode reason: heuristically aligned focused tests were evaluated, but no scenario has full deterministic lexical support",
               "expired-boundary: missing failure-path evidence"
             ],
             "label": "Scenario support",
             "level": "missing",
             "mode": "missing",
-            "modeReason": "heuristically aligned focused tests were evaluated, but no scenario has full deterministic support",
+            "modeReason": "heuristically aligned focused tests were evaluated, but no scenario has full deterministic lexical support",
             "signalId": "scenario-support",
-            "summary": "0/1 scenario(s) have deterministic support"
+            "summary": "0/1 scenario(s) have deterministic lexical support"
           },
           {
             "facts": [
@@ -143,7 +147,7 @@
       "invariantId": "auth.refresh.validity",
       "obligations": [
         {
-          "description": "Add or tighten a focused test for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.",
+          "description": "Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.",
           "fileHints": [
             "src/auth/token.js"
           ],
@@ -752,9 +756,9 @@
         "code": "invariant-risk",
         "evidence": [
           "3 surviving mutants in impacted invariant scope",
-          "Missing deterministic test evidence for scenario 'exact expiry boundary denies access'",
-          "Invariant evidence modes: focused-test-alignment=inferred; scenario-support=missing; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit",
-          "Add or tighten a focused test for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'."
+          "Missing deterministic lexical test evidence for scenario 'exact expiry boundary denies access'",
+          "Invariant evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof; Invariant evidence modes: focused-test-alignment=inferred; scenario-support=missing; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit",
+          "Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'."
         ],
         "id": "policy:invariant:auth.refresh.validity",
         "level": "error",

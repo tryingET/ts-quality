@@ -17,14 +17,13 @@
     "rootDir": ".",
     "outDir": "dist",
     "baseUrl": ".",
-    "typeRoots": [
-      "./types"
+    "types": [
+      "node"
     ]
   },
   "include": [
     "packages/**/*.ts",
-    "scripts/**/*.ts",
-    "types/**/*.d.ts"
+    "scripts/**/*.ts"
   ],
   "exclude": [
     "dist",

@@ -5,34 +5,55 @@
   "commands": {
     "validate": {
       "authoritative": false,
-      "authority_mode": "error",
-      "ci_profile": "branch-ci",
+      "authority_mode": "best_effort_workspace_loose",
+      "ci_profile": null,
       "command": "validate",
-      "error": {
-        "details": {
-          "project_path": "core/ontology-kernel",
-          "requested_ref": "main"
+      "layer_sources": [
+        {
+          "kind": "ref",
+          "locator_kind": "repo",
+          "name": "company",
+          "origin": "<repo:softwareco/ontology@main>",
+          "source": "workspace"
         },
-        "kind": "not_found",
-        "message": "local ref not available in workspace/cache: <repo:core/ontology-kernel@main> (set --workspace-root / ROCS_WORKSPACE_ROOT and checkout the dependency repo locally)"
-      },
-      "layer_sources": [],
-      "legacy_gitlab_fallback_used": false,
-      "locator_kinds_present": [],
-      "loose_workspace_ref_layers_used": 0,
-      "ok": false,
-      "profile": null,
-      "ref_layer_count": 0,
-      "ref_layers_present": false,
-      "repo": "/home/tryinget/ai-society/softwareco/copier/tpl-project-repo",
+        {
+          "kind": "ref",
+          "locator_kind": "repo",
+          "name": "core",
+          "origin": "<repo:core/ontology-kernel@main>",
+          "source": "workspace"
+        },
+        {
+          "kind": "path",
+          "locator_kind": "path",
+          "name": "repo",
+          "origin": "ontology/src",
+          "source": "path"
+        }
+      ],
+      "locator_kinds_present": [
+        "path",
+        "repo"
+      ],
+      "loose_workspace_ref_layers_used": 2,
+      "ok": true,
+      "profile": "repo-dev",
+      "ref_layer_count": 2,
+      "ref_layers_present": true,
+      "repo": "/home/tryinget/ai-society/softwareco/owned/ts-quality",
       "resolve_refs_requested": true,
-      "schema_version": 2,
+      "result": {
+        "error_count": 0,
+        "finding_count": 0,
+        "warning_count": 0
+      },
+      "schema_version": 3,
       "version": "0.1.4",
-      "workspace_ref_mode": "strict"
+      "workspace_ref_mode": "loose"
     }
   },
   "last_command": "validate",
-  "repo": "/home/tryinget/ai-society/softwareco/copier/tpl-project-repo",
-  "schema_version": 2,
+  "repo": "/home/tryinget/ai-society/softwareco/owned/ts-quality",
+  "schema_version": 3,
   "version": "0.1.4"
 }

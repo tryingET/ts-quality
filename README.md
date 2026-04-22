@@ -70,6 +70,8 @@ It progresses through five layers:
 - focused lexical test evidence for invariants
 - explicit governance and legitimacy rules
 
+Invariant scenario support is therefore a deterministic lexical witness, not execution-backed behavioral proof. Current lexical-only matches are reported as `lexically-supported`. The plain `supported` label is now reserved for scenarios backed by explicit execution witness artifacts, so the tool is no longer silently upgrading deterministic lexical alignment into proof-like status.
+
 That makes the system explainable and debuggable. It also means shallow tests produce shallow evidence.
 
 ### Governance that follows real import flow
@@ -78,8 +80,12 @@ The governance layer is built to catch the kinds of boundary bypasses that show 
 
 It now catches forbidden imports that flow through:
 
+- re-export declarations and TS `import = require(...)` declarations
 - local `require` aliases
 - chained assignments
+- sequence-expression aliases when the final operand resolves to the loader
+- statically-resolved conditional aliases when the condition collapses to one branch
+- logical fallback aliases (`||`, `&&`, `??`) when static semantics make the loader flow explicit
 - destructuring
 - aliased destructuring containers
 - destructured parameter defaults
@@ -93,10 +99,12 @@ When a boundary-scoped file uses a non-literal `import(...)` or `require(...)` t
 
 Downstream decisions are anchored to the exact reviewed run:
 
-- `check` snapshots the decision control plane into `run.json`
-- `plan`, `govern`, and `authorize` project from that exact run
-- approvals, overrides, and attestations are re-evaluated only when they target that run correctly
-- drift in changed files or control-plane inputs causes authorization to fail closed
+- `check` snapshots the immutable evidence/control-plane bundle into `run.json`
+- `report.json` and `report --json` keep the same run fields but add `decisionContext` metadata so operators can tell whether they are looking at the persisted check-time report or a later projected decision view
+- `explain`, `report`, `plan`, `govern`, and `authorize` can all target that exact persisted run via `--run-id <id>`
+- when `--run-id` is omitted, those read/projection commands fall back to `.ts-quality/latest.json`
+- approvals, waivers, and attestations are re-evaluated only when they target that run correctly; authorization also re-applies overrides against the exact scoped run
+- drift in changed files or control-plane inputs is surfaced on projected review surfaces and causes authorization to fail closed
 
 That matters a lot in agent-heavy workflows, where generated artifacts and support files can change quickly.
 
@@ -134,11 +142,11 @@ This validates the repo, regenerates sample artifacts, and checks that reviewed 
 ### 3) Run the CLI on the included fixture
 
 ```bash
-node dist/packages/ts-quality/src/cli.js check --root fixtures/governed-app
-node dist/packages/ts-quality/src/cli.js explain --root fixtures/governed-app
-node dist/packages/ts-quality/src/cli.js report --root fixtures/governed-app
-node dist/packages/ts-quality/src/cli.js govern --root fixtures/governed-app
-node dist/packages/ts-quality/src/cli.js authorize --root fixtures/governed-app --agent release-bot
+node dist/packages/ts-quality/src/cli.js check --root fixtures/governed-app --run-id fixture-review
+node dist/packages/ts-quality/src/cli.js explain --root fixtures/governed-app --run-id fixture-review
+node dist/packages/ts-quality/src/cli.js report --root fixtures/governed-app --run-id fixture-review
+node dist/packages/ts-quality/src/cli.js govern --root fixtures/governed-app --run-id fixture-review
+node dist/packages/ts-quality/src/cli.js authorize --root fixtures/governed-app --agent release-bot --run-id fixture-review
 ```
 
 ### 4) Inspect the generated outputs
@@ -148,6 +156,7 @@ Look at:
 ```text
 .ts-quality/runs/<run-id>/run.json
 .ts-quality/runs/<run-id>/verdict.json
+.ts-quality/runs/<run-id>/report.json
 .ts-quality/runs/<run-id>/report.md
 .ts-quality/runs/<run-id>/pr-summary.md
 .ts-quality/runs/<run-id>/check-summary.txt
@@ -155,6 +164,8 @@ Look at:
 .ts-quality/runs/<run-id>/plan.txt
 .ts-quality/runs/<run-id>/govern.txt
 .ts-quality/runs/<run-id>/attestation-verify.txt
+.ts-quality/runs/<run-id>/execution-witnesses.json        # optional, when witness plans were considered
+.ts-quality/runs/<run-id>/execution-witnesses.txt         # optional, when witness plans were considered
 .ts-quality/runs/<run-id>/authorize.<agent>.<action>.json
 .ts-quality/runs/<run-id>/bundle.<agent>.<action>.json
 .ts-quality/amendments/<proposal-id>.result.json
@@ -182,35 +193,47 @@ examples/artifacts/governed-app/amend.txt
 npx ts-quality init
 npx ts-quality materialize
 npx ts-quality check [--run-id <id>]
-npx ts-quality explain
-npx ts-quality report
+npx ts-quality explain [--run-id <id>]
+npx ts-quality report [--run-id <id>]
 npx ts-quality trend
-npx ts-quality plan
-npx ts-quality govern
-npx ts-quality authorize --agent release-bot
+npx ts-quality plan [--run-id <id>]
+npx ts-quality govern [--run-id <id>]
+npx ts-quality authorize --agent release-bot [--run-id <id>]
+npx ts-quality witness test --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.js --test-files test/token.test.js --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- node --test test/token.test.js
+npx ts-quality witness refresh [--changed <a,b,c>]
 npx ts-quality attest sign --issuer ci.verify --key-id sample --private-key .ts-quality/keys/sample.pem --subject .ts-quality/runs/<run-id>/verdict.json --claims ci.tests.passed --out .ts-quality/attestations/ci.tests.passed.json
 npx ts-quality attest verify --attestation .ts-quality/attestations/ci.tests.passed.json --trusted-keys .ts-quality/keys
 npx ts-quality amend --proposal proposal.json
 ```
 
+When `--run-id` is omitted on `explain`, `report`, `plan`, `govern`, or `authorize`, the CLI uses `.ts-quality/latest.json`. Pass an explicit run id whenever multiple reviewed runs coexist and you want to avoid ambient latest-pointer selection.
+
+`run.json` remains the immutable `check`-time bundle. `report --json` emits the selected run plus an additive `decisionContext` block instead of echoing raw `run.json` bytes, so automation can tell whether it is reading the persisted check-time report or a later projected decision view and whether drift was detected.
+
+`trend` only compares the latest run against the nearest earlier **comparable** run. If changed scope, invariant baseline, or snapped policy/constitution baseline differs, it reports that no comparable prior run exists instead of inventing a misleading delta.
+
+`witness refresh` is the repo-native pre-check surface for running all configured impacted execution-witness commands from the current changed scope and writing their artifacts before `check`. `check` also auto-generates those same configured witnesses when you skip the explicit pre-refresh step, but `witness refresh` is useful in CI or when you want witness artifact churn to be an explicit stage. For the canonical witness contract and config surface, see `docs/invariant-dsl.md` and `docs/config-reference.md`; for the recommended CI/operator flow, see `docs/ci-integration.md`.
+
 `authorize` writes `.ts-quality/runs/<run-id>/authorize.<agent>.<action>.json` and the paired `.ts-quality/runs/<run-id>/bundle.<agent>.<action>.json`. The decision artifact remains the operator-facing legitimacy record, while its additive `evidenceContext` points back to the exact evaluated run, blocking governance findings, run-scoped attestation verification outcomes, and the first at-risk invariant provenance summary instead of inventing a second authority beyond `run.json` and the paired bundle.
 
 `amend` writes `.ts-quality/amendments/<proposal-id>.result.json`, mirrors the same JSON to stdout, and also writes a concise human-readable `.ts-quality/amendments/<proposal-id>.result.txt` summary. The JSON result remains authoritative for automation, while the additive `proposalContext` block is also projected into the reviewed text surface so operators can see the proposal title/rationale, explicit evidence entries, per-change rule summary, and approval-burden basis without inventing a second amendment authority beyond the proposal and constitution.
 
-`attest sign` expects `--subject` to point at a repo-local artifact under `--root` (for example `.ts-quality/runs/<run-id>/verdict.json`), reports missing repo-local subjects as missing input, and rejects subjects that only appear repo-local through symlink escapes outside the repository root. Signed subject digests bind to the exact file bytes on disk instead of a UTF-8-decoded text view, so binary or malformed-byte subjects cannot mutate silently while still verifying. `attest verify` defaults to human-readable text output and also supports `--json` for a versioned machine-readable verification record. Single-file CLI verification still treats an unreadable attestation path as an operator error with a non-zero exit, while malformed JSON or schema-invalid attestation content is reported through the canonical verification record. Signed `payload.runId` / `payload.artifactName` are only valid for run-scoped subjects under `.ts-quality/runs/<run-id>/...`, persisted run artifacts redact raw OS read-error detail for unreadable attestation files, and signing plus verification now share the same attestation-contract validation: blank issuers are rejected, renderable issuer/subject metadata cannot contain control, next-line, line/paragraph separator, bidi override/isolation, zero-width, BOM, or other invisible Unicode format characters, run-scoped payload metadata must match the signed `subjectFile`, the CLI fails closed on unknown, missing-value, or subcommand-irrelevant options instead of swallowing them silently, and human-readable verification output plus CLI error text escape unsafe characters that arrive from filenames, paths, or other fallback labels instead of rendering them raw. Every `check` also writes `.ts-quality/runs/<run-id>/attestation-verify.txt` using that same human-readable verification framing so run-bound legitimacy review stays attached to the evaluated run.
+`attest sign` expects `--subject` to point at a repo-local artifact under `--root` (for example `.ts-quality/runs/<run-id>/verdict.json`), reports missing repo-local subjects as missing input, and rejects subjects that only appear repo-local through symlink escapes outside the repository root. Signed subject digests bind to the exact file bytes on disk instead of a UTF-8-decoded text view, so binary or malformed-byte subjects cannot mutate silently while still verifying. `attest verify` defaults to human-readable text output and also supports `--json` for a versioned machine-readable verification record. Single-file CLI verification still treats an unreadable attestation path as an operator error with a non-zero exit, while malformed JSON or schema-invalid attestation content is reported through the canonical verification record. Signed `payload.runId` / `payload.artifactName` are only valid for run-scoped subjects under `.ts-quality/runs/<run-id>/...`, persisted run artifacts redact raw OS read-error detail for unreadable attestation files, and signing plus verification now share the same attestation-contract validation: blank issuers are rejected, renderable issuer/subject metadata cannot contain control, next-line, line/paragraph separator, bidi override/isolation, zero-width, BOM, or other invisible Unicode format characters, run-scoped payload metadata must match the signed `subjectFile`, the CLI fails closed on duplicate, unknown, missing-value, or subcommand-irrelevant options instead of swallowing them silently, and human-readable verification output plus CLI error text escape unsafe characters that arrive from filenames, paths, or other fallback labels instead of rendering them raw. Every `check` also writes `.ts-quality/runs/<run-id>/attestation-verify.txt` using that same human-readable verification framing so run-bound legitimacy review stays attached to the evaluated run.
 
 ## What a run produces
 
 A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<run-id>/`:
 
-- `run.json` — complete machine-readable bundle
+- `run.json` — immutable machine-readable run bundle
 - `verdict.json` — merge-confidence verdict
+- `report.json` — machine-readable report view with additive `decisionContext` metadata (`projection`, `drift`)
 - `report.md` — human-readable report
 - `pr-summary.md` — PR-facing summary with concise invariant evidence provenance
-- `check-summary.txt` — terse run-status summary with the first at-risk invariant provenance when present
+- `check-summary.txt` — terse run-status summary with the first at-risk invariant provenance when present; when configured witness commands run, it also records auto-ran vs skipped execution witness activity
 - `explain.txt` — explanation trail
 - `plan.txt` — governance plan with related invariant evidence provenance for the at-risk claim
 - `govern.txt` — governance findings with related invariant evidence provenance for the at-risk claim
+- optional `execution-witnesses.json` / `execution-witnesses.txt` — additive per-run summary of configured execution witness commands that auto-ran and those skipped by scope
 
 `run.json` also carries additive execution receipts that make the run boundary explicit instead of implicit:
 
@@ -218,7 +241,11 @@ A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<ru
 - `controlPlane` records a schema-versioned run-bound snapshot of the config digest, policy defaults, constitution digest + rules, agent digest + grants, and the exact support-path bindings for later approval/waiver/override/attestation lookups
 - `mutationBaseline` records whether the baseline test command was green before mutants were interpreted
 
-Each impacted invariant also carries a structured `behaviorClaims[].evidenceSummary` in `run.json`, exposing the invariant-scoped evidence basis directly: impacted files, focused tests, changed functions, coverage pressure, mutation counts, per-scenario support, and named deterministic sub-signals such as `focused-test-alignment`, `scenario-support`, `coverage-pressure`, `mutation-pressure`, and `changed-function-pressure`. Every sub-signal is also labeled as `explicit`, `inferred`, or `missing` so reviewers can tell whether support came from direct configured/artifact evidence or deterministic alignment heuristics.
+Each impacted invariant also carries a structured `behaviorClaims[].evidenceSummary` in `run.json`, exposing the invariant-scoped evidence basis directly: `evidenceSemantics` / `evidenceSemanticsSummary`, impacted files, focused tests, optional `executionWitnessFiles`, changed functions, coverage pressure, mutation counts, per-scenario support, and named deterministic sub-signals such as `focused-test-alignment`, `execution-witness`, `scenario-support`, `coverage-pressure`, `mutation-pressure`, and `changed-function-pressure`. Every sub-signal is also labeled as `explicit`, `inferred`, or `missing` so reviewers can tell whether support came from direct configured/artifact evidence or deterministic alignment heuristics.
+
+`run.json` is the historical source of truth for what `check` persisted. The generated `report.json` is the check-time report view over that run, and later `report --json` / `explain` / `plan` / `govern` / `authorize` calls reproject the selected run with current targeted approvals, waivers, attestations, and drift detection instead of blindly echoing the persisted bundle.
+
+Execution witness artifacts now also persist additive sidecar receipts beside the witness file itself (for example `.ts-quality/witnesses/<name>.receipt.json`), recording the exact command, scoped source/test files, and execution receipt that produced the witness. That keeps execution-backed invariant support inspectable instead of collapsing it into a naked pass artifact.
 
 Authorization artifacts written by `ts-quality authorize` add an additive `evidenceContext` that points back to the exact evaluated run (`runId`, artifact paths, blocking governance findings, run-scoped attestation verification outcomes, and the first at-risk invariant provenance summary). The paired `bundle.<agent>.<action>.json` artifact carries the same run-scoped attestation verification summary so legitimacy inputs remain inspectable at the exact authorization boundary without inventing a second evidence authority beyond `run.json`.
 
@@ -226,13 +253,15 @@ Authorization artifacts written by `ts-quality authorize` add an additive `evide
 
 A strong `ts-quality` result depends on explicit inputs, not hidden inference:
 
+- **Explicit changed scope** — provide CLI `--changed <a,b,c>`, `changeSet.files`, or a `changeSet.diffFile` with at least one changed hunk. `check` fails closed when no changed scope is supplied instead of silently widening to the whole repo.
 - **Coverage evidence** — provide `coverage/lcov.info` so CRAP and covered-only mutation selection are grounded in executed code.
 - **Green mutation baseline** — `mutations.testCommand` must pass before mutation results are trusted. A broken baseline blocks mutation scoring instead of pretending every failing run killed a mutant.
 - **Executable tests** — `mutations.testCommand` must actually fail when behavior changes, or mutants will survive and confidence will drop. The command must contain at least one executable argument.
 - **Hermetic mutation execution** — mutation subprocesses drop inherited nested test-runner recursion context (for example `NODE_TEST_CONTEXT`) so the same repo does not score differently just because `check` was launched from inside `node --test`.
 - **Measured mutation pressure** — if the evaluated scope produces no killed or surviving mutants, `ts-quality` treats that as missing evidence instead of a perfect 1.0 mutation score.
 - **Runtime parity for built-output tests** — when tests execute compiled output from roots such as `dist/` or `lib/`, configured runtime mirrors receive mutated JS directly for JS sources and transpiled JS for TS/TSX sources so mutation pressure stays aligned with the runtime under test.
-- **Focused test evidence** — invariant scenarios are matched against tests aligned to the impacted source by file naming/import hints or explicit `requiredTestPatterns`, not by unrelated repo-global keyword hits.
+- **Focused test evidence** — invariant scenarios are matched against tests aligned to the impacted source by file naming/import hints or explicit `requiredTestPatterns`, not by unrelated repo-global keyword hits. Deterministic lexical support also has to come from one assertion-bearing focused test case, not from stitching happy-path and failure-path keywords across separate tests in the same file or relying on setup-only non-asserting cases. That evidence is deterministic lexical alignment unless the scenario also carries a matching execution witness artifact.
+- **Execution-backed witnesses** — when you have a narrow runtime proof command, `ts-quality witness test ... -- <command>` can generate a scoped execution witness artifact under `.ts-quality/witnesses/` so invariant support can graduate from `lexically-supported` to `supported` without hand-authoring JSON. For recurring scenarios, the same witness command/output can now be declared directly on the invariant scenario so `ts-quality check` auto-generates it for impacted scope.
 
 ## Materialized runtime config
 
@@ -282,6 +311,8 @@ npm run sample-artifacts
 npm run smoke
 npm run verify
 ```
+
+`npm test` now runs the full `test/*.test.mjs` surface before exiting so one early failure does not hide later regressions. Failing runs also write a compact deterministic summary to `.ts-quality/test-runner/failure-summary.json`, which is cleared before a clean passing run so stale failure state does not linger. For local debugging when you explicitly want the old stop-on-first-failure behavior, set `TS_QUALITY_TEST_RUNNER_FAIL_FAST=1`.
 
 ## Repo task workflow (AK)
 

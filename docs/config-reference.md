@@ -61,17 +61,55 @@ npx ts-quality materialize
 npx ts-quality check --config .ts-quality/materialized/ts-quality.config.json
 ```
 
+## Invariant witness generation
+
+Invariant scenarios live in the separate invariants file, but `check` can now auto-generate execution-backed witness artifacts when a scenario declares:
+
+- `executionWitnessCommand: string[]`
+- `executionWitnessOutput: string`
+- optional `executionWitnessTestFiles: string[]`
+- optional `executionWitnessTimeoutMs: number`
+- optional `executionWitnessPatterns: string[]` (defaults to `[executionWitnessOutput]`)
+
+`sourceFiles` are intentionally **not** configured here; they are inferred from the impacted invariant scope at runtime so the witness command stays downstream of the same changed-scope truth used by invariant evaluation.
+
+Example inside `.ts-quality/invariants.ts`:
+
+```ts
+export default [{
+  id: 'auth.refresh.validity',
+  title: 'Refresh token validity',
+  description: 'Expired refresh tokens must never authorize access.',
+  severity: 'high',
+  selectors: ['path:src/auth/**', 'symbol:isRefreshExpired'],
+  scenarios: [{
+    id: 'expired-boundary',
+    description: 'exact expiry boundary denies access',
+    keywords: ['active token before expiry allows access'],
+    failurePathKeywords: ['exact expiry boundary denies access'],
+    executionWitnessCommand: ['node', '--test', 'test/token.test.js'],
+    executionWitnessOutput: '.ts-quality/witnesses/auth-refresh-expired-boundary.json',
+    executionWitnessTestFiles: ['test/token.test.js'],
+    executionWitnessTimeoutMs: 5000,
+    expected: 'deny'
+  }]
+}];
+```
+
+`check` runs that command for impacted scenarios, writes the witness under the configured repo-local output path, writes a sibling `.receipt.json` execution receipt sidecar, then lets invariant evaluation consume it as execution-backed support. The repo-native pre-refresh surface is `npx ts-quality witness refresh` (or `npm run witness:refresh --silent` from this repo), which runs the same configured impacted witness commands before `check` when you want that stage to stay explicit in CI. Keep the witness artifact/receipt semantics in `docs/invariant-dsl.md`; keep CI staging guidance in `docs/ci-integration.md`.
+
 ## Notes
 
-- `changeSet.files` scopes merge confidence to changed code. When it is absent or an empty array, `check` falls back to all discovered source files instead of analyzing an empty scope.
-- `changeSet.diffFile` adds diff-hunk precision and now narrows scope within a changed file instead of widening back to whole-file analysis.
+- `ts-quality check` now requires explicit changed scope. Provide CLI `--changed <a,b,c>`, configure `changeSet.files`, or configure a `changeSet.diffFile` that yields at least one changed hunk. If no changed files or hunks are available, `check` fails closed instead of silently widening to the whole repo.
+- `changeSet.files` scopes merge confidence to changed code.
+- `changeSet.diffFile` adds diff-hunk precision and also contributes changed file identities when `changeSet.files` is omitted, so diff-only runs stay anchored to the exact changed files instead of widening back to whole-file analysis.
 - `mutations.testCommand` must pass on the unmutated baseline before mutation pressure is trusted, and it must contain at least one executable argument.
 - For `.ts` / `.js` / `.mjs` / `.cjs` config and repo-local support files, only data-only module syntax is supported. If you need dynamic values, compute them outside the config file and write the resolved data into the config explicitly.
 - Mutation cache reuse is keyed by a deterministic execution fingerprint that includes the effective execution environment after inherited nested test-runner recursion context is stripped, so test-corpus drift or runner-context leakage invalidates stale manifest entries.
 - `mutations.coveredOnly` focuses on covered lines. When a file or line has no LCOV evidence, it is treated as uncovered rather than mutated optimistically.
 - `mutations.runtimeMirrorRoots` tells mutant runs which built-runtime roots should mirror mutated sources into executable runtime trees (default: `['dist']`). JS sources are copied directly; TS/TSX sources are transpiled before being written into matching runtime mirror files. Use this when tests execute built output from `dist/`, `lib/`, `build/`, or another runtime tree. Root-level source files are also mirrored into matching built roots such as `dist/index.js`.
 - `policy` defines default merge gates before constitutional rules add domain-specific constraints. Values are range-checked when config is loaded: `maxChangedCrap >= 0`, `0 <= minMutationScore <= 1`, and `0 <= minMergeConfidence <= 100`.
-- Path-bearing analysis inputs (`coverage.lcovPath`, `changeSet.files`, `changeSet.diffFile`, `mutations.runtimeMirrorRoots`) and config/support artifact paths (`invariantsPath`, `constitutionPath`, `agentsPath`, `approvalsPath`, `waiversPath`, `overridesPath`, `attestationsDir`, `trustedKeysDir`) are canonicalized to repo-local paths. Paths that escape `--root`, including symlink escapes, are rejected.
+- Path-bearing analysis inputs (`coverage.lcovPath`, `changeSet.files`, `changeSet.diffFile`, `mutations.runtimeMirrorRoots`) and config/support artifact paths (`invariantsPath`, `constitutionPath`, `agentsPath`, `approvalsPath`, `waiversPath`, `overridesPath`, `attestationsDir`, `trustedKeysDir`) are canonicalized to repo-local paths. Invariants also canonicalize execution witness output/test-file paths and reject witness outputs that escape `--root`. Paths that escape `--root`, including symlink escapes, are rejected.
 - The default `testPatterns` intentionally include both `test/**` and `tests/**` trees plus colocated `*.test.*` / `*.spec.*` files for JS and TS variants.
 - CLI commands that load config (`check`, `plan`, `govern`, `authorize`, `amend`) accept `--config <file>` when you need a nonstandard config filename.
-- Downstream decision commands (`plan`, `govern`, `authorize`) project from the latest evaluated run plus exact run-bound approvals/attestations. `check` snapshots the decision control plane (schema version, config digest, policy defaults, constitution rules, agent grants, and support-path bindings), so later decision surfaces keep using that run-bound snapshot, reject unsupported or malformed snapshot schemas with a re-run instruction, and refuse the request if the analyzed changed files or snapped config / constitution / agents drift after `check`.
+- Downstream run-reading commands (`explain`, `report`, `plan`, `govern`, `authorize`) accept `--run-id <id>` when you need an exact persisted run instead of the repo-local latest pointer. `check` snapshots the decision control plane (schema version, config digest, policy defaults, constitution rules, agent grants, and support-path bindings), so later decision surfaces keep using that run-bound snapshot, reject unsupported or malformed snapshot schemas with a re-run instruction, and refuse the request if the analyzed changed files or snapped config / constitution / agents drift after `check`.

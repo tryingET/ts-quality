@@ -4,8 +4,9 @@ auth-risk-budget: Auth code requires stronger evidence because it decides author
 - Merge confidence 46 below minimum 65
 
 - Invariant evidence at risk: auth.refresh.validity
+- Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof
 - Evidence provenance: explicit 3, inferred 1, missing 1
 - focused-test-alignment [clear; mode=inferred]: 1 focused test file aligned to invariant scope
-- scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support
+- scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic lexical support
 - mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 4 mutation sites
-- Obligation: Add or tighten a focused test for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.
+- Obligation: Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.

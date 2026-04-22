@@ -160,7 +160,7 @@ Before publishing, re-check the reviewed legitimacy outputs that README and rele
 - `examples/artifacts/governed-app/amend.txt`
 
 These are the current sample anchors for the shipped SG6 legitimacy surface: run-bound authorization evidence, human-readable attestation verification, and the additive amendment summary.
-Keep `run.json`, the authorization decision + bundle artifacts, and the amendment JSON result authoritative; the reviewed sample outputs are operator-facing projections, not a second legitimacy authority.
+Keep `run.json`, the authorization decision + bundle artifacts, and the amendment JSON result authoritative; the reviewed sample outputs are operator-facing projections, not a second legitimacy authority. If the release also changes invariant witness generation or execution-backed support semantics, re-check the live contracts in `docs/invariant-dsl.md`, `docs/config-reference.md`, and `docs/ci-integration.md` instead of duplicating witness-specific release prose here.
 
 ### 7) Confirm public repo metadata
 
@@ -169,6 +169,7 @@ Before publishing, make sure the public surfaces are coherent:
 - GitHub description matches the npm description closely
 - README quickstart and package-operator guidance match the staged-package path
 - README/operator docs point at the same legitimacy outputs the repo actually ships (`authorize.*.json`, `attestation-verify.txt`, and amendment JSON/text)
+- if witness generation/operator flow changed, README and docs should defer to `docs/invariant-dsl.md`, `docs/config-reference.md`, and `docs/ci-integration.md` as the canonical witness/operator docs instead of restating those details ad hoc
 - GitHub topics are set
 - social preview image is uploaded in repo settings
 - CHANGELOG documents anything alpha-breaking or release-relevant

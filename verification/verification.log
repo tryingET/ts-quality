@@ -134,6 +134,12 @@ $ npm run smoke:packaging --silent
     "dist/packages/evidence-model/src/index.d.ts",
     "dist/packages/evidence-model/src/index.js",
     "dist/packages/evidence-model/src/index.js.map",
+    "dist/packages/governance/src/import-collector.d.ts",
+    "dist/packages/governance/src/import-collector.js",
+    "dist/packages/governance/src/import-collector.js.map",
+    "dist/packages/governance/src/import-provenance.d.ts",
+    "dist/packages/governance/src/import-provenance.js",
+    "dist/packages/governance/src/import-provenance.js.map",
     "dist/packages/governance/src/index.d.ts",
     "dist/packages/governance/src/index.js",
     "dist/packages/governance/src/index.js.map",
@@ -175,6 +181,12 @@ $ npm run smoke:packaging --silent
     "package/dist/packages/evidence-model/src/index.d.ts",
     "package/dist/packages/evidence-model/src/index.js",
     "package/dist/packages/evidence-model/src/index.js.map",
+    "package/dist/packages/governance/src/import-collector.d.ts",
+    "package/dist/packages/governance/src/import-collector.js",
+    "package/dist/packages/governance/src/import-collector.js.map",
+    "package/dist/packages/governance/src/import-provenance.d.ts",
+    "package/dist/packages/governance/src/import-provenance.js",
+    "package/dist/packages/governance/src/import-provenance.js.map",
     "package/dist/packages/governance/src/index.d.ts",
     "package/dist/packages/governance/src/index.js",
     "package/dist/packages/governance/src/index.js.map",
@@ -219,7 +231,23 @@ $ npm run smoke:packaging --silent
       ".ts-quality/keys/sample.pem",
       ".ts-quality/keys/sample.pub.pem"
     ],
-    "materializedConfig": ".ts-quality/materialized/ts-quality.config.json"
+    "materializedConfig": ".ts-quality/materialized/ts-quality.config.json",
+    "checkRequiresScope": {
+      "outcome": "fail",
+      "stderrIncludes": "Changed scope is required."
+    },
+    "keygen": {
+      "runId": "packaging-installed-keygen-run",
+      "outDir": ".ts-quality/generated-keys",
+      "keyId": "packaging-generated",
+      "stdoutMatchesAbsolutePaths": true,
+      "created": [
+        ".ts-quality/generated-keys/packaging-generated.pem",
+        ".ts-quality/generated-keys/packaging-generated.pub.pem"
+      ],
+      "attestationPath": ".ts-quality/attestations/generated-key.json",
+      "verifiedIssuer": "ci.generated"
+    }
   },
   "api": {
     "exportTypes": {
@@ -242,6 +270,154 @@ $ npm run smoke:packaging --silent
     "compiler": "tsc",
     "passed": true,
     "importStatement": "import { initProject, materializeProject } from 'ts-quality';"
+  },
+  "fixtureBreadth": {
+    "monorepoBoundary": {
+      "fixture": "mini-monorepo",
+      "runId": "packaging-installed-mini-monorepo-run",
+      "changedFiles": [
+        "packages/api/src/consumer.js"
+      ],
+      "outcome": "fail",
+      "packageName": "api-pkg",
+      "governanceRuleId": "api-cannot-import-identity",
+      "governIncludes": [
+        "api-cannot-import-identity",
+        "API code may not import identity state directly."
+      ]
+    }
+  },
+  "reviewFlow": {
+    "fixture": "governed-app",
+    "runId": "packaging-installed-review-run",
+    "runArtifacts": [
+      ".ts-quality/runs/packaging-installed-review-run/run.json",
+      ".ts-quality/runs/packaging-installed-review-run/verdict.json",
+      ".ts-quality/runs/packaging-installed-review-run/report.md",
+      ".ts-quality/runs/packaging-installed-review-run/pr-summary.md",
+      ".ts-quality/runs/packaging-installed-review-run/check-summary.txt",
+      ".ts-quality/runs/packaging-installed-review-run/explain.txt",
+      ".ts-quality/runs/packaging-installed-review-run/plan.txt",
+      ".ts-quality/runs/packaging-installed-review-run/govern.txt",
+      ".ts-quality/runs/packaging-installed-review-run/attestation-verify.txt"
+    ],
+    "report": {
+      "artifact": ".ts-quality/runs/packaging-installed-review-run/report.md",
+      "stdoutMatchesArtifact": true,
+      "stdoutIncludes": [
+        "# ts-quality report"
+      ]
+    },
+    "explain": {
+      "artifact": ".ts-quality/runs/packaging-installed-review-run/explain.txt",
+      "stdoutMatchesArtifact": true,
+      "stdoutIncludes": [
+        "Reasons:"
+      ]
+    },
+    "plan": {
+      "artifact": ".ts-quality/runs/packaging-installed-review-run/plan.txt",
+      "stdoutIncludes": [
+        "Invariant evidence at risk: auth.refresh.validity",
+        "1. Tighten tests around surviving mutants"
+      ],
+      "artifactIncludes": [
+        "Invariant evidence at risk: auth.refresh.validity",
+        "1. [test] Tighten tests around surviving mutants"
+      ]
+    },
+    "trend": {
+      "currentRun": "packaging-installed-review-trend-run",
+      "previousRun": "packaging-installed-review-run",
+      "stdoutIncludes": [
+        "Current run: packaging-installed-review-trend-run",
+        "Previous run: packaging-installed-review-run",
+        "Invariant evidence at risk: auth.refresh.validity",
+        "Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof",
+        "Evidence provenance: explicit 3, inferred 1, missing 1",
+        "scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic lexical support"
+      ],
+      "omitsObligation": true
+    },
+    "runSelection": {
+      "latestReportRunId": "packaging-installed-review-trend-run",
+      "selectedReportRunId": "packaging-installed-review-run",
+      "latestAuthorizeOutcome": "deny",
+      "latestAuthorizeRunId": "packaging-installed-review-trend-run",
+      "selectedAuthorizeOutcome": "approve",
+      "selectedAuthorizeRunId": "packaging-installed-review-run",
+      "selectedAuthorizeOverride": "maintainer"
+    },
+    "materializedConfig": {
+      "configPath": ".ts-quality/materialized/ts-quality.config.json",
+      "sourceRunId": "packaging-installed-materialized-source-run",
+      "runId": "packaging-installed-materialized-config-run",
+      "analysisConfigPath": ".ts-quality/materialized/ts-quality.config.json",
+      "controlPlaneConfigPath": ".ts-quality/materialized/ts-quality.config.json",
+      "matchesSourceVerdict": true,
+      "matchesSourceChangedFiles": true,
+      "matchesSourceGovernance": true,
+      "governIncludes": [
+        "auth-risk-budget",
+        "Invariant evidence at risk: auth.refresh.validity"
+      ]
+    },
+    "driftDetection": {
+      "runId": "packaging-installed-drift-run",
+      "mutatedFile": "src/auth/token.js",
+      "planIncludes": [
+        "Run drift detected for packaging-installed-drift-run.",
+        "changed file src/auth/token.js:"
+      ],
+      "governIncludes": [
+        "Run drift detected for packaging-installed-drift-run.",
+        "changed file src/auth/token.js:"
+      ],
+      "authorize": {
+        "agent": "maintainer",
+        "outcome": "deny",
+        "runId": "packaging-installed-drift-run",
+        "reasonIncludes": "Repository changed since run",
+        "bundlePath": ".ts-quality/runs/packaging-installed-drift-run/bundle.maintainer.merge.json",
+        "decisionPath": ".ts-quality/runs/packaging-installed-drift-run/authorize.maintainer.merge.json"
+      }
+    },
+    "governIncludes": "auth-risk-budget",
+    "attestation": {
+      "subject": ".ts-quality/runs/packaging-installed-review-run/verdict.json",
+      "runId": "packaging-installed-review-run",
+      "artifact": "verdict.json",
+      "verified": true
+    },
+    "authorize": {
+      "agent": "maintainer",
+      "outcome": "approve",
+      "overrideUsed": "maintainer",
+      "runId": "packaging-installed-review-run",
+      "bundlePath": ".ts-quality/runs/packaging-installed-review-run/bundle.maintainer.merge.json",
+      "verifiedAttestations": 1
+    },
+    "releaseBotAuthorize": {
+      "deniedWithoutOverride": {
+        "outcome": "deny",
+        "missingProof": [],
+        "verifiedAttestations": 1,
+        "governIncludes": "auth-risk-budget"
+      },
+      "approved": {
+        "agent": "release-bot",
+        "outcome": "approve",
+        "overrideUsed": "maintainer",
+        "runId": "packaging-installed-review-run",
+        "bundlePath": ".ts-quality/runs/packaging-installed-review-run/bundle.release-bot.merge.json",
+        "verifiedAttestations": 1
+      }
+    },
+    "amend": {
+      "proposalId": "packaging-installed-amendment",
+      "outcome": "needs-approvals",
+      "textArtifact": ".ts-quality/amendments/packaging-installed-amendment.result.txt"
+    }
   }
 }
 

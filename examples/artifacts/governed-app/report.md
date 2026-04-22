@@ -51,9 +51,9 @@ type: "reference"
 ℹ duration_ms 0
 - [error] Invariant auth.refresh.validity is at-risk
   - 3 surviving mutants in impacted invariant scope
-  - Missing deterministic test evidence for scenario 'exact expiry boundary denies access'
-  - Invariant evidence modes: focused-test-alignment=inferred; scenario-support=missing; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit
-  - Add or tighten a focused test for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.
+  - Missing deterministic lexical test evidence for scenario 'exact expiry boundary denies access'
+  - Invariant evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof; Invariant evidence modes: focused-test-alignment=inferred; scenario-support=missing; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit
+  - Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.
 - [error] Auth code requires stronger evidence because it decides authorization.
   - Mutation score 0.25 below budget 0.75
 - [error] Auth code requires stronger evidence because it decides authorization.
@@ -61,6 +61,7 @@ type: "reference"
 
 ## Invariants
 - auth.refresh.validity: at-risk
+  - evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof
   - impacted files: src/auth/token.js
   - focused tests: test/token.test.js
   - changed functions: function:canUseRefreshToken (src/auth/token.js, coverage 100%, CRAP 3); function:isRefreshExpired (src/auth/token.js, coverage 100%, CRAP 1); function:issueAccessDecision (src/auth/token.js, coverage 100%, CRAP 3)
@@ -72,8 +73,8 @@ type: "reference"
       - mode reason: matched focused tests via deterministic path/import/selector hints
       - impacted files: src/auth/token.js
       - focused tests: test/token.test.js
-    - scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic support
-      - mode reason: heuristically aligned focused tests were evaluated, but no scenario has full deterministic support
+    - scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic lexical support
+      - mode reason: heuristically aligned focused tests were evaluated, but no scenario has full deterministic lexical support
       - expired-boundary: missing failure-path evidence
     - coverage-pressure [clear; mode=explicit]: All changed functions in invariant scope are at or above 80% coverage
       - mode reason: coverage evidence came from LCOV for changed functions in invariant scope
@@ -88,7 +89,7 @@ type: "reference"
       - function:canUseRefreshToken (src/auth/token.js, coverage 100%, CRAP 3)
       - function:isRefreshExpired (src/auth/token.js, coverage 100%, CRAP 1)
       - function:issueAccessDecision (src/auth/token.js, coverage 100%, CRAP 3)
-  - obligation: Add or tighten a focused test for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.
+  - obligation: Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.
 
 ## Governance
 - [error] auth-risk-budget: Auth code requires stronger evidence because it decides authorization.

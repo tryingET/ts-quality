@@ -37,13 +37,37 @@ The monorepo root is the control plane; package-specific runtime behavior belong
 ## AK workflow
 - Agent Kernel is authoritative for live repo task state.
 - `governance/work-items.json` is a checked-in projection/planning artifact, not the live queue.
-- This repo now ships a repo-local AK launcher copied from the working `ts-quality-tools` pattern:
-  - canonical entrypoint: `./scripts/ak.sh`
-  - compatibility alias: `./scripts/ak-v2.sh`
-  - doctor / runner resolution: `./scripts/ak.sh --doctor`
-  - ready tasks: `./scripts/ak.sh task ready --format json`
-  - inspect repo task detail: `./scripts/ak.sh task list --format json --verbose | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality" and .id == <TASK_ID>)'`
-  - claim a repo-scoped task: `./scripts/ak.sh task claim <TASK_ID> --agent pi`
+- Use plain installed `ak` for all AK operations:
+  - canonical entrypoint: `ak`
+  - doctor / runner resolution: `ak --doctor`
+  - ready tasks: `ak task ready --format json`
+  - inspect repo task detail: `ak task list --format json --verbose | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality" and .id == <TASK_ID>)'`
+  - claim a repo-scoped task: `ak task claim <TASK_ID> --agent pi`
+- Repo direction lives in `docs/project/*`; when direction docs change or you need current posture, use `ak direction import|check|export` from the repo root.
+- Treat `ak direction check` as the authority-reconciliation gate between repo direction docs and AK’s structured direction substrate.
+
+## Exact-task shortcut
+When the operator provides an exact AK task id, use exact-task mode.
+
+Default flow:
+1. `ak task show <id>`
+2. `ak task scope show <id>`
+3. claim the task if claimable
+4. read only the docs/code/tests needed for that task
+5. implement within scope
+6. run the smallest truthful verification that proves the slice
+7. commit
+
+In exact-task mode, do **not** read or update:
+- `next_session_prompt.md`
+- `docs/project/**`
+- `governance/work-items.json`
+- `diary/**`
+
+unless:
+- the operator explicitly asked,
+- the task scope explicitly requires it, or
+- implementation is strictly blocked without it.
 
 ## Product/runtime source of truth
 For exact shipped behavior, read and keep aligned:
@@ -78,6 +102,16 @@ For exact shipped behavior, read and keep aligned:
 - Amendment flow: `npx ts-quality amend --proposal <proposal.json>`
 
 ## Read order
+### Exact-task sessions
+Use this when the operator supplied an exact AK task id.
+1. `README.md`
+2. `ARCHITECTURE.md`
+3. relevant runtime docs (`docs/config-reference.md`, `docs/invariant-dsl.md`, `docs/ci-integration.md`) only as needed
+4. relevant package source under `packages/`
+5. relevant regression tests under `test/`
+6. `next_session_prompt.md` only if the task scope or operator explicitly requires it
+
+### Resume/handoff sessions without an exact task id
 1. `README.md`
 2. `ARCHITECTURE.md`
 3. `next_session_prompt.md`

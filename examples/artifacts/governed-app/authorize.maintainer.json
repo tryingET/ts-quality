@@ -45,8 +45,10 @@
         "inferred": 1,
         "missing": 1
       },
+      "evidenceSemantics": "deterministic-lexical",
+      "evidenceSemanticsSummary": "deterministic lexical alignment over focused tests; not execution-backed behavioral proof",
       "invariantId": "auth.refresh.validity",
-      "obligation": "Add or tighten a focused test for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.",
+      "obligation": "Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.",
       "signals": [
         {
           "label": "Focused test alignment",
@@ -60,7 +62,7 @@
           "level": "missing",
           "mode": "missing",
           "signalId": "scenario-support",
-          "summary": "0/1 scenario(s) have deterministic support"
+          "summary": "0/1 scenario(s) have deterministic lexical support"
         },
         {
           "label": "Mutation pressure",

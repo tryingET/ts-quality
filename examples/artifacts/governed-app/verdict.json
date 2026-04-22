@@ -66,9 +66,9 @@
       "code": "invariant-risk",
       "evidence": [
         "3 surviving mutants in impacted invariant scope",
-        "Missing deterministic test evidence for scenario 'exact expiry boundary denies access'",
-        "Invariant evidence modes: focused-test-alignment=inferred; scenario-support=missing; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit",
-        "Add or tighten a focused test for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'."
+        "Missing deterministic lexical test evidence for scenario 'exact expiry boundary denies access'",
+        "Invariant evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof; Invariant evidence modes: focused-test-alignment=inferred; scenario-support=missing; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit",
+        "Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'."
       ],
       "id": "policy:invariant:auth.refresh.validity",
       "level": "error",
