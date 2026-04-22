@@ -1,4 +1,5 @@
 node_modules/
 .ts-quality/
 coverage/
+.pi-subagent-sessions/
 *.log
