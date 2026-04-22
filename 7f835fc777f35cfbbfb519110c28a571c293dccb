@@ -1,0 +1,20 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "7f835fc777f35cfbbfb519110c28a571c293dccb"
+created_at: "2026-04-22T19:00:53Z"
+intent: "ignore local pi subagent session artifacts so they do not appear as repo work"
+files:
+  - ".gitignore"
+validation:
+  fast_gate:
+    command: "npm test"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 1
+  total: 2
+  rationale: "local harness artifacts should stay out of git status"
