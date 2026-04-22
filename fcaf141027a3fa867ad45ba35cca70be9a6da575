@@ -3,33 +3,18 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "fcaf141027a3fa867ad45ba35cca70be9a6da575"
-created_at: "2026-04-22T15:39:32Z"
-intent: "add execution witness pipeline, run-id selection, trend comparability, and decision projection across all packages"
+created_at: "2026-04-22T15:42:59Z"
+intent: "add execution witness pipeline, run-id selection, trend comparability, and decision projection"
 files:
-  - "packages/evidence-model/src/index.ts"
-  - "packages/governance/src/import-collector.ts"
-  - "packages/governance/src/import-provenance.ts"
-  - "packages/governance/src/index.ts"
-  - "packages/invariants/src/index.ts"
-  - "packages/legitimacy/src/index.ts"
-  - "packages/policy-engine/src/index.ts"
-  - "packages/ts-mutate/src/index.ts"
-  - "packages/ts-quality/src/cli.ts"
-  - "packages/ts-quality/src/config.ts"
-  - "packages/ts-quality/src/index.ts"
-  - "dist"
-  - "package.json"
-  - "package-lock.json"
-  - "scripts"
-  - "test"
+  []
 validation:
   fast_gate:
     command: "npm run typecheck"
     status: "pass"
   full_gate:
     command: "npm run verify"
-    status: "pending"
+    status: "pass"
 group:
   index: 2
   total: 3
-  rationale: "all source, dist, test, and script changes for the execution witness feature set"
+  rationale: "main feature source/test/dist/scripts"
