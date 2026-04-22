@@ -1,0 +1,50 @@
+{
+  "repoId": "softwareco/owned/example-repo",
+  "repoPath": "/home/tryinget/ai-society/softwareco/owned/example-repo",
+  "sourceOfTruth": "docs/dev/ts-quality-current-vs-target.md",
+  "adoptionStage": "planning",
+  "currentSlices": [
+    {
+      "id": "example.boundary.contract",
+      "screenedPaths": [
+        "src/example/example-core.ts"
+      ],
+      "facadeAliases": [
+        "src/example.ts",
+        "dist/example.js"
+      ],
+      "witnessTests": [
+        "tests/example_contract.test.mjs"
+      ],
+      "status": "planned",
+      "notes": "Replace this example entry with repo-local truth before registration."
+    }
+  ],
+  "readyNextSlices": [
+    {
+      "id": "example.next.contract",
+      "candidatePaths": [
+        "src/example/next-core.ts"
+      ],
+      "witnessTests": [
+        "tests/example_next_contract.test.mjs"
+      ],
+      "why": "Describe why this is the next truthful screening slice."
+    }
+  ],
+  "candidateLaterSlices": [
+    {
+      "area": "example later area",
+      "candidatePaths": [
+        "src/example/later-core.ts"
+      ],
+      "witnessTests": [
+        "tests/example_later_contract.test.mjs"
+      ],
+      "whyLater": "Describe what makes this a later candidate instead of the next slice."
+    }
+  ],
+  "targetState": [
+    "Describe the target screening shape for this repo in concise, reviewable bullets."
+  ]
+}

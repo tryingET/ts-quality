@@ -1,0 +1,130 @@
+{
+  "repoId": "softwareco/owned/test-capabilities",
+  "repoPath": "/home/tryinget/ai-society/softwareco/owned/test-capabilities",
+  "sourceOfTruth": "docs/dev/ts-quality-current-vs-target.md",
+  "adoptionStage": "four-live-slices",
+  "currentSlices": [
+    {
+      "id": "healing.collect-files.boundary",
+      "screenedPaths": [
+        "src/healing/collect-files-core.ts"
+      ],
+      "facadeAliases": [
+        "dist/healing/collect-files.js",
+        "src/healing/collect-files.ts"
+      ],
+      "witnessTests": [
+        "tests/collect_files_contract.test.mjs"
+      ],
+      "status": "supported",
+      "notes": "Facade and runtime aliases normalize onto the behavior-bearing collect-files implementation file so mutation pressure lands on real logic instead of a re-export barrel."
+    },
+    {
+      "id": "operation.command-runner.error-surface",
+      "screenedPaths": [
+        "src/core/operations/command-runner-core.ts"
+      ],
+      "facadeAliases": [
+        "dist/core/operations/command-runner.js",
+        "src/core/operations/command-runner.ts"
+      ],
+      "witnessTests": [
+        "tests/command_runner_contract.test.mjs"
+      ],
+      "status": "supported",
+      "notes": "Facade and runtime aliases normalize onto the behavior-bearing command-runner implementation file so mutation pressure lands on real logic instead of a re-export barrel."
+    },
+    {
+      "id": "operation.kernel.fail-closed",
+      "screenedPaths": [
+        "src/core/operations/dispatch-execution.ts"
+      ],
+      "facadeAliases": [
+        "dist/core/operations.js",
+        "src/core/operations.ts"
+      ],
+      "witnessTests": [
+        "tests/operation_kernel_contract.test.mjs"
+      ],
+      "status": "supported",
+      "notes": "Facade and runtime aliases normalize onto the behavior-bearing dispatch implementation file so mutation pressure lands on real logic instead of a re-export barrel."
+    },
+    {
+      "id": "operation.test.config-override.contract",
+      "screenedPaths": [
+        "src/core/operations/config-load-core.ts",
+        "src/core/operations/config-quick-mode-core.ts",
+        "src/core/operations/config-targets-core.ts"
+      ],
+      "facadeAliases": [
+        "dist/core/operations/config-overrides.js",
+        "src/core/operations/config-overrides.ts"
+      ],
+      "witnessTests": [
+        "tests/config_overrides_contract.test.mjs"
+      ],
+      "status": "supported",
+      "notes": "The facade alias normalizes onto a three-file implementation cluster because the override contract is split across load, target routing, and quick-mode shaping."
+    }
+  ],
+  "readyNextSlices": [],
+  "candidateLaterSlices": [
+    {
+      "area": "config schema fail-closed",
+      "candidatePaths": [
+        "src/core/operations/config-load-core.ts"
+      ],
+      "witnessTests": [
+        "tests/config_contract.test.mjs"
+      ],
+      "whyLater": "Overlaps with the now-live config-override cluster until responsibilities are split more sharply."
+    },
+    {
+      "area": "heal operation",
+      "candidatePaths": [
+        "src/core/operations/heal-operation.ts"
+      ],
+      "witnessTests": [
+        "tests/healing_contract.test.mjs"
+      ],
+      "whyLater": "Useful, but broader than the first rollout slices."
+    },
+    {
+      "area": "orchestrator fail-closed",
+      "candidatePaths": [
+        "src/core/orchestrator.ts"
+      ],
+      "witnessTests": [
+        "tests/orchestrator_fail_closed_contract.test.mjs"
+      ],
+      "whyLater": "Valuable, but broader and noisier than the current operation-kernel rollout pattern."
+    },
+    {
+      "area": "quantum operation",
+      "candidatePaths": [
+        "src/core/operations/quantum-operation.ts"
+      ],
+      "witnessTests": [
+        "tests/quantum_simulator_contract.test.mjs"
+      ],
+      "whyLater": "Good candidate, but the boundary choice between operation layer and simulator layer needs care."
+    },
+    {
+      "area": "surf explore operation",
+      "candidatePaths": [
+        "src/core/operations/surf-explore-operation.ts"
+      ],
+      "witnessTests": [
+        "tests/operation_kernel_contract.test.mjs",
+        "tests/surf_client_contract.test.mjs"
+      ],
+      "whyLater": "May need a more focused witness command before becoming a clean screening slice."
+    }
+  ],
+  "targetState": [
+    "Cover the highest-risk behavior-bearing paths under src/core/operations/** rather than facade barrels.",
+    "Cover selected bounded helper boundaries under src/healing/**.",
+    "Keep witness commands focused and deterministic rather than repo-global.",
+    "Widen the net one reviewable slice at a time instead of flipping the whole repo at once."
+  ]
+}
