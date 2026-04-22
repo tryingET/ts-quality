@@ -1,0 +1,30 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "b5f4af19dec0fbaacc95756fb45f8980bb2d4077"
+created_at: "2026-04-22T18:49:04Z"
+intent: "enable stricter TypeScript compiler checks and adapt source to noUnused/noPropertyAccess rules"
+files:
+  - "tsconfig.base.json"
+  - "packages/crap4ts/src/index.ts"
+  - "packages/evidence-model/src/index.ts"
+  - "packages/governance/src/import-provenance.ts"
+  - "packages/governance/src/index.ts"
+  - "packages/invariants/src/index.ts"
+  - "packages/legitimacy/src/index.ts"
+  - "packages/ts-mutate/src/index.ts"
+  - "packages/ts-quality/src/config.ts"
+  - "packages/ts-quality/src/index.ts"
+  - "dist"
+validation:
+  fast_gate:
+    command: "npm run typecheck"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 1
+  total: 1
+  rationale: "single strictness-hardening slice covering tsconfig, source adaptations, and regenerated dist artifacts"
