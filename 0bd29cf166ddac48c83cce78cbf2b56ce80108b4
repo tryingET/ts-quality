@@ -1,0 +1,25 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "0bd29cf166ddac48c83cce78cbf2b56ce80108b4"
+created_at: "2026-04-23T11:33:16Z"
+intent: "expand checked-js coverage across remaining operator scripts"
+files:
+  - "scripts/clean.mjs"
+  - "scripts/handoff-sync.mjs"
+  - "scripts/lint.mjs"
+  - "scripts/register-screening-catalog.mjs"
+  - "scripts/smoke.mjs"
+  - "tsconfig.scripts-check.json"
+validation:
+  fast_gate:
+    command: "npm --prefix /home/tryinget/ai-society/softwareco/owned/ts-quality run typecheck --silent && npm --prefix /home/tryinget/ai-society/softwareco/owned/ts-quality run typecheck:scripts --silent"
+    status: "pass"
+  full_gate:
+    command: "npm --prefix /home/tryinget/ai-society/softwareco/owned/ts-quality run verify --silent"
+    status: "pending"
+group:
+  index: 1
+  total: 2
+  rationale: "finish script-surface checked-js coverage including the screening catalog helper"
