@@ -1,3 +1,5 @@
+// @ts-check
+
 import { spawnSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -23,6 +25,10 @@ if (args.size > 1 || (args.size === 1 && !args.has('--check'))) {
   process.exit(1);
 }
 
+/**
+ * @param {string} command
+ * @param {string[]} commandArgs
+ */
 function run(command, commandArgs) {
   const result = spawnSync(command, commandArgs, {
     cwd: root,

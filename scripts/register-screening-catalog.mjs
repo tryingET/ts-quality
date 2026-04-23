@@ -1,6 +1,15 @@
+// @ts-check
+
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+
+/** @typedef {{ id: string, screenedPaths: string[], witnessTests: string[], status: string, facadeAliases?: string[], notes?: string }} RepoScreeningCurrentSlice */
+/** @typedef {{ id: string, candidatePaths: string[], witnessTests: string[], why: string }} RepoScreeningReadyNextSlice */
+/** @typedef {{ area: string, candidatePaths: string[], witnessTests: string[], whyLater: string }} RepoScreeningLaterSlice */
+/** @typedef {{ repoId: string, repoPath: string, sourceOfTruth: string, adoptionStage: string, currentSlices: RepoScreeningCurrentSlice[], readyNextSlices: RepoScreeningReadyNextSlice[], candidateLaterSlices: RepoScreeningLaterSlice[], targetState: string[] }} RepoScreeningEntry */
+/** @typedef {{ version: 1, repos: RepoScreeningEntry[] }} RepoScreeningCatalog */
+/** @typedef {{ catalogPath: string, markdownPath: string, entryPath?: string, templatePath?: string, check?: boolean, help?: boolean }} ScriptArgs */
 
 const scriptPath = fileURLToPath(import.meta.url)
 const repoRoot = path.resolve(path.dirname(scriptPath), '..')
@@ -22,20 +31,13 @@ export const repoScreeningEntryTemplate = {
       notes: 'Replace this example entry with repo-local truth before registration.'
     }
   ],
-  readyNextSlices: [
-    {
-      id: 'example.next.contract',
-      candidatePaths: ['src/example/next-core.ts'],
-      witnessTests: ['tests/example_next_contract.test.mjs'],
-      why: 'Describe why this is the next truthful screening slice.'
-    }
-  ],
+  readyNextSlices: [],
   candidateLaterSlices: [
     {
       area: 'example later area',
       candidatePaths: ['src/example/later-core.ts'],
       witnessTests: ['tests/example_later_contract.test.mjs'],
-      whyLater: 'Describe what makes this a later candidate instead of the next slice.'
+      whyLater: 'Describe what keeps this later for now. If no single slice is clearly next, leave readyNextSlices empty until one candidate has a behavior-bearing target, a focused witness, and clear boundaries.'
     }
   ],
   targetState: [
@@ -43,6 +45,7 @@ export const repoScreeningEntryTemplate = {
   ]
 }
 
+/** @returns {void} */
 function usage() {
   console.log([
     'Usage:',
@@ -52,7 +55,12 @@ function usage() {
   ].join('\n'))
 }
 
+/**
+ * @param {string[]} argv
+ * @returns {ScriptArgs}
+ */
 function parseArgs(argv) {
+  /** @type {ScriptArgs} */
   const args = {
     catalogPath: defaultCatalogPath,
     markdownPath: defaultMarkdownPath
@@ -63,18 +71,30 @@ function parseArgs(argv) {
     const next = argv[index + 1]
     switch (arg) {
       case '--entry':
+        if (!next) {
+          throw new Error('--entry requires a path')
+        }
         args.entryPath = next
         index += 1
         break
       case '--catalog':
+        if (!next) {
+          throw new Error('--catalog requires a path')
+        }
         args.catalogPath = next
         index += 1
         break
       case '--markdown':
+        if (!next) {
+          throw new Error('--markdown requires a path')
+        }
         args.markdownPath = next
         index += 1
         break
       case '--write-template':
+        if (!next) {
+          throw new Error('--write-template requires a path')
+        }
         args.templatePath = next
         index += 1
         break
@@ -93,19 +113,33 @@ function parseArgs(argv) {
   return args
 }
 
+/** @param {string} filePath */
 function ensureParentDir(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
 }
 
+/**
+ * @param {string} filePath
+ * @returns {any}
+ */
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'))
 }
 
+/**
+ * @param {string} filePath
+ * @param {unknown} value
+ */
 function writeJson(filePath, value) {
   ensureParentDir(filePath)
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
 }
 
+/**
+ * @param {unknown} value
+ * @param {string} label
+ * @returns {string[]}
+ */
 function normalizeStringArray(value, label) {
   if (!Array.isArray(value) || value.some((item) => typeof item !== 'string' || item.length === 0)) {
     throw new Error(`${label} must be a non-empty string array when provided`)
@@ -113,6 +147,11 @@ function normalizeStringArray(value, label) {
   return [...new Set(value)].sort((left, right) => left.localeCompare(right))
 }
 
+/**
+ * @param {any} slice
+ * @param {number} index
+ * @returns {RepoScreeningCurrentSlice}
+ */
 function normalizeCurrentSlice(slice, index) {
   if (!slice || typeof slice !== 'object') {
     throw new Error(`currentSlices[${index}] must be an object`)
@@ -120,6 +159,7 @@ function normalizeCurrentSlice(slice, index) {
   if (typeof slice.id !== 'string' || slice.id.length === 0) {
     throw new Error(`currentSlices[${index}].id must be a non-empty string`)
   }
+  /** @type {RepoScreeningCurrentSlice} */
   const normalized = {
     id: slice.id,
     screenedPaths: normalizeStringArray(slice.screenedPaths, `currentSlices[${index}].screenedPaths`),
@@ -135,6 +175,11 @@ function normalizeCurrentSlice(slice, index) {
   return normalized
 }
 
+/**
+ * @param {any} slice
+ * @param {number} index
+ * @returns {RepoScreeningReadyNextSlice}
+ */
 function normalizeReadyNextSlice(slice, index) {
   if (!slice || typeof slice !== 'object') {
     throw new Error(`readyNextSlices[${index}] must be an object`)
@@ -152,6 +197,11 @@ function normalizeReadyNextSlice(slice, index) {
   }
 }
 
+/**
+ * @param {any} slice
+ * @param {number} index
+ * @returns {RepoScreeningLaterSlice}
+ */
 function normalizeLaterSlice(slice, index) {
   if (!slice || typeof slice !== 'object') {
     throw new Error(`candidateLaterSlices[${index}] must be an object`)
@@ -169,6 +219,10 @@ function normalizeLaterSlice(slice, index) {
   }
 }
 
+/**
+ * @param {any} entry
+ * @returns {RepoScreeningEntry}
+ */
 export function normalizeRepoEntry(entry) {
   if (!entry || typeof entry !== 'object') {
     throw new Error('repo screening entry must be an object')
@@ -185,9 +239,27 @@ export function normalizeRepoEntry(entry) {
   if (typeof entry.adoptionStage !== 'string' || entry.adoptionStage.length === 0) {
     throw new Error('adoptionStage must be a non-empty string')
   }
-  const currentSlices = Array.isArray(entry.currentSlices) ? entry.currentSlices.map(normalizeCurrentSlice) : []
-  const readyNextSlices = Array.isArray(entry.readyNextSlices) ? entry.readyNextSlices.map(normalizeReadyNextSlice) : []
-  const candidateLaterSlices = Array.isArray(entry.candidateLaterSlices) ? entry.candidateLaterSlices.map(normalizeLaterSlice) : []
+  /** @type {RepoScreeningCurrentSlice[]} */
+  const currentSlices = []
+  if (Array.isArray(entry.currentSlices)) {
+    for (let index = 0; index < entry.currentSlices.length; index += 1) {
+      currentSlices.push(normalizeCurrentSlice(entry.currentSlices[index], index))
+    }
+  }
+  /** @type {RepoScreeningReadyNextSlice[]} */
+  const readyNextSlices = []
+  if (Array.isArray(entry.readyNextSlices)) {
+    for (let index = 0; index < entry.readyNextSlices.length; index += 1) {
+      readyNextSlices.push(normalizeReadyNextSlice(entry.readyNextSlices[index], index))
+    }
+  }
+  /** @type {RepoScreeningLaterSlice[]} */
+  const candidateLaterSlices = []
+  if (Array.isArray(entry.candidateLaterSlices)) {
+    for (let index = 0; index < entry.candidateLaterSlices.length; index += 1) {
+      candidateLaterSlices.push(normalizeLaterSlice(entry.candidateLaterSlices[index], index))
+    }
+  }
   const targetState = Array.isArray(entry.targetState) ? normalizeStringArray(entry.targetState, 'targetState') : []
 
   return {
@@ -202,17 +274,32 @@ export function normalizeRepoEntry(entry) {
   }
 }
 
+/**
+ * @param {any} catalog
+ * @returns {RepoScreeningCatalog}
+ */
 export function normalizeCatalog(catalog) {
   if (!catalog || typeof catalog !== 'object') {
     throw new Error('catalog must be an object')
   }
-  const repos = Array.isArray(catalog.repos) ? catalog.repos.map(normalizeRepoEntry) : []
+  /** @type {RepoScreeningEntry[]} */
+  const repos = []
+  if (Array.isArray(catalog.repos)) {
+    for (const repoEntry of catalog.repos) {
+      repos.push(normalizeRepoEntry(repoEntry))
+    }
+  }
   return {
     version: 1,
     repos: repos.sort((left, right) => left.repoId.localeCompare(right.repoId))
   }
 }
 
+/**
+ * @param {any} catalog
+ * @param {any} entry
+ * @returns {RepoScreeningCatalog}
+ */
 export function upsertRepoEntry(catalog, entry) {
   const normalizedCatalog = normalizeCatalog(catalog)
   const normalizedEntry = normalizeRepoEntry(entry)
@@ -221,10 +308,18 @@ export function upsertRepoEntry(catalog, entry) {
   return normalizeCatalog({ version: 1, repos })
 }
 
+/**
+ * @param {string[]} items
+ * @returns {string}
+ */
 function markdownList(items) {
   return items.map((item) => `\`${item}\``).join(', ')
 }
 
+/**
+ * @param {any} catalog
+ * @returns {string}
+ */
 export function renderCatalogMarkdown(catalog) {
   const normalizedCatalog = normalizeCatalog(catalog)
   const lines = [
@@ -327,6 +422,10 @@ export function renderCatalogMarkdown(catalog) {
   return `${lines.join('\n')}\n`
 }
 
+/**
+ * @param {string} catalogPath
+ * @returns {RepoScreeningCatalog}
+ */
 function loadCatalog(catalogPath) {
   if (!fs.existsSync(catalogPath)) {
     return { version: 1, repos: [] }
@@ -334,6 +433,11 @@ function loadCatalog(catalogPath) {
   return normalizeCatalog(readJson(catalogPath))
 }
 
+/**
+ * @param {string} catalogPath
+ * @param {string} markdownPath
+ * @param {any} catalog
+ */
 function writeCatalogOutputs(catalogPath, markdownPath, catalog) {
   const normalizedCatalog = normalizeCatalog(catalog)
   writeJson(catalogPath, normalizedCatalog)
@@ -341,6 +445,10 @@ function writeCatalogOutputs(catalogPath, markdownPath, catalog) {
   fs.writeFileSync(markdownPath, renderCatalogMarkdown(normalizedCatalog), 'utf8')
 }
 
+/**
+ * @param {{ entryPath: string, catalogPath?: string, markdownPath?: string }} params
+ * @returns {RepoScreeningCatalog}
+ */
 export function registerRepoEntry({ entryPath, catalogPath = defaultCatalogPath, markdownPath = defaultMarkdownPath }) {
   if (!entryPath) {
     throw new Error('--entry requires a path')
@@ -352,7 +460,11 @@ export function registerRepoEntry({ entryPath, catalogPath = defaultCatalogPath,
   return updated
 }
 
-export function checkCatalogOutputs({ catalogPath = defaultCatalogPath, markdownPath = defaultMarkdownPath }) {
+/**
+ * @param {{ catalogPath?: string, markdownPath?: string }} [params={}]
+ * @returns {void}
+ */
+export function checkCatalogOutputs({ catalogPath = defaultCatalogPath, markdownPath = defaultMarkdownPath } = {}) {
   if (!fs.existsSync(catalogPath)) {
     throw new Error(`catalog file not found: ${catalogPath}`)
   }
@@ -367,6 +479,10 @@ export function checkCatalogOutputs({ catalogPath = defaultCatalogPath, markdown
   }
 }
 
+/**
+ * @param {string} templatePath
+ * @returns {void}
+ */
 function writeTemplate(templatePath) {
   if (!templatePath) {
     throw new Error('--write-template requires a path')
@@ -387,7 +503,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
       process.exit(0)
     }
     if (args.entryPath) {
-      const updated = registerRepoEntry(args)
+      const updated = registerRepoEntry({
+        entryPath: args.entryPath,
+        catalogPath: args.catalogPath,
+        markdownPath: args.markdownPath
+      })
       console.log(`registered ${updated.repos.length} repo entr${updated.repos.length === 1 ? 'y' : 'ies'}`)
       process.exit(0)
     }
@@ -399,7 +519,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
     usage()
     process.exit(1)
   } catch (error) {
-    console.error((error && error.message) || String(error))
+    console.error(error instanceof Error ? error.message : String(error))
     process.exit(1)
   }
 }

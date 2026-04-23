@@ -1,3 +1,5 @@
+// @ts-check
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -17,10 +19,18 @@ const includeExt = /\.(ts|js|mjs|md|json)$/;
 const excludeDirNames = new Set(['dist', 'node_modules', 'verification']);
 const excludeDirPaths = ['examples/artifacts'];
 
+/**
+ * @param {string} relativePath
+ * @param {string} parentPath
+ */
 function isWithin(relativePath, parentPath) {
   return relativePath === parentPath || relativePath.startsWith(`${parentPath}/`);
 }
 
+/**
+ * @param {string} relativePath
+ * @param {string} entryName
+ */
 function shouldSkipDirectory(relativePath, entryName) {
   if (entryName.startsWith('.')) {
     return true;
@@ -31,9 +41,15 @@ function shouldSkipDirectory(relativePath, entryName) {
   return excludeDirPaths.some((excludedPath) => isWithin(relativePath, excludedPath));
 }
 
+/**
+ * @param {string} [scanRoot=root]
+ * @returns {string[]}
+ */
 export function collectLintIssues(scanRoot = root) {
+  /** @type {string[]} */
   const issues = [];
 
+  /** @param {string} currentDir */
   function visit(currentDir) {
     for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
       const absolute = path.join(currentDir, entry.name);
@@ -64,6 +80,7 @@ export function collectLintIssues(scanRoot = root) {
   return issues;
 }
 
+/** @param {string} [scanRoot=root] */
 export function runLint(scanRoot = root) {
   const issues = collectLintIssues(scanRoot);
   if (issues.length > 0) {

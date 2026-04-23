@@ -13,6 +13,11 @@
     "scripts/pack-ts-quality.mjs",
     "scripts/generate-samples.mjs",
     "scripts/run-tests.mjs",
-    "scripts/packaging-smoke.mjs"
+    "scripts/packaging-smoke.mjs",
+    "scripts/clean.mjs",
+    "scripts/handoff-sync.mjs",
+    "scripts/lint.mjs",
+    "scripts/smoke.mjs",
+    "scripts/register-screening-catalog.mjs"
   ]
 }
