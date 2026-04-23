@@ -1,0 +1,24 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "7424967872a941895366558a41279718dba74011"
+created_at: "2026-04-23T11:34:04Z"
+intent: "clarify adoption guidance and central catalog semantics for when no slice is truthfully ready-next"
+files:
+  - "docs/adoption/agent-integration-how-to.md"
+  - "docs/adoption/entries/test-capabilities.json"
+  - "docs/adoption/repo-screening-catalog.json"
+  - "docs/adoption/repo-screening-catalog.md"
+  - "docs/adoption/repo-screening-entry.template.json"
+validation:
+  fast_gate:
+    command: "npm --prefix /home/tryinget/ai-society/softwareco/owned/ts-quality run typecheck --silent && npm --prefix /home/tryinget/ai-society/softwareco/owned/ts-quality run typecheck:scripts --silent"
+    status: "pass"
+  full_gate:
+    command: "npm --prefix /home/tryinget/ai-society/softwareco/owned/ts-quality run verify --silent"
+    status: "pending"
+group:
+  index: 2
+  total: 2
+  rationale: "keep adoption guidance and generated catalog artifacts together"
