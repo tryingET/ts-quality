@@ -30,3 +30,16 @@ test('verification artifacts keep the canonical npm ci step even when execution 
   assert.equal(artifactLines[0], '- `npm ci --ignore-scripts --no-audit --no-fund`');
   assert.equal(executionLines.includes('- `npm ci --ignore-scripts --no-audit --no-fund`'), false);
 });
+
+test('verification plan includes checked-js typing for critical repo scripts', () => {
+  const commands = verificationCommands(true).map((step) => `${step.command} ${step.args.join(' ')}`);
+  const typecheckIndex = commands.indexOf('npm run typecheck --silent');
+  const scriptTypecheckIndex = commands.indexOf('npm run typecheck:scripts --silent');
+
+  assert.notEqual(typecheckIndex, -1);
+  assert.notEqual(scriptTypecheckIndex, -1);
+  assert.ok(scriptTypecheckIndex > typecheckIndex);
+
+  const markdownLines = verificationMarkdownLines(true);
+  assert.equal(markdownLines.includes('- `npm run typecheck:scripts --silent`'), true);
+});

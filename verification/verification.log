@@ -10,6 +10,10 @@ $ npm run typecheck --silent
 
 
 exit=0
+$ npm run typecheck:scripts --silent
+
+
+exit=0
 $ npm run lint --silent
 lint: ok
 

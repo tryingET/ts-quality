@@ -1,17 +1,21 @@
+// @ts-check
+
 import fs from 'fs';
 import os from 'os';
 import { spawnSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+/** @typedef {{ testFile: string, exitCode: number }} TestFailure */
+
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRoot = path.resolve(path.dirname(scriptPath), '..');
-const root = path.resolve(process.env.TS_QUALITY_TEST_RUNNER_ROOT ?? defaultRoot);
+const root = path.resolve(process.env['TS_QUALITY_TEST_RUNNER_ROOT'] ?? defaultRoot);
 const testDir = path.join(root, 'test');
-const cacheRoot = process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), '.cache');
+const cacheRoot = process.env['XDG_CACHE_HOME'] ?? path.join(os.homedir(), '.cache');
 const testTempRoot = path.join(cacheRoot, 'ts-quality', 'test-runner');
-const failFast = process.env.TS_QUALITY_TEST_RUNNER_FAIL_FAST === '1';
-const skipBuild = process.env.TS_QUALITY_TEST_RUNNER_SKIP_BUILD === '1';
+const failFast = process.env['TS_QUALITY_TEST_RUNNER_FAIL_FAST'] === '1';
+const skipBuild = process.env['TS_QUALITY_TEST_RUNNER_SKIP_BUILD'] === '1';
 const SANITIZED_TEST_RUNNER_ENV_KEYS = ['NODE_TEST_CONTEXT'];
 const failureSummaryPath = path.join(root, '.ts-quality', 'test-runner', 'failure-summary.json');
 
@@ -19,6 +23,11 @@ fs.mkdirSync(testTempRoot, { recursive: true });
 fs.mkdirSync(path.dirname(failureSummaryPath), { recursive: true });
 fs.rmSync(failureSummaryPath, { force: true });
 
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @param {import('child_process').SpawnSyncOptions} [options]
+ */
 function run(command, args, options = {}) {
   return spawnSync(command, args, {
     cwd: root,
@@ -27,6 +36,10 @@ function run(command, args, options = {}) {
   });
 }
 
+/**
+ * @param {NodeJS.ProcessEnv} [baseEnv]
+ * @returns {NodeJS.ProcessEnv}
+ */
 function testCommandEnv(baseEnv = process.env) {
   const env = { ...baseEnv };
   for (const key of SANITIZED_TEST_RUNNER_ENV_KEYS) {
@@ -35,6 +48,10 @@ function testCommandEnv(baseEnv = process.env) {
   return env;
 }
 
+/**
+ * @param {TestFailure[]} failures
+ * @param {number} totalFiles
+ */
 function writeFailureSummary(failures, totalFiles) {
   const summary = {
     version: 1,
@@ -58,6 +75,7 @@ const testFiles = fs.readdirSync(testDir)
   .sort((left, right) => left.localeCompare(right))
   .map((fileName) => path.posix.join('test', fileName));
 
+/** @type {TestFailure[]} */
 const failures = [];
 
 for (const testFile of testFiles) {

@@ -1,9 +1,15 @@
+// @ts-check
+
 import assert from 'node:assert/strict';
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { gunzipSync } from 'node:zlib';
+
+/** @typedef {{ topLevelEntries: string[], directories: string[], files: string[] }} StageBoundary */
+/** @typedef {{ path: string, typeFlag: string }} TarNonRegularEntry */
+/** @typedef {{ files: string[], nonRegularEntries: TarNonRegularEntry[] }} TarballBoundary */
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -130,6 +136,7 @@ export const stagedRuntimeFilesByPackage = Object.freeze({
 });
 
 export const stagedRuntimePackageNames = Object.freeze(Object.keys(stagedRuntimeFilesByPackage).sort((left, right) => left.localeCompare(right)));
+const stagedRuntimeFilesByPackageRecord = /** @type {Record<string, readonly string[]>} */ (stagedRuntimeFilesByPackage);
 
 export const stagedPackageDirectories = Object.freeze([
   'dist',
@@ -144,19 +151,26 @@ export const stagedPackageFiles = Object.freeze([
   'LICENSE',
   'README.md',
   'package.json',
-  ...stagedRuntimePackageNames.flatMap((packageName) => stagedRuntimeFilesByPackage[packageName].map((relativePath) => `dist/packages/${packageName}/${relativePath}`))
+  ...stagedRuntimePackageNames.flatMap((packageName) => (stagedRuntimeFilesByPackageRecord[packageName] ?? []).map((relativePath) => `dist/packages/${packageName}/${relativePath}`))
 ].sort((left, right) => left.localeCompare(right)));
 
 export const packedTarballFiles = Object.freeze(stagedPackageFiles.map((relativePath) => `package/${relativePath}`).sort((left, right) => left.localeCompare(right)));
 
+/** @param {string} filePath */
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
+/** @param {unknown} value */
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+/**
+ * @param {Record<string, unknown>} source
+ * @param {string} key
+ * @param {string} sourceLabel
+ */
 function requireManifestField(source, key, sourceLabel) {
   const value = source[key];
   if (value === undefined || value === null) {
@@ -171,17 +185,29 @@ function requireManifestField(source, key, sourceLabel) {
   return cloneJson(value);
 }
 
+/**
+ * @param {string} filePath
+ * @param {string} message
+ */
 function ensureFile(filePath, message) {
   if (!fs.existsSync(filePath)) {
     throw new Error(message);
   }
 }
 
+/**
+ * @param {string} sourcePath
+ * @param {string} destinationPath
+ */
 function copyFileIntoStage(sourcePath, destinationPath) {
   fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
   fs.copyFileSync(sourcePath, destinationPath);
 }
 
+/**
+ * @param {string} sourceDir
+ * @param {string} destinationDir
+ */
 function copyDirectory(sourceDir, destinationDir) {
   const entries = fs.readdirSync(sourceDir, { withFileTypes: true });
   fs.mkdirSync(destinationDir, { recursive: true });
@@ -196,6 +222,11 @@ function copyDirectory(sourceDir, destinationDir) {
   }
 }
 
+/**
+ * @param {string} label
+ * @param {string[]} expected
+ * @param {string[]} actual
+ */
 function formatPathContractMessage(label, expected, actual) {
   const expectedSet = new Set(expected);
   const actualSet = new Set(actual);
@@ -210,10 +241,20 @@ function formatPathContractMessage(label, expected, actual) {
   ].filter(Boolean).join('\n');
 }
 
+/**
+ * @param {string} rootDir
+ * @returns {StageBoundary}
+ */
 function collectStagePaths(rootDir) {
+  /** @type {string[]} */
   const directories = [];
+  /** @type {string[]} */
   const files = [];
 
+  /**
+   * @param {string} currentDir
+   * @param {string} [relativeDir='']
+   */
   function walk(currentDir, relativeDir = '') {
     const entries = fs.readdirSync(currentDir, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name));
     for (const entry of entries) {
@@ -237,6 +278,7 @@ function collectStagePaths(rootDir) {
   };
 }
 
+/** @param {Buffer} block */
 function isZeroBlock(block) {
   for (const byte of block) {
     if (byte !== 0) {
@@ -246,10 +288,16 @@ function isZeroBlock(block) {
   return true;
 }
 
+/**
+ * @param {Buffer} header
+ * @param {number} start
+ * @param {number} length
+ */
 function readTarHeaderString(header, start, length) {
   return header.toString('utf8', start, start + length).replace(/\0.*$/su, '').trim();
 }
 
+/** @param {Buffer} header */
 function readTarTypeFlag(header) {
   const value = header.toString('utf8', 156, 157);
   if (!value || value === '\0') {
@@ -258,11 +306,20 @@ function readTarTypeFlag(header) {
   return value.trim() || '0';
 }
 
+/**
+ * @param {Buffer} header
+ * @param {number} start
+ * @param {number} length
+ */
 function parseTarOctal(header, start, length) {
   const value = header.toString('utf8', start, start + length).replace(/\0.*$/su, '').trim();
   return value === '' ? 0 : Number.parseInt(value, 8);
 }
 
+/**
+ * @param {string} tarballPath
+ * @returns {TarballBoundary}
+ */
 function collectTarballPaths(tarballPath) {
   const archive = gunzipSync(fs.readFileSync(tarballPath));
   const files = [];
@@ -302,6 +359,7 @@ function collectTarballPaths(tarballPath) {
   };
 }
 
+/** @param {string} tarballPath */
 export function assertPackedTarballFileSetContract(tarballPath) {
   ensureFile(tarballPath, `Missing packed tarball: ${tarballPath}`);
   const actual = collectTarballPaths(tarballPath);
@@ -323,6 +381,10 @@ export function assertPackedTarballFileSetContract(tarballPath) {
   return actual;
 }
 
+/**
+ * @param {Record<string, unknown>} publicPackage
+ * @param {Record<string, unknown>} workspacePackage
+ */
 export function buildStagedPackageManifest(publicPackage, workspacePackage) {
   return {
     name: requireManifestField(publicPackage, 'name', 'public package'),
@@ -346,29 +408,35 @@ export function buildStagedPackageManifest(publicPackage, workspacePackage) {
   };
 }
 
+/**
+ * @param {Record<string, any>} stagedPackage
+ * @param {Record<string, unknown>} publicPackage
+ * @param {Record<string, unknown>} workspacePackage
+ */
 export function assertStagedPackageManifestContract(stagedPackage, publicPackage, workspacePackage) {
   const expectedKeys = [...stagedManifestKeys].sort((left, right) => left.localeCompare(right));
   const actualKeys = Object.keys(stagedPackage).sort((left, right) => left.localeCompare(right));
   assert.deepEqual(actualKeys, expectedKeys, `Staged package manifest keys drifted: expected ${expectedKeys.join(', ')}, got ${actualKeys.join(', ')}`);
 
-  assert.equal(stagedPackage.name, requireManifestField(publicPackage, 'name', 'public package'));
-  assert.equal(stagedPackage.version, requireManifestField(publicPackage, 'version', 'public package'));
-  assert.equal(stagedPackage.description, requireManifestField(publicPackage, 'description', 'public package'));
-  assert.equal(stagedPackage.license, requireManifestField(publicPackage, 'license', 'public package'));
-  assert.deepEqual(stagedPackage.repository, requireManifestField(publicPackage, 'repository', 'public package'));
-  assert.equal(stagedPackage.homepage, requireManifestField(publicPackage, 'homepage', 'public package'));
-  assert.deepEqual(stagedPackage.bugs, requireManifestField(publicPackage, 'bugs', 'public package'));
-  assert.deepEqual(stagedPackage.keywords, requireManifestField(publicPackage, 'keywords', 'public package'));
-  assert.deepEqual(stagedPackage.dependencies, requireManifestField(publicPackage, 'dependencies', 'public package'));
-  assert.deepEqual(stagedPackage.engines, requireManifestField(workspacePackage, 'engines', 'workspace package'));
-  assert.equal(stagedPackage.main, stagedEntrypoints.main);
-  assert.equal(stagedPackage.types, stagedEntrypoints.types);
-  assert.deepEqual(stagedPackage.exports, stagedExports);
-  assert.deepEqual(stagedPackage.bin, { 'ts-quality': stagedEntrypoints.bin });
-  assert.deepEqual(stagedPackage.files, stagedFiles);
-  assert.deepEqual(stagedPackage.publishConfig, stagedPublishConfig);
+  assert.equal(stagedPackage['name'], requireManifestField(publicPackage, 'name', 'public package'));
+  assert.equal(stagedPackage['version'], requireManifestField(publicPackage, 'version', 'public package'));
+  assert.equal(stagedPackage['description'], requireManifestField(publicPackage, 'description', 'public package'));
+  assert.equal(stagedPackage['license'], requireManifestField(publicPackage, 'license', 'public package'));
+  assert.deepEqual(stagedPackage['repository'], requireManifestField(publicPackage, 'repository', 'public package'));
+  assert.equal(stagedPackage['homepage'], requireManifestField(publicPackage, 'homepage', 'public package'));
+  assert.deepEqual(stagedPackage['bugs'], requireManifestField(publicPackage, 'bugs', 'public package'));
+  assert.deepEqual(stagedPackage['keywords'], requireManifestField(publicPackage, 'keywords', 'public package'));
+  assert.deepEqual(stagedPackage['dependencies'], requireManifestField(publicPackage, 'dependencies', 'public package'));
+  assert.deepEqual(stagedPackage['engines'], requireManifestField(workspacePackage, 'engines', 'workspace package'));
+  assert.equal(stagedPackage['main'], stagedEntrypoints.main);
+  assert.equal(stagedPackage['types'], stagedEntrypoints.types);
+  assert.deepEqual(stagedPackage['exports'], stagedExports);
+  assert.deepEqual(stagedPackage['bin'], { 'ts-quality': stagedEntrypoints.bin });
+  assert.deepEqual(stagedPackage['files'], stagedFiles);
+  assert.deepEqual(stagedPackage['publishConfig'], stagedPublishConfig);
 }
 
+/** @param {string} stageRootDir */
 export function assertStagedPackageFileBoundaryContract(stageRootDir) {
   ensureFile(stageRootDir, `Missing staged package directory: ${stageRootDir}`);
   const actual = collectStagePaths(stageRootDir);

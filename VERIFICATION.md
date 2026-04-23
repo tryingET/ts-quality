@@ -13,6 +13,7 @@ The following commands were executed successfully:
 - `npm ci --ignore-scripts --no-audit --no-fund`
 - `npm run build --silent`
 - `npm run typecheck --silent`
+- `npm run typecheck:scripts --silent`
 - `npm run lint --silent`
 - `npm test --silent`
 - `npm run sample-artifacts --silent`

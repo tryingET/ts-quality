@@ -1,3 +1,5 @@
+// @ts-check
+
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
@@ -54,6 +56,7 @@ const expectedReviewRunArtifacts = [
   '.ts-quality/runs/packaging-installed-review-run/attestation-verify.txt'
 ];
 
+/** @param {string} rootDir */
 function resetRuntimeState(rootDir) {
   for (const runtimeRoot of [
     path.join(rootDir, '.ts-quality', 'attestations'),
@@ -71,6 +74,12 @@ function resetRuntimeState(rootDir) {
   }
 }
 
+/**
+ * @param {string} baseDir
+ * @param {string} fixtureName
+ * @param {string} projectDirName
+ * @returns {string}
+ */
 function prepareInstalledFixtureProject(baseDir, fixtureName, projectDirName) {
   const source = path.join(root, 'fixtures', fixtureName);
   const target = path.join(baseDir, projectDirName);
@@ -80,16 +89,30 @@ function prepareInstalledFixtureProject(baseDir, fixtureName, projectDirName) {
   return target;
 }
 
+/**
+ * @param {string} baseDir
+ * @param {string} [projectDirName='review-project']
+ * @returns {string}
+ */
 function prepareInstalledReviewProject(baseDir, projectDirName = 'review-project') {
   return prepareInstalledFixtureProject(baseDir, reviewFixtureName, projectDirName);
 }
 
+/**
+ * @param {string} baseDir
+ * @param {string} [projectDirName='monorepo-project']
+ * @returns {string}
+ */
 function prepareInstalledMonorepoProject(baseDir, projectDirName = 'monorepo-project') {
   const target = prepareInstalledFixtureProject(baseDir, monorepoFixtureName, projectDirName);
   fs.writeFileSync(path.join(target, 'packages', 'api', 'package.json'), `${JSON.stringify({ name: 'api-pkg', private: true }, null, 2)}\n`, 'utf8');
   return target;
 }
 
+/**
+ * @param {string} rootDir
+ * @returns {string}
+ */
 function writeInstalledReviewProposal(rootDir) {
   const proposalPath = path.join(rootDir, 'proposal.json');
   fs.writeFileSync(proposalPath, `${JSON.stringify({
@@ -131,6 +154,12 @@ function writeInstalledReviewProposal(rootDir) {
   return proposalPath;
 }
 
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @param {string} cwd
+ * @returns {string}
+ */
 function run(command, args, cwd) {
   const result = spawnSync(command, args, { cwd, encoding: 'utf8' });
   if (result.status !== 0) {
@@ -139,34 +168,59 @@ function run(command, args, cwd) {
   return result.stdout.trim();
 }
 
+/**
+ * @param {string} filePath
+ * @param {string} label
+ */
 function ensureFile(filePath, label) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`${label} is missing: ${filePath}`);
   }
 }
 
+/**
+ * @param {string} filePath
+ * @returns {any}
+ */
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
+/** @param {string} relativePath */
 function normalizePackageRelative(relativePath) {
   return relativePath.replace(/^\.\//u, '');
 }
 
+/**
+ * @param {string} baseDir
+ * @param {string} binName
+ * @returns {string}
+ */
 function installedBinPath(baseDir, binName) {
   return path.join(baseDir, 'node_modules', '.bin', process.platform === 'win32' ? `${binName}.cmd` : binName);
 }
 
+/**
+ * @param {string} baseDir
+ * @param {string[]} relativePaths
+ * @param {string} label
+ */
 function ensureRelativeFiles(baseDir, relativePaths, label) {
   for (const relativePath of relativePaths) {
     ensureFile(path.join(baseDir, relativePath), `${label} file`);
   }
 }
 
+/** @param {string} text */
 function normalizeText(text) {
   return text.replace(/\r\n/g, '\n').trim();
 }
 
+/**
+ * @param {string} commandOutput
+ * @param {string} artifactPath
+ * @param {string} label
+ */
 function assertOutputMatchesArtifact(commandOutput, artifactPath, label) {
   const normalizedOutput = normalizeText(commandOutput);
   const normalizedArtifact = normalizeText(fs.readFileSync(artifactPath, 'utf8'));
@@ -175,6 +229,11 @@ function assertOutputMatchesArtifact(commandOutput, artifactPath, label) {
   }
 }
 
+/**
+ * @param {string} text
+ * @param {string} label
+ * @param {string[]} fragments
+ */
 function assertTextIncludes(text, label, fragments) {
   for (const fragment of fragments) {
     if (!text.includes(fragment)) {
@@ -503,8 +562,8 @@ export function runPackagingSmoke() {
     if (JSON.stringify(materializedRun.changedFiles) !== JSON.stringify(materializedSourceRun.changedFiles)) {
       throw new Error(`Installed materialized-config changed files drifted from source config.\nexpected: ${JSON.stringify(materializedSourceRun.changedFiles)}\nactual: ${JSON.stringify(materializedRun.changedFiles)}`);
     }
-    const materializedGovernanceSummary = materializedRun.governance.map(({ ruleId, message }) => ({ ruleId, message }));
-    const materializedSourceGovernanceSummary = materializedSourceRun.governance.map(({ ruleId, message }) => ({ ruleId, message }));
+    const materializedGovernanceSummary = /** @type {any[]} */ (materializedRun.governance).map(({ ruleId, message }) => ({ ruleId, message }));
+    const materializedSourceGovernanceSummary = /** @type {any[]} */ (materializedSourceRun.governance).map(({ ruleId, message }) => ({ ruleId, message }));
     if (JSON.stringify(materializedGovernanceSummary) !== JSON.stringify(materializedSourceGovernanceSummary)) {
       throw new Error(`Installed materialized-config governance drifted from source config.\nexpected: ${JSON.stringify(materializedSourceGovernanceSummary)}\nactual: ${JSON.stringify(materializedGovernanceSummary)}`);
     }
@@ -541,7 +600,7 @@ export function runPackagingSmoke() {
     if (driftAuthorizeDecision.outcome !== 'deny') {
       throw new Error(`Unexpected ts-quality drift authorize output from installed package:\n${JSON.stringify(driftAuthorizeDecision, null, 2)}`);
     }
-    if (!(driftAuthorizeDecision.reasons ?? []).some((reason) => reason.includes('Repository changed since run'))) {
+    if (!(/** @type {string[]} */ (driftAuthorizeDecision.reasons ?? [])).some((reason) => reason.includes('Repository changed since run'))) {
       throw new Error(`Expected installed drift authorize output to mention repository drift:\n${JSON.stringify(driftAuthorizeDecision, null, 2)}`);
     }
     ensureFile(path.join(driftReviewProjectRoot, '.ts-quality', 'runs', reviewDriftRunId, 'bundle.maintainer.merge.json'), 'Installed drift authorization bundle');
@@ -550,7 +609,7 @@ export function runPackagingSmoke() {
     const monorepoProjectRoot = prepareInstalledMonorepoProject(installRoot);
     run(installedCliBinPath, ['check', '--root', monorepoProjectRoot, '--run-id', monorepoRunId], installRoot);
     const monorepoRun = readJson(path.join(monorepoProjectRoot, '.ts-quality', 'runs', monorepoRunId, 'run.json'));
-    const monorepoApiFile = monorepoRun.files.find((file) => file.filePath === 'packages/api/src/consumer.js');
+    const monorepoApiFile = /** @type {any[]} */ (monorepoRun.files).find((file) => file.filePath === 'packages/api/src/consumer.js');
     if (monorepoRun.verdict?.outcome !== 'fail') {
       throw new Error(`Expected installed monorepo fixture to fail due to the boundary violation, got:\n${JSON.stringify(monorepoRun.verdict, null, 2)}`);
     }
@@ -560,7 +619,7 @@ export function runPackagingSmoke() {
     if (monorepoApiFile?.packageName !== 'api-pkg') {
       throw new Error(`Expected installed monorepo api file to resolve to nested package api-pkg, got ${monorepoApiFile?.packageName}`);
     }
-    if (!(monorepoRun.governance ?? []).some((finding) => finding.ruleId === 'api-cannot-import-identity')) {
+    if (!(/** @type {any[]} */ (monorepoRun.governance ?? [])).some((finding) => finding.ruleId === 'api-cannot-import-identity')) {
       throw new Error(`Expected installed monorepo fixture to surface api-cannot-import-identity, got:\n${JSON.stringify(monorepoRun.governance, null, 2)}`);
     }
     const monorepoGovernText = run(installedCliBinPath, ['govern', '--root', monorepoProjectRoot, '--run-id', monorepoRunId], installRoot);

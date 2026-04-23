@@ -1,8 +1,13 @@
+// @ts-check
+
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
+
+/** @typedef {{ command: string, args: string[], markdown: string }} VerificationStep */
+/** @typedef {{ skipInstall?: boolean, checkArtifacts?: boolean }} RunVerificationOptions */
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -23,6 +28,11 @@ const typecheckStep = {
   command: 'npm',
   args: ['run', 'typecheck', '--silent'],
   markdown: '- `npm run typecheck --silent`'
+};
+const typecheckScriptsStep = {
+  command: 'npm',
+  args: ['run', 'typecheck:scripts', '--silent'],
+  markdown: '- `npm run typecheck:scripts --silent`'
 };
 const lintStep = {
   command: 'npm',
@@ -51,11 +61,16 @@ const packagingSmokeStep = {
   markdown: '- `npm run smoke:packaging --silent`'
 };
 
+/**
+ * @param {boolean} [skipInstall=false]
+ * @returns {VerificationStep[]}
+ */
 export function verificationCommands(skipInstall = false) {
   return [
     ...(skipInstall ? [] : [installStep]),
     buildStep,
     typecheckStep,
+    typecheckScriptsStep,
     lintStep,
     testStep,
     sampleArtifactsStep,
@@ -68,11 +83,16 @@ export function verificationCommands(skipInstall = false) {
   }));
 }
 
+/**
+ * @param {boolean} [skipInstall=false]
+ * @returns {string[]}
+ */
 export function verificationMarkdownLines(skipInstall = false) {
   return [
     ...(skipInstall ? [] : [installStep.markdown]),
     buildStep.markdown,
     typecheckStep.markdown,
+    typecheckScriptsStep.markdown,
     lintStep.markdown,
     testStep.markdown,
     sampleArtifactsStep.markdown,
@@ -82,11 +102,13 @@ export function verificationMarkdownLines(skipInstall = false) {
   ];
 }
 
+/** @returns {string[]} */
 export function verificationArtifactMarkdownLines() {
   return [
     installStep.markdown,
     buildStep.markdown,
     typecheckStep.markdown,
+    typecheckScriptsStep.markdown,
     lintStep.markdown,
     testStep.markdown,
     sampleArtifactsStep.markdown,
@@ -96,6 +118,7 @@ export function verificationArtifactMarkdownLines() {
   ];
 }
 
+/** @param {string} line */
 function sanitizeLogLine(line) {
   return line
     .replace(/(\baudited \d+ packages in )\d+(?:\.\d+)?ms\b/, '$1<duration-ms>')
@@ -106,6 +129,7 @@ function sanitizeLogLine(line) {
     .replace(/(ℹ duration_ms )\d+(?:\.\d+)?$/u, '$1<duration-ms>');
 }
 
+/** @param {string} value */
 function sanitizeLogFragment(value) {
   return value
     .split('\n')
@@ -113,8 +137,13 @@ function sanitizeLogFragment(value) {
     .join('\n');
 }
 
+/**
+ * @param {string} dir
+ * @returns {Map<string, string>}
+ */
 function snapshotDirectory(dir) {
   const entries = new Map();
+  /** @param {string} currentDir */
   function walk(currentDir) {
     for (const entry of fs.readdirSync(currentDir, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))) {
       const absolute = path.join(currentDir, entry.name);
@@ -131,10 +160,16 @@ function snapshotDirectory(dir) {
   return entries;
 }
 
+/** @param {Map<string, string>} snapshot */
 function formatSnapshot(snapshot) {
   return [...snapshot.entries()].map(([relative, digest]) => `${relative}:${digest}`).join('\n');
 }
 
+/**
+ * @param {Map<string, string>} left
+ * @param {Map<string, string>} right
+ * @returns {string[]}
+ */
 function diffSnapshots(left, right) {
   const files = [...new Set([...left.keys(), ...right.keys()])].sort((a, b) => a.localeCompare(b));
   const changes = [];
@@ -149,6 +184,7 @@ function diffSnapshots(left, right) {
   return changes;
 }
 
+/** @param {string} sampleArtifactsDir */
 function assertVerifiedSampleAttestation(sampleArtifactsDir) {
   const verifyPath = path.join(sampleArtifactsDir, 'attestation.verify.txt');
   const verifyText = fs.readFileSync(verifyPath, 'utf8');
@@ -157,6 +193,7 @@ function assertVerifiedSampleAttestation(sampleArtifactsDir) {
   }
 }
 
+/** @returns {string[]} */
 function canonicalInstallLogLines() {
   return [
     `$ ${installStep.command} ${installStep.args.join(' ')}`,
@@ -166,6 +203,7 @@ function canonicalInstallLogLines() {
   ];
 }
 
+/** @param {string[]} pathsToCheck */
 function assertVerificationArtifactsInSync(pathsToCheck) {
   const relativePaths = pathsToCheck.map((artifactPath) => path.relative(root, artifactPath).replace(/\\/g, '/'));
   const result = spawnSync('git', ['diff', '--exit-code', '--', ...relativePaths], {
@@ -184,12 +222,20 @@ function assertVerificationArtifactsInSync(pathsToCheck) {
   throw new Error(`Verification step failed: tracked verification artifacts drifted (${relativePaths.join(', ')})`);
 }
 
+/**
+ * @param {RunVerificationOptions} [options={}]
+ */
 export function runVerification(options = {}) {
   const skipInstall = options.skipInstall === true;
   const checkArtifacts = options.checkArtifacts === true;
   fs.mkdirSync(verificationDir, { recursive: true });
+  /** @type {string[]} */
   const lines = [];
 
+  /**
+   * @param {string} command
+   * @param {string[]} args
+   */
   function run(command, args) {
     lines.push(`$ ${command} ${args.join(' ')}`);
     const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
@@ -224,6 +270,7 @@ export function runVerification(options = {}) {
   }
   run(buildStep.command, buildStep.args);
   run(typecheckStep.command, typecheckStep.args);
+  run(typecheckScriptsStep.command, typecheckScriptsStep.args);
   run(lintStep.command, lintStep.args);
   run(testStep.command, testStep.args);
   run(sampleArtifactsStep.command, sampleArtifactsStep.args);

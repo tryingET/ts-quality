@@ -1,3 +1,5 @@
+// @ts-check
+
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
@@ -20,6 +22,7 @@ const SAMPLE_EXECUTION_FINGERPRINT = 'sha256:sample-governed-app';
 const SAMPLE_REPO_ROOT = 'tmp/tsq-samples-governed-app';
 const SAMPLE_REPO_DIR = path.join(root, '.ts-quality', 'tmp-samples', SAMPLE_FIXTURE);
 
+/** @param {string} target */
 function resetSampleRuntimeState(target) {
   const runtimeRoots = [
     path.join(target, '.ts-quality', 'attestations'),
@@ -38,6 +41,7 @@ function resetSampleRuntimeState(target) {
   }
 }
 
+/** @param {string} name */
 function prepareSampleRoot(name) {
   const source = path.join(root, 'fixtures', name);
   fs.rmSync(SAMPLE_REPO_DIR, { recursive: true, force: true });
@@ -46,7 +50,12 @@ function prepareSampleRoot(name) {
   return SAMPLE_REPO_DIR;
 }
 
+/**
+ * @param {NodeJS.ProcessEnv} [baseEnv]
+ * @returns {Record<string, string>}
+ */
 function sampleCommandEnv(baseEnv = process.env) {
+  /** @type {Record<string, string>} */
   const env = {};
   for (const key of ['PATH', 'HOME', 'TMPDIR', 'TMP', 'TEMP', 'SHELL', 'SystemRoot', 'ComSpec', 'WINDIR', 'USERPROFILE']) {
     const value = baseEnv[key];
@@ -54,10 +63,15 @@ function sampleCommandEnv(baseEnv = process.env) {
       env[key] = value;
     }
   }
-  env.TZ = 'UTC';
+  env['TZ'] = 'UTC';
   return env;
 }
 
+/**
+ * @param {string[]} args
+ * @param {string} cwd
+ * @returns {string}
+ */
 function run(args, cwd) {
   const result = spawnSync('node', [cli, ...args, '--root', cwd], {
     encoding: 'utf8',
@@ -69,12 +83,21 @@ function run(args, cwd) {
   return result.stdout;
 }
 
+/**
+ * @param {boolean} condition
+ * @param {string} message
+ */
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
 }
 
+/**
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @param {string} message
+ */
 function assertStableJsonEqual(actual, expected, message) {
   const actualJson = evidenceModel.stableStringify(actual);
   const expectedJson = evidenceModel.stableStringify(expected);
@@ -83,6 +106,7 @@ function assertStableJsonEqual(actual, expected, message) {
   }
 }
 
+/** @param {unknown} decision */
 function assertSampleAmendmentDecision(decision) {
   assertStableJsonEqual(decision, {
     approvalsAccepted: ['maintainer'],
@@ -107,6 +131,7 @@ function assertSampleAmendmentDecision(decision) {
   }, 'Sample amendment decision drifted from the reviewed contract.');
 }
 
+/** @param {unknown} text */
 function normalizeTimingText(text) {
   if (typeof text !== 'string' || text.length === 0) {
     return text;
@@ -128,10 +153,15 @@ function normalizeTimingText(text) {
     .join('\n');
 }
 
+/** @param {{ status: string, filePath: string, siteId: string }} result */
 function stableMutationDetail(result) {
   return `Mutation ${result.status} for ${result.filePath} (${result.siteId}).`;
 }
 
+/**
+ * @param {any} run
+ * @param {string} target
+ */
 function normalizeRunArtifact(run, target) {
   return {
     ...run,
@@ -159,14 +189,14 @@ function normalizeRunArtifact(run, target) {
             : normalizeTimingText(run.mutationBaseline.details)
         }
       : run.mutationBaseline,
-    mutations: run.mutations.map((result) => ({
+    mutations: /** @type {any[]} */ (run.mutations).map((result) => ({
       ...result,
       durationMs: 0,
       details: stableMutationDetail(result)
     })),
     executionWitnesses: run.executionWitnesses
       ? {
-          autoRan: run.executionWitnesses.autoRan.map((item) => ({
+          autoRan: /** @type {any[]} */ (run.executionWitnesses.autoRan).map((item) => ({
             ...item,
             receipt: {
               ...item.receipt,
@@ -174,19 +204,23 @@ function normalizeRunArtifact(run, target) {
               details: normalizeTimingText(item.receipt.details)
             }
           })),
-          skipped: run.executionWitnesses.skipped.map((item) => ({ ...item }))
+          skipped: /** @type {any[]} */ (run.executionWitnesses.skipped).map((item) => ({ ...item }))
         }
       : run.executionWitnesses,
     verdict: {
       ...run.verdict,
-      findings: run.verdict.findings.map((finding) => ({
+      findings: /** @type {any[]} */ (run.verdict.findings).map((finding) => ({
         ...finding,
-        evidence: finding.evidence.map((entry) => normalizeTimingText(entry))
+        evidence: /** @type {string[]} */ (finding.evidence).map((entry) => normalizeTimingText(entry))
       }))
     }
   };
 }
 
+/**
+ * @param {string} runDir
+ * @param {any} run
+ */
 function writeNormalizedRunArtifacts(runDir, run) {
   evidenceModel.writeJson(path.join(runDir, 'run.json'), run);
   evidenceModel.writeJson(path.join(runDir, 'report.json'), {
@@ -205,16 +239,20 @@ function writeNormalizedRunArtifacts(runDir, run) {
     const lines = [`Execution witnesses: auto-ran ${run.executionWitnesses.autoRan.length}, skipped ${run.executionWitnesses.skipped.length}`];
     if (run.executionWitnesses.autoRan.length > 0) {
       lines.push('Ran:');
-      lines.push(...run.executionWitnesses.autoRan.map((item) => `- ${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.receipt.status}; receipt=${item.receiptPath})`));
+      lines.push(.../** @type {any[]} */ (run.executionWitnesses.autoRan).map((item) => `- ${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.receipt.status}; receipt=${item.receiptPath})`));
     }
     if (run.executionWitnesses.skipped.length > 0) {
       lines.push('Skipped:');
-      lines.push(...run.executionWitnesses.skipped.map((item) => `- ${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.reason.replace(/-/g, ' ')})`));
+      lines.push(.../** @type {any[]} */ (run.executionWitnesses.skipped).map((item) => `- ${item.invariantId}:${item.scenarioId} -> ${item.outputPath} (${item.reason.replace(/-/g, ' ')})`));
     }
     fs.writeFileSync(path.join(runDir, 'execution-witnesses.txt'), `${lines.join('\n')}\n`, 'utf8');
   }
 }
 
+/**
+ * @param {string} target
+ * @param {string} runDir
+ */
 function writeStableAttestation(target, runDir) {
   const privateKeyPem = fs.readFileSync(path.join(target, '.ts-quality', 'keys', 'sample.pem'), 'utf8');
   const attestation = legitimacy.signAttestation({
