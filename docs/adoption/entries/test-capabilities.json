@@ -2,7 +2,7 @@
   "repoId": "softwareco/owned/test-capabilities",
   "repoPath": "/home/tryinget/ai-society/softwareco/owned/test-capabilities",
   "sourceOfTruth": "docs/dev/ts-quality-current-vs-target.md",
-  "adoptionStage": "four-live-slices",
+  "adoptionStage": "five-live-slices",
   "currentSlices": [
     {
       "id": "healing.collect-files.boundary",
@@ -48,6 +48,17 @@
       ],
       "status": "supported",
       "notes": "Facade and runtime aliases normalize onto the behavior-bearing dispatch implementation file so mutation pressure lands on real logic instead of a re-export barrel."
+    },
+    {
+      "id": "operation.quantum.input-envelope.contract",
+      "screenedPaths": [
+        "src/core/operations/quantum-operation.ts"
+      ],
+      "witnessTests": [
+        "tests/quantum_operation_contract.test.mjs"
+      ],
+      "status": "supported",
+      "notes": "The slice screens the behavior-bearing quantum operation implementation directly and keeps witness pressure on input validation plus result-envelope shaping rather than the broader simulator layer."
     },
     {
       "id": "operation.test.config-override.contract",
@@ -98,16 +109,6 @@
         "tests/orchestrator_fail_closed_contract.test.mjs"
       ],
       "whyLater": "Valuable, but broader and noisier than the current operation-kernel rollout pattern."
-    },
-    {
-      "area": "quantum operation",
-      "candidatePaths": [
-        "src/core/operations/quantum-operation.ts"
-      ],
-      "witnessTests": [
-        "tests/quantum_simulator_contract.test.mjs"
-      ],
-      "whyLater": "Leading non-surf candidate if widening resumes on the operation layer, but the current named witness coverage is centered on the simulator layer. Before promotion to ready-next, extract a focused operation-level witness from the existing quantum assertions in tests/operation_kernel_contract.test.mjs so the slice proves wrapper behavior such as missing-target rejection, invalid-target rejection, invalid branch-count rejection, and direct executeQuantumOperation(...) wiring/result shape without depending on the broader kernel contract file."
     },
     {
       "area": "surf explore operation",

@@ -26,8 +26,8 @@ node scripts/register-screening-catalog.mjs --entry docs/adoption/entries/<repo>
 
 - repo path: `/home/tryinget/ai-society/softwareco/owned/test-capabilities`
 - source of truth: `docs/dev/ts-quality-current-vs-target.md`
-- adoption stage: `four-live-slices`
-- live slices: 4
+- adoption stage: `five-live-slices`
+- live slices: 5
 - ready-next slices: 0
 
 ### Current live slices
@@ -50,6 +50,11 @@ node scripts/register-screening-catalog.mjs --entry docs/adoption/entries/<repo>
   - witness tests: `tests/operation_kernel_contract.test.mjs`
   - status: `supported`
   - notes: Facade and runtime aliases normalize onto the behavior-bearing dispatch implementation file so mutation pressure lands on real logic instead of a re-export barrel.
+- `operation.quantum.input-envelope.contract`
+  - screened paths: `src/core/operations/quantum-operation.ts`
+  - witness tests: `tests/quantum_operation_contract.test.mjs`
+  - status: `supported`
+  - notes: The slice screens the behavior-bearing quantum operation implementation directly and keeps witness pressure on input validation plus result-envelope shaping rather than the broader simulator layer.
 - `operation.test.config-override.contract`
   - screened paths: `src/core/operations/config-load-core.ts`, `src/core/operations/config-quick-mode-core.ts`, `src/core/operations/config-targets-core.ts`
   - facade/runtime aliases: `dist/core/operations/config-overrides.js`, `src/core/operations/config-overrides.ts`
@@ -75,10 +80,6 @@ node scripts/register-screening-catalog.mjs --entry docs/adoption/entries/<repo>
   - candidate paths: `src/core/orchestrator.ts`
   - witness tests: `tests/orchestrator_fail_closed_contract.test.mjs`
   - why later: Valuable, but broader and noisier than the current operation-kernel rollout pattern.
-- quantum operation
-  - candidate paths: `src/core/operations/quantum-operation.ts`
-  - witness tests: `tests/quantum_simulator_contract.test.mjs`
-  - why later: Leading non-surf candidate if widening resumes on the operation layer, but the current named witness coverage is centered on the simulator layer. Before promotion to ready-next, extract a focused operation-level witness from the existing quantum assertions in tests/operation_kernel_contract.test.mjs so the slice proves wrapper behavior such as missing-target rejection, invalid-target rejection, invalid branch-count rejection, and direct executeQuantumOperation(...) wiring/result shape without depending on the broader kernel contract file.
 - surf explore operation
   - candidate paths: `src/core/operations/surf-explore-operation.ts`
   - witness tests: `tests/operation_kernel_contract.test.mjs`, `tests/surf_client_contract.test.mjs`
