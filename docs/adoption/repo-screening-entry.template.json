@@ -20,18 +20,7 @@
       "notes": "Replace this example entry with repo-local truth before registration."
     }
   ],
-  "readyNextSlices": [
-    {
-      "id": "example.next.contract",
-      "candidatePaths": [
-        "src/example/next-core.ts"
-      ],
-      "witnessTests": [
-        "tests/example_next_contract.test.mjs"
-      ],
-      "why": "Describe why this is the next truthful screening slice."
-    }
-  ],
+  "readyNextSlices": [],
   "candidateLaterSlices": [
     {
       "area": "example later area",
@@ -41,7 +30,7 @@
       "witnessTests": [
         "tests/example_later_contract.test.mjs"
       ],
-      "whyLater": "Describe what makes this a later candidate instead of the next slice."
+      "whyLater": "Describe what keeps this later for now. If no single slice is clearly next, leave readyNextSlices empty until one candidate has a behavior-bearing target, a focused witness, and clear boundaries."
     }
   ],
   "targetState": [

@@ -78,11 +78,11 @@ node scripts/register-screening-catalog.mjs --entry docs/adoption/entries/<repo>
 - quantum operation
   - candidate paths: `src/core/operations/quantum-operation.ts`
   - witness tests: `tests/quantum_simulator_contract.test.mjs`
-  - why later: Good candidate, but the boundary choice between operation layer and simulator layer needs care.
+  - why later: Leading non-surf candidate if widening resumes on the operation layer, but the current named witness coverage is centered on the simulator layer. Before promotion to ready-next, extract a focused operation-level witness from the existing quantum assertions in tests/operation_kernel_contract.test.mjs so the slice proves wrapper behavior such as missing-target rejection, invalid-target rejection, invalid branch-count rejection, and direct executeQuantumOperation(...) wiring/result shape without depending on the broader kernel contract file.
 - surf explore operation
   - candidate paths: `src/core/operations/surf-explore-operation.ts`
   - witness tests: `tests/operation_kernel_contract.test.mjs`, `tests/surf_client_contract.test.mjs`
-  - why later: May need a more focused witness command before becoming a clean screening slice.
+  - why later: Intentionally paused while the surf implementation/runtime choice may still change; do not start this slice until the runtime boundary stabilizes and the witness can stay focused.
 
 ### Target state
 

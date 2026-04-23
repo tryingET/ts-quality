@@ -107,7 +107,7 @@
       "witnessTests": [
         "tests/quantum_simulator_contract.test.mjs"
       ],
-      "whyLater": "Good candidate, but the boundary choice between operation layer and simulator layer needs care."
+      "whyLater": "Leading non-surf candidate if widening resumes on the operation layer, but the current named witness coverage is centered on the simulator layer. Before promotion to ready-next, extract a focused operation-level witness from the existing quantum assertions in tests/operation_kernel_contract.test.mjs so the slice proves wrapper behavior such as missing-target rejection, invalid-target rejection, invalid branch-count rejection, and direct executeQuantumOperation(...) wiring/result shape without depending on the broader kernel contract file."
     },
     {
       "area": "surf explore operation",
@@ -118,7 +118,7 @@
         "tests/operation_kernel_contract.test.mjs",
         "tests/surf_client_contract.test.mjs"
       ],
-      "whyLater": "May need a more focused witness command before becoming a clean screening slice."
+      "whyLater": "Intentionally paused while the surf implementation/runtime choice may still change; do not start this slice until the runtime boundary stabilizes and the witness can stay focused."
     }
   ],
   "targetState": [

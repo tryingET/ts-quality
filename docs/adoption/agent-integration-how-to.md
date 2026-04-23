@@ -166,9 +166,14 @@ Create a repo-local overview such as:
 
 That file should answer:
 - what is live now
-- what is next
+- what is next, or explicitly why no single slice is ready-next yet
 - what is later
 - what the target shape is for that repo
+
+If more than one later candidate is still plausible, keep that truth:
+- do not force a provisional ready-next slice just to fill the slot
+- leave `readyNextSlices` empty in the central catalog until one candidate has a behavior-bearing implementation target, one focused witness command, and a boundary that is clear enough to review on its own
+- treat that as a deliberate pause in widening, not as rollout failure
 
 ### 11) Register the repo in the central catalog
 
