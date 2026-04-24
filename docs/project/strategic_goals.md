@@ -8,6 +8,8 @@ type: "reference"
 
 # Strategic Goals
 
+Product-maturity context for the SG7/SG8 sequence lives in [`product_posture.md`](product_posture.md); this file keeps the active strategic direction rather than becoming product-status or task truth.
+
 ## Active strategic goal
 
 ### SG7 — Re-test adoption-facing operator paths against the richer SG6 legitimacy surface

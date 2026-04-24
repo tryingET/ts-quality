@@ -14,7 +14,7 @@ Active tactical goal: **TG19 — Refresh public operator and release surfaces fo
 
 ## Current state
 
-SG6 is now complete through `task:1766-1767`: the shipped runtime already exposes additive run-bound authorization evidence and a concise human-readable amendment summary, but the direction ladder still points at those finished slices. The next truthful move is to revalidate adoption-facing docs and release surfaces against that richer SG6 output contract before promoting the deeper installed-package proof wave.
+SG6 is now complete through `task:1766-1767`: the shipped runtime already exposes additive run-bound authorization evidence and a concise human-readable amendment summary, and the active direction ladder has moved to SG7/TG19 adoption-facing revalidation. The next truthful move is to revalidate adoption-facing docs and release surfaces against that richer SG6 output contract before promoting the deeper installed-package proof wave.
 
 ## Active operating slices
 
