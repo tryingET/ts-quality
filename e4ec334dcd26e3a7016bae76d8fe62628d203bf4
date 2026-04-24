@@ -1,0 +1,21 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "e4ec334dcd26e3a7016bae76d8fe62628d203bf4"
+created_at: "2026-04-24T14:39:19Z"
+intent: "Lightly align direction docs with product_posture.md"
+files:
+  - "docs/project/strategic_goals.md"
+  - "docs/project/operating_plan.md"
+validation:
+  fast_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+  full_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+group:
+  index: 1
+  total: 1
+  rationale: "Single logical group \u2014 direction-doc alignment with product_posture.md"
