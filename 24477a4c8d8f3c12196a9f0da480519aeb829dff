@@ -1,0 +1,24 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "24477a4c8d8f3c12196a9f0da480519aeb829dff"
+created_at: "2026-04-27T18:45:06Z"
+intent: "Clarify adoption guide boundaries, add minimal walkthrough and CLI command manifest"
+files:
+  - "docs/adoption/agent-integration-how-to.md"
+  - "docs/adoption/greenfield-bootstrap-how-to.md"
+  - "docs/adoption/minimal-external-walkthrough.md"
+  - "docs/cli-command-manifest.json"
+  - "test/agent-integration-guide.test.mjs"
+validation:
+  fast_gate:
+    command: "node --test test/agent-integration-guide.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pending"
+group:
+  index: 2
+  total: 3
+  rationale: "interdependent adoption docs, new walkthrough/manifest, and updated test"
