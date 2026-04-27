@@ -6,7 +6,7 @@ read_when:
 type: "reference"
 ---
 
-# ts-quality v0.1.0
+# ts-quality
 
 [![Completely Vibe Engineered](https://img.shields.io/badge/completely-vibe%20engineered-ff4fd8?style=for-the-badge)](https://github.com/tryingET/ts-quality)
 [![Alpha](https://img.shields.io/badge/status-alpha-f59e0b?style=for-the-badge)](https://github.com/tryingET/ts-quality/blob/main/CHANGELOG.md)
@@ -110,21 +110,30 @@ That matters a lot in agent-heavy workflows, where generated artifacts and suppo
 
 ## Try it now
 
-There are two truthful ways to start with `ts-quality`: prove the package-operator path the repo can now ship, or evaluate the project directly from source.
+Start with the published package when you are evaluating a target repo. Use the repo-from-source and release-maintainer paths only when you are developing or releasing `ts-quality` itself.
 
-### 1) Prove the package-operator path
+### 1) Use the published package in a target repo
 
 ```bash
-npm install
-npm run build
-npm run smoke:packaging
+npm install --save-dev ts-quality
+npx ts-quality init
+npx ts-quality materialize
 ```
 
-This stages the package under `.ts-quality/npm/ts-quality/package`, validates the staged manifest contract, validates staged and packed file boundaries, installs the tarball into a fresh temp project, and proves the shipped CLI/API/types surfaces.
+Then configure the generated `ts-quality.config.ts` for your repo's test, coverage, changed-scope, invariant, governance, and agent surfaces. `check` intentionally requires explicit changed scope from CLI `--changed`, config `changeSet.files`, or a diff file; it fails closed instead of silently widening to the whole repo.
 
-If you are preparing the public release, do **not** publish from a local shell. Use `npm run release:plan -- --version <next-version>` and `npm run release:prepare -- --version <next-version> --apply`, then create a GitHub Release whose tag exactly matches the public package version. The release workflow re-runs the packaging proof and publishes the staged package to npm through Trusted Publishing/OIDC.
+A typical bounded review command looks like:
 
-### 2) Evaluate the repo from source
+```bash
+npx ts-quality check --changed src/auth/token.ts --run-id review-001
+npx ts-quality explain --run-id review-001
+npx ts-quality report --run-id review-001
+npx ts-quality govern --run-id review-001
+```
+
+Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example and `docs/adoption/agent-integration-how-to.md` for brownfield adoption.
+
+### 2) Evaluate this repo from source
 
 ```bash
 npm install
@@ -134,7 +143,19 @@ npm run verify
 
 This validates the repo, regenerates sample artifacts, and checks that reviewed examples stay deterministic.
 
-### 3) Run the CLI on the included fixture
+### 3) Prove the release-maintainer package path
+
+```bash
+npm install
+npm run build
+npm run smoke:packaging
+```
+
+This stages the package under `.ts-quality/npm/ts-quality/package`, validates the staged manifest contract, validates staged and packed file boundaries, installs the tarball into a fresh temp project, and proves shipped CLI/API/types plus representative review, governance, legitimacy, materialized-config, drift, and monorepo fixture flows.
+
+If you are preparing a public release, do **not** publish from a local shell. Use `npm run release:plan -- --version <next-version>` and `npm run release:prepare -- --version <next-version> --apply`, then create a GitHub Release whose tag exactly matches the public package version. The publish workflow re-runs the packaging proof and publishes the staged package to npm through Trusted Publishing/OIDC.
+
+### 4) Run the CLI on the included fixture
 
 ```bash
 node dist/packages/ts-quality/src/cli.js check --root fixtures/governed-app --run-id fixture-review
@@ -144,7 +165,7 @@ node dist/packages/ts-quality/src/cli.js govern --root fixtures/governed-app --r
 node dist/packages/ts-quality/src/cli.js authorize --root fixtures/governed-app --agent release-bot --run-id fixture-review
 ```
 
-### 4) Inspect the generated outputs
+### 5) Inspect the generated outputs
 
 Look at:
 

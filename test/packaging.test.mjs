@@ -335,6 +335,11 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.equal(summary.version, manifestContract.version);
   assert.equal(summary.stageDir, '.ts-quality/npm/ts-quality/package');
   assert.match(summary.tarball, /^\.ts-quality\/npm\/ts-quality\/tarballs\/ts-quality-.*\.tgz$/);
+  assert.deepEqual(summary.readme, {
+    startsWithFrontmatter: false,
+    heading: '# ts-quality',
+    containsVersionedHeading: false
+  });
   assert.deepEqual(summary.entrypoints, expectedEntrypoints);
   assert.deepEqual(Object.keys(summary.manifest).sort(), [...expectedManifestKeys].sort());
   assert.deepEqual(summary.manifest, manifestContract);

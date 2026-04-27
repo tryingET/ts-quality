@@ -44,6 +44,11 @@ $ npm run smoke:packaging --silent
   "version": "0.1.5",
   "stageDir": ".ts-quality/npm/ts-quality/package",
   "tarball": ".ts-quality/npm/ts-quality/tarballs/ts-quality-0.1.5.tgz",
+  "readme": {
+    "startsWithFrontmatter": false,
+    "heading": "# ts-quality",
+    "containsVersionedHeading": false
+  },
   "entrypoints": {
     "main": "dist/packages/ts-quality/src/index.js",
     "types": "dist/packages/ts-quality/src/index.d.ts",

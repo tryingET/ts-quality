@@ -13,6 +13,11 @@ type: "reference"
 ### Fixed
 
 - Fixed public release verification so freshly published `ts-quality` versions can be checked immediately without changing the maintainer's global npm `min-release-age` policy.
+- Fixed public README/package presentation by removing stale README version branding, making the first quickstart published-package-first, and making the staged package README fail closed on frontmatter or versioned headings.
+
+### Changed
+
+- Refreshed product posture to reflect that representative installed-package review/governance/legitimacy proof has landed, shifting the production-readiness gap toward first-user UX, packaged README presentation, and CLI help ergonomics.
 
 ## [0.1.5] - 2026-04-27
 

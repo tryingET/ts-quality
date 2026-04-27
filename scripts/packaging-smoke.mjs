@@ -633,6 +633,7 @@ export function runPackagingSmoke() {
       version: packSummary.version,
       stageDir: packSummary.stageDir,
       tarball: packSummary.tarball,
+      readme: packSummary.readme,
       entrypoints: packSummary.entrypoints,
       manifest: stagedPackage,
       topLevelEntries: stagedBoundary.topLevelEntries,

@@ -166,6 +166,34 @@ function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+/** @param {string} markdown */
+function stripMarkdownFrontmatter(markdown) {
+  if (!markdown.startsWith('---\n')) {
+    return markdown;
+  }
+  const end = markdown.indexOf('\n---\n', 4);
+  return end >= 0 ? markdown.slice(end + '\n---\n'.length).trimStart() : markdown;
+}
+
+/**
+ * @param {string} sourcePath
+ * @param {string} destinationPath
+ */
+function copyReadmeIntoStage(sourcePath, destinationPath) {
+  const readme = stripMarkdownFrontmatter(fs.readFileSync(sourcePath, 'utf8'));
+  if (/^---\n/u.test(readme)) {
+    throw new Error('Packaged README must not start with markdown frontmatter.');
+  }
+  if (/^#\s+ts-quality\s+v\d+\.\d+\.\d+/mu.test(readme)) {
+    throw new Error('Packaged README heading must be version-neutral; release version belongs in package metadata and release notes.');
+  }
+  if (!/^# ts-quality\s*$/mu.test(readme)) {
+    throw new Error('Packaged README must include a version-neutral `# ts-quality` heading.');
+  }
+  fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+  fs.writeFileSync(destinationPath, readme, 'utf8');
+}
+
 /**
  * @param {Record<string, unknown>} source
  * @param {string} key
@@ -475,7 +503,7 @@ export function packTsQuality() {
   fs.mkdirSync(tarballDir, { recursive: true });
 
   copyDirectory(builtDistDir, path.join(stageDir, 'dist'));
-  copyFileIntoStage(path.join(root, 'README.md'), path.join(stageDir, 'README.md'));
+  copyReadmeIntoStage(path.join(root, 'README.md'), path.join(stageDir, 'README.md'));
   copyFileIntoStage(path.join(root, 'LICENSE'), path.join(stageDir, 'LICENSE'));
 
   const stagedPackage = buildStagedPackageManifest(publicPackage, workspacePackage);
@@ -507,6 +535,7 @@ export function packTsQuality() {
   }
   const tarballPath = path.join(tarballDir, tarballName);
   const tarballBoundary = assertPackedTarballFileSetContract(tarballPath);
+  const stagedReadme = fs.readFileSync(path.join(stageDir, 'README.md'), 'utf8');
 
   const summary = {
     packageName: stagedPackage.name,
@@ -514,6 +543,11 @@ export function packTsQuality() {
     stageDir: path.relative(root, stageDir),
     packageJson: path.relative(root, path.join(stageDir, 'package.json')),
     tarball: path.relative(root, tarballPath),
+    readme: {
+      startsWithFrontmatter: stagedReadme.startsWith('---\n'),
+      heading: stagedReadme.split(/\r?\n/u).find((line) => line.startsWith('# ')) ?? '',
+      containsVersionedHeading: /^#\s+ts-quality\s+v\d+\.\d+\.\d+/mu.test(stagedReadme)
+    },
     entrypoints: stagedEntrypointFiles,
     manifest: stagedPackage,
     topLevelEntries: stagedBoundary.topLevelEntries,
