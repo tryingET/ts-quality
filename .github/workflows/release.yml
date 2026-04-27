@@ -24,7 +24,7 @@ jobs:
           ref: ${{ github.event.release.tag_name }}
       - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
       - name: Install dependencies
         run: |
@@ -37,6 +37,43 @@ jobs:
           done
       - name: Use npm CLI with Trusted Publishing support
         run: npm install -g npm@latest
+      - name: Verify Trusted Publishing runtime prerequisites
+        run: |
+          NPM_VERSION="$(npm --version)"
+          node - "$NPM_VERSION" <<'NODE'
+          const npmVersion = process.argv[2] ?? '';
+          const parse = (value) => value.split('.').map((part) => Number.parseInt(part, 10));
+          const [nodeMajor, nodeMinor] = parse(process.versions.node);
+          const [npmMajor, npmMinor, npmPatch] = parse(npmVersion);
+          const hasMinimumNpm = npmMajor > 11 || (npmMajor === 11 && (npmMinor > 5 || (npmMinor === 5 && npmPatch >= 1)));
+          if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 14)) {
+            throw new Error(`npm Trusted Publishing requires Node >=22.14.0; got ${process.version}.`);
+          }
+          if (!hasMinimumNpm) {
+            throw new Error(`npm Trusted Publishing requires npm >=11.5.1; got ${npmVersion}.`);
+          }
+          for (const name of ['GITHUB_ACTIONS', 'ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN']) {
+            if (!process.env[name]) {
+              throw new Error(`Missing GitHub OIDC environment variable required for Trusted Publishing: ${name}`);
+            }
+          }
+          console.log(JSON.stringify({
+            npmTrustedPublishing: 'oidc-runtime-prerequisites-present',
+            packageName: 'ts-quality',
+            expectedTrustedPublisher: {
+              owner: 'tryingET',
+              repository: 'ts-quality',
+              workflowFilename: 'release.yml'
+            },
+            node: process.version,
+            npm: npmVersion,
+            githubRepository: process.env.GITHUB_REPOSITORY,
+            githubWorkflow: process.env.GITHUB_WORKFLOW,
+            githubEventName: process.env.GITHUB_EVENT_NAME,
+            githubRefType: process.env.GITHUB_REF_TYPE,
+            githubRefName: process.env.GITHUB_REF_NAME
+          }, null, 2));
+          NODE
       - name: Validate GitHub Release intent
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}

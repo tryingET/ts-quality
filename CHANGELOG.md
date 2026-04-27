@@ -13,6 +13,7 @@ type: "reference"
 ### Fixed
 
 - Fixed `release:github` to use the release notes `## Title` as the GitHub Release title and publish only the `## Release body` content, keeping the public release page aligned with the curated release draft.
+- Fixed the release workflow's Trusted Publishing runtime by moving the publish job to Node `24`, asserting npm `>=11.5.1` plus GitHub OIDC request variables before publish, and documenting the exact npm trusted-publisher tuple (`tryingET/ts-quality`, workflow filename `release.yml`).
 
 ## [0.1.3] - 2026-04-27
 

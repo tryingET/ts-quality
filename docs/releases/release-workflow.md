@@ -34,12 +34,14 @@ The staged package remains the package artifact, but GitHub Actions owns the fin
 Before the first workflow-driven npm publish, configure npm Trusted Publishing for:
 
 - package: `ts-quality`
-- repository: `tryingET/ts-quality`
-- workflow: `.github/workflows/release.yml`
+- GitHub owner / organization: `tryingET`
+- repository: `ts-quality`
+- workflow filename: `release.yml` — enter only the filename in npm, not `.github/workflows/release.yml`
+- environment name: blank, unless a GitHub deployment environment is intentionally added to the release job and the same environment is configured in npm
 
-The workflow uses `id-token: write` and `npm publish --provenance`; it must not require `NPM_TOKEN` or `NODE_AUTH_TOKEN`. It also avoids configuring `actions/setup-node` with `registry-url` in the release job so npm does not prefer a registry auth-token config over Trusted Publishing/OIDC.
+The workflow uses GitHub-hosted runners, `id-token: write`, Node `24`, npm `>=11.5.1`, and `npm publish --provenance`; it must not require `NPM_TOKEN` or `NODE_AUTH_TOKEN`. It also avoids configuring `actions/setup-node` with `registry-url` in the release job so npm does not prefer a registry auth-token config over Trusted Publishing/OIDC.
 
-If npm does not allow Trusted Publishing setup before the first package publication, perform the smallest possible bootstrap publish from the proven staged package, then configure Trusted Publishing immediately for subsequent releases. Prefer avoiding that fallback if npm supports pre-publication trusted-publisher setup for the package name.
+If the publish step fails with `ENEEDAUTH` after the workflow's Trusted Publishing runtime-prerequisite step passes, treat that as external npm Trusted Publisher configuration debt: the package is not configured on npmjs.com, the owner/repository/workflow filename does not exactly match, or npm requires a bootstrap publication before the package settings can be edited. If npm does not allow Trusted Publishing setup before the first package publication, perform the smallest possible bootstrap publish from the proven staged package, then configure Trusted Publishing immediately for subsequent releases. Prefer avoiding that fallback if npm supports pre-publication trusted-publisher setup for the package name.
 
 ## Local planning
 
@@ -92,12 +94,14 @@ Publishing the GitHub Release triggers `.github/workflows/release.yml`.
 The release workflow:
 
 1. checks out the exact release tag
-2. validates tag/version/package intent with `npm run release:intent:check`
-3. runs `npm run verify:ci --silent`
-4. uploads the staged npm tarball as a workflow artifact
-5. publishes from `.ts-quality/npm/ts-quality/package` through Trusted Publishing/OIDC
-6. verifies `npm view ts-quality@<version>` and `npx -p ts-quality@<version> ts-quality --help`
-7. attaches the proven tarball to the GitHub Release
+2. installs Node `24` and a current npm CLI with Trusted Publishing support
+3. verifies local Trusted Publishing runtime prerequisites: Node `>=22.14.0`, npm `>=11.5.1`, GitHub OIDC request variables, and the expected npm trusted-publisher tuple
+4. validates tag/version/package intent with `npm run release:intent:check`
+5. runs `npm run verify:ci --silent`
+6. uploads the staged npm tarball as a workflow artifact
+7. publishes from `.ts-quality/npm/ts-quality/package` through Trusted Publishing/OIDC
+8. verifies `npm view ts-quality@<version>` and `npx -p ts-quality@<version> ts-quality --help`
+9. attaches the proven tarball to the GitHub Release
 
 Prerelease GitHub Releases publish to npm dist-tag `next`; normal releases publish to `latest`.
 

@@ -36,7 +36,7 @@ Current repo truth is:
 
 - **GitHub Release is release intent** — a published GitHub Release on tag `v<packages/ts-quality version>` is the only action that authorizes public npm publication
 - **Staged package remains the package artifact** — the release workflow builds at repo root, creates the publishable staged package, proves the tarball, and publishes from `.ts-quality/npm/ts-quality/package`
-- **npm Trusted Publishing/OIDC is publication authority** — maintainers must configure the npm package trusted publisher for this repository and `.github/workflows/release.yml`; no local npm token or local `npm publish` is part of the operator path
+- **npm Trusted Publishing/OIDC is publication authority** — maintainers must configure the npm package trusted publisher for GitHub owner `tryingET`, repository `ts-quality`, and workflow filename `release.yml`; no local npm token or local `npm publish` is part of the operator path
 
 Canonical workflow details live in `docs/releases/release-workflow.md`.
 
@@ -209,7 +209,7 @@ For the first release, use this exact authority sequence:
 3. commit the prepared release files and create tag `v<next-version>`
 4. push the release commit and tag
 5. run `npm run release:github -- --version <next-version> --apply` to create the GitHub Release
-6. let `.github/workflows/release.yml` validate the tag/version contract, re-run `npm run verify:ci`, upload the proven tarball artifact, and publish to npm with `npm publish --provenance --access public` through Trusted Publishing/OIDC
+6. let `.github/workflows/release.yml` install Node `24` and npm `>=11.5.1`, verify GitHub OIDC runtime prerequisites, validate the tag/version contract, re-run `npm run verify:ci`, upload the proven tarball artifact, and publish to npm with `npm publish --provenance --access public` through Trusted Publishing/OIDC
 7. run `npm run release:verify-public -- --version <next-version>` after the workflow succeeds
 
 If anything that affects the package changes after the local smoke pass — version, manifest inputs, built output, README, LICENSE, or shipped runtime files — rerun the build and packaging proof before creating the GitHub Release.
