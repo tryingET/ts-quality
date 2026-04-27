@@ -1,0 +1,22 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "c0704a7f54610f831091b246c4973c319966b5d3"
+created_at: "2026-04-27T23:31:59Z"
+intent: "Allow ts-quality public release verifier to check fresh self-publishes despite global npm min-release-age"
+files:
+  - "scripts/release-orchestrator.mjs"
+  - "docs/releases/release-workflow.md"
+  - "docs/npm-publishing-checklist.md"
+  - "test/adoption-guidance.test.mjs"
+  - "CHANGELOG.md"
+validation:
+  fast_gate:
+    command: "node --test test/adoption-guidance.test.mjs && npm run release:verify-public -- --version 0.1.5"
+    status: "pass"
+  full_gate:
+    command: "npm run typecheck:scripts --silent && npm run lint --silent && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+group:
+  rationale: "Global ~/.npmrc min-release-age is a rolling safety policy; release verification for our own just-published package needs a scoped subprocess override rather than a global policy change."
