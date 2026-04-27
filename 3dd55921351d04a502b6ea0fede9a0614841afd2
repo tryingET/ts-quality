@@ -1,0 +1,23 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "3dd55921351d04a502b6ea0fede9a0614841afd2"
+created_at: "2026-04-27T22:44:44Z"
+intent: "Align changelog and GitHub Release body handling with Pi-style release notes"
+files:
+  - "CHANGELOG.md"
+  - "docs/releases/release-workflow.md"
+  - "scripts/release-orchestrator.mjs"
+  - "test/adoption-guidance.test.mjs"
+validation:
+  fast_gate:
+    command: "npm run typecheck:scripts --silent && node --test test/adoption-guidance.test.mjs && npm run lint --silent && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+  full_gate:
+    command: "same as fast gate"
+    status: "pass"
+group:
+  index: 1
+  total: 1
+  rationale: "make release pages use curated body and adopt categorized changelog direction"
