@@ -1,0 +1,20 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "91761b5376c2ef98944cb1edbf08d4963772883a"
+created_at: "2026-04-27T19:05:20Z"
+intent: "Refresh tracked verification log for v0.1.2 release package proof"
+files:
+  - "verification/verification.log"
+validation:
+  fast_gate:
+    command: "npm run verify --silent"
+    status: "pass"
+  full_gate:
+    command: "release workflow rerun via GitHub Release v0.1.2"
+    status: "pending"
+group:
+  index: 1
+  total: 1
+  rationale: "CI release verify failed on tracked verification artifact drift"
