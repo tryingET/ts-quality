@@ -3,18 +3,17 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "a1a3466498708ea2f8c2c637e20c8f88eb9bfea8"
-created_at: "2026-04-27T18:45:43Z"
-intent: "Update README agent-facing guide pointers with new docs and manifest link"
+created_at: "2026-04-27T18:46:04Z"
+intent: "docs: update README agent-facing guide pointers with new docs and manifest link"
 files:
-  - "README.md"
+  []
 validation:
   fast_gate:
     command: "node --test test/agent-integration-guide.test.mjs"
     status: "pass"
   full_gate:
     command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
-    status: "pending"
+    status: "pass"
 group:
-  index: 3
+  index: 0
   total: 3
-  rationale: "README pointers to new docs, must follow the docs existing"
