@@ -3,7 +3,7 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "5873d174e865ec1d9f8c9eeff7aa123a549dbb27"
-created_at: "2026-04-27T22:11:41Z"
+created_at: "2026-04-27T22:15:37Z"
 intent: "Prepare v0.1.3 after deleting unpublished v0.1.2 release and aligning Trusted Publishing workflow"
 files:
   - ".github/workflows/release.yml"
@@ -19,9 +19,9 @@ validation:
     command: "npm run verify --silent && RELEASE_TAG=v0.1.3 GITHUB_REF_TYPE=tag npm run release:intent:check --silent && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
     status: "pass"
   full_gate:
-    command: "GitHub Release workflow for v0.1.3"
-    status: "pending"
+    command: "GitHub Release workflow for v0.1.3 (https://github.com/tryingET/ts-quality/actions/runs/25022322021)"
+    status: "fail"
 group:
   index: 1
   total: 1
-  rationale: "release-prep commit after local full verify passed"
+  rationale: "local release prep passed; external npm Trusted Publishing auth failed with ENEEDAUTH"
