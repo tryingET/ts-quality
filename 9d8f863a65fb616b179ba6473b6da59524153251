@@ -1,0 +1,24 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "9d8f863a65fb616b179ba6473b6da59524153251"
+created_at: "2026-04-27T23:13:47Z"
+intent: "Align ts-quality npm Trusted Publisher tuple with publish.yml and npm-publish environment"
+files:
+  - ".github/workflows/publish.yml"
+  - ".github/ISSUE_TEMPLATE/release-checklist.md"
+  - "CHANGELOG.md"
+  - "docs/npm-publishing-checklist.md"
+  - "docs/releases/release-workflow.md"
+  - "scripts/release-orchestrator.mjs"
+  - "test/adoption-guidance.test.mjs"
+validation:
+  fast_gate:
+    command: "node --test test/adoption-guidance.test.mjs && npm run lint --silent"
+    status: "pass"
+  full_gate:
+    command: "npm run verify --silent && npm run typecheck:scripts --silent && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+group:
+  rationale: "Npm Trusted Publisher was configured to project standard workflow filename publish.yml and environment npm-publish; repo workflow/docs/tests now match that external authority."
