@@ -84,16 +84,26 @@ test('release workflow makes GitHub Release the single npm publication intent', 
   ], '.github/workflows/release.yml');
 
   assert.equal(workflow.includes('workflow_dispatch:'), false, 'release workflow must not expose a second manual publish intent');
+  assert.equal(workflow.includes('registry-url:'), false, 'release workflow must not configure registry auth-token mode when using Trusted Publishing/OIDC');
   assert.equal(workflow.includes('NODE_AUTH_TOKEN'), false, 'Trusted Publishing/OIDC must not be modeled as a checked-in token path');
   assert.equal(workflow.includes('NPM_TOKEN'), false, 'Trusted Publishing/OIDC must not depend on a checked-in npm token secret path');
 });
 
 test('local release orchestration scripts expose plan/prepare/github/verify surfaces', () => {
   const packageJson = JSON.parse(readRepoFile('package.json'));
+  const releaseOrchestrator = readRepoFile('scripts/release-orchestrator.mjs');
   assert.equal(packageJson.scripts['release:plan'], 'node scripts/release-orchestrator.mjs plan');
   assert.equal(packageJson.scripts['release:prepare'], 'node scripts/release-orchestrator.mjs prepare');
   assert.equal(packageJson.scripts['release:github'], 'node scripts/release-orchestrator.mjs github');
   assert.equal(packageJson.scripts['release:verify-public'], 'node scripts/release-orchestrator.mjs verify-public');
+
+  expectContainsAll(releaseOrchestrator, [
+    'function releaseTitleFromNotes',
+    "const releaseTitle = releaseTitleFromNotes(version, notesPath);",
+    "'--title', releaseTitle",
+    'title: releaseTitle'
+  ], 'scripts/release-orchestrator.mjs');
+  assert.equal(releaseOrchestrator.includes('`ts-quality v${version} — deterministic trust for TypeScript changes`, \'--notes-file\''), false, 'release create title must come from release notes instead of a hard-coded generic title');
 
   const workflowDoc = readRepoFile('docs/releases/release-workflow.md');
   expectContainsAll(workflowDoc, [
@@ -103,7 +113,8 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'npm run release:prepare -- --version <next-version> --apply',
     'npm run release:github -- --version <next-version> --apply',
     'npm run release:verify-public -- --version <released-version>',
-    'Prerelease GitHub Releases publish to npm dist-tag `next`; normal releases publish to `latest`.'
+    'Prerelease GitHub Releases publish to npm dist-tag `next`; normal releases publish to `latest`.',
+    'avoids configuring `actions/setup-node` with `registry-url`'
   ], 'docs/releases/release-workflow.md');
 });
 

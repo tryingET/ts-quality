@@ -148,6 +148,24 @@ function stripFrontmatter(markdown) {
  * @param {string} version
  * @param {string} notesPath
  */
+function releaseTitleFromNotes(version, notesPath) {
+  const markdown = stripFrontmatter(fs.readFileSync(notesPath, 'utf8'));
+  const titleSection = /^## Title\s+([\s\S]*?)(?:\n## |$)/mu.exec(markdown);
+  const rawTitle = titleSection?.[1]?.trim() ?? '';
+  const title = rawTitle.replace(/^`([^`]+)`$/u, '$1').trim();
+  if (!title) {
+    throw new Error(`Release notes for v${version} must include a non-empty ## Title section.`);
+  }
+  if (!title.startsWith(`ts-quality v${version} `)) {
+    throw new Error(`Release notes title must start with "ts-quality v${version} ", got: ${title}`);
+  }
+  return title;
+}
+
+/**
+ * @param {string} version
+ * @param {string} notesPath
+ */
 function materializeGithubReleaseNotesBody(version, notesPath) {
   const outputDir = path.join(root, '.ts-quality', 'release-notes');
   fs.mkdirSync(outputDir, { recursive: true });
@@ -346,8 +364,9 @@ function commandGithub(options) {
   if (external.githubRelease) {
     throw new Error(`GitHub Release ${tag} already exists: ${external.githubRelease.url}`);
   }
+  const releaseTitle = releaseTitleFromNotes(version, notesPath);
   const notesFileForGithub = apply ? path.relative(root, materializeGithubReleaseNotesBody(version, notesPath)) : notesRelative;
-  const command = ['release', 'create', tag, '--repo', repoSlug, '--title', `ts-quality v${version} — deterministic trust for TypeScript changes`, '--notes-file', notesFileForGithub, '--latest'];
+  const command = ['release', 'create', tag, '--repo', repoSlug, '--title', releaseTitle, '--notes-file', notesFileForGithub, '--latest'];
   if (apply) {
     runRequired('gh', command);
   }
@@ -355,6 +374,7 @@ function commandGithub(options) {
     action: 'github',
     applied: apply,
     tag,
+    title: releaseTitle,
     command: `gh ${command.join(' ')}`,
     consequence: 'GitHub Release publication triggers .github/workflows/release.yml, which publishes npm through Trusted Publishing/OIDC.'
   }, null, 2));
