@@ -10,6 +10,10 @@ type: "reference"
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed public release verification so freshly published `ts-quality` versions can be checked immediately without changing the maintainer's global npm `min-release-age` policy.
+
 ## [0.1.5] - 2026-04-27
 
 ### Changed

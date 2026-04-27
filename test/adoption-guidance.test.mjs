@@ -112,7 +112,9 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     '^## Release body\\s+([\\s\\S]*)$',
     "const releaseTitle = releaseTitleFromNotes(version, notesPath);",
     "'--title', releaseTitle",
-    'title: releaseTitle'
+    'title: releaseTitle',
+    "const freshSelfPublishEnv = { NPM_CONFIG_MIN_RELEASE_AGE: '0' }",
+    "runRequired('npx', ['-p', `${packageName}@${version}`, 'ts-quality', '--help'], freshSelfPublishEnv)"
   ], 'scripts/release-orchestrator.mjs');
   assert.equal(releaseOrchestrator.includes('`ts-quality v${version} — deterministic trust for TypeScript changes`, \'--notes-file\''), false, 'release create title must come from release notes instead of a hard-coded generic title');
 
@@ -127,7 +129,8 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'Prerelease GitHub Releases publish to npm dist-tag `next`; normal releases publish to `latest`.',
     'avoids configuring `actions/setup-node` with `registry-url`',
     'workflow filename: `publish.yml`',
-    'environment name: `npm-publish`'
+    'environment name: `npm-publish`',
+    'NPM_CONFIG_MIN_RELEASE_AGE=0'
   ], 'docs/releases/release-workflow.md');
 });
 

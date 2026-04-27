@@ -394,8 +394,9 @@ function commandVerifyPublic(options) {
     throw new Error('release:verify-public requires --version <x.y.z>.');
   }
   assertVersion(version);
-  const npmVersion = runRequired('npm', ['view', `${packageName}@${version}`, 'version']);
-  const help = runRequired('npx', ['-p', `${packageName}@${version}`, 'ts-quality', '--help']);
+  const freshSelfPublishEnv = { NPM_CONFIG_MIN_RELEASE_AGE: '0' };
+  const npmVersion = runRequired('npm', ['view', `${packageName}@${version}`, 'version'], freshSelfPublishEnv);
+  const help = runRequired('npx', ['-p', `${packageName}@${version}`, 'ts-quality', '--help'], freshSelfPublishEnv);
   const release = runRequired('gh', ['release', 'view', `v${version}`, '--repo', repoSlug, '--json', 'tagName,url,publishedAt,isPrerelease']);
   console.log(JSON.stringify({
     action: 'verify-public',

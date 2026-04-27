@@ -210,7 +210,7 @@ For the first release, use this exact authority sequence:
 4. push the release commit and tag
 5. run `npm run release:github -- --version <next-version> --apply` to create the GitHub Release
 6. let `.github/workflows/publish.yml` run in the `npm-publish` environment, install Node `24` and npm `>=11.5.1`, verify GitHub OIDC runtime prerequisites, validate the tag/version contract, re-run `npm run verify:ci`, upload the proven tarball artifact, and publish to npm with `npm publish --provenance --access public` through Trusted Publishing/OIDC
-7. run `npm run release:verify-public -- --version <next-version>` after the workflow succeeds
+7. run `npm run release:verify-public -- --version <next-version>` after the workflow succeeds; this repo-local verifier bypasses npm `min-release-age` only for its own `ts-quality@<next-version>` public-install check
 
 If anything that affects the package changes after the local smoke pass — version, manifest inputs, built output, README, LICENSE, or shipped runtime files — rerun the build and packaging proof before creating the GitHub Release.
 

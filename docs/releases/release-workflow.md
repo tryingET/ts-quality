@@ -113,4 +113,4 @@ After the workflow succeeds, local verification is:
 npm run release:verify-public -- --version <released-version>
 ```
 
-This checks npm package visibility, CLI installability, and GitHub Release visibility.
+This checks npm package visibility, CLI installability, and GitHub Release visibility. The verifier intentionally sets `NPM_CONFIG_MIN_RELEASE_AGE=0` only for its own `npm view` / `npx -p ts-quality@<version>` subprocesses so maintainers can immediately verify a freshly published `ts-quality` release without weakening their global npm `min-release-age` policy for unrelated installs.
