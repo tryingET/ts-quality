@@ -10,6 +10,12 @@ type: "reference"
 
 ## Unreleased
 
+## 0.1.2 - 2026-04-27
+
+- Added `docs/harnessed-llm-operator-guide.md` as the repo-local operating guide for AI agents working inside `ts-quality`, including read order, validation choices, artifact boundaries, and improvement/removal candidates.
+- Added `docs/adoption/minimal-external-walkthrough.md` and `docs/cli-command-manifest.json` so target-repo adoption has a tiny one-slice example and harnesses can inspect CLI command reads/writes/options without scraping help text.
+- Clarified brownfield vs greenfield adoption guidance with explicit guide routing, one-slice rollout/bootstrap loops, truthful evidence-status closure, and catalog registration only after repo-local truth is stable.
+
 ## 0.1.1 - 2026-04-27
 
 - Policy: `ts-quality` is alpha, so breaking changes are allowed before 1.0 when they improve deterministic evidence, safety, trust-boundary correctness, or contract clarity. Intentional breaks must still be documented in the changelog and affected docs.
