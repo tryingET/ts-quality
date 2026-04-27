@@ -1,0 +1,23 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "cb5d8ef6f240667ac2636fd7735e649a869b8ed2"
+created_at: "2026-04-27T23:16:46Z"
+intent: "Prepare ts-quality v0.1.5 release for project-standard Trusted Publishing tuple"
+files:
+  - "package.json"
+  - "packages/ts-quality/package.json"
+  - "package-lock.json"
+  - "CHANGELOG.md"
+  - "docs/releases/2026-04-27-v0.1.5-github-release.md"
+  - "verification/verification.log"
+validation:
+  fast_gate:
+    command: "node --test test/adoption-guidance.test.mjs && RELEASE_TAG=v0.1.5 GITHUB_REF_TYPE=tag npm run release:intent:check --silent"
+    status: "pass"
+  full_gate:
+    command: "npm run verify --silent && npm run typecheck:scripts --silent && npm run lint --silent && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+group:
+  rationale: "Bump version and curate v0.1.5 release notes around publish.yml plus npm-publish environment alignment."
