@@ -1,15 +1,15 @@
 ---
-summary: "Checklist for publishing ts-quality through the repo's proven staged-package path."
+summary: "Checklist for releasing ts-quality through GitHub Release and npm Trusted Publishing/OIDC."
 read_when:
   - "When preparing the first public npm release for ts-quality"
   - "When deciding whether the current package layout is publish-ready"
 type: "how-to"
 ---
 
-# npm publishing checklist
+# npm release checklist
 
-This repo now has a deterministic staged-package publish path.
-Use this checklist to publish `ts-quality` through that proven path instead of relying on repo-memory or a naive `npm publish` from `packages/ts-quality/`.
+GitHub Release is the single release intent for `ts-quality`.
+Local Pi/orchestrator sessions prepare proof and release notes; npm publication happens automatically in `.github/workflows/release.yml` through npm Trusted Publishing/OIDC after a GitHub Release is published. Prerelease GitHub Releases publish with npm dist-tag `next`; other releases publish with `latest`.
 
 ## Current state snapshot
 
@@ -30,23 +30,36 @@ Important current constraint:
 
 ## Release decision checklist
 
-### 1) Confirm the current package strategy
+### 1) Confirm the current release authority
 
 Current repo truth is:
 
-- **Staged package publish** — build at repo root, create the publishable staged package, prove the tarball from that staged package, and only then publish from the staged directory
+- **GitHub Release is release intent** — a published GitHub Release on tag `v<packages/ts-quality version>` is the only action that authorizes public npm publication
+- **Staged package remains the package artifact** — the release workflow builds at repo root, creates the publishable staged package, proves the tarball, and publishes from `.ts-quality/npm/ts-quality/package`
+- **npm Trusted Publishing/OIDC is publication authority** — maintainers must configure the npm package trusted publisher for this repository and `.github/workflows/release.yml`; no local npm token or local `npm publish` is part of the operator path
 
-This is the current operator path:
+Canonical workflow details live in `docs/releases/release-workflow.md`.
+
+Local planning and preparation use:
+
+```bash
+npm run release:plan -- --version <next-version>
+npm run release:prepare -- --version <next-version> --apply
+```
+
+Local preparation proof remains:
 
 ```bash
 npm run build
 npm run pack:ts-quality
 npm run smoke:packaging
+RELEASE_TAG=v<next-version> GITHUB_REF_TYPE=tag npm run release:intent:check
 ```
 
 Keep these guardrails in mind:
 
 - do **not** publish directly from `packages/ts-quality/`
+- do **not** publish manually from `.ts-quality/npm/ts-quality/package`; create the GitHub Release instead
 - do **not** assume the repo-root `dist/` layout is itself the published package root
 - treat package-local dist as a possible future architecture change, not the current release path
 
@@ -187,18 +200,19 @@ Prepare a short release note answering:
 
 When possible, anchor those notes to the reviewed sample artifacts above instead of describing the legitimacy surface abstractly.
 
-### 9) Publish only after staged-package proof
+### 9) Create the GitHub Release only after staged-package proof
 
-For the first release, prefer this exact sequence:
+For the first release, use this exact authority sequence:
 
-```bash
-npm run build
-npm run smoke:packaging
-cd .ts-quality/npm/ts-quality/package
-npm publish --access public
-```
+1. run `npm run release:plan -- --version <next-version>`
+2. run `npm run release:prepare -- --version <next-version> --apply`
+3. commit the prepared release files and create tag `v<next-version>`
+4. push the release commit and tag
+5. run `npm run release:github -- --version <next-version> --apply` to create the GitHub Release
+6. let `.github/workflows/release.yml` validate the tag/version contract, re-run `npm run verify:ci`, upload the proven tarball artifact, and publish to npm with `npm publish --provenance --access public` through Trusted Publishing/OIDC
+7. run `npm run release:verify-public -- --version <next-version>` after the workflow succeeds
 
-If anything that affects the package changes after the smoke pass — version, manifest inputs, built output, README, LICENSE, or shipped runtime files — rerun the build and packaging proof before publishing.
+If anything that affects the package changes after the local smoke pass — version, manifest inputs, built output, README, LICENSE, or shipped runtime files — rerun the build and packaging proof before creating the GitHub Release.
 
 ## Deterministic packaging helpers
 
@@ -234,4 +248,4 @@ Use `npm run smoke:packaging` as the default release-proof step before any publi
 - shipped API exports and type declarations resolve for consumers
 - public metadata and release surfaces look intentional
 - release validation passes from repo root
-- public operator docs point at the same staged-package path and legitimacy outputs the repo actually proves
+- public operator docs point at GitHub Release as the release intent, the staged-package artifact path, Trusted Publishing/OIDC npm publication, and the legitimacy outputs the repo actually proves

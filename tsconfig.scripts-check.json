@@ -18,6 +18,8 @@
     "scripts/handoff-sync.mjs",
     "scripts/lint.mjs",
     "scripts/smoke.mjs",
-    "scripts/register-screening-catalog.mjs"
+    "scripts/register-screening-catalog.mjs",
+    "scripts/validate-release-intent.mjs",
+    "scripts/release-orchestrator.mjs"
   ]
 }

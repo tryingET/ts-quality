@@ -27,6 +27,11 @@
     "handoff:sync": "node scripts/handoff-sync.mjs",
     "handoff:check": "node scripts/handoff-sync.mjs --check",
     "clean": "node scripts/clean.mjs",
+    "release:plan": "node scripts/release-orchestrator.mjs plan",
+    "release:prepare": "node scripts/release-orchestrator.mjs prepare",
+    "release:github": "node scripts/release-orchestrator.mjs github",
+    "release:verify-public": "node scripts/release-orchestrator.mjs verify-public",
+    "release:intent:check": "node scripts/validate-release-intent.mjs",
     "pack:ts-quality": "node scripts/pack-ts-quality.mjs"
   },
   "devDependencies": {

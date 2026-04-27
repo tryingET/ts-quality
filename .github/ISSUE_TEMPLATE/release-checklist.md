@@ -1,6 +1,6 @@
 ---
 name: Release checklist
-about: Prepare a public GitHub and npm-quality release of ts-quality
+about: Prepare a public GitHub Release that automatically publishes ts-quality to npm
 title: "release: prepare <version>"
 labels: [release]
 assignees: []
@@ -56,9 +56,11 @@ assignees: []
 
 ## Publish steps
 
-- [ ] publish staged package tarball/process
-- [ ] create GitHub release
+- [ ] confirm npm Trusted Publishing/OIDC is configured for `.github/workflows/release.yml`
+- [ ] create/push tag `v<version>` matching `packages/ts-quality/package.json`
+- [ ] create GitHub Release (prerelease publishes to npm dist-tag `next`; other releases publish to `latest`)
 - [ ] paste release notes
+- [ ] confirm release workflow uploaded the proven tarball and published to npm
 - [ ] verify install from public npm after publish
 
 ## Post-release

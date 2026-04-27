@@ -11,6 +11,8 @@ type: "reference"
 ## Unreleased
 
 - Policy: `ts-quality` is alpha, so breaking changes are allowed before 1.0 when they improve deterministic evidence, safety, trust-boundary correctness, or contract clarity. Intentional breaks must still be documented in the changelog and affected docs.
+- Changed release authority: GitHub Release is now the single release intent, and `.github/workflows/release.yml` publishes the staged package to npm through Trusted Publishing/OIDC after re-running deterministic release proof.
+- Added local release orchestration scripts for planning, preparing, creating GitHub Releases, and verifying public npm/GitHub release state without making local `npm publish` the operator path.
 - BREAKING: config and repo-local support modules (`ts-quality.config.*`, `.ts-quality/invariants.*`, `.ts-quality/constitution.*`, `.ts-quality/agents.*`, and similar loaded data files) are now parsed as **data-only modules** instead of being executed as project code. Literal exports remain supported, including computed property names backed by top-level `const` bindings, but function calls, runtime property access, and imperative module bodies are rejected.
 - Added configurable mutation runtime mirror roots and nested-tsconfig-aware governance import resolution so built-output tests and common monorepo alias layouts stay inside the same repo-contract semantics.
 - Hardened runtime mirrors so TS/TSX mutations are transpiled into configured built-runtime roots instead of only copying JS sources.

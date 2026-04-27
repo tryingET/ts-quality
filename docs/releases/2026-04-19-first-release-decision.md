@@ -23,17 +23,19 @@ type: "record"
 ## Executive summary
 
 `ts-quality` should proceed with its first public npm release.
-The staged-package operator path was rehearsed successfully through `npm publish --dry-run --access public`, the repo's public operator surfaces already describe that same path consistently, and no publish-blocking defect surfaced during the rehearsal.
-This is therefore a **go** decision, not a defer.
+The staged-package operator path was rehearsed successfully through `npm publish --dry-run --access public`, no publish-blocking defect surfaced during the rehearsal, and the final npm publication step is now delegated to GitHub Actions through npm Trusted Publishing/OIDC.
+This is therefore a **go** decision, not a defer, with GitHub Release as the single release intent.
 
 ## Context
 
-The repo had already completed the release-surface alignment work before this decision:
+The repo had already completed the staged-package proof work before this decision:
 
-- README quickstart points at the staged-package path
-- `docs/npm-publishing-checklist.md` describes the staged-package-first operator contract
-- the public release draft already describes the same first-publish story
+- README quickstart points at the staged-package artifact path
+- `docs/npm-publishing-checklist.md` describes the staged-package-first package contract
+- the public release draft describes the first-publish story
 - `task:1755` captured a full rehearsal of that path, including a real npm publish dry-run from the staged package root
+
+This rebuild updates the final authority boundary: local Pi/orchestrator sessions prepare proof and release notes, while a published GitHub Release triggers `.github/workflows/release.yml` to perform npm publication through Trusted Publishing/OIDC.
 
 That means the remaining gap was no longer packaging correctness itself.
 The missing piece was an explicit release disposition so the repo did not leave the first public publish posture implicit.
@@ -49,20 +51,22 @@ The missing piece was an explicit release disposition so the repo did not leave 
 
 The repo adopts a **go** decision for the first public `ts-quality@0.1.0` release.
 
-The intended publish path remains exactly:
+The intended release path is now exactly:
 
 ```bash
 npm run build
 npm run smoke:packaging
-cd .ts-quality/npm/ts-quality/package
-npm publish --access public
+# then create the GitHub Release for tag v0.1.0
 ```
 
-This go decision does **not** change the operator contract:
+The GitHub Release is the single release intent. `.github/workflows/release.yml` validates that the release tag matches the package version, re-runs the packaging proof through `npm run verify:ci`, uploads the proven tarball, and publishes from `.ts-quality/npm/ts-quality/package` to npm through Trusted Publishing/OIDC.
 
-- publish from `.ts-quality/npm/ts-quality/package`, not from `packages/ts-quality/`
-- rerun the build and packaging proof immediately before the real publish if any package-affecting input changed after the rehearsal
-- treat the staged package, packed tarball, and install/load proof as the canonical release gate
+This updates the operator contract:
+
+- create the GitHub Release; do not run local `npm publish`
+- publish from the staged package in CI, not from `packages/ts-quality/`
+- rerun the local build and packaging proof immediately before creating the release if any package-affecting input changed after the rehearsal
+- treat the staged package, packed tarball, install/load proof, and release workflow result as the canonical release gate
 
 ## Evidence supporting the go decision
 
@@ -75,7 +79,7 @@ This go decision does **not** change the operator contract:
   - shipped CLI, API, and consumer type-resolution behavior
 - `npm publish --dry-run --access public` succeeded from `.ts-quality/npm/ts-quality/package`
 - the rehearsal found no hidden extra release step beyond the currently documented staged-package flow
-- public operator docs were already aligned around that same path before this decision was recorded
+- public operator docs now align around GitHub Release intent, the staged-package artifact path, and Trusted Publishing/OIDC npm publication
 
 ## Blockers
 
@@ -83,8 +87,9 @@ No publish-blocking defect was identified by the rehearsal evidence.
 
 The remaining follow-through items are operational, not blockers:
 
-- rerun the standard publish-time proof from a clean repo state when the operator is ready to perform the real publish
-- publish from the staged package root and cut the public release using the updated draft + decision record
+- rerun the standard publish-time proof from a clean repo state when the operator is ready to create the GitHub Release
+- configure npm Trusted Publishing for this repository/workflow before the release if it is not already configured
+- cut the public GitHub Release using the updated draft + decision record and let CI publish to npm
 
 ## Consequences
 
@@ -119,5 +124,6 @@ Those additions do not change release authority.
 1. When ready to publish for real, rerun:
    - `npm run build`
    - `npm run smoke:packaging`
-2. Publish from `.ts-quality/npm/ts-quality/package` with `npm publish --access public`.
-3. Cut the public release using the updated draft, the explicit go decision, and the proven staged-package path.
+   - `RELEASE_TAG=v0.1.0 GITHUB_REF_TYPE=tag npm run release:intent:check`
+2. Confirm npm Trusted Publishing is configured for `.github/workflows/release.yml`.
+3. Cut the public GitHub Release for tag `v0.1.0`; the release workflow publishes the staged package to npm. Prerelease GitHub Releases use npm dist-tag `next`; other releases use `latest`.

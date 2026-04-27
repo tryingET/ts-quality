@@ -122,12 +122,7 @@ npm run smoke:packaging
 
 This stages the package under `.ts-quality/npm/ts-quality/package`, validates the staged manifest contract, validates staged and packed file boundaries, installs the tarball into a fresh temp project, and proves the shipped CLI/API/types surfaces.
 
-If you are preparing the first public publish, publish from the staged package root after that proof passes:
-
-```bash
-cd .ts-quality/npm/ts-quality/package
-npm publish --access public
-```
+If you are preparing the public release, do **not** publish from a local shell. Use `npm run release:plan -- --version <next-version>` and `npm run release:prepare -- --version <next-version> --apply`, then create a GitHub Release whose tag exactly matches the public package version. The release workflow re-runs the packaging proof and publishes the staged package to npm through Trusted Publishing/OIDC.
 
 ### 2) Evaluate the repo from source
 

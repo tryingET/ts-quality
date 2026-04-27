@@ -1,0 +1,400 @@
+// @ts-check
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const scriptPath = fileURLToPath(import.meta.url);
+const root = path.resolve(path.dirname(scriptPath), '..');
+const packageName = 'ts-quality';
+const repoSlug = 'tryingET/ts-quality';
+
+/** @typedef {{ status: number | null, stdout: string, stderr: string }} CommandResult */
+/** @typedef {Record<string, string | boolean>} CliOptions */
+
+/** @param {string} filePath */
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+/**
+ * @param {string} filePath
+ * @param {unknown} value
+ */
+function writeJson(filePath, value) {
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
+
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @param {Record<string, string>} [env]
+ * @returns {CommandResult}
+ */
+function run(command, args, env = {}) {
+  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8', env: { ...process.env, ...env } });
+  return {
+    status: result.status,
+    stdout: result.stdout.trim(),
+    stderr: result.stderr.trim()
+  };
+}
+
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @param {Record<string, string>} [env]
+ * @returns {string}
+ */
+function runRequired(command, args, env = {}) {
+  const result = run(command, args, env);
+  if (result.status !== 0) {
+    throw new Error(`Command failed: ${command} ${args.join(' ')}\n${result.stdout}\n${result.stderr}`.trim());
+  }
+  return result.stdout;
+}
+
+/** @param {string[]} argv */
+function parseArgs(argv) {
+  /** @type {Record<string, string | boolean>} */
+  const parsed = {};
+  /** @type {string[]} */
+  const positional = [];
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (!arg) {
+      continue;
+    }
+    if (!arg.startsWith('--')) {
+      positional.push(arg);
+      continue;
+    }
+    const withoutPrefix = arg.slice(2);
+    const equalsIndex = withoutPrefix.indexOf('=');
+    if (equalsIndex >= 0) {
+      parsed[withoutPrefix.slice(0, equalsIndex)] = withoutPrefix.slice(equalsIndex + 1);
+      continue;
+    }
+    const next = argv[index + 1];
+    if (next && !next.startsWith('--')) {
+      parsed[withoutPrefix] = next;
+      index += 1;
+      continue;
+    }
+    parsed[withoutPrefix] = true;
+  }
+  return { positional, options: parsed };
+}
+
+/** @param {unknown} value */
+function stringOption(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+/** @param {string} version */
+function assertVersion(version) {
+  if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(version)) {
+    throw new Error(`Invalid SemVer-ish release version: ${version}`);
+  }
+}
+
+/** @param {string} version */
+function nextPatch(version) {
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-.+)?$/u.exec(version);
+  if (!match) {
+    throw new Error(`Cannot derive next patch version from: ${version}`);
+  }
+  return `${match[1]}.${match[2]}.${Number(match[3]) + 1}`;
+}
+
+function packageState() {
+  const workspacePath = path.join(root, 'package.json');
+  const publicPath = path.join(root, 'packages', packageName, 'package.json');
+  const lockPath = path.join(root, 'package-lock.json');
+  const workspacePackage = readJson(workspacePath);
+  const publicPackage = readJson(publicPath);
+  const lockPackage = fs.existsSync(lockPath) ? readJson(lockPath) : null;
+  return { workspacePath, publicPath, lockPath, workspacePackage, publicPackage, lockPackage };
+}
+
+/** @param {string} version */
+function releaseNotesPath(version) {
+  const date = new Date().toISOString().slice(0, 10);
+  return path.join(root, 'docs', 'releases', `${date}-v${version}-github-release.md`);
+}
+
+/** @param {string} version */
+function existingReleaseNotesPath(version) {
+  const releaseDir = path.join(root, 'docs', 'releases');
+  if (!fs.existsSync(releaseDir)) {
+    return releaseNotesPath(version);
+  }
+  const suffix = `-v${version}-github-release.md`;
+  const existing = fs.readdirSync(releaseDir).find((entry) => entry.endsWith(suffix));
+  return existing ? path.join(releaseDir, existing) : releaseNotesPath(version);
+}
+
+/** @param {string} markdown */
+function stripFrontmatter(markdown) {
+  if (!markdown.startsWith('---\n')) {
+    return markdown;
+  }
+  const end = markdown.indexOf('\n---\n', 4);
+  return end >= 0 ? markdown.slice(end + '\n---\n'.length).trimStart() : markdown;
+}
+
+/**
+ * @param {string} version
+ * @param {string} notesPath
+ */
+function materializeGithubReleaseNotesBody(version, notesPath) {
+  const outputDir = path.join(root, '.ts-quality', 'release-notes');
+  fs.mkdirSync(outputDir, { recursive: true });
+  const outputPath = path.join(outputDir, `v${version}.md`);
+  fs.writeFileSync(outputPath, stripFrontmatter(fs.readFileSync(notesPath, 'utf8')), 'utf8');
+  return outputPath;
+}
+
+/** @param {string} version */
+function inspectExternalVersion(version) {
+  const tag = `v${version}`;
+  const gitTag = run('git', ['tag', '--list', tag]).stdout === tag;
+  const githubReleaseResult = run('gh', ['release', 'view', tag, '--repo', repoSlug, '--json', 'tagName,publishedAt,url,isDraft,isPrerelease']);
+  const npmResult = run('npm', ['view', `${packageName}@${version}`, 'version', '--json']);
+  return {
+    tag,
+    gitTag,
+    githubRelease: githubReleaseResult.status === 0 ? JSON.parse(githubReleaseResult.stdout) : null,
+    githubReleaseError: githubReleaseResult.status === 0 ? null : (githubReleaseResult.stderr || githubReleaseResult.stdout),
+    npmPublished: npmResult.status === 0,
+    npmVersion: npmResult.status === 0 ? JSON.parse(npmResult.stdout) : null,
+    npmError: npmResult.status === 0 ? null : (npmResult.stderr || npmResult.stdout)
+  };
+}
+
+/**
+ * @param {string} version
+ * @param {ReturnType<typeof inspectExternalVersion>} external
+ */
+function releaseBlockers(version, external) {
+  /** @type {string[]} */
+  const blockers = [];
+  if (external.npmPublished) {
+    blockers.push(`npm already has ${packageName}@${version}; npm versions are immutable.`);
+  }
+  if (external.githubRelease) {
+    blockers.push(`GitHub Release ${external.tag} already exists; create a new version instead of reusing it.`);
+  }
+  return blockers;
+}
+
+/**
+ * @param {string} version
+ * @param {boolean} apply
+ */
+function updateVersions(version, apply) {
+  const state = packageState();
+  const files = [state.workspacePath, state.publicPath];
+  if (apply) {
+    state.workspacePackage.version = version;
+    state.publicPackage.version = version;
+    writeJson(state.workspacePath, state.workspacePackage);
+    writeJson(state.publicPath, state.publicPackage);
+    if (state.lockPackage) {
+      state.lockPackage.version = version;
+      if (state.lockPackage.packages?.['']) {
+        state.lockPackage.packages[''].version = version;
+      }
+      writeJson(state.lockPath, state.lockPackage);
+      files.push(state.lockPath);
+    }
+  } else if (state.lockPackage) {
+    files.push(state.lockPath);
+  }
+  return files.map((file) => path.relative(root, file));
+}
+
+/**
+ * @param {string} version
+ * @param {boolean} apply
+ */
+function writeReleaseNotes(version, apply) {
+  const notesPath = existingReleaseNotesPath(version);
+  const relativeNotesPath = path.relative(root, notesPath);
+  if (fs.existsSync(notesPath)) {
+    return relativeNotesPath;
+  }
+  const content = `---\nsummary: "GitHub release notes for ts-quality v${version}."\nread_when:\n  - "When creating the public GitHub Release for ts-quality v${version}"\ntype: "draft"\n---\n\n# GitHub release draft — ts-quality v${version}\n\n## Title\n\n\`ts-quality v${version} — deterministic trust for TypeScript changes\`\n\n## Release body\n\nThis release is prepared through the repo's GitHub Release authority path. Publishing the GitHub Release for tag \`v${version}\` triggers \`.github/workflows/release.yml\`, which validates the tag/version contract, re-runs deterministic package proof, publishes the staged package to npm through Trusted Publishing/OIDC, verifies public installability, and attaches the proven tarball to the GitHub Release.\n\n### Verification before release\n\n\`\`\`bash\nnpm run verify --silent\nRELEASE_TAG=v${version} GITHUB_REF_TYPE=tag npm run release:intent:check --silent\n\`\`\`\n\n### Install\n\n\`\`\`bash\nnpx -p ts-quality@${version} ts-quality --help\n\`\`\`\n`;
+  if (apply) {
+    fs.writeFileSync(notesPath, content, 'utf8');
+  }
+  return relativeNotesPath;
+}
+
+/**
+ * @param {string} version
+ * @param {boolean} apply
+ */
+function updateChangelog(version, apply) {
+  const changelogPath = path.join(root, 'CHANGELOG.md');
+  const changelog = fs.readFileSync(changelogPath, 'utf8');
+  if (changelog.includes(`## ${version}`)) {
+    return path.relative(root, changelogPath);
+  }
+  const date = new Date().toISOString().slice(0, 10);
+  const updated = changelog.replace('## Unreleased\n', `## Unreleased\n\n## ${version} - ${date}\n`);
+  if (updated === changelog) {
+    throw new Error('CHANGELOG.md is missing an `## Unreleased` heading.');
+  }
+  if (apply) {
+    fs.writeFileSync(changelogPath, updated, 'utf8');
+  }
+  return path.relative(root, changelogPath);
+}
+
+/** @param {CliOptions} options */
+function commandPlan(options) {
+  const state = packageState();
+  const currentVersion = String(state.publicPackage.version ?? '').trim();
+  assertVersion(currentVersion);
+  const requested = stringOption(options['version']);
+  const targetVersion = requested || nextPatch(currentVersion);
+  assertVersion(targetVersion);
+  const currentExternal = inspectExternalVersion(currentVersion);
+  const targetExternal = inspectExternalVersion(targetVersion);
+  const status = run('git', ['status', '--short']).stdout;
+  const plan = {
+    releaseAuthority: 'github-release',
+    npmPublishing: 'trusted-publishing-oidc',
+    currentVersion,
+    recommendedTargetVersion: targetVersion,
+    dirtyWorktree: status.length > 0,
+    currentVersionState: currentExternal,
+    targetVersionState: targetExternal,
+    blockers: releaseBlockers(targetVersion, targetExternal),
+    warnings: [
+      ...(currentExternal.githubRelease && !currentExternal.npmPublished ? [`Current version ${currentVersion} has a GitHub Release but is not published to npm; do not reuse it from current main.`] : []),
+      ...(status.length > 0 ? ['Working tree is dirty; prepare/apply should start from a clean release-prep branch or include only intentional release changes.'] : [])
+    ],
+    nextActions: [
+      `npm run release:prepare -- --version ${targetVersion} --apply`,
+      `git push origin main && git push origin v${targetVersion}`,
+      `npm run release:github -- --version ${targetVersion} --apply`,
+      `npm run release:verify-public -- --version ${targetVersion}`
+    ]
+  };
+  console.log(JSON.stringify(plan, null, 2));
+}
+
+/** @param {CliOptions} options */
+function commandPrepare(options) {
+  const version = stringOption(options['version']);
+  if (!version) {
+    throw new Error('release:prepare requires --version <x.y.z>.');
+  }
+  assertVersion(version);
+  const apply = options['apply'] === true;
+  const external = inspectExternalVersion(version);
+  const blockers = releaseBlockers(version, external);
+  if (blockers.length > 0) {
+    throw new Error(`Release ${version} is blocked:\n- ${blockers.join('\n- ')}`);
+  }
+  const changedFiles = [
+    ...updateVersions(version, apply),
+    updateChangelog(version, apply),
+    writeReleaseNotes(version, apply)
+  ];
+  if (apply) {
+    runRequired('npm', ['run', 'build', '--silent']);
+    runRequired('npm', ['run', 'smoke:packaging', '--silent']);
+    runRequired('npm', ['run', 'release:intent:check', '--silent'], { RELEASE_TAG: `v${version}`, GITHUB_REF_TYPE: 'tag' });
+  }
+  console.log(JSON.stringify({
+    action: 'prepare',
+    applied: apply,
+    version,
+    tag: `v${version}`,
+    changedFiles: [...new Set(changedFiles)].sort((left, right) => left.localeCompare(right)),
+    followUp: apply ? [
+      `git add ${[...new Set(changedFiles)].join(' ')}`,
+      `git commit -m "chore(release): v${version}"`,
+      `git tag -a v${version} -m "ts-quality v${version}"`,
+      `npm run release:github -- --version ${version} --apply`
+    ] : [`rerun with --apply to write release prep for v${version}`]
+  }, null, 2));
+}
+
+/** @param {CliOptions} options */
+function commandGithub(options) {
+  const version = stringOption(options['version']);
+  if (!version) {
+    throw new Error('release:github requires --version <x.y.z>.');
+  }
+  assertVersion(version);
+  const apply = options['apply'] === true;
+  const tag = `v${version}`;
+  const notesPath = existingReleaseNotesPath(version);
+  const notesRelative = path.relative(root, notesPath);
+  if (!fs.existsSync(notesPath)) {
+    throw new Error(`Missing release notes file: ${notesRelative}`);
+  }
+  const external = inspectExternalVersion(version);
+  if (!external.gitTag) {
+    throw new Error(`Missing local git tag ${tag}. Run release:prepare follow-up tag step first.`);
+  }
+  if (external.githubRelease) {
+    throw new Error(`GitHub Release ${tag} already exists: ${external.githubRelease.url}`);
+  }
+  const notesFileForGithub = apply ? path.relative(root, materializeGithubReleaseNotesBody(version, notesPath)) : notesRelative;
+  const command = ['release', 'create', tag, '--repo', repoSlug, '--title', `ts-quality v${version} — deterministic trust for TypeScript changes`, '--notes-file', notesFileForGithub, '--latest'];
+  if (apply) {
+    runRequired('gh', command);
+  }
+  console.log(JSON.stringify({
+    action: 'github',
+    applied: apply,
+    tag,
+    command: `gh ${command.join(' ')}`,
+    consequence: 'GitHub Release publication triggers .github/workflows/release.yml, which publishes npm through Trusted Publishing/OIDC.'
+  }, null, 2));
+}
+
+/** @param {CliOptions} options */
+function commandVerifyPublic(options) {
+  const version = stringOption(options['version']);
+  if (!version) {
+    throw new Error('release:verify-public requires --version <x.y.z>.');
+  }
+  assertVersion(version);
+  const npmVersion = runRequired('npm', ['view', `${packageName}@${version}`, 'version']);
+  const help = runRequired('npx', ['-p', `${packageName}@${version}`, 'ts-quality', '--help']);
+  const release = runRequired('gh', ['release', 'view', `v${version}`, '--repo', repoSlug, '--json', 'tagName,url,publishedAt,isPrerelease']);
+  console.log(JSON.stringify({
+    action: 'verify-public',
+    version,
+    npmVersion,
+    cliHelpIncludesCommands: help.includes('ts-quality commands:'),
+    githubRelease: JSON.parse(release)
+  }, null, 2));
+}
+
+const { positional, options } = parseArgs(process.argv.slice(2));
+const command = positional[0] ?? 'plan';
+
+try {
+  if (command === 'plan') {
+    commandPlan(options);
+  } else if (command === 'prepare') {
+    commandPrepare(options);
+  } else if (command === 'github') {
+    commandGithub(options);
+  } else if (command === 'verify-public') {
+    commandVerifyPublic(options);
+  } else {
+    throw new Error(`Unknown release orchestrator command: ${command}`);
+  }
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}

@@ -1,0 +1,77 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish-npm:
+    name: Publish npm package from GitHub Release intent
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            npm ci --ignore-scripts --no-audit --no-fund && exit 0
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            sleep $((attempt * 15))
+          done
+      - name: Use npm CLI with Trusted Publishing support
+        run: npm install -g npm@latest
+      - name: Validate GitHub Release intent
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          GITHUB_REF_TYPE: tag
+        run: npm run release:intent:check --silent
+      - name: Prove release package
+        run: npm run verify:ci --silent
+      - name: Upload proven npm tarball as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-quality-${{ github.event.release.tag_name }}-npm-tarball
+          path: .ts-quality/npm/ts-quality/tarballs/*.tgz
+          if-no-files-found: error
+      - name: Publish to npm with Trusted Publishing/OIDC
+        working-directory: .ts-quality/npm/ts-quality/package
+        env:
+          NPM_DIST_TAG: ${{ github.event.release.prerelease && 'next' || 'latest' }}
+        run: npm publish --provenance --access public --tag "$NPM_DIST_TAG"
+      - name: Verify public npm package
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          for attempt in 1 2 3 4 5; do
+            npm view "ts-quality@${VERSION}" version && break
+            if [ "$attempt" -eq 5 ]; then
+              exit 1
+            fi
+            sleep $((attempt * 15))
+          done
+          npx -p "ts-quality@${VERSION}" ts-quality --help
+      - name: Attach proven tarball to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$RELEASE_TAG" .ts-quality/npm/ts-quality/tarballs/*.tgz --clobber
