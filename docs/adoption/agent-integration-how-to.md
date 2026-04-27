@@ -1,14 +1,16 @@
 ---
-summary: "How-to guide for agents integrating ts-quality into a new project."
+summary: "How-to guide for agents integrating ts-quality into a target repository without fake-green evidence."
 read_when:
-  - "You are wiring ts-quality into a repo for the first time."
+  - "You are wiring ts-quality into a target repo for the first time."
   - "You need a brownfield rollout recipe instead of only the core product semantics."
 type: "how-to"
 ---
 
-# Agent integration how-to
+# Target-repo agent integration how-to
 
-This guide is for agents and operators integrating `ts-quality` into a new repository.
+This guide is for agents and operators integrating `ts-quality` into a new or existing **target repository**.
+
+Use `docs/harnessed-llm-operator-guide.md` instead when you are maintaining or reviewing the `ts-quality` repo itself. Use `docs/adoption/greenfield-bootstrap-how-to.md` instead when the target repo is new enough to shape its structure from day one. Use this guide only for brownfield-style target-repo adoption: selecting the first screened slice, adding repo-local control-plane files, running witnesses/checks, and recording rollout state.
 
 Use it when the question is not just _how does ts-quality work?_ but instead:
 - which file should be screened first?
@@ -22,7 +24,27 @@ Canonical product semantics still live in:
 - `docs/config-reference.md`
 - `docs/ci-integration.md`
 
+For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide.
+
 This guide is about **adoption and rollout**, not replacing those contracts.
+
+## One-slice rollout loop
+
+Adoption improves by deleting ambiguity, not by widening scope. Keep one behavior-bearing slice open until its evidence debt is either resolved or explicitly routed.
+
+For each slice:
+
+1. **Select** one behavior-bearing implementation boundary.
+2. **Bind** the repo-local control plane for that slice: config, invariants, governance/agents as needed, changed-scope mapping, and witness command if execution-backed support is claimed.
+3. **Run** the target repo's normal quality command, then the narrow witness/check commands with explicit `--changed` and `--run-id` values.
+4. **Classify** the result honestly: pass, warn, fail, unsupported, lexically-supported, or execution-backed. Do not rewrite evidence just to make the slice green.
+5. **Route debt** before widening:
+   - resolve blocking in-scope debt now,
+   - defer out-of-scope debt with reason and reopen trigger, or
+   - stop with the next blocking debt named as the next slice ceiling.
+6. **Record** current-vs-target state in the target repo and update the central catalog only after repo-local truth is stable.
+
+Do not compensate for ambiguous aliases, missing focused tests, bad coverage remapping, or governance uncertainty by broadening changed scope or searching unrelated tests. Narrow the slice or fix the target repo evidence first.
 
 ## Authority model
 
@@ -40,6 +62,8 @@ The central catalog is downstream visibility, not the authority for any one repo
 
 ## Brownfield rollout recipe
 
+This recipe assumes the target repo already has structure, tests, and possible facade/runtime drift. If those constraints do not exist yet, stop here and use the greenfield guide instead of importing brownfield recovery work into a new repo.
+
 ### 1) Inventory the behavior-bearing boundaries
 
 Before writing config, inspect the target repo and identify:
@@ -56,7 +80,7 @@ Choose **one** slice that is:
 - behavior-bearing
 - high enough value to matter
 - small enough to review cleanly
-- already testable with one focused witness command
+- already testable with one focused test or witness command
 
 Good first slices usually look like:
 - fail-closed dispatch paths
@@ -150,11 +174,18 @@ Keep only committed control-plane files and the witness-directory README.
 Minimum truthful verification usually looks like:
 
 ```bash
+# target repo's existing normal quality gate; name varies by repo
 npm run check
+
+# docs strictness when the target repo uses this docs contract
 node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict
+
+# target repo wrapper commands around ts-quality
 npm run screening:witness-refresh -- --changed <repo-local-path>
 npm run screening:check -- --changed <repo-local-path> --run-id <repo-slice-id>
 ```
+
+Always use an explicit changed path and run id in harnessed automation. Avoid relying on an ambient latest pointer when comparing or authorizing reviewed runs.
 
 If the screening run fails on mutation pressure, coverage pressure, or governance, keep that truth.
 A good integration can still yield a failing screening verdict when the repo risk is real.
@@ -202,11 +233,11 @@ Avoid these:
 ## Definition of a good first integration
 
 A new repo integration is in good shape when:
-- at least one slice is live and supported
-- witness refresh works
+- at least one slice has a truthful run with explicit evidence status; do not require fake-green support before recording reality
+- witness refresh works when execution witnesses are configured
 - screening check works from the natural repo-facing changed paths
 - runtime artifacts are ignored correctly
 - the repo has a current-vs-target overview
-- the repo is registered in the central catalog
+- the repo is registered in the central catalog after repo-local truth is stable
 
 At that point, widen the net one reviewable slice at a time.

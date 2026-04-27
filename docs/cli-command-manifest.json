@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "kind": "ts-quality-cli-command-manifest",
+  "status": "authored-projection",
+  "sourceOfTruth": "packages/ts-quality/src/cli.ts",
+  "description": "Machine-readable guide for harnesses choosing ts-quality CLI commands. Keep this aligned with COMMAND_CONTRACTS and dispatch behavior in packages/ts-quality/src/cli.ts.",
+  "globalRules": {
+    "rootDefault": "process.cwd()",
+    "strictOptionValidation": true,
+    "duplicateValueOptionsRejected": true,
+    "unknownOptionsRejected": true,
+    "explicitRunIdRecommendedForAutomation": true,
+    "latestPointerFallback": ".ts-quality/latest.json is used only by selected read/projection commands when --run-id is omitted"
+  },
+  "commands": [
+    {
+      "name": "init",
+      "purpose": "Create starter ts-quality config/support files in a target repo.",
+      "category": "setup",
+      "allowedValueOptions": ["--root"],
+      "allowedFlagOptions": [],
+      "reads": ["target repo root"],
+      "writes": ["ts-quality starter control-plane files under the target repo"],
+      "artifacts": [],
+      "automationNotes": ["Use only when intentionally initializing or refreshing the target repo control plane."]
+    },
+    {
+      "name": "materialize",
+      "purpose": "Export author-authored config/support data into canonical runtime JSON artifacts.",
+      "category": "setup",
+      "allowedValueOptions": ["--root", "--config", "--out-dir"],
+      "allowedFlagOptions": [],
+      "reads": ["ts-quality.config.*", "configured support files"],
+      "writes": [".ts-quality/materialized/ts-quality.config.json", ".ts-quality/materialized/**"],
+      "artifacts": ["materialized runtime config", "materialized support JSON"],
+      "automationNotes": ["Use before check when a boring JSON runtime control plane is preferred."]
+    },
+    {
+      "name": "check",
+      "purpose": "Run the evidence, mutation, invariant, governance, and verdict pipeline for an explicit changed scope.",
+      "category": "evaluation",
+      "allowedValueOptions": ["--root", "--config", "--changed", "--run-id"],
+      "allowedFlagOptions": [],
+      "reads": ["ts-quality.config.*", "coverage/lcov.info or configured coverage", "changed source files", "configured support files", "configured attestations/keys when present"],
+      "writes": [".ts-quality/runs/<run-id>/run.json", ".ts-quality/runs/<run-id>/verdict.json", ".ts-quality/runs/<run-id>/report.json", ".ts-quality/runs/<run-id>/report.md", ".ts-quality/runs/<run-id>/pr-summary.md", ".ts-quality/runs/<run-id>/check-summary.txt", ".ts-quality/runs/<run-id>/explain.txt", ".ts-quality/runs/<run-id>/plan.txt", ".ts-quality/runs/<run-id>/govern.txt", ".ts-quality/latest.json", "optional execution witness artifacts/receipts"],
+      "artifacts": ["immutable run bundle", "verdict", "report views", "operator text summaries", "optional execution witness summary"],
+      "automationNotes": ["Provide --changed, config changeSet.files, or config changeSet.diffFile; check fails closed without changed scope.", "Prefer --run-id in harnessed automation.", "Run coverage and the target repo's normal quality gate before check when meaningful evidence is required."]
+    },
+    {
+      "name": "explain",
+      "purpose": "Render the explanation trail for a selected persisted run.",
+      "category": "projection",
+      "allowedValueOptions": ["--root", "--run-id"],
+      "allowedFlagOptions": [],
+      "reads": [".ts-quality/runs/<run-id>/run.json or .ts-quality/latest.json"],
+      "writes": [],
+      "artifacts": ["human-readable explanation text on stdout"],
+      "latestPointerFallback": true,
+      "automationNotes": ["Prefer --run-id to avoid ambient latest selection."]
+    },
+    {
+      "name": "report",
+      "purpose": "Render markdown or JSON report projection for a selected persisted run.",
+      "category": "projection",
+      "allowedValueOptions": ["--root", "--run-id"],
+      "allowedFlagOptions": ["--json"],
+      "reads": [".ts-quality/runs/<run-id>/run.json or .ts-quality/latest.json"],
+      "writes": [],
+      "artifacts": ["markdown report on stdout", "JSON report projection on stdout when --json is passed"],
+      "latestPointerFallback": true,
+      "automationNotes": ["Prefer --run-id; report --json includes additive decisionContext metadata."]
+    },
+    {
+      "name": "trend",
+      "purpose": "Compare the latest run with the nearest earlier comparable run.",
+      "category": "projection",
+      "allowedValueOptions": ["--root"],
+      "allowedFlagOptions": [],
+      "reads": [".ts-quality/runs/**", ".ts-quality/latest.json"],
+      "writes": [],
+      "artifacts": ["trend text on stdout"],
+      "automationNotes": ["Comparable trends require matching changed scope and evidence baselines."]
+    },
+    {
+      "name": "plan",
+      "purpose": "Render governance implementation plan for a selected persisted run or current config context.",
+      "category": "projection",
+      "allowedValueOptions": ["--root", "--config", "--run-id"],
+      "allowedFlagOptions": [],
+      "reads": [".ts-quality/runs/<run-id>/run.json or .ts-quality/latest.json", "configured support files when needed"],
+      "writes": [],
+      "artifacts": ["governance plan text on stdout"],
+      "latestPointerFallback": true,
+      "automationNotes": ["Prefer --run-id for run-bound review."]
+    },
+    {
+      "name": "govern",
+      "purpose": "Render governance findings and related evidence for a selected persisted run or current config context.",
+      "category": "projection",
+      "allowedValueOptions": ["--root", "--config", "--run-id"],
+      "allowedFlagOptions": [],
+      "reads": [".ts-quality/runs/<run-id>/run.json or .ts-quality/latest.json", "configured support files when needed"],
+      "writes": [],
+      "artifacts": ["governance finding text on stdout"],
+      "latestPointerFallback": true,
+      "automationNotes": ["Prefer --run-id for run-bound review."]
+    },
+    {
+      "name": "authorize",
+      "purpose": "Evaluate whether an agent has standing to perform an action against a selected run.",
+      "category": "legitimacy",
+      "allowedValueOptions": ["--root", "--config", "--agent", "--action", "--run-id"],
+      "allowedFlagOptions": [],
+      "requiredOptions": ["--agent"],
+      "reads": [".ts-quality/runs/<run-id>/run.json or .ts-quality/latest.json", "configured agents", "configured constitution", "approvals", "overrides", "attestations", "trusted keys"],
+      "writes": [".ts-quality/runs/<run-id>/authorize.<agent>.<action>.json", ".ts-quality/runs/<run-id>/bundle.<agent>.<action>.json"],
+      "artifacts": ["authorization decision", "proof-carrying change bundle"],
+      "latestPointerFallback": true,
+      "automationNotes": ["Prefer --run-id; default action is merge when --action is omitted."]
+    },
+    {
+      "name": "witness test",
+      "purpose": "Run one explicit proof command and write an execution witness plus receipt sidecar.",
+      "category": "witness",
+      "allowedValueOptions": ["--root", "--invariant", "--scenario", "--source-files", "--test-files", "--out", "--timeout-ms", "--observed-at"],
+      "allowedFlagOptions": [],
+      "requiredOptions": ["--invariant", "--scenario", "--source-files", "--out"],
+      "requiresTrailingCommand": true,
+      "reads": ["source files named by --source-files", "test files named by --test-files when present", "trailing command inputs"],
+      "writes": ["configured witness output JSON", "configured witness output .receipt.json sidecar"],
+      "artifacts": ["execution witness", "execution receipt"],
+      "automationNotes": ["Use for narrow proof commands; do not replace focused witnesses with repo-global test runs."]
+    },
+    {
+      "name": "witness refresh",
+      "purpose": "Run all configured execution witness commands impacted by the current changed scope.",
+      "category": "witness",
+      "allowedValueOptions": ["--root", "--config", "--changed"],
+      "allowedFlagOptions": [],
+      "reads": ["ts-quality.config.*", "configured invariants", "changed scope"],
+      "writes": ["configured witness output JSON files", "configured witness receipt sidecars"],
+      "artifacts": ["execution witnesses", "execution receipts", "stdout summary"],
+      "automationNotes": ["Pass --changed in harnessed automation unless changeSet.files or changeSet.diffFile supplies scope."]
+    },
+    {
+      "name": "attest keygen",
+      "purpose": "Generate an Ed25519 keypair for local attestation workflows.",
+      "category": "legitimacy",
+      "allowedValueOptions": ["--root", "--out-dir", "--key-id"],
+      "allowedFlagOptions": [],
+      "reads": [],
+      "writes": [".ts-quality/keys/<key-id>.pem", ".ts-quality/keys/<key-id>.pub.pem"],
+      "artifacts": ["private key", "public key"],
+      "automationNotes": ["Do not commit private keys."]
+    },
+    {
+      "name": "attest sign",
+      "purpose": "Sign a repo-local subject artifact with an Ed25519 private key.",
+      "category": "legitimacy",
+      "allowedValueOptions": ["--root", "--issuer", "--key-id", "--private-key", "--subject", "--out", "--claims"],
+      "allowedFlagOptions": [],
+      "requiredOptions": ["--issuer", "--key-id", "--private-key", "--subject", "--out"],
+      "reads": ["repo-local subject artifact", "private key"],
+      "writes": ["attestation JSON at --out"],
+      "artifacts": ["signed attestation"],
+      "automationNotes": ["Subject must be repo-local under --root; run-scoped payload metadata must match the subject path when present."]
+    },
+    {
+      "name": "attest verify",
+      "purpose": "Verify a signed attestation against trusted public keys.",
+      "category": "legitimacy",
+      "allowedValueOptions": ["--root", "--attestation", "--trusted-keys"],
+      "allowedFlagOptions": ["--json"],
+      "requiredOptions": ["--attestation"],
+      "reads": ["attestation JSON", "trusted public keys directory"],
+      "writes": [],
+      "artifacts": ["human-readable verification text", "JSON verification record when --json is passed"],
+      "automationNotes": ["Use --json for machine consumers."]
+    },
+    {
+      "name": "amend",
+      "purpose": "Evaluate and optionally apply a constitutional amendment proposal.",
+      "category": "governance",
+      "allowedValueOptions": ["--root", "--proposal", "--config"],
+      "allowedFlagOptions": ["--apply"],
+      "requiredOptions": ["--proposal"],
+      "reads": ["proposal JSON", "configured constitution", "configured agents"],
+      "writes": [".ts-quality/amendments/<proposal-id>.result.json", ".ts-quality/amendments/<proposal-id>.result.txt", "constitution file only when --apply is passed and amendment is applicable"],
+      "artifacts": ["amendment decision JSON", "amendment decision text"],
+      "automationNotes": ["Omit --apply for review-only evaluation."]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 ---
-summary: "How-to guide for agents bootstrapping ts-quality in a greenfield project."
+summary: "How-to guide for agents bootstrapping ts-quality in a greenfield target repository without creating brownfield debt."
 read_when:
   - "You are starting a new repo and want ts-quality from day one."
   - "You want a greenfield bootstrap path instead of a brownfield rollout recipe."
@@ -8,16 +8,17 @@ type: "how-to"
 
 # Greenfield bootstrap how-to
 
-This guide is for agents and operators bootstrapping `ts-quality` in a **new** repository.
+This guide is for agents and operators bootstrapping `ts-quality` in a **new** target repository.
 
-Use it when the repo is still flexible enough that you can choose the right structure up front.
-For brownfield integrations, use `docs/adoption/agent-integration-how-to.md` instead.
+Use it when the repo is still flexible enough that you can choose behavior boundaries, test shape, artifact ignores, and screening wrappers up front. Use `docs/adoption/agent-integration-how-to.md` instead when the target repo already has meaningful structure, tests, facades, or built-runtime drift. Use `docs/harnessed-llm-operator-guide.md` instead when maintaining or reviewing the `ts-quality` repo itself.
 
 Canonical product semantics still live in:
 - `README.md`
 - `docs/invariant-dsl.md`
 - `docs/config-reference.md`
 - `docs/ci-integration.md`
+
+For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide.
 
 This guide is about **greenfield setup choices**, not replacing those contracts.
 
@@ -30,7 +31,22 @@ That means:
 - keep screening on authored source from day one
 - keep witnesses focused
 - make repo-local truth explicit early
-- register the repo in the central catalog once the first live slice lands
+- register the repo in the central catalog once the first truthful slice lands
+
+## One-slice bootstrap loop
+
+Do not bootstrap a broad quality theater. Start with one behavior-bearing slice and make its evidence path boring.
+
+For the first slice:
+
+1. **Design** an implementation boundary before adding facade barrels.
+2. **Bind** one invariant, one focused test or witness, explicit changed scope, and one run id.
+3. **Run** the repo's normal quality command, then witness/check wrappers with explicit `--changed` and `--run-id` values.
+4. **Classify** the evidence honestly: pass, warn, fail, unsupported, lexically-supported, or execution-backed.
+5. **Route debt** before widening: fix blocking in-scope gaps now, defer out-of-scope gaps with reason and trigger, or name the next slice ceiling.
+6. **Record** current-vs-target truth locally before updating the central catalog.
+
+The greenfield advantage is assumption deletion: do not create facade drift, built-runtime ambiguity, repo-global witnesses, or ambient latest-pointer workflows that brownfield integrations later have to unwind.
 
 ## Bootstrap recipe
 
@@ -121,16 +137,23 @@ Keep only control-plane files and the witness-directory README committed.
 Typical first verification:
 
 ```bash
+# target repo's existing normal quality gate; name varies by repo
 npm run check
+
+# docs strictness when the target repo uses this docs contract
 node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict
+
+# target repo wrapper commands around ts-quality
 npm run screening:witness-refresh -- --changed <repo-local-path>
 npm run screening:check -- --changed <repo-local-path> --run-id <repo-slice-id>
 ```
 
+Always pass explicit changed scope and run id in harnessed automation. Do not teach a new repo to depend on ambient `.ts-quality/latest.json` selection.
+
 If that run fails, keep the truth.
 The goal is not early green theater; it is a trustworthy first slice.
 
-### 9) Register the repo in the central catalog once the first slice is live
+### 9) Register the repo in the central catalog once the first truthful slice lands
 
 Use:
 - `docs/adoption/repo-screening-entry.template.json`
@@ -151,10 +174,11 @@ Avoid these:
 ## Definition of a good greenfield start
 
 A greenfield repo is in good shape when:
-- at least one slice is live and supported
+- at least one slice has a truthful run with explicit evidence status; do not require fake-green support before recording reality
 - implementation boundaries are clearer than facade barrels
-- screening targets `src/**`
-- witness refresh and screening check work from natural repo-facing paths
+- screening targets authored source such as `src/**`
+- witness refresh works when execution witnesses are configured
+- screening check works from natural repo-facing paths
 - runtime artifacts are ignored correctly
 - repo-local rollout truth exists
-- the repo is registered in the central catalog
+- the repo is registered in the central catalog after repo-local truth is stable
