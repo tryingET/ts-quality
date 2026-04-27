@@ -37,7 +37,7 @@ Before the first workflow-driven npm publish, configure npm Trusted Publishing f
 - repository: `tryingET/ts-quality`
 - workflow: `.github/workflows/release.yml`
 
-The workflow uses `id-token: write` and `npm publish --provenance`; it must not require `NPM_TOKEN` or `NODE_AUTH_TOKEN`.
+The workflow uses `id-token: write` and `npm publish --provenance`; it must not require `NPM_TOKEN` or `NODE_AUTH_TOKEN`. It also avoids configuring `actions/setup-node` with `registry-url` in the release job so npm does not prefer a registry auth-token config over Trusted Publishing/OIDC.
 
 If npm does not allow Trusted Publishing setup before the first package publication, perform the smallest possible bootstrap publish from the proven staged package, then configure Trusted Publishing immediately for subsequent releases. Prefer avoiding that fallback if npm supports pre-publication trusted-publisher setup for the package name.
 

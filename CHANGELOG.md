@@ -10,11 +10,12 @@ type: "reference"
 
 ## Unreleased
 
-## 0.1.2 - 2026-04-27
+## 0.1.3 - 2026-04-27
 
 - Added `docs/harnessed-llm-operator-guide.md` as the repo-local operating guide for AI agents working inside `ts-quality`, including read order, validation choices, artifact boundaries, and improvement/removal candidates.
 - Added `docs/adoption/minimal-external-walkthrough.md` and `docs/cli-command-manifest.json` so target-repo adoption has a tiny one-slice example and harnesses can inspect CLI command reads/writes/options without scraping help text.
 - Clarified brownfield vs greenfield adoption guidance with explicit guide routing, one-slice rollout/bootstrap loops, truthful evidence-status closure, and catalog registration only after repo-local truth is stable.
+- Adjusted the GitHub Release publishing workflow so the release job does not configure `actions/setup-node` with `registry-url`, avoiding registry auth-token configuration in the Trusted Publishing/OIDC publish path.
 
 ## 0.1.1 - 2026-04-27
 
