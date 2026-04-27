@@ -99,6 +99,8 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
 
   expectContainsAll(releaseOrchestrator, [
     'function releaseTitleFromNotes',
+    'function releaseBodyFromNotes',
+    '^## Release body\\s+([\\s\\S]*)$',
     "const releaseTitle = releaseTitleFromNotes(version, notesPath);",
     "'--title', releaseTitle",
     'title: releaseTitle'

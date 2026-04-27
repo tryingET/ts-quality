@@ -81,7 +81,10 @@ git push origin v<next-version>
 npm run release:github -- --version <next-version> --apply
 ```
 
-That creates the GitHub Release with the generated release notes.
+That creates the GitHub Release with the curated release notes. The release orchestrator reads `## Title` from the notes file for the GitHub Release title and uses only the `## Release body` section as the public release body, so draft scaffolding such as `# GitHub release draft` does not appear on the release page.
+
+Prefer release bodies shaped like the upstream Pi release style: concise categorized sections such as `### New Features`, `### Breaking Changes`, `### Added`, `### Changed`, and `### Fixed`, with bullets that mention the user-visible effect first and link supporting docs or issues when available.
+
 Publishing the GitHub Release triggers `.github/workflows/release.yml`.
 
 ## Workflow publication

@@ -8,16 +8,25 @@ type: "reference"
 
 # Changelog
 
-## Unreleased
+## [Unreleased]
 
-## 0.1.3 - 2026-04-27
+### Fixed
+
+- Fixed `release:github` to use the release notes `## Title` as the GitHub Release title and publish only the `## Release body` content, keeping the public release page aligned with the curated release draft.
+
+## [0.1.3] - 2026-04-27
+
+### Added
 
 - Added `docs/harnessed-llm-operator-guide.md` as the repo-local operating guide for AI agents working inside `ts-quality`, including read order, validation choices, artifact boundaries, and improvement/removal candidates.
 - Added `docs/adoption/minimal-external-walkthrough.md` and `docs/cli-command-manifest.json` so target-repo adoption has a tiny one-slice example and harnesses can inspect CLI command reads/writes/options without scraping help text.
+
+### Changed
+
 - Clarified brownfield vs greenfield adoption guidance with explicit guide routing, one-slice rollout/bootstrap loops, truthful evidence-status closure, and catalog registration only after repo-local truth is stable.
 - Adjusted the GitHub Release publishing workflow so the release job does not configure `actions/setup-node` with `registry-url`, avoiding registry auth-token configuration in the Trusted Publishing/OIDC publish path.
 
-## 0.1.1 - 2026-04-27
+## [0.1.1] - 2026-04-27
 
 - Policy: `ts-quality` is alpha, so breaking changes are allowed before 1.0 when they improve deterministic evidence, safety, trust-boundary correctness, or contract clarity. Intentional breaks must still be documented in the changelog and affected docs.
 - Changed release authority: GitHub Release is now the single release intent, and `.github/workflows/release.yml` publishes the staged package to npm through Trusted Publishing/OIDC after re-running deterministic release proof.
@@ -49,7 +58,7 @@ type: "reference"
 - BREAKING: `ts-quality check` now requires explicit changed scope from CLI `--changed`, `changeSet.files`, or a non-empty `changeSet.diffFile`. When no changed files or hunks are supplied, `check` fails closed instead of silently widening to all discovered source files; diff-only runs now derive exact changed files from diff hunks.
 - Stabilized `verification/verification.log` by normalizing volatile duration output so `npm run verify` no longer dirties the working tree with timing-only churn.
 
-## 0.1.0
+## [0.1.0]
 
 - Reset the public SemVer line to `0.1.0` so the first public release matches the repo's explicit alpha status instead of implying prior stable major generations.
 - Added a root `ts-quality` CLI and unified config surface.

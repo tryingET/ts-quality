@@ -162,6 +162,13 @@ function releaseTitleFromNotes(version, notesPath) {
   return title;
 }
 
+/** @param {string} markdown */
+function releaseBodyFromNotes(markdown) {
+  const stripped = stripFrontmatter(markdown).trimStart();
+  const bodySection = /^## Release body\s+([\s\S]*)$/mu.exec(stripped);
+  return `${(bodySection?.[1] ?? stripped).trim()}\n`;
+}
+
 /**
  * @param {string} version
  * @param {string} notesPath
@@ -170,7 +177,7 @@ function materializeGithubReleaseNotesBody(version, notesPath) {
   const outputDir = path.join(root, '.ts-quality', 'release-notes');
   fs.mkdirSync(outputDir, { recursive: true });
   const outputPath = path.join(outputDir, `v${version}.md`);
-  fs.writeFileSync(outputPath, stripFrontmatter(fs.readFileSync(notesPath, 'utf8')), 'utf8');
+  fs.writeFileSync(outputPath, releaseBodyFromNotes(fs.readFileSync(notesPath, 'utf8')), 'utf8');
   return outputPath;
 }
 
@@ -261,9 +268,9 @@ function updateChangelog(version, apply) {
     return path.relative(root, changelogPath);
   }
   const date = new Date().toISOString().slice(0, 10);
-  const updated = changelog.replace('## Unreleased\n', `## Unreleased\n\n## ${version} - ${date}\n`);
+  const updated = changelog.replace(/^## \[?Unreleased\]?\n/mu, (heading) => `${heading}\n## [${version}] - ${date}\n`);
   if (updated === changelog) {
-    throw new Error('CHANGELOG.md is missing an `## Unreleased` heading.');
+    throw new Error('CHANGELOG.md is missing an `## [Unreleased]` or `## Unreleased` heading.');
   }
   if (apply) {
     fs.writeFileSync(changelogPath, updated, 'utf8');
