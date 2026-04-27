@@ -331,11 +331,11 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
 
   const summary = JSON.parse(result.stdout);
   assert.equal(summary.packageName, 'ts-quality');
-  assert.equal(summary.version, '0.1.0');
+  const manifestContract = expectedManifestContract();
+  assert.equal(summary.version, manifestContract.version);
   assert.equal(summary.stageDir, '.ts-quality/npm/ts-quality/package');
   assert.match(summary.tarball, /^\.ts-quality\/npm\/ts-quality\/tarballs\/ts-quality-.*\.tgz$/);
   assert.deepEqual(summary.entrypoints, expectedEntrypoints);
-  const manifestContract = expectedManifestContract();
   assert.deepEqual(Object.keys(summary.manifest).sort(), [...expectedManifestKeys].sort());
   assert.deepEqual(summary.manifest, manifestContract);
   assert.deepEqual(readJson(`${summary.stageDir}/package.json`), manifestContract);

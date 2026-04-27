@@ -10,6 +10,8 @@ type: "reference"
 
 ## Unreleased
 
+## 0.1.1 - 2026-04-27
+
 - Policy: `ts-quality` is alpha, so breaking changes are allowed before 1.0 when they improve deterministic evidence, safety, trust-boundary correctness, or contract clarity. Intentional breaks must still be documented in the changelog and affected docs.
 - Changed release authority: GitHub Release is now the single release intent, and `.github/workflows/release.yml` publishes the staged package to npm through Trusted Publishing/OIDC after re-running deterministic release proof.
 - Added local release orchestration scripts for planning, preparing, creating GitHub Releases, and verifying public npm/GitHub release state without making local `npm publish` the operator path.
