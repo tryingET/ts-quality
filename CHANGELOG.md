@@ -10,6 +10,8 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-04-27
+
 ### Changed
 
 - Aligned npm Trusted Publishing with the project-standard publisher tuple: workflow filename `publish.yml` and GitHub Actions environment `npm-publish`.
