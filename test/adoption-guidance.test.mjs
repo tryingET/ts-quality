@@ -62,20 +62,24 @@ test('publishing checklist keeps legitimacy sample anchors and authority guidanc
   }
 });
 
-test('release workflow makes GitHub Release the single npm publication intent', () => {
-  const workflow = readRepoFile('.github/workflows/release.yml');
+test('publish workflow makes GitHub Release the single npm publication intent', () => {
+  assert.equal(fs.existsSync(path.join(repoRoot, '.github/workflows/release.yml')), false, 'Trusted Publisher filename must be publish.yml, not release.yml');
+  const workflow = readRepoFile('.github/workflows/publish.yml');
 
   expectContainsAll(workflow, [
     'release:',
     'types: [published]',
     'id-token: write',
+    'environment:',
+    'name: npm-publish',
     "node-version: '24'",
     'Use npm CLI with Trusted Publishing support',
     'npm install -g npm@latest',
     'Verify Trusted Publishing runtime prerequisites',
     'npm Trusted Publishing requires Node >=22.14.0',
     'npm Trusted Publishing requires npm >=11.5.1',
-    "workflowFilename: 'release.yml'",
+    "workflowFilename: 'publish.yml'",
+    "environmentName: 'npm-publish'",
     'Validate GitHub Release intent',
     'npm run release:intent:check --silent',
     'npm run verify:ci --silent',
@@ -86,7 +90,7 @@ test('release workflow makes GitHub Release the single npm publication intent', 
     'npm publish --provenance --access public --tag "$NPM_DIST_TAG"',
     'Verify public npm package',
     'npx -p "ts-quality@${VERSION}" ts-quality --help'
-  ], '.github/workflows/release.yml');
+  ], '.github/workflows/publish.yml');
 
   assert.equal(workflow.includes('workflow_dispatch:'), false, 'release workflow must not expose a second manual publish intent');
   assert.equal(workflow.includes('registry-url:'), false, 'release workflow must not configure registry auth-token mode when using Trusted Publishing/OIDC');
@@ -121,7 +125,9 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'npm run release:github -- --version <next-version> --apply',
     'npm run release:verify-public -- --version <released-version>',
     'Prerelease GitHub Releases publish to npm dist-tag `next`; normal releases publish to `latest`.',
-    'avoids configuring `actions/setup-node` with `registry-url`'
+    'avoids configuring `actions/setup-node` with `registry-url`',
+    'workflow filename: `publish.yml`',
+    'environment name: `npm-publish`'
   ], 'docs/releases/release-workflow.md');
 });
 

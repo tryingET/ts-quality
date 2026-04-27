@@ -56,7 +56,7 @@ assignees: []
 
 ## Publish steps
 
-- [ ] confirm npm Trusted Publishing/OIDC is configured for `.github/workflows/release.yml`
+- [ ] confirm npm Trusted Publishing/OIDC is configured for workflow filename `publish.yml` and environment `npm-publish`
 - [ ] create/push tag `v<version>` matching `packages/ts-quality/package.json`
 - [ ] create GitHub Release (prerelease publishes to npm dist-tag `next`; other releases publish to `latest`)
 - [ ] paste release notes

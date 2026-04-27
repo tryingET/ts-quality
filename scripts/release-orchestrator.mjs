@@ -250,7 +250,7 @@ function writeReleaseNotes(version, apply) {
   if (fs.existsSync(notesPath)) {
     return relativeNotesPath;
   }
-  const content = `---\nsummary: "GitHub release notes for ts-quality v${version}."\nread_when:\n  - "When creating the public GitHub Release for ts-quality v${version}"\ntype: "draft"\n---\n\n# GitHub release draft — ts-quality v${version}\n\n## Title\n\n\`ts-quality v${version} — deterministic trust for TypeScript changes\`\n\n## Release body\n\nThis release is prepared through the repo's GitHub Release authority path. Publishing the GitHub Release for tag \`v${version}\` triggers \`.github/workflows/release.yml\`, which validates the tag/version contract, re-runs deterministic package proof, publishes the staged package to npm through Trusted Publishing/OIDC, verifies public installability, and attaches the proven tarball to the GitHub Release.\n\n### Verification before release\n\n\`\`\`bash\nnpm run verify --silent\nRELEASE_TAG=v${version} GITHUB_REF_TYPE=tag npm run release:intent:check --silent\n\`\`\`\n\n### Install\n\n\`\`\`bash\nnpx -p ts-quality@${version} ts-quality --help\n\`\`\`\n`;
+  const content = `---\nsummary: "GitHub release notes for ts-quality v${version}."\nread_when:\n  - "When creating the public GitHub Release for ts-quality v${version}"\ntype: "draft"\n---\n\n# GitHub release draft — ts-quality v${version}\n\n## Title\n\n\`ts-quality v${version} — deterministic trust for TypeScript changes\`\n\n## Release body\n\nThis release is prepared through the repo's GitHub Release authority path. Publishing the GitHub Release for tag \`v${version}\` triggers \`.github/workflows/publish.yml\` in the \`npm-publish\` environment, which validates the tag/version contract, re-runs deterministic package proof, publishes the staged package to npm through Trusted Publishing/OIDC, verifies public installability, and attaches the proven tarball to the GitHub Release.\n\n### Verification before release\n\n\`\`\`bash\nnpm run verify --silent\nRELEASE_TAG=v${version} GITHUB_REF_TYPE=tag npm run release:intent:check --silent\n\`\`\`\n\n### Install\n\n\`\`\`bash\nnpx -p ts-quality@${version} ts-quality --help\n\`\`\`\n`;
   if (apply) {
     fs.writeFileSync(notesPath, content, 'utf8');
   }
@@ -383,7 +383,7 @@ function commandGithub(options) {
     tag,
     title: releaseTitle,
     command: `gh ${command.join(' ')}`,
-    consequence: 'GitHub Release publication triggers .github/workflows/release.yml, which publishes npm through Trusted Publishing/OIDC.'
+    consequence: 'GitHub Release publication triggers .github/workflows/publish.yml in the npm-publish environment, which publishes npm through Trusted Publishing/OIDC.'
   }, null, 2));
 }
 
