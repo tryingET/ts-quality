@@ -340,8 +340,8 @@ These are review findings, not a mandate to do them all at once.
 
 ### Candidates to remove or explain
 
-1. **Template placeholder directories.**  
-   These tracked placeholders can confuse agents because source/tests actually live elsewhere:
+1. **Template marker directories.**  
+   These tracked marker files can confuse agents because source/tests actually live elsewhere:
    - `src/.gitkeep`
    - `tests/.gitkeep`
    - `policy/.gitkeep`
