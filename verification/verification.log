@@ -24,12 +24,12 @@ $ npm test --silent
 
 exit=0
 $ npm run sample-artifacts --silent
-sample-artifacts: ok -> /home/tryinget/ai-society/softwareco/owned/ts-quality/examples/artifacts/governed-app
+sample-artifacts: ok -> <repo>/examples/artifacts/governed-app
 
 
 exit=0
 $ npm run sample-artifacts --silent
-sample-artifacts: ok -> /home/tryinget/ai-society/softwareco/owned/ts-quality/examples/artifacts/governed-app
+sample-artifacts: ok -> <repo>/examples/artifacts/governed-app
 
 
 exit=0

@@ -131,9 +131,10 @@ function sanitizeLogLine(line) {
 
 /** @param {string} value */
 function sanitizeLogFragment(value) {
+  const normalizedRoot = root.replace(/\\/g, '/');
   return value
     .split('\n')
-    .map((line) => sanitizeLogLine(line))
+    .map((line) => sanitizeLogLine(line).replaceAll(root, '<repo>').replaceAll(normalizedRoot, '<repo>'))
     .join('\n');
 }
 
