@@ -3,18 +3,17 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "a113fd9fa672f91fb5860394299488be287798f5"
-created_at: "2026-04-27T18:44:27Z"
-intent: "Add the new harnessed-llm-operator-guide as a standalone doc for agents operating inside ts-quality"
+created_at: "2026-04-27T18:46:03Z"
+intent: "docs: add harnessed-llm-operator-guide for agents operating inside this repo"
 files:
-  - "docs/harnessed-llm-operator-guide.md"
+  []
 validation:
   fast_gate:
     command: "node --test test/agent-integration-guide.test.mjs"
     status: "pass"
   full_gate:
     command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
-    status: "pending"
+    status: "pass"
 group:
-  index: 1
+  index: 0
   total: 3
-  rationale: "new standalone doc, no dependencies on other changed files"
