@@ -209,11 +209,14 @@ When `--run-id` is omitted on `explain`, `report`, `plan`, `govern`, or `authori
 
 `witness refresh` is the repo-native pre-check surface for running all configured impacted execution-witness commands from the current changed scope and writing their artifacts before `check`. `check` also auto-generates those same configured witnesses when you skip the explicit pre-refresh step, but `witness refresh` is useful in CI or when you want witness artifact churn to be an explicit stage. For the canonical witness contract and config surface, see `docs/invariant-dsl.md` and `docs/config-reference.md`; for the recommended CI/operator flow, see `docs/ci-integration.md`.
 
-If you are integrating `ts-quality` into a repo for the first time, start with:
-- `docs/adoption/agent-integration-how-to.md` for brownfield rollout
-- `docs/adoption/greenfield-bootstrap-how-to.md` for greenfield bootstrap
+Agent-facing guides are split by job:
+- `docs/harnessed-llm-operator-guide.md` for AI agents maintaining or reviewing this `ts-quality` repo itself: read order, command selection, artifact boundaries, and improvement/removal candidates.
+- `docs/adoption/agent-integration-how-to.md` for AI agents integrating `ts-quality` into an existing target repo.
+- `docs/adoption/greenfield-bootstrap-how-to.md` for AI agents adding `ts-quality` to a new repo from the beginning.
+- `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice target-repo example.
+- `docs/cli-command-manifest.json` for a machine-readable authored projection of CLI commands, options, reads, writes, and artifacts.
 
-Then use `docs/adoption/repo-screening-entry.template.json` plus `node scripts/register-screening-catalog.mjs --entry ...` to keep the central rollout catalog aligned.
+For adoption work, use `docs/adoption/repo-screening-entry.template.json` plus `node scripts/register-screening-catalog.mjs --entry ...` after repo-local truth is stable to keep the central rollout catalog aligned.
 
 `authorize` writes `.ts-quality/runs/<run-id>/authorize.<agent>.<action>.json` and the paired `.ts-quality/runs/<run-id>/bundle.<agent>.<action>.json`. The decision artifact remains the operator-facing legitimacy record, while its additive `evidenceContext` points back to the exact evaluated run, blocking governance findings, run-scoped attestation verification outcomes, and the first at-risk invariant provenance summary instead of inventing a second authority beyond `run.json` and the paired bundle.
 
