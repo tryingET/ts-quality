@@ -1,0 +1,16 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "c0ebfb5ca7daf5058dce777955865fa09bb27e3a"
+created_at: "2026-04-28T12:47:27Z"
+intent: "Prepare local ts-quality v0.1.7 release files, changelog, release notes, version bumps, and verification artifact."
+files:
+  []
+validation:
+  fast_gate:
+    command: "npm run verify --silent"
+    status: "pass"
+  full_gate:
+    command: "RELEASE_TAG=v0.1.7 GITHUB_REF_TYPE=tag npm run release:intent:check --silent && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
