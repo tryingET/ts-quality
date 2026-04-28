@@ -21,7 +21,7 @@ type: "reference"
 ### Fixed
 
 - Ignored the Pi subagent self-memory file that can be produced by local harness state.
-- Fixed release publication verification so both GitHub Actions and local release verification retry the fresh public `npx -p ts-quality@<version> ts-quality --help` installability check after npm publish, and so the proven tarball still attaches to the GitHub Release once npm publish succeeds.
+- Fixed release publication verification so both GitHub Actions and local release verification retry fresh public npm visibility separately from `npx -p ts-quality@<version> ts-quality --help` installability after npm publish, report which stage exhausted, and keep attaching the proven tarball to the GitHub Release once npm publish succeeds.
 
 ## [0.1.6] - 2026-04-28
 

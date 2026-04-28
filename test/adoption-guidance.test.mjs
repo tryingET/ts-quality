@@ -90,10 +90,14 @@ test('publish workflow makes GitHub Release the single npm publication intent', 
     'id: publish_npm',
     'npm publish --provenance --access public --tag "$NPM_DIST_TAG"',
     'Verify public npm package',
-    'npm publish succeeded; waiting for public npm install resolution for ts-quality@${VERSION}.',
+    'npm publish succeeded; waiting for public npm registry propagation for ${PACKAGE_SPEC}.',
     'for attempt in 1 2 3 4 5 6 7 8',
-    'Public install verification attempt ${attempt}/8',
-    'npm view "ts-quality@${VERSION}" version && npx -y -p "ts-quality@${VERSION}" ts-quality --help',
+    'npm registry visibility attempt ${attempt}/8 for ${PACKAGE_SPEC}',
+    'npm registry propagation pending for ${PACKAGE_SPEC}:',
+    '::error title=npm propagation pending::npm publish succeeded, but npm view ${PACKAGE_SPEC} did not resolve the exact version after bounded retries.',
+    'Public npx CLI verification attempt ${attempt}/8 for ${PACKAGE_SPEC}',
+    'npx -y -p "${PACKAGE_SPEC}" ts-quality --help',
+    '::error title=public CLI verification failed::npm registry resolves ${PACKAGE_SPEC}, but npx -p ${PACKAGE_SPEC} ts-quality --help failed after bounded retries.',
     "NPM_CONFIG_MIN_RELEASE_AGE: '0'",
     "if: ${{ !cancelled() && steps.publish_npm.outcome == 'success' }}"
   ], '.github/workflows/publish.yml');
@@ -121,8 +125,12 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'title: releaseTitle',
     'function runRequiredWithRetry',
     "const freshSelfPublishEnv = { NPM_CONFIG_MIN_RELEASE_AGE: '0' }",
-    "runRequiredWithRetry('npm view public package', 'npm', ['view', `${packageName}@${version}`, 'version'], freshSelfPublishEnv)",
-    "runRequiredWithRetry('npx public package install', 'npx', ['-y', '-p', `${packageName}@${version}`, 'ts-quality', '--help'], freshSelfPublishEnv)"
+    'const packageSpec = `${packageName}@${version}`;',
+    "'npm registry exact-version lookup'",
+    'npm registry propagation may still be pending',
+    "'public npx CLI smoke'",
+    'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
+    '`npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality --help did not pass`'
   ], 'scripts/release-orchestrator.mjs');
   assert.equal(releaseOrchestrator.includes('`ts-quality v${version} — deterministic trust for TypeScript changes`, \'--notes-file\''), false, 'release create title must come from release notes instead of a hard-coded generic title');
 

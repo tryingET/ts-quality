@@ -66,9 +66,11 @@ function sleep(milliseconds) {
  * @param {string[]} args
  * @param {Record<string, string>} [env]
  * @param {number} [attempts]
+ * @param {string} [retryReason]
+ * @param {string} [exhaustedReason]
  * @returns {string}
  */
-function runRequiredWithRetry(label, command, args, env = {}, attempts = 8) {
+function runRequiredWithRetry(label, command, args, env = {}, attempts = 8, retryReason = 'transient failure may still be resolving', exhaustedReason = 'command failed after bounded retries') {
   /** @type {CommandResult | null} */
   let lastResult = null;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -78,13 +80,13 @@ function runRequiredWithRetry(label, command, args, env = {}, attempts = 8) {
     }
     lastResult = result;
     if (attempt < attempts) {
-      console.error(`${label} attempt ${attempt}/${attempts} failed; retrying after npm registry propagation delay.`);
+      console.error(`${label} attempt ${attempt}/${attempts} failed; ${retryReason}.`);
       sleep(attempt * 15_000);
     }
   }
   const stdout = lastResult?.stdout ?? '';
   const stderr = lastResult?.stderr ?? '';
-  throw new Error(`Command failed after ${attempts} attempts: ${command} ${args.join(' ')}\n${stdout}\n${stderr}`.trim());
+  throw new Error(`${label} failed after ${attempts} attempts: ${exhaustedReason}\nCommand: ${command} ${args.join(' ')}\n${stdout}\n${stderr}`.trim());
 }
 
 /** @param {string[]} argv */
@@ -427,8 +429,28 @@ function commandVerifyPublic(options) {
   }
   assertVersion(version);
   const freshSelfPublishEnv = { NPM_CONFIG_MIN_RELEASE_AGE: '0' };
-  const npmVersion = runRequiredWithRetry('npm view public package', 'npm', ['view', `${packageName}@${version}`, 'version'], freshSelfPublishEnv);
-  const help = runRequiredWithRetry('npx public package install', 'npx', ['-y', '-p', `${packageName}@${version}`, 'ts-quality', '--help'], freshSelfPublishEnv);
+  const packageSpec = `${packageName}@${version}`;
+  const npmVersion = runRequiredWithRetry(
+    'npm registry exact-version lookup',
+    'npm',
+    ['view', packageSpec, 'version'],
+    freshSelfPublishEnv,
+    8,
+    'npm registry propagation may still be pending',
+    `npm publish may have succeeded, but npm view ${packageSpec} did not resolve the exact version yet`
+  );
+  if (npmVersion.trim() !== version) {
+    throw new Error(`npm registry returned an unexpected version for ${packageSpec}: ${npmVersion}`);
+  }
+  const help = runRequiredWithRetry(
+    'public npx CLI smoke',
+    'npx',
+    ['-y', '-p', packageSpec, 'ts-quality', '--help'],
+    freshSelfPublishEnv,
+    8,
+    'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
+    `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality --help did not pass`
+  );
   const release = runRequired('gh', ['release', 'view', `v${version}`, '--repo', repoSlug, '--json', 'tagName,url,publishedAt,isPrerelease']);
   console.log(JSON.stringify({
     action: 'verify-public',

@@ -100,8 +100,8 @@ The release workflow:
 5. runs `npm run verify:ci --silent`
 6. uploads the staged npm tarball as a workflow artifact
 7. publishes from `.ts-quality/npm/ts-quality/package` through Trusted Publishing/OIDC
-8. after `npm publish` succeeds, starts the public-propagation timer and verifies installability by retrying the paired `npm view ts-quality@<version>` and `npx -p ts-quality@<version> ts-quality --help` checks, because npm packument visibility and `npx` install resolution can converge at different times immediately after publish
-9. attaches the proven tarball to the GitHub Release once npm publish succeeds, even if a later public-install verification retry exhausts and the job fails for operator attention
+8. after `npm publish` succeeds, starts a bounded public-propagation timer by retrying `npm view ts-quality@<version> version` until the exact version is visible, then separately retries `npx -p ts-quality@<version> ts-quality --help`, because npm packument visibility and `npx` install resolution can converge at different times immediately after publish
+9. attaches the proven tarball to the GitHub Release once npm publish succeeds, even if a later propagation or public-install verification retry exhausts and the job fails for operator attention
 
 Prerelease GitHub Releases publish to npm dist-tag `next`; normal releases publish to `latest`.
 
@@ -113,4 +113,4 @@ After the workflow succeeds, local verification is:
 npm run release:verify-public -- --version <released-version>
 ```
 
-This checks npm package visibility, CLI installability, and GitHub Release visibility. The verifier intentionally sets `NPM_CONFIG_MIN_RELEASE_AGE=0` only for its own `npm view` / `npx -p ts-quality@<version>` subprocesses and retries those fresh-public-package reads so maintainers can immediately verify a freshly published `ts-quality` release without weakening their global npm `min-release-age` policy for unrelated installs.
+This checks npm package visibility, CLI installability, and GitHub Release visibility. The verifier intentionally sets `NPM_CONFIG_MIN_RELEASE_AGE=0` only for its own `npm view` / `npx -p ts-quality@<version>` subprocesses, retries the exact-version registry lookup separately from the public `npx` smoke, and reports which stage exhausted so maintainers can immediately verify a freshly published `ts-quality` release without weakening their global npm `min-release-age` policy for unrelated installs.

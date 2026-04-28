@@ -102,17 +102,40 @@ jobs:
           NPM_CONFIG_MIN_RELEASE_AGE: '0'
         run: |
           VERSION="${RELEASE_TAG#v}"
-          echo "npm publish succeeded; waiting for public npm install resolution for ts-quality@${VERSION}."
+          PACKAGE_SPEC="ts-quality@${VERSION}"
+          echo "npm publish succeeded; waiting for public npm registry propagation for ${PACKAGE_SPEC}."
           for attempt in 1 2 3 4 5 6 7 8; do
-            echo "Public install verification attempt ${attempt}/8"
-            if npm view "ts-quality@${VERSION}" version && npx -y -p "ts-quality@${VERSION}" ts-quality --help; then
-              echo "Public install verification succeeded on attempt ${attempt}/8"
+            echo "npm registry visibility attempt ${attempt}/8 for ${PACKAGE_SPEC}"
+            if NPM_VIEW_OUTPUT="$(npm view "${PACKAGE_SPEC}" version 2>&1)"; then
+              if [ "${NPM_VIEW_OUTPUT}" = "${VERSION}" ]; then
+                echo "npm registry resolves exact version ${PACKAGE_SPEC}."
+                break
+              fi
+              echo "npm registry returned an unexpected version for ${PACKAGE_SPEC}: ${NPM_VIEW_OUTPUT}"
+            else
+              echo "npm registry propagation pending for ${PACKAGE_SPEC}:"
+              echo "${NPM_VIEW_OUTPUT}"
+            fi
+            if [ "$attempt" -eq 8 ]; then
+              echo "::error title=npm propagation pending::npm publish succeeded, but npm view ${PACKAGE_SPEC} did not resolve the exact version after bounded retries."
+              exit 1
+            fi
+            echo "Retrying npm registry visibility after $((attempt * 15)) seconds."
+            sleep $((attempt * 15))
+          done
+
+          echo "npm registry sees ${PACKAGE_SPEC}; verifying public npx CLI smoke."
+          for attempt in 1 2 3 4 5 6 7 8; do
+            echo "Public npx CLI verification attempt ${attempt}/8 for ${PACKAGE_SPEC}"
+            if npx -y -p "${PACKAGE_SPEC}" ts-quality --help; then
+              echo "Public npx CLI verification succeeded on attempt ${attempt}/8."
               exit 0
             fi
             if [ "$attempt" -eq 8 ]; then
+              echo "::error title=public CLI verification failed::npm registry resolves ${PACKAGE_SPEC}, but npx -p ${PACKAGE_SPEC} ts-quality --help failed after bounded retries."
               exit 1
             fi
-            echo "Public install verification attempt ${attempt}/8 failed; retrying after $((attempt * 15)) seconds."
+            echo "Public npx CLI verification failed; retrying after $((attempt * 15)) seconds."
             sleep $((attempt * 15))
           done
       - name: Attach proven tarball to GitHub Release
