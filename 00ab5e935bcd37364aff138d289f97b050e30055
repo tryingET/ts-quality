@@ -1,0 +1,25 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "00ab5e935bcd37364aff138d289f97b050e30055"
+created_at: "2026-04-28T01:11:53Z"
+intent: "Prepare ts-quality v0.1.6 release with curated release notes, version bumps, changelog, and refreshed verification log."
+files:
+  - "package.json"
+  - "packages/ts-quality/package.json"
+  - "package-lock.json"
+  - "CHANGELOG.md"
+  - "docs/releases/2026-04-28-v0.1.6-github-release.md"
+  - "verification/verification.log"
+validation:
+  fast_gate:
+    command: "RELEASE_TAG=v0.1.6 GITHUB_REF_TYPE=tag npm run release:intent:check --silent && node /home/tryinget/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+  full_gate:
+    command: "npm run verify --silent"
+    status: "pass"
+group:
+  index: 1
+  total: 1
+  rationale: "Release-prep commit after production-clean package presentation and first bounded-review CLI guidance; GitHub Release remains the publication authority."
