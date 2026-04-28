@@ -1,0 +1,33 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "pi"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "aefc51d751f090495c36729de2efdf3163555dcf"
+created_at: "2026-04-28T16:08:00Z"
+intent: "Make verdict reasons name residual pressure for execution-backed invariants, avoiding misleading stronger-test/coverage wording after witness and coverage are clear."
+files:
+  - "packages/policy-engine/src/index.ts"
+  - "dist/packages/policy-engine/src/index.js"
+  - "test/cli-integration.test.mjs"
+  - "docs/adoption/second-witness-pilot-pi-server.md"
+  - "docs/project/product_posture.md"
+  - "CHANGELOG.md"
+validation:
+  build_gate:
+    command: "npm run build"
+    status: "pass"
+  targeted_gate:
+    command: "node --test test/cli-integration.test.mjs"
+    status: "pass"
+  typecheck_gate:
+    command: "npm run typecheck"
+    status: "pass"
+  lint_gate:
+    command: "npm run lint"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pass"
+  docs_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
