@@ -1,5 +1,5 @@
 ---
-summary: "Tactical handoff with SG7 active: TG19 adoption-surface revalidation is live, TG20 packaged-proof deepening is staged behind it, and SG6 legitimacy continuity is complete history."
+summary: "Tactical handoff after v0.2.0: TG21 public outside-repo adoption proof is active, TG22 artifact compatibility is staged behind it, and SG7 adoption-surface revalidation is complete history."
 read_when:
   - "When planning the next sprint/week for ts-quality"
   - "When turning the current strategic state into bounded delivery waves"
@@ -8,40 +8,46 @@ type: "reference"
 
 # Tactical Goals
 
-Active strategic goal: **SG7 — Re-test adoption-facing operator paths against the richer SG6 legitimacy surface**
+Active strategic goal: **SG8 — Prove the public `0.2.0` outside-repo adoption loop with compact agent diagnostics**
 
-SG6 is now complete. The next unfinished repo-local concern is adoption-facing truth: the repo's public operator/release surfaces and packaged proof path were aligned before the richer SG6 authorize/amend outputs landed, so the next tactical wave should revalidate those surfaces before assuming outside-repo operators will infer the new behavior from generic legitimacy wording.
+SG7 is now complete. `0.2.0` shipped the adoption-friction package and the release process now enforces categorized breaking-change / agent-migration notes. The next unfinished repo-local concern is proving the public package loop against a real outside target repo using the new `doctor --machine`, remediation, and next-evidence-action surfaces instead of assuming the internal architecture is enough.
 
 ## Active tactical goals
 
-### TG19 — Refresh public operator and release surfaces for the richer SG6 legitimacy outputs
-- **Why this is active:** README, publish guidance, and release surfaces already describe the staged-package path, but they still frame legitimacy/operator behavior mostly at the pre-SG6 granularity. The next truthful SG7 slice is to point those adoption-facing surfaces at the run-bound authorization evidence and human-readable amendment summary that now exist, using reviewed artifacts instead of hand-wavy claims.
-- **Completion target:** adoption-facing docs and release guidance describe the richer SG6 legitimacy outputs and their reviewed sample anchors truthfully, without inventing a second authority beyond `run.json`, authorization artifacts, or the amendment decision JSON/text pair.
-- **Materialized through:** repo-local AK tasks `task:1791-1793`.
-- **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `2`
+### TG21 — Run a public `0.2.0` outside-repo adoption pilot from `doctor --machine`
+- **Why this is active:** the designmd-foundry and pi-server pilots proved the first-witness habit before `0.2.0`, and the pi-server rerun identified exactly the friction that `0.2.0` now addresses. The next truthful tactical slice is to rerun the habit from the published package with the compact agent diagnostic as the first step.
+- **Completion target:** an adoption evidence doc records a real outside-repo run using `ts-quality@0.2.0`, including `doctor --machine`, selected preset/config, bounded `check`, `explain`, next-evidence-action output, and one focused witness or a documented reason why the witness was not the next truthful step.
+- **Materialized through:** next repo-local AK pilot task.
+- **Eisenhower-3D:** importance `3`, urgency `2`, difficulty `3`
 
-### TG20 — Re-prove the staged-package operator path with a representative SG6 review flow
-- **Why this is next:** the current packaging smoke path proves staging/install/load/init/materialize/API/types, but not a representative `check` / governance / legitimacy flow from the shipped package. Once TG19 refreshes the public operator story, the next truthful SG7 follow-through is to prove that richer path from a fresh installed package rather than leaving it as implied capability.
-- **Completion target:** a deterministic fresh-install proof exercises a representative SG6 review/legitimacy workflow from the packaged surface and keeps that proof inside the repo's normal validation contract.
-- **Promotion trigger:** promote after TG19 completes through `task:1791-1793`.
-- **Eisenhower-3D:** importance `2`, urgency `1`, difficulty `3`
+### TG22 — Add artifact-schema compatibility and compact-machine-surface regression coverage
+- **Why this is next:** `0.2.0` intentionally changes the run artifact schema version and adds new additive surfaces. Agents and parsers need fixtures and checks that keep older run artifacts readable where possible and keep `doctor --machine` compact rather than drifting into token-heavy JSON.
+- **Completion target:** tests and docs cover legacy `0.1.0` run artifacts, current `0.2.0` run artifacts, and the `TSQ_DOCTOR_MACHINE_V1` line protocol contract.
+- **Promotion trigger:** promote after TG21 identifies which compatibility edges matter most for outside-repo agents.
+- **Eisenhower-3D:** importance `2`, urgency `2`, difficulty `2`
 
 ## Recently completed tactical history
 
+### TG20 — Re-prove the staged-package operator path with a representative SG6 review flow
+- **Completed by:** `task:1914-1917`.
+- **What landed:** release preparation and verification prove the package path through Trusted Publishing/OIDC, staged package smoke, installed CLI/API/types, representative review/governance/legitimacy flows, public npm visibility, and GitHub Release attachment.
+
+### TG19 — Refresh public operator and release surfaces for the richer SG6 legitimacy outputs
+- **Completed by:** repo-local AK tasks `task:1791-1793` plus follow-through release-note and harnessed-LLM guidance tasks.
+- **What landed:** README, publishing guidance, release notes, CLI command manifest, and harnessed-LLM guide now point at current run-bound legitimacy/adoption outputs and include regression coverage for release-note drift.
+
 ### TG18 — Project amendment evaluation context into human-readable outputs and reviewed sample artifacts
 - **Completed by:** repo-local AK task `task:1767`.
-- **What landed:** amendment evaluation now persists `.result.txt` alongside the authoritative JSON result, the reviewed sample bundle includes `amend.txt`, and the README documents that additive human-readable contract.
+- **What landed:** amendment evaluation now persists `.result.txt` alongside the authoritative JSON result, the reviewed sample bundle includes `amend.txt`, and README documents the additive contract.
 
 ### TG17 — Surface attestation verification outcomes in authorization artifacts and bundle surfaces
 - **Completed by:** repo-local AK task `task:1766`.
 - **What landed:** authorization artifacts and bundles now project run-scoped attestation verification outcomes in additive form instead of forcing operators to cross-reference a separate attestation review path manually.
 
-### TG16 — Close SG5 or materialize one last concrete SG5 follow-through
-- **Completed by:** repo-local AK task `task:1765`.
-- **What landed:** SG5 retired cleanly, the ladder rolled forward into SG6, and the next product-native follow-through queue was materialized as `task:1766-1767` instead of leaving the repo with a stale finished wave.
-
 ## Tactical guardrails
-- keep adoption-facing operator surfaces downstream of exact SG6 artifacts rather than marketing generic legitimacy claims
-- keep README/release/checklist guidance aligned to reviewed sample artifacts and current shipped commands
-- keep additive-first contract growth intact: SG7 should restate current truth, not invent a new report model
-- do not reopen SG6 or generic control-plane cleanup unless the SG7 revalidation work finds a concrete contract contradiction
+
+- prove public-package adoption from target-repo truth rather than repo-internal assumptions
+- use `doctor --machine` for harnessed LLM setup diagnostics and avoid token-heavy JSON unless a CI/report surface explicitly needs it
+- keep adoption-facing operator surfaces downstream of exact run artifacts rather than marketing generic confidence claims
+- keep additive-first contract growth intact: compatibility work should preserve older artifacts where truthful and require explicit migration notes where not
+- do not add broad new semantic claims before the public `0.2.0` adoption loop is repeated

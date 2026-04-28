@@ -1,5 +1,5 @@
 ---
-summary: "Operating plan with SG7/TG19 active: adoption-facing docs/release surfaces are the live wave, packaged SG6 proof remains next, and SG6 runtime continuity is complete history."
+summary: "Operating plan after v0.2.0: public outside-repo adoption proof with doctor --machine is the live wave; artifact compatibility follows."
 read_when:
   - "When deciding the next bounded implementation slice in ts-quality"
   - "When translating the current tactical state into the repo-local queue"
@@ -8,43 +8,47 @@ type: "reference"
 
 # Operating Plan
 
-Active strategic goal: **SG7 — Re-test adoption-facing operator paths against the richer SG6 legitimacy surface**
+Active strategic goal: **SG8 — Prove the public `0.2.0` outside-repo adoption loop with compact agent diagnostics**
 
-Active tactical goal: **TG19 — Refresh public operator and release surfaces for the richer SG6 legitimacy outputs**
+Active tactical goal: **TG21 — Run a public `0.2.0` outside-repo adoption pilot from `doctor --machine`**
 
 ## Current state
 
-SG6 is now complete through `task:1766-1767`: the shipped runtime already exposes additive run-bound authorization evidence and a concise human-readable amendment summary, and the active direction ladder has moved to SG7/TG19 adoption-facing revalidation. The next truthful move is to revalidate adoption-facing docs and release surfaces against that richer SG6 output contract before promoting the deeper installed-package proof wave.
+`0.2.0` is public. It added the production-readiness adoption package: configured coverage-generation polish, actionable mutation remediation, source-vs-built LCOV warnings, confidence breakdowns, next-evidence-action artifacts, `doctor`, init presets, categorized release notes with breaking-change / agent-migration guidance, and compact `doctor --machine` diagnostics for harnessed LLMs. SG7/TG19 adoption-surface revalidation is complete enough to move the active wave from documentation alignment to public-package adoption proof.
 
 ## Active operating slices
 
-### OP1 — Align README and publish checklist with SG6 legitimacy outputs
-- **AK task:** `task:1791`
+### OP1 — Select and bind the public `0.2.0` outside-repo pilot target
+- **AK task:** `task:1921`
 - **State:** active
-- **Deliverable:** README and `docs/npm-publishing-checklist.md` point operators at the current SG6 legitimacy outputs and reviewed artifact anchors where that outside-repo guidance actually benefits from them.
-- **Guardrails:** keep `run.json`, authorization artifacts, and amendment JSON/text outputs authoritative; do not over-market semantics or imply packaged proof that the repo has not yet run.
+- **Deliverable:** choose one real outside target repo and record a bounded pilot plan: changed file/slice, expected test command, expected coverage path, likely init preset, and off-limits repo mutations.
+- **Guardrails:** use a temp copy or explicit non-mutating target posture; do not broaden into unrelated repos; do not treat raw pilot artifacts as canonical target-repo truth.
 
-### OP2 — Align public release docs with SG6 legitimacy outputs
-- **AK task:** `task:1792`
+### OP2 — Execute the pilot from `doctor --machine` through first bounded review
+- **AK task:** `task:1922`
 - **State:** next
-- **Deliverable:** the public release draft and first-release decision surfaces describe the richer SG6 legitimacy outputs truthfully enough that the release story matches the current shipped surface.
-- **Guardrails:** keep release wording downstream of current reviewed repo truth; do not turn release notes into a second technical authority surface.
+- **Deliverable:** run the public package path (`npx -p ts-quality@0.2.0 ts-quality doctor --machine`, init/config, bounded `check`, `explain`, next-evidence-action inspection, and one focused witness or documented deferral) and capture what worked / what remained red.
+- **Guardrails:** use the public npm package, not local source; keep changed scope explicit; preserve target-repo evidence truth even when the result stays red.
 
-### OP3 — Add regression coverage for SG7 adoption-surface drift
-- **AK task:** `task:1793`
+### OP3 — Convert pilot findings into the next smallest product slice
+- **AK task:** `task:1923`
 - **State:** next
-- **Deliverable:** regression coverage fails closed if the refreshed adoption-facing SG6 guidance drifts from the reviewed surfaces again.
-- **Guardrails:** add the smallest truthful regression surface; if validation reveals a deeper shipped-product gap, materialize that exact next slice instead of papering it over with prose-only checks.
+- **Deliverable:** either add artifact/schema compatibility fixtures, improve `doctor --machine` recommendations, or sharpen mutation remediation based on the first concrete pilot blocker.
+- **Guardrails:** one finding class per slice; prefer tests over prose-only corrections; keep `run.json` authoritative.
 
 ## Recently completed operating history
 
+- **Compact doctor machine diagnostics (`task:1917`):** `doctor --machine` now emits a token-light `TSQ_DOCTOR_MACHINE_V1` line protocol for harnessed LLMs/agents, while existing `--json` surfaces remain for CI/report projections.
+- **Release-note contract repair (`task:1916`):** release notes now follow release-please-style categories, reject generic fallback titles, require `### Breaking Changes`, and require `### Agent migration notes` when breaking changes are non-empty.
+- **`0.2.0` adoption-readiness package (`task:1914-1915`):** run artifact schema `0.2.0`, actionable mutation remediation, coverage-generation sidecars, built-output LCOV warnings, confidence breakdowns, next-evidence-action artifacts, `doctor`, init presets, docs, dist, examples, and public release were completed.
+- **SG7 adoption-surface documentation/proof (`task:1791-1793`):** README, release/publishing docs, and regression checks were aligned with richer SG6 legitimacy outputs.
 - **Amendment human-readable/sample continuity (`task:1767`):** amendment results now persist `.result.txt`, the reviewed sample bundle includes `amend.txt`, and README documents the additive contract.
 - **Authorization attestation-verification continuity (`task:1766`):** authorization artifacts and bundles now project run-scoped attestation verification outcomes from the exact evaluated run.
-- **SG5 closure/promotion (`task:1765`):** the repo retired SG5 cleanly, materialized `task:1766-1767`, and refreshed the handoff ladder so active direction returned to a native product/runtime wave.
 
 ## Queue discipline
-- `task:1791` is the live ready slice for SG7/TG19
-- `task:1792` depends on `task:1791`
-- `task:1793` depends on `task:1791-1792`
-- completed SG6 tasks `task:1766-1767` stay closed unless SG7 surfaces reveal a concrete contract contradiction
-- TG20 stays staged until TG19 materially lands
+
+- OP1 is the live next planning slice.
+- OP2 should not start until a target and bounded slice are explicit.
+- OP3 should be evidence-driven by OP2, not guessed from internal preference.
+- TG22 compatibility work stays staged until the pilot identifies which consumer edge matters most, unless a direct artifact-reader regression appears first.
+- Release publication remains GitHub Release / Trusted Publishing only; do not run local `npm publish`.
