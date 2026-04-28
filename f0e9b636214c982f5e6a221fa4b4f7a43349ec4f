@@ -1,0 +1,16 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "f0e9b636214c982f5e6a221fa4b4f7a43349ec4f"
+created_at: "2026-04-28T11:26:48Z"
+intent: "separate npm propagation visibility from public npx CLI verification after trusted publish"
+files:
+  []
+validation:
+  fast_gate:
+    command: "npm run release:verify-public -- --version 0.1.6"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pass"
