@@ -228,46 +228,136 @@ function csvValues(parsed: ParsedArgs, name: string): string[] | undefined {
 
 function usage(command?: string, subcommand?: string): string {
   if (!command) {
-    return `ts-quality commands:\n- init\n- materialize [--out-dir <dir>]\n- check [--run-id <id>]\n- explain [--run-id <id>]\n- report [--run-id <id>] [--json]\n- trend\n- plan [--run-id <id>]\n- govern [--run-id <id>]\n- authorize --agent <id> [--action merge] [--run-id <id>]\n- attest sign|verify|keygen\n- witness test --invariant <id> --scenario <id> --source-files <a,b> --out <file> -- <command...>\n- witness refresh [--config <file>] [--changed <a,b,c>]\n- amend --proposal <file> [--apply]\n`;
+    return `ts-quality commands:
+
+First bounded review:
+  ts-quality init
+  # configure ts-quality.config.* for coverage, changed scope, invariants, governance, and agents
+  ts-quality check --changed src/file.ts --run-id review-001
+  ts-quality explain --run-id review-001
+  ts-quality report --run-id review-001
+
+Core commands:
+- init                                      create starter control-plane files
+- materialize [--out-dir <dir>]            write boring runtime JSON from config/support files
+- check [--changed <a,b>] [--run-id <id>]  write the immutable evidence run bundle
+- explain|report|plan|govern --run-id <id> project a persisted run without re-checking
+- authorize --agent <id> [--action merge] --run-id <id>
+- witness test|refresh                     create or refresh execution witnesses
+- attest sign|verify|keygen                bind or verify run artifacts
+- trend                                    compare the nearest comparable prior run
+- amend --proposal <file> [--apply]        evaluate a governance amendment
+
+Trust contract:
+- check requires explicit changed scope from --changed, config changeSet.files, or a diff file.
+- Prefer --run-id in automation; latest.json fallback is only for selected read/projection commands.
+- Run coverage and your target repo quality gate before check when coverage/mutation evidence matters.
+- Machine truth is under .ts-quality/runs/<run-id>/; stdout and Markdown are projections.
+
+Use: ts-quality <command> --help
+`;
   }
   if (command === 'materialize') {
-    return 'Usage: ts-quality materialize [--root <dir>] [--config <file>] [--out-dir <dir>]\n';
+    return `Usage: ts-quality materialize [--root <dir>] [--config <file>] [--out-dir <dir>]
+
+Exports author-authored config/support data into canonical runtime JSON.
+Reads: ts-quality.config.* and configured support files.
+Writes: .ts-quality/materialized/ts-quality.config.json and related support JSON.
+Use this before check when CI or agents should consume generated data instead of source config.
+`;
   }
   if (command === 'check') {
-    return 'Usage: ts-quality check [--root <dir>] [--config <file>] [--changed <a,b,c>] [--run-id <id>]\n';
+    return `Usage: ts-quality check [--root <dir>] [--config <file>] [--changed <a,b,c>] [--run-id <id>]
+
+Runs the evidence, mutation, invariant, governance, and verdict pipeline.
+Required trust precondition: explicit changed scope from --changed, config changeSet.files, or a configured diff file.
+Recommended precondition: run the target repo's tests/coverage first so LCOV and mutation evidence are meaningful.
+Writes: .ts-quality/runs/<run-id>/{run.json,verdict.json,report.json,report.md,pr-summary.md,check-summary.txt,explain.txt,plan.txt,govern.txt} and .ts-quality/latest.json.
+Automation: pass --run-id so explain/report/plan/govern/authorize stay bound to this exact run.
+`;
   }
   if (command === 'explain') {
-    return 'Usage: ts-quality explain [--root <dir>] [--run-id <id>]\n';
+    return `Usage: ts-quality explain [--root <dir>] [--run-id <id>]
+
+Renders the explanation trail for a persisted run. Prefer --run-id; when omitted this command reads .ts-quality/latest.json.
+Writes no artifacts; stdout is a projection of run.json and snapped decision context.
+`;
   }
   if (command === 'report') {
-    return 'Usage: ts-quality report [--root <dir>] [--run-id <id>] [--json]\n';
+    return `Usage: ts-quality report [--root <dir>] [--run-id <id>] [--json]
+
+Renders a Markdown or JSON report for a persisted run. Prefer --run-id; when omitted this command reads .ts-quality/latest.json.
+Use --json for machine consumers; report JSON includes additive decisionContext metadata.
+`;
+  }
+  if (command === 'trend') {
+    return `Usage: ts-quality trend [--root <dir>]
+
+Compares the latest run with the nearest earlier comparable run.
+Fails closed instead of comparing unrelated changed scopes or changed evidence baselines.
+`;
   }
   if (command === 'plan') {
-    return 'Usage: ts-quality plan [--root <dir>] [--config <file>] [--run-id <id>]\n';
+    return `Usage: ts-quality plan [--root <dir>] [--config <file>] [--run-id <id>]
+
+Renders governance implementation guidance for a persisted run or current config context.
+Prefer --run-id for review/release decisions so drift and snapped control-plane truth stay visible.
+`;
   }
   if (command === 'govern') {
-    return 'Usage: ts-quality govern [--root <dir>] [--config <file>] [--run-id <id>]\n';
+    return `Usage: ts-quality govern [--root <dir>] [--config <file>] [--run-id <id>]
+
+Renders governance findings for a persisted run or current config context.
+Prefer --run-id; findings are downstream of the exact run evidence, not a separate authority.
+`;
   }
   if (command === 'authorize') {
-    return 'Usage: ts-quality authorize --agent <id> [--action merge] [--root <dir>] [--config <file>] [--run-id <id>]\n';
+    return `Usage: ts-quality authorize --agent <id> [--action merge] [--root <dir>] [--config <file>] [--run-id <id>]
+
+Evaluates whether an agent/human has standing to perform an action against a selected run.
+Prefer --run-id; authorization rechecks drift and writes run-bound authorization and bundle JSON.
+Writes: .ts-quality/runs/<run-id>/authorize.<agent>.<action>.json and bundle.<agent>.<action>.json.
+`;
   }
   if (command === 'attest' && subcommand === 'sign') {
-    return 'Usage: ts-quality attest sign --issuer <id> --key-id <id> --private-key <file> --subject <file> --out <file> [--claims <a,b>] [--root <dir>]\n';
+    return `Usage: ts-quality attest sign --issuer <id> --key-id <id> --private-key <file> --subject <file> --out <file> [--claims <a,b>] [--root <dir>]
+
+Signs a repo-local subject artifact. Subject paths must stay inside --root and run-scoped payload metadata must match the subject path when present.
+Do not commit private keys.
+`;
   }
   if (command === 'attest' && subcommand === 'verify') {
-    return 'Usage: ts-quality attest verify --attestation <file> [--trusted-keys <dir>] [--json] [--root <dir>]\n';
+    return `Usage: ts-quality attest verify --attestation <file> [--trusted-keys <dir>] [--json] [--root <dir>]
+
+Verifies a signed attestation against trusted public keys. Use --json for machine consumers.
+`;
   }
   if (command === 'attest' && subcommand === 'keygen') {
-    return 'Usage: ts-quality attest keygen [--out-dir <dir>] [--key-id <id>] [--root <dir>]\n';
+    return `Usage: ts-quality attest keygen [--out-dir <dir>] [--key-id <id>] [--root <dir>]
+
+Generates an Ed25519 keypair for local attestation workflows. Do not commit private keys.
+`;
   }
   if (command === 'witness' && subcommand === 'test') {
-    return 'Usage: ts-quality witness test --invariant <id> --scenario <id> --source-files <a,b> [--test-files <a,b>] --out <file> [--timeout-ms <ms>] [--observed-at <iso>] [--root <dir>] -- <command...>\n';
+    return `Usage: ts-quality witness test --invariant <id> --scenario <id> --source-files <a,b> [--test-files <a,b>] --out <file> [--timeout-ms <ms>] [--observed-at <iso>] [--root <dir>] -- <command...>
+
+Runs one explicit proof command and writes an execution witness plus receipt sidecar.
+Keep commands narrow: a focused witness is stronger product evidence than a repo-global green test run.
+`;
   }
   if (command === 'witness' && subcommand === 'refresh') {
-    return 'Usage: ts-quality witness refresh [--root <dir>] [--config <file>] [--changed <a,b,c>]\n';
+    return `Usage: ts-quality witness refresh [--root <dir>] [--config <file>] [--changed <a,b,c>]
+
+Runs configured execution witness commands impacted by the current changed scope.
+Pass --changed in automation unless config changeSet.files or a diff file supplies scope.
+`;
   }
   if (command === 'amend') {
-    return 'Usage: ts-quality amend --proposal <file> [--apply] [--root <dir>] [--config <file>]\n';
+    return `Usage: ts-quality amend --proposal <file> [--apply] [--root <dir>] [--config <file>]
+
+Evaluates a constitutional amendment proposal and writes amendment result JSON/text.
+Omit --apply for review-only evaluation.
+`;
   }
   return `Usage: ts-quality ${command} [--root <dir>]\n`;
 }

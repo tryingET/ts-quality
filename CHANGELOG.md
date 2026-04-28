@@ -10,6 +10,14 @@ type: "reference"
 
 ## [Unreleased]
 
+### Added
+
+- Added first-user CLI help guidance that turns `ts-quality --help` and command-specific help into a bounded-review trust contract, including explicit changed-scope preconditions, `--run-id` habits, prerequisite coverage guidance, and the authoritative run artifact locations.
+
+### Changed
+
+- Updated the product posture snapshot to reflect the production-clean package README and first-user CLI help improvements, narrowing the next product-readiness gap to first-witness adoption.
+
 ### Fixed
 
 - Fixed public release verification so freshly published `ts-quality` versions can be checked immediately without changing the maintainer's global npm `min-release-age` policy.

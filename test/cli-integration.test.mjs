@@ -886,10 +886,23 @@ test('check rejects changed file overrides that escape the repository root', () 
 });
 
 
+test('top-level help teaches the first bounded review trust contract', () => {
+  const result = spawnSync('node', [cli, '--help'], { encoding: 'utf8' });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /First bounded review:/);
+  assert.match(result.stdout, /ts-quality check --changed src\/file\.ts --run-id review-001/);
+  assert.match(result.stdout, /check requires explicit changed scope/);
+  assert.match(result.stdout, /Machine truth is under \.ts-quality\/runs\/<run-id>\//);
+  assert.equal(result.stderr, '');
+});
+
 test('check --help renders usage instead of executing analysis', () => {
   const result = spawnSync('node', [cli, 'check', '--help'], { encoding: 'utf8' });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Usage: ts-quality check/);
+  assert.match(result.stdout, /Required trust precondition: explicit changed scope/);
+  assert.match(result.stdout, /Writes: \.ts-quality\/runs\/<run-id>/);
+  assert.match(result.stdout, /pass --run-id/i);
   assert.equal(result.stderr, '');
 });
 
