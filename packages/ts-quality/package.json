@@ -1,6 +1,6 @@
 {
   "name": "ts-quality",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Deterministic trust for TypeScript changes in agent-built systems: mutation testing, invariants, governance, and attestable authorization.",
   "license": "MIT",
   "repository": {

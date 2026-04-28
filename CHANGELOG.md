@@ -10,22 +10,20 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-04-28
+
 ### Added
 
 - Added first-user CLI help guidance that turns `ts-quality --help` and command-specific help into a bounded-review trust contract, including explicit changed-scope preconditions, `--run-id` habits, prerequisite coverage guidance, and the authoritative run artifact locations.
 
 ### Changed
 
-- Updated the product posture snapshot to reflect the production-clean package README and first-user CLI help improvements, narrowing the next product-readiness gap to first-witness adoption.
+- Updated the product posture snapshot to reflect representative installed-package review/governance/legitimacy proof, production-clean packaged README staging, and first-user CLI help, narrowing the next product-readiness gap to first-witness adoption.
 
 ### Fixed
 
 - Fixed public release verification so freshly published `ts-quality` versions can be checked immediately without changing the maintainer's global npm `min-release-age` policy.
 - Fixed public README/package presentation by removing stale README version branding, making the first quickstart published-package-first, and making the staged package README fail closed on frontmatter or versioned headings.
-
-### Changed
-
-- Refreshed product posture to reflect that representative installed-package review/governance/legitimacy proof has landed, shifting the production-readiness gap toward first-user UX, packaged README presentation, and CLI help ergonomics.
 
 ## [0.1.5] - 2026-04-27
 
