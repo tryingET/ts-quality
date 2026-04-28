@@ -114,3 +114,40 @@ The next product slice should make target-repo proof-command selection more disc
 Follow-up slice `#1905` addressed the immediate documentation and CLI-help friction by teaching `witness test --help`, README quickstart guidance, and the invariant/config references to choose the command after `--` deliberately: start from the changed source plus focused test, prefer module-level target-repo commands, reserve repo-global `npm test` for baseline evidence when it cannot focus the slice, run builds before dist-based witnesses, and hide long TypeScript/source-mode loader commands behind repo-local npm scripts.
 
 Follow-up slice `#1906` closed the immediate LCOV automation gap exposed here: `ts-quality check` can now run a configured `coverage.generateCommand` when the configured LCOV path is missing, fail closed if generation fails or does not create the expected file, parse the generated LCOV before risk scoring, and record a run-local `coverageGeneration` receipt.
+
+## Follow-up rerun with configured LCOV generation
+
+After `#1906`, the pilot was rerun against a fresh temp copy of `pi-server` using the local built `ts-quality` CLI. The target copy configured:
+
+```ts
+coverage: {
+  lcovPath: 'coverage/lcov.info',
+  generateCommand: ['node', 'scripts/coverage-command-classification.mjs'],
+  generateTimeoutMs: 60000
+}
+```
+
+The target coverage script created `coverage/` and ran Node's test coverage reporter over the built command-classification test with source-map support enabled so LCOV mapped back to `src/command-classification.ts` rather than only `dist/command-classification.js`.
+
+The pre-witness rerun showed the intended structural-evidence improvement:
+
+```text
+Coverage generation: pass -> coverage/lcov.info
+src/command-classification.ts: 359 covered lines / 399 total lines
+getCommandTimeoutPolicy: coverage 100%, CRAP 6
+changed functions under 80% coverage: 0
+max changed CRAP: 6
+```
+
+After regenerating the same focused execution witness and deleting `coverage/` before the second check, `check` generated LCOV again and recognized both generated coverage and the witness:
+
+```text
+Coverage generation: pass -> coverage/lcov.info
+Evidence semantics: execution-backed witness artifacts matched the invariant scenario scope
+coverage-pressure [clear; mode=explicit]: All changed functions in invariant scope are at or above 80% coverage
+Execution witness is present; remaining risk comes from mutation-pressure.
+```
+
+The earlier LCOV/CRAP/governance failure therefore moved correctly: missing coverage was no longer the blocker, and `getCommandTimeoutPolicy` no longer exceeded the CRAP budget. The review still failed truthfully because mutation pressure remained below budget: 6 killed mutants and 2 surviving mutants, producing mutation score `0.75` against the configured `0.80` threshold and a merge-confidence governance finding. That means the next target-repo remediation is tighter assertions around the surviving mutants, not coverage generation.
+
+One follow-up product wording issue remains visible: the high-level verdict reason still says `1 invariant(s) need stronger test evidence or failure-path coverage` even when the scenario is execution-backed and the concise summary correctly says the remaining risk is mutation pressure. The concise summary is now truthful, but the verdict reason should eventually become residual-pressure-specific.
