@@ -1,0 +1,16 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "98e0cad2f0d2792463c4f5bf8e9b1b11df9a7bb0"
+created_at: "2026-04-28T12:20:56Z"
+intent: "Assert report JSON preserves run.json fields apart from additive decisionContext metadata."
+files:
+  []
+validation:
+  fast_gate:
+    command: "node --test test/cli-integration.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run lint"
+    status: "pass"
