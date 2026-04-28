@@ -55,6 +55,38 @@ function runRequired(command, args, env = {}) {
   return result.stdout;
 }
 
+/** @param {number} milliseconds */
+function sleep(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+/**
+ * @param {string} label
+ * @param {string} command
+ * @param {string[]} args
+ * @param {Record<string, string>} [env]
+ * @param {number} [attempts]
+ * @returns {string}
+ */
+function runRequiredWithRetry(label, command, args, env = {}, attempts = 8) {
+  /** @type {CommandResult | null} */
+  let lastResult = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const result = run(command, args, env);
+    if (result.status === 0) {
+      return result.stdout;
+    }
+    lastResult = result;
+    if (attempt < attempts) {
+      console.error(`${label} attempt ${attempt}/${attempts} failed; retrying after npm registry propagation delay.`);
+      sleep(attempt * 15_000);
+    }
+  }
+  const stdout = lastResult?.stdout ?? '';
+  const stderr = lastResult?.stderr ?? '';
+  throw new Error(`Command failed after ${attempts} attempts: ${command} ${args.join(' ')}\n${stdout}\n${stderr}`.trim());
+}
+
 /** @param {string[]} argv */
 function parseArgs(argv) {
   /** @type {Record<string, string | boolean>} */
@@ -395,8 +427,8 @@ function commandVerifyPublic(options) {
   }
   assertVersion(version);
   const freshSelfPublishEnv = { NPM_CONFIG_MIN_RELEASE_AGE: '0' };
-  const npmVersion = runRequired('npm', ['view', `${packageName}@${version}`, 'version'], freshSelfPublishEnv);
-  const help = runRequired('npx', ['-p', `${packageName}@${version}`, 'ts-quality', '--help'], freshSelfPublishEnv);
+  const npmVersion = runRequiredWithRetry('npm view public package', 'npm', ['view', `${packageName}@${version}`, 'version'], freshSelfPublishEnv);
+  const help = runRequiredWithRetry('npx public package install', 'npx', ['-y', '-p', `${packageName}@${version}`, 'ts-quality', '--help'], freshSelfPublishEnv);
   const release = runRequired('gh', ['release', 'view', `v${version}`, '--repo', repoSlug, '--json', 'tagName,url,publishedAt,isPrerelease']);
   console.log(JSON.stringify({
     action: 'verify-public',

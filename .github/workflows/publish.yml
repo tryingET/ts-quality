@@ -91,6 +91,7 @@ jobs:
           path: .ts-quality/npm/ts-quality/tarballs/*.tgz
           if-no-files-found: error
       - name: Publish to npm with Trusted Publishing/OIDC
+        id: publish_npm
         working-directory: .ts-quality/npm/ts-quality/package
         env:
           NPM_DIST_TAG: ${{ github.event.release.prerelease && 'next' || 'latest' }}
@@ -98,17 +99,24 @@ jobs:
       - name: Verify public npm package
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          NPM_CONFIG_MIN_RELEASE_AGE: '0'
         run: |
           VERSION="${RELEASE_TAG#v}"
-          for attempt in 1 2 3 4 5; do
-            npm view "ts-quality@${VERSION}" version && break
-            if [ "$attempt" -eq 5 ]; then
+          echo "npm publish succeeded; waiting for public npm install resolution for ts-quality@${VERSION}."
+          for attempt in 1 2 3 4 5 6 7 8; do
+            echo "Public install verification attempt ${attempt}/8"
+            if npm view "ts-quality@${VERSION}" version && npx -y -p "ts-quality@${VERSION}" ts-quality --help; then
+              echo "Public install verification succeeded on attempt ${attempt}/8"
+              exit 0
+            fi
+            if [ "$attempt" -eq 8 ]; then
               exit 1
             fi
+            echo "Public install verification attempt ${attempt}/8 failed; retrying after $((attempt * 15)) seconds."
             sleep $((attempt * 15))
           done
-          npx -p "ts-quality@${VERSION}" ts-quality --help
       - name: Attach proven tarball to GitHub Release
+        if: ${{ !cancelled() && steps.publish_npm.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}

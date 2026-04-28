@@ -87,9 +87,15 @@ test('publish workflow makes GitHub Release the single npm publication intent', 
     'Attach proven tarball to GitHub Release',
     'gh release upload "$RELEASE_TAG" .ts-quality/npm/ts-quality/tarballs/*.tgz --clobber',
     'working-directory: .ts-quality/npm/ts-quality/package',
+    'id: publish_npm',
     'npm publish --provenance --access public --tag "$NPM_DIST_TAG"',
     'Verify public npm package',
-    'npx -p "ts-quality@${VERSION}" ts-quality --help'
+    'npm publish succeeded; waiting for public npm install resolution for ts-quality@${VERSION}.',
+    'for attempt in 1 2 3 4 5 6 7 8',
+    'Public install verification attempt ${attempt}/8',
+    'npm view "ts-quality@${VERSION}" version && npx -y -p "ts-quality@${VERSION}" ts-quality --help',
+    "NPM_CONFIG_MIN_RELEASE_AGE: '0'",
+    "if: ${{ !cancelled() && steps.publish_npm.outcome == 'success' }}"
   ], '.github/workflows/publish.yml');
 
   assert.equal(workflow.includes('workflow_dispatch:'), false, 'release workflow must not expose a second manual publish intent');
@@ -113,8 +119,10 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     "const releaseTitle = releaseTitleFromNotes(version, notesPath);",
     "'--title', releaseTitle",
     'title: releaseTitle',
+    'function runRequiredWithRetry',
     "const freshSelfPublishEnv = { NPM_CONFIG_MIN_RELEASE_AGE: '0' }",
-    "runRequired('npx', ['-p', `${packageName}@${version}`, 'ts-quality', '--help'], freshSelfPublishEnv)"
+    "runRequiredWithRetry('npm view public package', 'npm', ['view', `${packageName}@${version}`, 'version'], freshSelfPublishEnv)",
+    "runRequiredWithRetry('npx public package install', 'npx', ['-y', '-p', `${packageName}@${version}`, 'ts-quality', '--help'], freshSelfPublishEnv)"
   ], 'scripts/release-orchestrator.mjs');
   assert.equal(releaseOrchestrator.includes('`ts-quality v${version} — deterministic trust for TypeScript changes`, \'--notes-file\''), false, 'release create title must come from release notes instead of a hard-coded generic title');
 
