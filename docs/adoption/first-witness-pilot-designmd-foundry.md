@@ -106,3 +106,16 @@ This is a good product signal: the witness lane can upgrade one invariant scenar
 This pilot partially closes the first outside-repo adoption gap: the published package can run the bounded-review plus focused-witness habit against a real TypeScript repo without mutating that repo.
 
 It does not yet prove broad production adoption. The next product slice should reduce the observed setup friction, especially target-repo test-command discovery, witness command ergonomics, and post-witness summary wording when execution support is present but other evidence pressure remains.
+
+## Follow-up mitigation landed
+
+The immediate follow-up reduced two pilot frictions:
+
+- `witness test --help` now explicitly recommends moving long TypeScript/source-mode proof commands into a repo-local npm script and invoking that script after `--`.
+- Concise invariant provenance now adds an explicit post-witness note when execution-backed support is present but other risk pressure remains, for example:
+
+```text
+Execution witness is present; remaining risk comes from coverage-pressure, mutation-pressure.
+```
+
+That wording keeps the witness success visible without hiding truthful coverage, mutation, or complexity gaps.

@@ -239,6 +239,7 @@ First bounded review:
 
 First focused witness:
   ts-quality witness test --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.ts --test-files test/auth/token.test.ts --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- npm test -- token
+  # Tip: put long TypeScript/source-mode proof commands in an npm script, then invoke it after --.
   ts-quality check --changed src/auth/token.ts --run-id review-001
 
 Core commands:
@@ -348,6 +349,7 @@ Generates an Ed25519 keypair for local attestation workflows. Do not commit priv
 Runs one explicit proof command and writes an execution witness plus receipt sidecar.
 Use this when a lexical invariant match should graduate to execution-backed support for one scenario.
 Keep commands narrow: one invariant, one scenario, one changed behavior, and one focused test command are stronger product evidence than a repo-global green test run.
+For long TypeScript/source-mode proof commands, prefer a repo-local npm script and invoke it after --, for example: -- npm run witness:auth-refresh --silent.
 `;
   }
   if (command === 'witness' && subcommand === 'refresh') {

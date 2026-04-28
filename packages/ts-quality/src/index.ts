@@ -153,14 +153,31 @@ function renderInvariantProvenanceBlock(
     return [];
   }
   const linePrefix = options?.linePrefix ?? '';
+  const witnessPressureNote = renderExecutionWitnessPressureNote(riskyInvariant, linePrefix);
   const lines = [
     `${linePrefix}Invariant evidence at risk: ${riskyInvariant.invariantId}`,
-    ...renderConciseInvariantProvenance(riskyInvariant, { linePrefix })
+    ...renderConciseInvariantProvenance(riskyInvariant, { linePrefix }),
+    ...(witnessPressureNote ? [witnessPressureNote] : [])
   ];
   if (options?.includeObligation !== false && riskyInvariant.obligations.length > 0) {
     lines.push(`${linePrefix}Obligation: ${riskyInvariant.obligations[0]?.description}`);
   }
   return lines;
+}
+
+function renderExecutionWitnessPressureNote(claim: RunArtifact['behaviorClaims'][number], linePrefix = ''): string | undefined {
+  const summary = claim.evidenceSummary;
+  if (!summary || summary.evidenceSemantics !== 'execution-backed') {
+    return undefined;
+  }
+  const remainingPressure = summary.subSignals
+    .filter((item) => !['focused-test-alignment', 'execution-witness', 'scenario-support'].includes(item.signalId))
+    .filter((item) => item.level === 'warning' || item.level === 'missing' || item.mode === 'missing')
+    .map((item) => item.signalId);
+  if (remainingPressure.length === 0) {
+    return undefined;
+  }
+  return `${linePrefix}Execution witness is present; remaining risk comes from ${remainingPressure.join(', ')}.`;
 }
 
 function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdict' | 'executionWitnesses'>): string {

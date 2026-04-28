@@ -979,6 +979,7 @@ test('witness test --help renders first-witness habit guidance', () => {
   assert.match(result.stdout, /Usage: ts-quality witness test/);
   assert.match(result.stdout, /lexical invariant match should graduate to execution-backed support/);
   assert.match(result.stdout, /one invariant, one scenario, one changed behavior/);
+  assert.match(result.stdout, /prefer a repo-local npm script/);
   assert.equal(result.stderr, '');
 });
 
@@ -1151,6 +1152,8 @@ test('check auto-generates execution witnesses for impacted scenarios with confi
   assert.equal(run.executionWitnesses.autoRan[0].receiptPath, '.ts-quality/witnesses/auth-refresh-expired-boundary.receipt.json');
   assert.equal(run.executionWitnesses.autoRan[0].receipt.status, 'pass');
   assert.equal(run.executionWitnesses.skipped.length, 0);
+  const checkSummaryText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'witness-auto-run', 'check-summary.txt'), 'utf8');
+  assert.match(checkSummaryText, /Execution witness is present; remaining risk comes from/);
   const witnessSummaryText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'witness-auto-run', 'execution-witnesses.txt'), 'utf8');
   assert.match(witnessSummaryText, /Execution witnesses: auto-ran 1, skipped 0/);
   assert.match(witnessSummaryText, /receipt=\.ts-quality\/witnesses\/auth-refresh-expired-boundary\.receipt\.json/);
