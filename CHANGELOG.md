@@ -14,6 +14,11 @@ type: "reference"
 
 - Added `ts-quality doctor --machine` as a compact line protocol for harnessed LLMs and agents, keeping first-contact adoption diagnostics token-light while preserving existing `--json` surfaces for CI-style JSON projections.
 
+### Fixed
+
+- Fixed release verification so future public package checks also require the compact `doctor --machine` protocol header, preventing docs or adoption plans from claiming a CLI path that the published tarball does not expose.
+- Fixed doctor script ranking so scripts named for tests or coverage outrank unrelated scripts whose command bodies merely mention test files, and generic Node test scripts no longer receive a Jest-specific `--runInBand` suffix.
+
 ## [0.2.0] - 2026-04-28
 
 ### Breaking Changes

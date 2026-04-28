@@ -560,12 +560,25 @@ function commandVerifyPublic(options) {
     'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
     `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality --help did not pass`
   );
+  const doctorMachine = runRequiredWithRetry(
+    'public doctor machine smoke',
+    'npx',
+    ['-y', '-p', packageSpec, 'ts-quality', 'doctor', '--machine', '--changed', 'src/index.ts'],
+    freshSelfPublishEnv,
+    8,
+    'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
+    `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality doctor --machine did not pass`
+  );
+  if (!doctorMachine.startsWith('TSQ_DOCTOR_MACHINE_V1\n')) {
+    throw new Error(`Public ${packageSpec} doctor --machine did not emit TSQ_DOCTOR_MACHINE_V1.`);
+  }
   const release = runRequired('gh', ['release', 'view', `v${version}`, '--repo', repoSlug, '--json', 'tagName,url,publishedAt,isPrerelease']);
   console.log(JSON.stringify({
     action: 'verify-public',
     version,
     npmVersion,
     cliHelpIncludesCommands: help.includes('ts-quality commands:'),
+    doctorMachineHeader: doctorMachine.split('\n')[0],
     githubRelease: JSON.parse(release)
   }, null, 2));
 }

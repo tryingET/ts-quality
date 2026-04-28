@@ -97,7 +97,9 @@ test('publish workflow makes GitHub Release the single npm publication intent', 
     '::error title=npm propagation pending::npm publish succeeded, but npm view ${PACKAGE_SPEC} did not resolve the exact version after bounded retries.',
     'Public npx CLI verification attempt ${attempt}/8 for ${PACKAGE_SPEC}',
     'npx -y -p "${PACKAGE_SPEC}" ts-quality --help',
-    '::error title=public CLI verification failed::npm registry resolves ${PACKAGE_SPEC}, but npx -p ${PACKAGE_SPEC} ts-quality --help failed after bounded retries.',
+    'ts-quality doctor --machine --changed src/index.ts',
+    '^TSQ_DOCTOR_MACHINE_V1$',
+    '::error title=public CLI verification failed::npm registry resolves ${PACKAGE_SPEC}, but npx -p ${PACKAGE_SPEC} ts-quality --help or doctor --machine failed after bounded retries.',
     "NPM_CONFIG_MIN_RELEASE_AGE: '0'",
     "if: ${{ !cancelled() && steps.publish_npm.outcome == 'success' }}"
   ], '.github/workflows/publish.yml');
@@ -131,8 +133,11 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     "'npm registry exact-version lookup'",
     'npm registry propagation may still be pending',
     "'public npx CLI smoke'",
+    "'public doctor machine smoke'",
     'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
-    '`npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality --help did not pass`'
+    '`npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality --help did not pass`',
+    '`npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality doctor --machine did not pass`',
+    "doctorMachineHeader: doctorMachine.split('\\n')[0]"
   ], 'scripts/release-orchestrator.mjs');
   assert.equal(releaseOrchestrator.includes('`ts-quality v${version} — deterministic trust for TypeScript changes`, \'--notes-file\''), false, 'release create title must come from release notes instead of a hard-coded generic title');
   assert.equal(releaseOrchestrator.includes('Release notes title is still the generic fallback'), true, 'release notes must reject the generic fallback title');
@@ -151,6 +156,8 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'workflow filename: `publish.yml`',
     'environment name: `npm-publish`',
     'NPM_CONFIG_MIN_RELEASE_AGE=0',
+    'ts-quality doctor --machine --changed src/index.ts',
+    'compact `doctor --machine` protocol header',
     'Release bodies are validated as local release-please-style notes',
     '`### Breaking Changes` plus at least one categorized change section',
     '`### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update'

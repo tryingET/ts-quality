@@ -349,6 +349,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.stagedFiles, expectedStageFiles);
   assert.deepEqual(summary.tarballFiles, expectedTarballFiles);
   assert.equal(summary.cli.helpIncludes, 'ts-quality commands:');
+  assert.equal(summary.cli.doctorMachineHeader, 'TSQ_DOCTOR_MACHINE_V1');
   assert.deepEqual(summary.cli.initCreated, expectedInitFiles);
   assert.equal(summary.cli.materializedConfig, '.ts-quality/materialized/ts-quality.config.json');
   assert.deepEqual(summary.cli.checkRequiresScope, expectedInstalledCliProofs.checkRequiresScope);

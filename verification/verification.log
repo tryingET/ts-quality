@@ -229,6 +229,7 @@ $ npm run smoke:packaging --silent
   ],
   "cli": {
     "helpIncludes": "ts-quality commands:",
+    "doctorMachineHeader": "TSQ_DOCTOR_MACHINE_V1",
     "initCreated": [
       "ts-quality.config.ts",
       ".ts-quality/invariants.ts",

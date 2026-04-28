@@ -124,15 +124,19 @@ jobs:
             sleep $((attempt * 15))
           done
 
-          echo "npm registry sees ${PACKAGE_SPEC}; verifying public npx CLI smoke."
+          echo "npm registry sees ${PACKAGE_SPEC}; verifying public npx CLI smoke and compact doctor protocol."
           for attempt in 1 2 3 4 5 6 7 8; do
             echo "Public npx CLI verification attempt ${attempt}/8 for ${PACKAGE_SPEC}"
             if npx -y -p "${PACKAGE_SPEC}" ts-quality --help; then
-              echo "Public npx CLI verification succeeded on attempt ${attempt}/8."
-              exit 0
+              if DOCTOR_OUTPUT="$(npx -y -p "${PACKAGE_SPEC}" ts-quality doctor --machine --changed src/index.ts 2>&1)" && printf '%s\n' "${DOCTOR_OUTPUT}" | grep -q '^TSQ_DOCTOR_MACHINE_V1$'; then
+                echo "Public npx CLI and doctor --machine verification succeeded on attempt ${attempt}/8."
+                exit 0
+              fi
+              echo "Public doctor --machine verification failed for ${PACKAGE_SPEC}:"
+              echo "${DOCTOR_OUTPUT}"
             fi
             if [ "$attempt" -eq 8 ]; then
-              echo "::error title=public CLI verification failed::npm registry resolves ${PACKAGE_SPEC}, but npx -p ${PACKAGE_SPEC} ts-quality --help failed after bounded retries."
+              echo "::error title=public CLI verification failed::npm registry resolves ${PACKAGE_SPEC}, but npx -p ${PACKAGE_SPEC} ts-quality --help or doctor --machine failed after bounded retries."
               exit 1
             fi
             echo "Public npx CLI verification failed; retrying after $((attempt * 15)) seconds."

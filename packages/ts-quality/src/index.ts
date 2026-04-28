@@ -1700,7 +1700,33 @@ function readPackageScripts(rootDir: string): Record<string, string> {
 }
 
 function likelyScriptNames(scripts: Record<string, string>, tokens: string[]): string[] {
-  return Object.keys(scripts).filter((name) => tokens.some((token) => name.includes(token) || scripts[name]?.includes(token))).sort();
+  return Object.keys(scripts)
+    .map((name) => {
+      const command = scripts[name] ?? '';
+      const nameMatches = tokens.some((token) => name.includes(token));
+      const commandMatches = tokens.some((token) => command.includes(token));
+      if (!nameMatches && !commandMatches) {
+        return null;
+      }
+      return { name, rank: nameMatches ? 0 : 1 };
+    })
+    .filter((item): item is { name: string; rank: number } => item !== null)
+    .sort((left, right) => left.rank - right.rank || left.name.localeCompare(right.name))
+    .map((item) => item.name);
+}
+
+function focusedTestRecommendation(scriptName: string, scriptCommand: string | undefined): { summary: string; command: string[] } {
+  const command = scriptCommand ?? '';
+  if (/\bjest\b/u.test(command)) {
+    return {
+      summary: `Candidate focused test command: npm run ${scriptName} -- --runInBand (adjust to the smallest trustworthy slice).`,
+      command: ['npm', 'run', scriptName, '--', '--runInBand']
+    };
+  }
+  return {
+    summary: `Candidate focused test command: npm run ${scriptName} (adjust to the smallest trustworthy slice).`,
+    command: ['npm', 'run', scriptName]
+  };
 }
 
 interface DoctorDiagnostic {
@@ -1790,7 +1816,8 @@ function buildDoctorDiagnostic(rootDir: string, options?: { changedFiles?: strin
     risks.push({ code: 'source-dist-coverage-risk', level: 'warn', message: 'Changed TypeScript source and built runtime roots are present.', hint: 'Ensure LCOV maps back to changed src/**/*.ts files rather than only built output.', evidence: [`changed=${changed.join(', ')}`, `runtimeMirrorRoots=${runtimeMirrorRoots.join(', ')}`] });
   }
   if (testScripts.length > 0) {
-    recommendations.push({ id: 'focused-test-command', kind: 'focused-test', summary: `Candidate focused test command: npm run ${testScripts[0]} -- --runInBand (adjust to the smallest trustworthy slice).`, command: ['npm', 'run', testScripts[0] ?? 'test', '--', '--runInBand'] });
+    const scriptName = testScripts[0] ?? 'test';
+    recommendations.push({ id: 'focused-test-command', kind: 'focused-test', ...focusedTestRecommendation(scriptName, scripts[scriptName]) });
   } else if (tests.length > 0) {
     recommendations.push({ id: 'focused-test-command', kind: 'focused-test', summary: `Candidate focused test command: node --test ${tests[0]}.`, command: ['node', '--test', tests[0] ?? 'test'] });
   }

@@ -25,7 +25,7 @@ test('init creates starter files in an empty repo', () => {
 
 test('init presets and doctor expose adoption diagnostics without running tests', () => {
   const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-'));
-  fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({ scripts: { test: 'node --test', coverage: 'node --test --experimental-test-coverage' } }, null, 2), 'utf8');
+  fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({ scripts: { 'build:js': 'esbuild src/test-helper.ts --outdir=dist', test: 'node --test', coverage: 'node --test --experimental-test-coverage' } }, null, 2), 'utf8');
   fs.mkdirSync(path.join(target, 'src'), { recursive: true });
   fs.mkdirSync(path.join(target, 'dist'), { recursive: true });
   fs.writeFileSync(path.join(target, 'src', 'index.ts'), 'export const ok = true;\n', 'utf8');
@@ -41,6 +41,8 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /changed scope: src\/index\.ts/);
   assert.match(result.stdout, /Changed TypeScript source and built runtime roots are present/);
   assert.match(result.stdout, /NODE_OPTIONS=--enable-source-maps/);
+  assert.match(result.stdout, /Candidate focused test command: npm run test \(adjust to the smallest trustworthy slice\)\./);
+  assert.doesNotMatch(result.stdout, /--runInBand/);
 
   result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'src/index.ts', '--machine'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
@@ -49,6 +51,8 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /\nchanged\tok\tfiles=src\/index\.ts\n/);
   assert.match(result.stdout, /\nrisk\twarn\tsource-dist-coverage-risk\t/);
   assert.match(result.stdout, /\nrecommend\tsource-map\tsource-map-coverage\t.*NODE_OPTIONS=--enable-source-maps/);
+  assert.match(result.stdout, /\nrecommend\tfocused-test\tfocused-test-command\tCandidate focused test command: npm run test \(adjust to the smallest trustworthy slice\)\./);
+  assert.doesNotMatch(result.stdout, /--runInBand/);
   assert.doesNotMatch(result.stdout, /^[{[]/);
 });
 

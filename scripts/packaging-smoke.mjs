@@ -309,6 +309,10 @@ export function runPackagingSmoke() {
     if (!cliHelp.includes('ts-quality commands:')) {
       throw new Error(`Unexpected ts-quality --help output:\n${cliHelp}`);
     }
+    const cliDoctorMachine = run(installedCliBinPath, ['doctor', '--machine', '--changed', 'src/index.ts'], installRoot);
+    if (!cliDoctorMachine.startsWith('TSQ_DOCTOR_MACHINE_V1\n')) {
+      throw new Error(`Unexpected ts-quality doctor --machine output from installed package:\n${cliDoctorMachine}`);
+    }
 
     const cliProjectRoot = path.join(installRoot, 'cli-project');
     fs.mkdirSync(cliProjectRoot, { recursive: true });
@@ -642,6 +646,7 @@ export function runPackagingSmoke() {
       tarballFiles: tarballBoundary.files,
       cli: {
         helpIncludes: 'ts-quality commands:',
+        doctorMachineHeader: cliDoctorMachine.split('\n')[0],
         initCreated: [...expectedInitFiles],
         materializedConfig: '.ts-quality/materialized/ts-quality.config.json',
         checkRequiresScope: {
