@@ -10,6 +10,58 @@
     "Auth code requires stronger evidence because it decides authorization.",
     "Auth code requires stronger evidence because it decides authorization."
   ],
+  "confidenceBreakdown": {
+    "base": 100,
+    "credits": [],
+    "final": 6,
+    "penalties": [
+      {
+        "amount": 20,
+        "details": [
+          "score=0.25",
+          "budget=0.75",
+          "killed=1",
+          "survived=3"
+        ],
+        "id": "mutation-score",
+        "label": "Mutation score penalty"
+      },
+      {
+        "amount": 24,
+        "details": [
+          "src/auth/token.js:2 >=",
+          "src/auth/token.js:8 &&",
+          "src/auth/token.js:7 &&"
+        ],
+        "id": "surviving-mutants",
+        "label": "Surviving mutants penalty"
+      },
+      {
+        "amount": 10,
+        "details": [
+          "auth.refresh.validity:at-risk"
+        ],
+        "id": "risky-invariants",
+        "label": "Risky invariant/residual pressure penalty"
+      },
+      {
+        "amount": 20,
+        "details": [
+          "Auth code requires stronger evidence because it decides authorization."
+        ],
+        "id": "governance",
+        "label": "Governance penalty"
+      },
+      {
+        "amount": 20,
+        "details": [
+          "Auth code requires stronger evidence because it decides authorization."
+        ],
+        "id": "governance",
+        "label": "Governance penalty"
+      }
+    ]
+  },
   "findings": [
     {
       "code": "mutation-score-budget",

@@ -23,6 +23,26 @@ test('init creates starter files in an empty repo', () => {
   assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'invariants.ts')), true);
 });
 
+test('init presets and doctor expose adoption diagnostics without running tests', () => {
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-'));
+  fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({ scripts: { test: 'node --test', coverage: 'node --test --experimental-test-coverage' } }, null, 2), 'utf8');
+  fs.mkdirSync(path.join(target, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(target, 'dist'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'src', 'index.ts'), 'export const ok = true;\n', 'utf8');
+  let result = spawnSync('node', [cli, 'init', '--root', target, '--preset', 'node-test-ts-dist'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const configText = fs.readFileSync(path.join(target, 'ts-quality.config.ts'), 'utf8');
+  assert.match(configText, /--enable-source-maps/);
+  assert.match(configText, /runtimeMirrorRoots: \['dist', 'lib', 'build'\]/);
+
+  result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'src/index.ts'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /ts-quality doctor/);
+  assert.match(result.stdout, /changed scope: src\/index\.ts/);
+  assert.match(result.stdout, /Coverage risk: changed src\/\*\*\/\*\.ts/);
+  assert.match(result.stdout, /NODE_OPTIONS=--enable-source-maps/);
+});
+
 test('check fails closed when init-generated config has no changed scope', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.rmSync(path.join(target, 'ts-quality.config.ts'), { force: true });
@@ -41,7 +61,7 @@ test('check auto-generates configured LCOV when missing before analysis', () => 
   const lcovText = fs.readFileSync(path.join(target, 'coverage', 'lcov.info'), 'utf8');
   fs.rmSync(path.join(target, 'coverage'), { recursive: true, force: true });
   fs.mkdirSync(path.join(target, 'scripts'), { recursive: true });
-  fs.writeFileSync(path.join(target, 'scripts', 'write-lcov.mjs'), `import fs from 'node:fs';\nfs.mkdirSync('coverage', { recursive: true });\nfs.writeFileSync('coverage/lcov.info', ${JSON.stringify(lcovText)}, 'utf8');\n`, 'utf8');
+  fs.writeFileSync(path.join(target, 'scripts', 'write-lcov.mjs'), `import fs from 'node:fs';\nfs.writeFileSync('coverage/lcov.info', ${JSON.stringify(lcovText)}, 'utf8');\n`, 'utf8');
   const configPath = path.join(target, 'ts-quality.config.ts');
   fs.writeFileSync(configPath, fs.readFileSync(configPath, 'utf8').replace(
     "coverage: { lcovPath: 'coverage/lcov.info' },",
@@ -57,8 +77,44 @@ test('check auto-generates configured LCOV when missing before analysis', () => 
   assert.deepEqual(run.coverageGeneration?.command, ['node', 'scripts/write-lcov.mjs']);
   assert.equal(run.coverageGeneration?.receipt.status, 'pass');
   assert.equal(run.coverage.some((item) => item.filePath === 'src/auth/token.js'), true);
-  const checkSummary = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'generated-lcov', 'check-summary.txt'), 'utf8');
+  const runDir = path.join(target, '.ts-quality', 'runs', 'generated-lcov');
+  const checkSummary = fs.readFileSync(path.join(runDir, 'check-summary.txt'), 'utf8');
   assert.match(checkSummary, /Coverage generation: pass -> coverage\/lcov\.info/);
+  assert.equal(fs.existsSync(path.join(runDir, 'coverage-generation.json')), true);
+  assert.match(fs.readFileSync(path.join(runDir, 'coverage-generation.txt'), 'utf8'), /command: node scripts\/write-lcov\.mjs/);
+});
+
+test('check warns when LCOV covers built output but not changed TypeScript source', () => {
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-built-lcov-'));
+  fs.mkdirSync(path.join(target, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(target, 'dist'), { recursive: true });
+  fs.mkdirSync(path.join(target, 'coverage'), { recursive: true });
+  let result = spawnSync('node', [cli, 'init', '--root', target, '--preset', 'node-test-ts-dist'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  fs.writeFileSync(path.join(target, 'src', 'value.ts'), 'export function value(flag: boolean): number { return flag ? 1 : 0; }\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'dist', 'value.js'), 'exports.value = function value(flag) { return flag ? 1 : 0; };\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'coverage', 'lcov.info'), 'TN:\nSF:dist/value.js\nDA:1,1\nend_of_record\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
+  sourcePatterns: ['src/**/*.ts'],
+  testPatterns: ['test/**/*.js'],
+  coverage: { lcovPath: 'coverage/lcov.info' },
+  mutations: { testCommand: ['node', '-e', 'process.exit(0)'], coveredOnly: false, timeoutMs: 5000, maxSites: 1, runtimeMirrorRoots: ['dist'] },
+  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },
+  changeSet: { files: ['src/value.ts'] },
+  invariantsPath: '.ts-quality/invariants.ts',
+  constitutionPath: '.ts-quality/constitution.ts',
+  agentsPath: '.ts-quality/agents.ts'
+};
+`, 'utf8');
+
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'built-lcov'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const run = readRun(target);
+  assert.equal(run.analysisWarnings?.[0]?.code, 'coverage-built-output-without-source-map');
+  assert.match(run.analysisWarnings?.[0]?.hint ?? '', /NODE_OPTIONS=--enable-source-maps/);
+  const explain = spawnSync('node', [cli, 'explain', '--root', target, '--run-id', 'built-lcov'], { encoding: 'utf8' });
+  assert.match(explain.stdout, /Coverage exists for built output but not changed source/);
+  assert.match(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'built-lcov', 'check-summary.txt'), 'utf8'), /NODE_OPTIONS=--enable-source-maps/);
 });
 
 test('check fails closed when configured LCOV generation fails', () => {
@@ -146,6 +202,17 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.equal(fs.existsSync(checkSummaryPath), true);
   assert.equal(fs.existsSync(planPath), true);
   assert.equal(fs.existsSync(governPath), true);
+  const run = readRun(target);
+  const runDir = path.join(target, '.ts-quality', 'runs', runId);
+  assert.equal(run.version, '0.2.0');
+  assert.equal(run.verdict.confidenceBreakdown.base, 100);
+  assert.equal(typeof run.verdict.confidenceBreakdown.final, 'number');
+  assert.equal(run.nextEvidenceAction.artifactPaths.run, `.ts-quality/runs/${runId}/run.json`);
+  assert.equal(fs.existsSync(path.join(runDir, 'next-evidence-action.txt')), true);
+  if (run.mutationRemediation) {
+    assert.equal(fs.existsSync(path.join(runDir, 'mutation-remediation.json')), true);
+    assert.equal(run.mutationRemediation.survivors.every((item) => item.filePath && item.siteId && item.assertionHint), true);
+  }
   const report = spawnSync('node', [cli, 'report', '--root', target], { encoding: 'utf8' });
   const explain = spawnSync('node', [cli, 'explain', '--root', target], { encoding: 'utf8' });
   const plan = spawnSync('node', [cli, 'plan', '--root', target], { encoding: 'utf8' });
@@ -169,6 +236,8 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.match(report.stdout, /mutation scope: [0-9]+ site\(s\), [0-9]+ killed, [0-9]+ survived/);
   assert.match(report.stdout, /focused-test-alignment \[clear; mode=inferred\]: 1 focused test file aligned to invariant scope/);
   assert.match(report.stdout, /mutation-pressure \[warning; mode=explicit\]: [0-9]+ surviving mutants? across [0-9]+ mutation sites?/);
+  assert.match(explain.stdout, /Confidence breakdown: base 100/);
+  assert.match(explain.stdout, /Next evidence action:/);
   assert.match(explain.stdout, /Reasons:/);
   assert.match(explain.stdout, /focused tests: test\/token.test.js/);
   assert.match(explain.stdout, /evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);

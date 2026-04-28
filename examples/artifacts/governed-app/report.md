@@ -12,6 +12,27 @@ type: "reference"
 - Merge confidence: **6/100**
 - Outcome: **fail**
 - Changed files: src/auth/token.js
+- Next evidence action: Add or tighten an assertion covering src/auth/token.js around the surviving mutant.
+
+## Confidence breakdown
+Confidence breakdown: base 100
+- -20 Mutation score penalty (score=0.25; budget=0.75; killed=1; survived=3)
+- -24 Surviving mutants penalty (src/auth/token.js:2 >=; src/auth/token.js:8 &&; src/auth/token.js:7 &&)
+- -10 Risky invariant/residual pressure penalty (auth.refresh.validity:at-risk)
+- -20 Governance penalty (Auth code requires stronger evidence because it decides authorization.)
+- -20 Governance penalty (Auth code requires stronger evidence because it decides authorization.)
+- final 6
+
+## Actionable surviving mutants
+- src/auth/token.js:2 >= -> >
+  command: node --test
+  next assertion: Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >.
+- src/auth/token.js:8 && -> ||
+  command: node --test
+  next assertion: Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.
+- src/auth/token.js:7 && -> ||
+  command: node --test
+  next assertion: Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.
 
 ## Findings
 - [error] Mutation score 0.25 is below budget 0.75

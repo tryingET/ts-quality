@@ -38,7 +38,14 @@ export declare function runCheck(rootDir: string, options?: {
     configPath?: string;
     runId?: string;
 }): CheckResult;
-export declare function initProject(rootDir: string): void;
+export type InitPreset = 'default' | 'node-test' | 'node-test-ts-dist' | 'vitest';
+export declare function initProject(rootDir: string, options?: {
+    preset?: InitPreset;
+}): void;
+export declare function renderDoctor(rootDir: string, options?: {
+    changedFiles?: string[];
+    configPath?: string;
+}): string;
 export declare function renderLatestReport(rootDir: string, format: 'markdown' | 'json', options?: RunDecisionOptions): string;
 export declare function renderLatestExplain(rootDir: string, options?: RunDecisionOptions): string;
 export declare function renderTrend(rootDir: string): string;

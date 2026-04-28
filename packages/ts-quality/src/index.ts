@@ -6,6 +6,7 @@ import {
   type AmendmentDecision,
   type AmendmentProposal,
   type AnalysisContext,
+  type AnalysisWarning,
   type Approval,
   type Attestation,
   type AttestationVerificationRecord,
@@ -23,6 +24,8 @@ import {
   type FileEntity,
   type RunArtifact,
   type SymbolEntity,
+  type MutationRemediation,
+  type NextEvidenceAction,
   CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION,
   DEFAULT_SOURCE_PATTERNS,
   DEFAULT_TEST_PATTERNS,
@@ -32,8 +35,10 @@ import {
   createRunId,
   ensureDir,
   fileDigest,
+  listFiles,
   listRunIds,
   loadRun,
+  matchPattern,
   normalizePath,
   nowIso,
   readLatestRun,
@@ -181,14 +186,38 @@ function renderExecutionWitnessPressureNote(claim: RunArtifact['behaviorClaims']
   return `${linePrefix}Execution witness is present; remaining risk comes from ${remainingPressure.join(', ')}.`;
 }
 
-function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdict' | 'executionWitnesses' | 'coverageGeneration'>): string {
+function renderAnalysisWarningsText(warnings: AnalysisWarning[] | undefined): string[] {
+  if (!warnings || warnings.length === 0) {
+    return [];
+  }
+  return warnings.flatMap((warning) => [
+    `Analysis warning: ${warning.message}`,
+    ...(warning.hint ? [`Hint: ${warning.hint}`] : []),
+    ...warning.evidence.map((item) => `Evidence: ${item}`)
+  ]);
+}
+
+function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdict' | 'executionWitnesses' | 'coverageGeneration' | 'analysisWarnings' | 'nextEvidenceAction'>): string {
   const lines = [
     `Merge confidence: ${run.verdict.mergeConfidence}/100`,
     `Outcome: ${run.verdict.outcome}`,
     `Best next action: ${run.verdict.bestNextAction ?? 'none'}`
   ];
+  if (run.nextEvidenceAction) {
+    lines.push(`Remaining blocker: ${run.nextEvidenceAction.remainingBlocker}`);
+  }
+  if (run.verdict.confidenceBreakdown) {
+    lines.push('', `Confidence breakdown: base ${run.verdict.confidenceBreakdown.base}`);
+    lines.push(...run.verdict.confidenceBreakdown.penalties.map((item) => `-${item.amount} ${item.label}`));
+    lines.push(...run.verdict.confidenceBreakdown.credits.map((item) => `+${item.amount} ${item.label}`));
+    lines.push(`final ${run.verdict.confidenceBreakdown.final}`);
+  }
   if (run.coverageGeneration) {
     lines.push('', `Coverage generation: ${run.coverageGeneration.receipt.status} -> ${run.coverageGeneration.lcovPath}`);
+  }
+  const analysisWarnings = renderAnalysisWarningsText(run.analysisWarnings);
+  if (analysisWarnings.length > 0) {
+    lines.push('', ...analysisWarnings);
   }
   if (run.executionWitnesses) {
     lines.push('', ...renderExecutionWitnessSummaryText(run.executionWitnesses).trimEnd().split('\n'));
@@ -198,6 +227,30 @@ function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdi
     lines.push('', ...provenance);
   }
   return `${lines.join('\n')}\n`;
+}
+
+function renderCoverageGenerationText(record: CoverageGenerationRecord): string {
+  return [
+    `command: ${record.command.join(' ')}`,
+    `lcovPath: ${record.lcovPath}`,
+    `status: ${record.receipt.status}`,
+    `durationMs: ${record.receipt.durationMs}`,
+    `exitCode: ${record.receipt.exitCode ?? 'none'}`,
+    `details: ${record.receipt.details ?? 'none'}`
+  ].join('\n') + '\n';
+}
+
+function renderNextEvidenceActionText(action: NextEvidenceAction): string {
+  return [
+    `remainingBlocker: ${action.remainingBlocker}`,
+    `bestNextAction: ${action.bestNextAction}`,
+    `coverage: ${action.coverageStatus}`,
+    `witness: ${action.witnessStatus}`,
+    `mutation: ${action.mutationStatus}`,
+    `governance: ${action.governanceStatus}`,
+    'artifacts:',
+    ...Object.entries(action.artifactPaths).map(([key, value]) => `- ${key}: ${value}`)
+  ].join('\n') + '\n';
 }
 
 function renderPlanText(run: RunArtifact, plan: ReturnType<typeof generateGovernancePlan>): string {
@@ -1153,6 +1206,7 @@ function readCoverageWithOptionalGeneration(rootDir: string, input: { coveragePa
   if (!input.generateCoverage || !input.generateWhenMissing || input.generateCommand.length === 0) {
     return { coverage: [] };
   }
+  ensureDir(path.dirname(coverageAbsolutePath));
   const coverageGeneration = runCoverageGenerationCommand(rootDir, {
     lcovPath: input.coveragePath,
     command: input.generateCommand,
@@ -1284,6 +1338,98 @@ function buildAnalysisContext(input: {
   };
 }
 
+function isSourceTsFile(filePath: string): boolean {
+  return /^src\/.*\.tsx?$/.test(normalizePath(filePath));
+}
+
+function builtOutputRoots(runtimeMirrorRoots: string[]): string[] {
+  return uniquePaths(['dist', 'lib', 'build', ...runtimeMirrorRoots]);
+}
+
+function coverageHasFile(coverage: RunArtifact['coverage'], filePath: string): boolean {
+  const normalized = normalizePath(filePath);
+  return coverage.some((item) => normalizePath(item.filePath) === normalized);
+}
+
+function detectBuiltOutputCoverageWarnings(input: { changedFiles: string[]; coverage: RunArtifact['coverage']; runtimeMirrorRoots: string[] }): AnalysisWarning[] {
+  const roots = builtOutputRoots(input.runtimeMirrorRoots);
+  const warnings: AnalysisWarning[] = [];
+  const coveredBuiltFiles = input.coverage.map((item) => normalizePath(item.filePath)).filter((filePath) => roots.some((root) => filePath === root || filePath.startsWith(`${root}/`)));
+  if (coveredBuiltFiles.length === 0) {
+    return warnings;
+  }
+  for (const changedFile of input.changedFiles.map((item) => normalizePath(item)).filter(isSourceTsFile)) {
+    if (coverageHasFile(input.coverage, changedFile)) {
+      continue;
+    }
+    const stem = changedFile.replace(/^src\//, '').replace(/\.tsx?$/, '');
+    const matchingBuilt = coveredBuiltFiles.filter((filePath) => filePath.replace(/^(dist|lib|build)\//, '').replace(/\.jsx?$/, '') === stem || filePath.endsWith(`/${path.basename(stem)}.js`));
+    if (matchingBuilt.length === 0) {
+      continue;
+    }
+    warnings.push({
+      code: 'coverage-built-output-without-source-map',
+      message: 'Coverage exists for built output but not changed source.',
+      changedFile,
+      evidence: [`changed source ${changedFile} has no LCOV entry`, `built LCOV entries: ${matchingBuilt.slice(0, 5).join(', ')}`],
+      hint: 'Coverage exists for built output but not changed source. Enable source-map coverage mapping, for example NODE_OPTIONS=--enable-source-maps, or configure coverage to map back to src/**.'
+    });
+  }
+  return warnings;
+}
+
+function buildMutationRemediation(mutations: RunArtifact['mutations']): MutationRemediation | undefined {
+  const survivors = mutations.filter((item) => item.status === 'survived').map((item) => ({
+    filePath: item.filePath,
+    siteId: item.siteId,
+    ...(item.span ? { span: item.span } : {}),
+    ...(item.operator ? { operator: item.operator } : {}),
+    ...(item.original ? { original: item.original } : {}),
+    ...(item.mutated ? { mutated: item.mutated } : {}),
+    ...(item.replacement ? { replacement: item.replacement } : {}),
+    ...(item.testCommand ? { testCommand: item.testCommand } : {}),
+    ...(item.assertionHint ? { assertionHint: item.assertionHint } : {})
+  }));
+  return survivors.length > 0 ? { survivors } : undefined;
+}
+
+function statusFromCount(clear: boolean, clearText: string, missingText: string): string {
+  return clear ? clearText : missingText;
+}
+
+function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'executionWitnesses' | 'mutations' | 'governance' | 'verdict'>): NextEvidenceAction {
+  const surviving = run.mutations.filter((item) => item.status === 'survived');
+  const mutationErrors = run.mutations.filter((item) => item.status === 'error' || item.status === 'invalid');
+  const remainingBlocker = run.verdict.findings.find((item) => item.code === 'surviving-mutant' || item.code === 'mutation-score-budget')
+    ? 'mutation-pressure'
+    : run.verdict.findings.find((item) => item.code === 'mutation-baseline')
+      ? 'mutation-baseline'
+      : run.verdict.findings.find((item) => item.code === 'mutation-evidence-missing')
+        ? 'mutation-evidence-missing'
+        : run.governance.some((item) => item.level === 'error')
+          ? 'governance'
+          : run.verdict.outcome;
+  return {
+    remainingBlocker,
+    bestNextAction: run.verdict.bestNextAction ?? 'No next evidence action is currently required.',
+    coverageStatus: statusFromCount(run.coverage.length > 0, 'coverage evidence present', run.coverageGeneration ? `coverage generation ${run.coverageGeneration.receipt.status}` : 'coverage evidence missing'),
+    witnessStatus: run.executionWitnesses && run.executionWitnesses.autoRan.length > 0 ? 'execution-backed witness considered' : 'no execution witness auto-ran',
+    mutationStatus: surviving.length > 0
+      ? `${surviving.length} surviving mutant(s); tighten focused assertions`
+      : mutationErrors.length > 0
+        ? `${mutationErrors.length} mutation execution error(s)`
+        : 'mutation pressure clear or not blocking',
+    governanceStatus: run.governance.some((item) => item.level === 'error') ? `blocked by ${run.governance.filter((item) => item.level === 'error').length} governance error(s)` : 'no governance errors',
+    artifactPaths: {
+      run: `.ts-quality/runs/${run.runId}/run.json`,
+      explain: `.ts-quality/runs/${run.runId}/explain.txt`,
+      checkSummary: `.ts-quality/runs/${run.runId}/check-summary.txt`,
+      mutationRemediation: `.ts-quality/runs/${run.runId}/mutation-remediation.json`,
+      coverageGeneration: `.ts-quality/runs/${run.runId}/coverage-generation.json`
+    }
+  };
+}
+
 export function refreshExecutionWitnesses(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; observedAt?: string }): ExecutionWitnessRefreshSummary {
   const manifest = buildAnalysisManifest(rootDir, options);
   const invariants = loadInvariants(rootDir, manifest.loaded.config.invariantsPath);
@@ -1409,6 +1555,8 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     ...(previousRun ? { previousRun } : {})
   };
   const evaluated = evaluatePolicy(evaluatedInput);
+  const analysisWarnings = detectBuiltOutputCoverageWarnings({ changedFiles, coverage, runtimeMirrorRoots: manifest.runtimeMirrorRoots });
+  const mutationRemediation = buildMutationRemediation(mutationRun.results);
 
   const repo = buildRepositoryEntity(rootDir, sourceFiles);
   const analysis = buildAnalysisContext({
@@ -1423,7 +1571,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     executionFingerprint: mutationRun.executionFingerprint
   });
   const run: RunArtifact = {
-    version: '0.1.0',
+    version: '0.2.0',
     runId,
     createdAt,
     repo,
@@ -1433,6 +1581,8 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     controlPlane,
     ...(executionWitnessSummary.autoRan.length > 0 || executionWitnessSummary.skipped.length > 0 ? { executionWitnesses: executionWitnessSummary } : {}),
     ...(manifest.coverageGeneration ? { coverageGeneration: manifest.coverageGeneration } : {}),
+    ...(analysisWarnings.length > 0 ? { analysisWarnings } : {}),
+    ...(mutationRemediation ? { mutationRemediation } : {}),
     files: fileEntities(rootDir, sourceFiles),
     symbols: symbolEntities(crapReport.hotspots),
     coverage,
@@ -1448,6 +1598,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     overrides,
     verdict: evaluated.verdict
   };
+  run.nextEvidenceAction = buildNextEvidenceAction(run);
   if (evaluated.trend) {
     run.trend = evaluated.trend;
   }
@@ -1462,6 +1613,17 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     writeJson(path.join(artifactDir, 'execution-witnesses.json'), run.executionWitnesses);
     fs.writeFileSync(path.join(artifactDir, 'execution-witnesses.txt'), renderExecutionWitnessSummaryText(run.executionWitnesses), 'utf8');
   }
+  if (run.coverageGeneration) {
+    writeJson(path.join(artifactDir, 'coverage-generation.json'), run.coverageGeneration);
+    fs.writeFileSync(path.join(artifactDir, 'coverage-generation.txt'), renderCoverageGenerationText(run.coverageGeneration), 'utf8');
+  }
+  if (run.mutationRemediation) {
+    writeJson(path.join(artifactDir, 'mutation-remediation.json'), run.mutationRemediation);
+  }
+  if (run.nextEvidenceAction) {
+    writeJson(path.join(artifactDir, 'next-evidence-action.json'), run.nextEvidenceAction);
+    fs.writeFileSync(path.join(artifactDir, 'next-evidence-action.txt'), renderNextEvidenceActionText(run.nextEvidenceAction), 'utf8');
+  }
   fs.writeFileSync(path.join(artifactDir, 'check-summary.txt'), renderCheckSummaryText(run), 'utf8');
   const plan = generateGovernancePlan(run, constitution, agents);
   fs.writeFileSync(path.join(artifactDir, 'plan.txt'), renderPlanArtifactText(run, plan), 'utf8');
@@ -1469,13 +1631,34 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
   return { run, artifactDir };
 }
 
-export function initProject(rootDir: string): void {
+export type InitPreset = 'default' | 'node-test' | 'node-test-ts-dist' | 'vitest';
+
+function initConfigText(preset: InitPreset): string {
+  const coverageCommand = preset === 'node-test-ts-dist'
+    ? "generateCommand: ['node', '--enable-source-maps', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],"
+    : preset === 'node-test'
+      ? "generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],"
+      : preset === 'vitest'
+        ? "generateCommand: ['npm', 'run', 'coverage'],"
+        : "// generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],";
+  const mutationCommand = preset === 'vitest' ? "['npm', 'test', '--', '--run']" : "['node', '--test']";
+  const runtimeMirrorRoots = preset === 'node-test-ts-dist' ? "['dist', 'lib', 'build']" : "['dist']";
+  const presetComment = preset === 'node-test-ts-dist'
+    ? 'TypeScript projects that execute built output should keep source-map coverage enabled so LCOV maps back to src/**.'
+    : preset === 'vitest'
+      ? 'Vitest projects should make npm run coverage write coverage/lcov.info deterministically.'
+      : 'Node test projects can let check create coverage/lcov.info when it is missing.';
+  return `// ts-quality init preset: ${preset}\n// ${presetComment}\nexport default {\n  sourcePatterns: ${stableStringify([...DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${stableStringify([...DEFAULT_TEST_PATTERNS])},\n  coverage: {\n    lcovPath: 'coverage/lcov.info',\n    // When lcovPath is missing, check can run this command after creating the parent directory.\n    ${coverageCommand}\n    generateTimeoutMs: 60000\n  },\n  mutations: { testCommand: ${mutationCommand}, coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ${runtimeMirrorRoots} },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  // Provide --changed <a,b,c> or set changeSet.files / changeSet.diffFile before running check.\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`;
+}
+
+export function initProject(rootDir: string, options?: { preset?: InitPreset }): void {
   ensureDir(path.join(rootDir, '.ts-quality', 'attestations'));
   ensureDir(path.join(rootDir, '.ts-quality', 'keys'));
   ensureDir(path.join(rootDir, '.ts-quality', 'witnesses'));
+  const preset = options?.preset ?? 'default';
   const configPath = path.join(rootDir, 'ts-quality.config.ts');
   if (!fs.existsSync(configPath)) {
-    fs.writeFileSync(configPath, `export default {\n  sourcePatterns: ${stableStringify([...DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${stableStringify([...DEFAULT_TEST_PATTERNS])},\n  coverage: {\n    lcovPath: 'coverage/lcov.info',\n    // Optional: when lcovPath is missing, check can run this command and then consume the generated LCOV.\n    // generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],\n    // generateTimeoutMs: 60000\n  },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  // Provide --changed <a,b,c> or set changeSet.files / changeSet.diffFile before running check.\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
+    fs.writeFileSync(configPath, initConfigText(preset), 'utf8');
   }
   const invariantsPath = path.join(rootDir, '.ts-quality', 'invariants.ts');
   if (!fs.existsSync(invariantsPath)) {
@@ -1501,6 +1684,81 @@ export function initProject(rootDir: string): void {
     fs.writeFileSync(`${keyBase}.pem`, pair.privateKeyPem, 'utf8');
     fs.writeFileSync(`${keyBase}.pub.pem`, pair.publicKeyPem, 'utf8');
   }
+}
+
+function readPackageScripts(rootDir: string): Record<string, string> {
+  const packagePath = path.join(rootDir, 'package.json');
+  if (!fs.existsSync(packagePath)) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(packagePath, 'utf8')) as { scripts?: Record<string, string> };
+    return parsed.scripts ?? {};
+  } catch {
+    return {};
+  }
+}
+
+function likelyScriptNames(scripts: Record<string, string>, tokens: string[]): string[] {
+  return Object.keys(scripts).filter((name) => tokens.some((token) => name.includes(token) || scripts[name]?.includes(token))).sort();
+}
+
+export function renderDoctor(rootDir: string, options?: { changedFiles?: string[]; configPath?: string }): string {
+  const scripts = readPackageScripts(rootDir);
+  let loaded: ReturnType<typeof loadContext> | undefined;
+  let configError: string | undefined;
+  try {
+    loaded = loadContext(rootDir, options?.configPath);
+  } catch (error) {
+    configError = error instanceof Error ? error.message : String(error);
+  }
+  const config = loaded?.config;
+  const sourcePatterns = config?.sourcePatterns ?? [...DEFAULT_SOURCE_PATTERNS];
+  const testPatterns = config?.testPatterns ?? [...DEFAULT_TEST_PATTERNS];
+  const sources = collectSourceFiles(rootDir, sourcePatterns);
+  const tests = listFiles(rootDir).filter((filePath) => testPatterns.some((pattern) => matchPattern(pattern, filePath)));
+  const changed = uniquePaths([...(options?.changedFiles ?? []), ...(config?.changeSet.files ?? [])]);
+  const lcovPath = config?.coverage.lcovPath ?? 'coverage/lcov.info';
+  const lcovExists = fs.existsSync(path.join(rootDir, lcovPath));
+  const generateCommand = config?.coverage.generateCommand ?? [];
+  const runtimeMirrorRoots = config?.mutations.runtimeMirrorRoots ?? ['dist'];
+  const sourceDistRisk = changed.some(isSourceTsFile) && builtOutputRoots(runtimeMirrorRoots).some((root) => fs.existsSync(path.join(rootDir, root)));
+  const coverageScripts = likelyScriptNames(scripts, ['coverage', 'lcov']);
+  const testScripts = likelyScriptNames(scripts, ['test']);
+  const lines = [
+    'ts-quality doctor',
+    `root: ${rootDir}`,
+    `config: ${loaded ? normalizePath(path.relative(rootDir, loaded.configPath)) : `not loaded (${configError ?? 'missing'})`}`,
+    `changed scope: ${changed.length > 0 ? changed.join(', ') : 'missing'}`,
+    `source files: ${sources.length}`,
+    `test files: ${tests.length}`,
+    `package scripts: ${Object.keys(scripts).length > 0 ? Object.keys(scripts).sort().join(', ') : 'none'}`,
+    `coverage lcovPath: ${lcovPath} (${lcovExists ? 'exists' : 'missing'})`,
+    `coverage.generateCommand: ${generateCommand.length > 0 ? generateCommand.join(' ') : 'not configured'}`,
+    `mutation testCommand: ${config?.mutations.testCommand.join(' ') ?? 'not configured'}`,
+    `runtimeMirrorRoots: ${runtimeMirrorRoots.join(', ')}`,
+    '',
+    'Recommendations:'
+  ];
+  if (changed.length === 0) {
+    lines.push('- Add changed scope with --changed <a,b,c>, changeSet.files, or changeSet.diffFile before check.');
+  }
+  if (!lcovExists && generateCommand.length === 0) {
+    lines.push(coverageScripts.length > 0
+      ? `- Configure coverage.generateCommand to run an existing script such as npm run ${coverageScripts[0]}.`
+      : '- Configure coverage.generateCommand to create coverage/lcov.info, for example node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info.');
+  }
+  if (sourceDistRisk) {
+    lines.push('- Coverage risk: changed src/**/*.ts files and built runtime roots are present. Enable source-map coverage mapping, for example NODE_OPTIONS=--enable-source-maps, or configure coverage to map back to src/**.');
+  }
+  if (testScripts.length > 0) {
+    lines.push(`- Candidate focused test command: npm run ${testScripts[0]} -- --runInBand (adjust to the smallest trustworthy slice).`);
+  } else if (tests.length > 0) {
+    lines.push(`- Candidate focused test command: node --test ${tests[0]}.`);
+  }
+  lines.push('- Candidate witness command shape: ts-quality witness test --invariant <id> --scenario <id> --source-files <src> --test-files <test> --out .ts-quality/witnesses/<id>.json -- <focused command>');
+  lines.push('- Suggested package.json snippets are advisory only: coverage:<slice>, witness:<slice>, quality:<slice>.');
+  return `${lines.join('\n')}\n`;
 }
 
 export function renderLatestReport(rootDir: string, format: 'markdown' | 'json', options?: RunDecisionOptions): string {

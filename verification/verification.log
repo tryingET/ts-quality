@@ -41,9 +41,9 @@ exit=0
 $ npm run smoke:packaging --silent
 {
   "packageName": "ts-quality",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "stageDir": ".ts-quality/npm/ts-quality/package",
-  "tarball": ".ts-quality/npm/ts-quality/tarballs/ts-quality-0.1.7.tgz",
+  "tarball": ".ts-quality/npm/ts-quality/tarballs/ts-quality-0.2.0.tgz",
   "readme": {
     "startsWithFrontmatter": false,
     "heading": "# ts-quality",
@@ -58,7 +58,7 @@ $ npm run smoke:packaging --silent
   },
   "manifest": {
     "name": "ts-quality",
-    "version": "0.1.7",
+    "version": "0.2.0",
     "description": "Deterministic trust for TypeScript changes in agent-built systems: mutation testing, invariants, governance, and attestable authorization.",
     "license": "MIT",
     "repository": {

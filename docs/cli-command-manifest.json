@@ -17,12 +17,23 @@
       "name": "init",
       "purpose": "Create starter ts-quality config/support files in a target repo.",
       "category": "setup",
-      "allowedValueOptions": ["--root"],
+      "allowedValueOptions": ["--root", "--preset"],
       "allowedFlagOptions": [],
       "reads": ["target repo root"],
       "writes": ["ts-quality starter control-plane files under the target repo"],
       "artifacts": [],
-      "automationNotes": ["Use only when intentionally initializing or refreshing the target repo control plane."]
+      "automationNotes": ["Use only when intentionally initializing or refreshing the target repo control plane.", "Supported presets: default, node-test, node-test-ts-dist, vitest."]
+    },
+    {
+      "name": "doctor",
+      "purpose": "Inspect target-repo adoption readiness without executing tests or mutating files.",
+      "category": "setup",
+      "allowedValueOptions": ["--root", "--config", "--changed"],
+      "allowedFlagOptions": [],
+      "reads": ["package.json", "ts-quality.config.* when present", "source/test file tree", "coverage/lcov.info when present"],
+      "writes": [],
+      "artifacts": ["human-readable adoption diagnostic text on stdout"],
+      "automationNotes": ["Use before check to discover missing changed scope, missing LCOV/generateCommand, and TypeScript dist source-map coverage risk."]
     },
     {
       "name": "materialize",
@@ -42,8 +53,8 @@
       "allowedValueOptions": ["--root", "--config", "--changed", "--run-id"],
       "allowedFlagOptions": [],
       "reads": ["ts-quality.config.*", "coverage/lcov.info or configured coverage", "changed source files", "configured support files", "configured attestations/keys when present"],
-      "writes": [".ts-quality/runs/<run-id>/run.json", ".ts-quality/runs/<run-id>/verdict.json", ".ts-quality/runs/<run-id>/report.json", ".ts-quality/runs/<run-id>/report.md", ".ts-quality/runs/<run-id>/pr-summary.md", ".ts-quality/runs/<run-id>/check-summary.txt", ".ts-quality/runs/<run-id>/explain.txt", ".ts-quality/runs/<run-id>/plan.txt", ".ts-quality/runs/<run-id>/govern.txt", ".ts-quality/latest.json", "optional execution witness artifacts/receipts"],
-      "artifacts": ["immutable run bundle", "verdict", "report views", "operator text summaries", "optional execution witness summary"],
+      "writes": [".ts-quality/runs/<run-id>/run.json", ".ts-quality/runs/<run-id>/verdict.json", ".ts-quality/runs/<run-id>/report.json", ".ts-quality/runs/<run-id>/report.md", ".ts-quality/runs/<run-id>/pr-summary.md", ".ts-quality/runs/<run-id>/check-summary.txt", ".ts-quality/runs/<run-id>/explain.txt", ".ts-quality/runs/<run-id>/plan.txt", ".ts-quality/runs/<run-id>/govern.txt", ".ts-quality/runs/<run-id>/next-evidence-action.json", ".ts-quality/runs/<run-id>/next-evidence-action.txt", ".ts-quality/latest.json", "optional coverage-generation sidecars", "optional mutation-remediation payload", "optional execution witness artifacts/receipts"],
+      "artifacts": ["immutable run bundle", "verdict", "report views", "operator text summaries", "next evidence action", "optional coverage generation sidecars", "optional mutation remediation", "optional execution witness summary"],
       "automationNotes": ["Provide --changed, config changeSet.files, or config changeSet.diffFile; check fails closed without changed scope.", "Prefer --run-id in harnessed automation.", "Run coverage and the target repo's normal quality gate before check when meaningful evidence is required."]
     },
     {

@@ -13,10 +13,17 @@ type: "reference"
 ### Added
 
 - Added configured LCOV generation during `check`: when `coverage.lcovPath` is missing and `coverage.generateCommand` is configured, `ts-quality` runs the command, fails closed on generation errors, consumes the generated LCOV, and records a `coverageGeneration` receipt.
+- Added coverage-generation sidecar artifacts (`coverage-generation.json` / `coverage-generation.txt`) whenever configured LCOV generation is attempted.
 - Added residual-pressure-specific verdict reasons for execution-backed invariants so post-witness failures name remaining blockers such as mutation pressure instead of asking for stronger test evidence or failure-path coverage.
+- Added actionable surviving-mutant remediation fields and `mutation-remediation.json` so survivors include file, site id, span, original/replacement snippets, command, and assertion hints when available.
+- Added built-output LCOV warnings when changed `src/**/*.ts(x)` files are missing source coverage but LCOV covers `dist/**`, `lib/**`, `build/**`, or configured runtime mirror roots.
+- Added deterministic merge-confidence breakdowns and `next-evidence-action.json` / `.txt` artifacts that summarize the remaining blocker and best next evidence action.
+- Added read-only `ts-quality doctor` adoption diagnostics plus `init --preset node-test`, `init --preset node-test-ts-dist`, and `init --preset vitest` starter config presets.
 
 ### Changed
 
+- Bumped the run artifact schema version to `0.2.0` for the new additive coverage-generation, mutation-remediation, analysis-warning, confidence-breakdown, and next-evidence-action surfaces.
+- `check` now creates the parent directory for `coverage.lcovPath` before running configured `coverage.generateCommand`.
 - Clarified first-witness proof-command selection in CLI help, README quickstart, and invariant/config references so target-repo operators choose module-level proof commands or repo-local npm scripts before falling back to broad repo-global tests.
 
 ## [0.1.7] - 2026-04-28

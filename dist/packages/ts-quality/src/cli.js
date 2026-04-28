@@ -16,6 +16,7 @@ const OPTION_KINDS = new Map([
     ['--run-id', 'value'],
     ['--config', 'value'],
     ['--out-dir', 'value'],
+    ['--preset', 'value'],
     ['--agent', 'value'],
     ['--action', 'value'],
     ['--issuer', 'value'],
@@ -38,7 +39,8 @@ const OPTION_KINDS = new Map([
     ['--apply', 'flag']
 ]);
 const COMMAND_CONTRACTS = new Map([
-    ['init', { allowedValues: ['--root'], allowedFlags: [], maxPositionals: 1 }],
+    ['init', { allowedValues: ['--root', '--preset'], allowedFlags: [], maxPositionals: 1 }],
+    ['doctor', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: [], maxPositionals: 1 }],
     ['materialize', { allowedValues: ['--root', '--config', '--out-dir'], allowedFlags: [], maxPositionals: 1 }],
     ['check', { allowedValues: ['--root', '--config', '--changed', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
     ['explain', { allowedValues: ['--root', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
@@ -179,6 +181,16 @@ function configPath(parsed) {
 function outDir(parsed) {
     return takeOption(parsed, '--out-dir');
 }
+function preset(parsed) {
+    const value = takeOption(parsed, '--preset');
+    if (!value) {
+        return undefined;
+    }
+    if (value === 'default' || value === 'node-test' || value === 'node-test-ts-dist' || value === 'vitest') {
+        return value;
+    }
+    throw new Error(`unsupported init preset ${value}`);
+}
 function csvValues(parsed, name) {
     const value = takeOption(parsed, name);
     return value ? value.split(',').filter(Boolean) : undefined;
@@ -201,7 +213,8 @@ First focused witness:
   ts-quality check --changed src/auth/token.ts --run-id review-001
 
 Core commands:
-- init                                      create starter control-plane files
+- init [--preset <name>]                   create starter control-plane files
+- doctor                                    inspect adoption readiness without running tests
 - materialize [--out-dir <dir>]            write boring runtime JSON from config/support files
 - check [--changed <a,b>] [--run-id <id>]  write the immutable evidence run bundle
 - explain|report|plan|govern --run-id <id> project a persisted run without re-checking
@@ -218,6 +231,22 @@ Trust contract:
 - Machine truth is under .ts-quality/runs/<run-id>/; stdout and Markdown are projections.
 
 Use: ts-quality <command> --help
+`;
+    }
+    if (command === 'init') {
+        return `Usage: ts-quality init [--root <dir>] [--preset default|node-test|node-test-ts-dist|vitest]
+
+Creates starter control-plane files. Presets only change generated starter config guidance; existing files are preserved.
+- node-test: Node's built-in test runner with LCOV generation.
+- node-test-ts-dist: built-output TypeScript repos; includes source-map coverage guidance and dist/lib/build runtime mirrors.
+- vitest: advisory npm run coverage / npm test starter shape.
+`;
+    }
+    if (command === 'doctor') {
+        return `Usage: ts-quality doctor [--root <dir>] [--changed <a,b,c>] [--config <file>]
+
+Inspects package scripts, config, changed scope, LCOV presence, coverage.generateCommand, runtime mirror roots, and likely source-vs-dist coverage risk.
+Read-only: doctor does not run tests or mutate package.json.
 `;
     }
     if (command === 'materialize') {
@@ -347,8 +376,22 @@ function main() {
     validateParsedArgs(parsed);
     const cwd = rootDir(parsed);
     if (command === 'init') {
-        (0, index_2.initProject)(cwd);
-        process.stdout.write(`Initialized ts-quality in ${cwd}\n`);
+        const selectedPreset = preset(parsed);
+        (0, index_2.initProject)(cwd, selectedPreset ? { preset: selectedPreset } : undefined);
+        process.stdout.write(`Initialized ts-quality in ${cwd}${selectedPreset ? ` with preset ${selectedPreset}` : ''}\n`);
+        return;
+    }
+    if (command === 'doctor') {
+        const doctorOptions = {};
+        const changed = changedFiles(parsed);
+        if (changed) {
+            doctorOptions.changedFiles = changed;
+        }
+        const explicitConfigPath = configPath(parsed);
+        if (explicitConfigPath) {
+            doctorOptions.configPath = explicitConfigPath;
+        }
+        process.stdout.write((0, index_2.renderDoctor)(cwd, Object.keys(doctorOptions).length > 0 ? doctorOptions : undefined));
         return;
     }
     if (command === 'materialize') {

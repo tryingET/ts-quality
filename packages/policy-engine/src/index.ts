@@ -62,19 +62,37 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
   const reasons: string[] = [];
   const warnings: string[] = [];
   const blockedBy: string[] = [];
+  const penalties: NonNullable<Verdict['confidenceBreakdown']>['penalties'] = [];
+  const credits: NonNullable<Verdict['confidenceBreakdown']>['credits'] = [];
+  function applyPenalty(id: string, label: string, amount: number, details: string[]): void {
+    const bounded = Math.max(0, Math.round(amount));
+    if (bounded === 0) {
+      return;
+    }
+    mergeConfidence -= bounded;
+    penalties.push({ id, label, amount: bounded, details });
+  }
+  function applyCredit(id: string, label: string, amount: number, details: string[]): void {
+    const bounded = Math.max(0, Math.round(amount));
+    if (bounded === 0) {
+      return;
+    }
+    mergeConfidence += bounded;
+    credits.push({ id, label, amount: bounded, details });
+  }
 
   const maxChangedCrap = input.changedComplexity.reduce((max, item) => Math.max(max, item.crap), 0);
   const hotspot = input.changedComplexity.sort((left, right) => right.crap - left.crap)[0];
   if (maxChangedCrap > input.policy.maxChangedCrap) {
     const delta = Math.ceil((maxChangedCrap - input.policy.maxChangedCrap) * 1.2);
-    mergeConfidence -= Math.min(delta, 25);
+    applyPenalty('crap', 'CRAP hotspot penalty', Math.min(delta, 25), [`${hotspot?.symbol ?? 'unknown'} CRAP=${maxChangedCrap.toFixed(2)}`, `budget=${input.policy.maxChangedCrap}`]);
     findings.push(finding('policy:crap', 'changed-crap-budget', 'error', `Changed code exceeds CRAP budget ${input.policy.maxChangedCrap}`, hotspot ? [hotspot.filePath] : [], hotspot ? [`${hotspot.symbol} CRAP=${hotspot.crap}`] : []));
     reasons.push(`CRAP hotspot ${hotspot?.symbol ?? 'unknown'} is ${maxChangedCrap.toFixed(2)} in changed code.`);
   }
 
   const mutationSummary = summarizeMutationScore(input.mutations);
   if (!mutationSummary.measured) {
-    mergeConfidence -= 25;
+    applyPenalty('mutation-missing', 'Missing mutation pressure penalty', 25, ['No killed or surviving mutants were measured.']);
     findings.push(finding(
       'policy:mutation-missing',
       'mutation-evidence-missing',
@@ -86,13 +104,13 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
     reasons.push('Mutation pressure is missing for the evaluated scope, so merge confidence cannot be trusted yet.');
   } else if (mutationSummary.score < input.policy.minMutationScore) {
     const penalty = Math.ceil((input.policy.minMutationScore - mutationSummary.score) * 40);
-    mergeConfidence -= penalty;
+    applyPenalty('mutation-score', 'Mutation score penalty', penalty, [`score=${mutationSummary.score.toFixed(2)}`, `budget=${input.policy.minMutationScore.toFixed(2)}`, `killed=${mutationSummary.killed}`, `survived=${mutationSummary.survived}`]);
     findings.push(finding('policy:mutation-score', 'mutation-score-budget', 'error', `Mutation score ${mutationSummary.score.toFixed(2)} is below budget ${input.policy.minMutationScore.toFixed(2)}`, input.mutations.map((item) => item.filePath), [`Killed ${mutationSummary.killed}, survived ${mutationSummary.survived}`]));
     reasons.push(`Mutation score is ${Math.round(mutationSummary.score * 100)}/100 with ${mutationSummary.survived} surviving mutants.`);
   }
 
   if (input.mutationBaseline && input.mutationBaseline.status !== 'pass') {
-    mergeConfidence -= 30;
+    applyPenalty('mutation-baseline', 'Mutation baseline penalty', 30, [`status=${input.mutationBaseline.status}`, `exitCode=${input.mutationBaseline.exitCode ?? 'none'}`]);
     findings.push(finding(
       'policy:mutation-baseline',
       'mutation-baseline',
@@ -110,7 +128,7 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
 
   const erroredMutations = input.mutations.filter((result) => result.status === 'error' || result.status === 'invalid');
   if (erroredMutations.length > 0) {
-    mergeConfidence -= Math.min(8 * erroredMutations.length, 20);
+    applyPenalty('mutation-execution-errors', 'Mutation execution errors penalty', Math.min(8 * erroredMutations.length, 20), erroredMutations.map((item) => `${item.filePath}:${item.siteId}`));
     for (const mutation of erroredMutations) {
       findings.push(finding(`policy:mutation-error:${mutation.siteId}`, 'mutation-execution', 'error', `Mutation execution failed for ${mutation.filePath}`, [mutation.filePath], [mutation.details ?? mutation.siteId]));
     }
@@ -119,7 +137,7 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
 
   const survivingMutants = input.mutations.filter((result) => result.status === 'survived');
   if (survivingMutants.length > 0) {
-    mergeConfidence -= Math.min(12 * survivingMutants.length, 24);
+    applyPenalty('surviving-mutants', 'Surviving mutants penalty', Math.min(12 * survivingMutants.length, 24), survivingMutants.map((item) => `${item.filePath}:${item.span?.startLine ?? 'unknown'} ${item.operator ?? item.siteId}`));
     for (const mutant of survivingMutants) {
       findings.push(finding(`policy:surviving:${mutant.siteId}`, 'surviving-mutant', 'error', `Surviving mutant in ${mutant.filePath}`, [mutant.filePath], [mutant.details ?? mutant.siteId]));
     }
@@ -128,7 +146,7 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
 
   const lexicallySupportedClaims = input.behaviorClaims.filter(isLexicallySupportedInvariantClaim);
   if (lexicallySupportedClaims.length > 0) {
-    mergeConfidence -= Math.min(3 * lexicallySupportedClaims.length, 9);
+    applyPenalty('lexical-invariants', 'Lexical invariant penalty', Math.min(3 * lexicallySupportedClaims.length, 9), lexicallySupportedClaims.map((item) => item.invariantId));
     for (const claim of lexicallySupportedClaims) {
       const modeSummary = invariantModeSummary(claim);
       findings.push(finding(
@@ -148,7 +166,7 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
 
   const riskyClaims = input.behaviorClaims.filter(isRiskyInvariantClaim);
   if (riskyClaims.length > 0) {
-    mergeConfidence -= Math.min(10 * riskyClaims.length, 20);
+    applyPenalty('risky-invariants', 'Risky invariant/residual pressure penalty', Math.min(10 * riskyClaims.length, 20), riskyClaims.map((item) => `${item.invariantId}:${item.status}`));
     for (const claim of riskyClaims) {
       const modeSummary = invariantModeSummary(claim);
       findings.push(finding(
@@ -168,7 +186,7 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
   }
 
   for (const governanceFinding of input.governance) {
-    mergeConfidence -= governanceFinding.level === 'error' ? 20 : 8;
+    applyPenalty('governance', 'Governance penalty', governanceFinding.level === 'error' ? 20 : 8, [governanceFinding.message]);
     findings.push(finding(`policy:governance:${governanceFinding.id}`, 'governance', governanceFinding.level, governanceFinding.message, governanceFinding.scope, governanceFinding.evidence, governanceFinding.ruleId));
     reasons.push(governanceFinding.message);
   }
@@ -179,7 +197,7 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
       item.waived = true;
       item.waiverId = waiver.id;
       warnings.push(`Applied waiver ${waiver.id} to ${item.code}`);
-      mergeConfidence += item.level === 'error' ? 10 : 4;
+      applyCredit(`waiver:${waiver.id}`, 'Waiver credit', item.level === 'error' ? 10 : 4, [`${waiver.id} -> ${item.code}`]);
     }
   }
 
@@ -209,6 +227,12 @@ export function evaluatePolicy(input: PolicyInput): { verdict: Verdict; trend?: 
     reasons,
     warnings,
     blockedBy,
+    confidenceBreakdown: {
+      base: 100,
+      penalties,
+      credits,
+      final: mergeConfidence
+    },
     findings
   };
   if (bestNextAction) {
@@ -433,6 +457,58 @@ export function renderPrSummary(run: Pick<RunArtifact, 'changedFiles' | 'behavio
   });
 }
 
+function renderConfidenceBreakdownLines(breakdown: NonNullable<Verdict['confidenceBreakdown']>, options?: { bulletPrefix?: string }): string[] {
+  const bulletPrefix = options?.bulletPrefix ?? '- ';
+  const lines = [`Confidence breakdown: base ${breakdown.base}`];
+  for (const penalty of breakdown.penalties) {
+    lines.push(`${bulletPrefix}-${penalty.amount} ${penalty.label}${penalty.details.length > 0 ? ` (${penalty.details.join('; ')})` : ''}`);
+  }
+  for (const credit of breakdown.credits) {
+    lines.push(`${bulletPrefix}+${credit.amount} ${credit.label}${credit.details.length > 0 ? ` (${credit.details.join('; ')})` : ''}`);
+  }
+  lines.push(`${bulletPrefix}final ${breakdown.final}`);
+  return lines;
+}
+
+function renderSurvivingMutationLines(mutations: MutationResult[], options?: { bulletPrefix?: string }): string[] {
+  const bulletPrefix = options?.bulletPrefix ?? '- ';
+  const survivors = mutations.filter((item) => item.status === 'survived');
+  if (survivors.length === 0) {
+    return [];
+  }
+  const lines = ['Actionable surviving mutants:'];
+  for (const survivor of survivors.slice(0, 8)) {
+    const location = `${survivor.filePath}:${survivor.span?.startLine ?? 'unknown'}`;
+    const mutation = survivor.original && survivor.replacement ? `${survivor.original} -> ${survivor.replacement}` : survivor.operator ?? survivor.siteId;
+    lines.push(`${bulletPrefix}${location} ${mutation}`);
+    if (survivor.testCommand && survivor.testCommand.length > 0) {
+      lines.push(`  command: ${survivor.testCommand.join(' ')}`);
+    }
+    if (survivor.assertionHint) {
+      lines.push(`  next assertion: ${survivor.assertionHint}`);
+    }
+  }
+  return lines;
+}
+
+function renderAnalysisWarningLines(warnings: RunArtifact['analysisWarnings'], options?: { bulletPrefix?: string }): string[] {
+  if (!warnings || warnings.length === 0) {
+    return [];
+  }
+  const bulletPrefix = options?.bulletPrefix ?? '- ';
+  const lines = ['Analysis warnings:'];
+  for (const warning of warnings) {
+    lines.push(`${bulletPrefix}${warning.message}`);
+    if (warning.hint) {
+      lines.push(`  hint: ${warning.hint}`);
+    }
+    for (const evidence of warning.evidence) {
+      lines.push(`  evidence: ${evidence}`);
+    }
+  }
+  return lines;
+}
+
 function renderExecutionWitnessLines(summary: NonNullable<RunArtifact['executionWitnesses']>, options?: { bulletPrefix?: string }): string[] {
   const bulletPrefix = options?.bulletPrefix ?? '- ';
   const lines = [`Execution witnesses: auto-ran ${summary.autoRan.length}, skipped ${summary.skipped.length}`];
@@ -447,11 +523,28 @@ function renderExecutionWitnessLines(summary: NonNullable<RunArtifact['execution
   return lines;
 }
 
-export function renderExplainText(run: Pick<RunArtifact, 'runId' | 'changedFiles' | 'behaviorClaims' | 'governance' | 'verdict' | 'executionWitnesses'>): string {
+export function renderExplainText(run: Pick<RunArtifact, 'runId' | 'changedFiles' | 'behaviorClaims' | 'governance' | 'verdict' | 'executionWitnesses' | 'mutations' | 'analysisWarnings' | 'nextEvidenceAction'>): string {
   const lines: string[] = [];
   lines.push(`Run ${run.runId}`);
   lines.push(`Changed files: ${run.changedFiles.join(', ') || 'none detected'}`);
   lines.push(`Merge confidence: ${run.verdict.mergeConfidence}/100 (${run.verdict.outcome})`);
+  if (run.verdict.confidenceBreakdown) {
+    lines.push('');
+    lines.push(...renderConfidenceBreakdownLines(run.verdict.confidenceBreakdown));
+  }
+  if (run.nextEvidenceAction) {
+    lines.push('');
+    lines.push(`Next evidence action: ${run.nextEvidenceAction.bestNextAction}`);
+    lines.push(`Remaining blocker: ${run.nextEvidenceAction.remainingBlocker}`);
+  }
+  const analysisWarnings = renderAnalysisWarningLines(run.analysisWarnings);
+  if (analysisWarnings.length > 0) {
+    lines.push('', ...analysisWarnings);
+  }
+  const survivorLines = renderSurvivingMutationLines(run.mutations);
+  if (survivorLines.length > 0) {
+    lines.push('', ...survivorLines);
+  }
   lines.push('');
   lines.push('Reasons:');
   for (const reason of run.verdict.reasons) {
@@ -496,6 +589,20 @@ export function renderMarkdownReport(run: RunArtifact): string {
   lines.push(`- Merge confidence: **${run.verdict.mergeConfidence}/100**`);
   lines.push(`- Outcome: **${run.verdict.outcome}**`);
   lines.push(`- Changed files: ${run.changedFiles.join(', ') || 'none'}`);
+  if (run.nextEvidenceAction) {
+    lines.push(`- Next evidence action: ${run.nextEvidenceAction.bestNextAction}`);
+  }
+  if (run.verdict.confidenceBreakdown) {
+    lines.push('', '## Confidence breakdown', ...renderConfidenceBreakdownLines(run.verdict.confidenceBreakdown, { bulletPrefix: '- ' }));
+  }
+  const analysisWarnings = renderAnalysisWarningLines(run.analysisWarnings, { bulletPrefix: '- ' });
+  if (analysisWarnings.length > 0) {
+    lines.push('', '## Analysis warnings', ...analysisWarnings.slice(1));
+  }
+  const survivorLines = renderSurvivingMutationLines(run.mutations, { bulletPrefix: '- ' });
+  if (survivorLines.length > 0) {
+    lines.push('', '## Actionable surviving mutants', ...survivorLines.slice(1));
+  }
   lines.push('');
   lines.push('## Findings');
   for (const item of run.verdict.findings) {

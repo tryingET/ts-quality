@@ -522,38 +522,153 @@
     "exitCode": 0,
     "status": "pass"
   },
+  "mutationRemediation": {
+    "survivors": [
+      {
+        "assertionHint": "Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >.",
+        "filePath": "src/auth/token.js",
+        "mutated": ">",
+        "operator": ">=",
+        "original": ">=",
+        "replacement": ">",
+        "siteId": "sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15",
+        "span": {
+          "endLine": 2,
+          "startLine": 2
+        },
+        "testCommand": [
+          "node",
+          "--test"
+        ]
+      },
+      {
+        "assertionHint": "Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.",
+        "filePath": "src/auth/token.js",
+        "mutated": "||",
+        "operator": "&&",
+        "original": "&&",
+        "replacement": "||",
+        "siteId": "sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20",
+        "span": {
+          "endLine": 8,
+          "startLine": 8
+        },
+        "testCommand": [
+          "node",
+          "--test"
+        ]
+      },
+      {
+        "assertionHint": "Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.",
+        "filePath": "src/auth/token.js",
+        "mutated": "||",
+        "operator": "&&",
+        "original": "&&",
+        "replacement": "||",
+        "siteId": "sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8",
+        "span": {
+          "endLine": 7,
+          "startLine": 7
+        },
+        "testCommand": [
+          "node",
+          "--test"
+        ]
+      }
+    ]
+  },
   "mutations": [
     {
+      "assertionHint": "Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >.",
       "details": "Mutation survived for src/auth/token.js (sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15).",
       "durationMs": 0,
+      "endOffset": 78,
       "filePath": "src/auth/token.js",
       "kind": "mutation-result",
+      "mutated": ">",
+      "operator": ">=",
+      "original": ">=",
+      "replacement": ">",
       "siteId": "sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15",
-      "status": "survived"
+      "span": {
+        "endLine": 2,
+        "startLine": 2
+      },
+      "startOffset": 76,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        "--test"
+      ]
     },
     {
+      "assertionHint": "Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.",
       "details": "Mutation survived for src/auth/token.js (sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20).",
       "durationMs": 0,
+      "endOffset": 215,
       "filePath": "src/auth/token.js",
       "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
       "siteId": "sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20",
-      "status": "survived"
+      "span": {
+        "endLine": 8,
+        "startLine": 8
+      },
+      "startOffset": 213,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        "--test"
+      ]
     },
     {
+      "assertionHint": "Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.",
       "details": "Mutation survived for src/auth/token.js (sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8).",
       "durationMs": 0,
+      "endOffset": 182,
       "filePath": "src/auth/token.js",
       "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
       "siteId": "sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8",
-      "status": "survived"
+      "span": {
+        "endLine": 7,
+        "startLine": 7
+      },
+      "startOffset": 180,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        "--test"
+      ]
     },
     {
+      "assertionHint": "Assert both equality and inequality behavior around src/auth/token.js:8; this mutant changed === to !==.",
       "details": "Mutation killed for src/auth/token.js (sha256:487f38e332d7dba3ce182d5e19378721fe317f956ba1da67310040b207e1fd5d).",
       "durationMs": 0,
+      "endOffset": 203,
       "filePath": "src/auth/token.js",
       "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
       "siteId": "sha256:487f38e332d7dba3ce182d5e19378721fe317f956ba1da67310040b207e1fd5d",
-      "status": "killed"
+      "span": {
+        "endLine": 8,
+        "startLine": 8
+      },
+      "startOffset": 200,
+      "status": "killed",
+      "testCommand": [
+        "node",
+        "--test"
+      ]
     }
   ],
   "mutationSites": [
@@ -614,6 +729,21 @@
       "startOffset": 200
     }
   ],
+  "nextEvidenceAction": {
+    "artifactPaths": {
+      "checkSummary": ".ts-quality/runs/sample-governed-app-run/check-summary.txt",
+      "coverageGeneration": ".ts-quality/runs/sample-governed-app-run/coverage-generation.json",
+      "explain": ".ts-quality/runs/sample-governed-app-run/explain.txt",
+      "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json",
+      "run": ".ts-quality/runs/sample-governed-app-run/run.json"
+    },
+    "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
+    "coverageStatus": "coverage evidence present",
+    "governanceStatus": "blocked by 2 governance error(s)",
+    "mutationStatus": "3 surviving mutant(s); tighten focused assertions",
+    "remainingBlocker": "mutation-pressure",
+    "witnessStatus": "no execution witness auto-ran"
+  },
   "overrides": [],
   "repo": {
     "digest": "sha256:b591e261c25f12d08c4ab7d681a674d069dcd0fba2f6e02d1c0684357e43696b",
@@ -704,6 +834,58 @@
       "Auth code requires stronger evidence because it decides authorization.",
       "Auth code requires stronger evidence because it decides authorization."
     ],
+    "confidenceBreakdown": {
+      "base": 100,
+      "credits": [],
+      "final": 6,
+      "penalties": [
+        {
+          "amount": 20,
+          "details": [
+            "score=0.25",
+            "budget=0.75",
+            "killed=1",
+            "survived=3"
+          ],
+          "id": "mutation-score",
+          "label": "Mutation score penalty"
+        },
+        {
+          "amount": 24,
+          "details": [
+            "src/auth/token.js:2 >=",
+            "src/auth/token.js:8 &&",
+            "src/auth/token.js:7 &&"
+          ],
+          "id": "surviving-mutants",
+          "label": "Surviving mutants penalty"
+        },
+        {
+          "amount": 10,
+          "details": [
+            "auth.refresh.validity:at-risk"
+          ],
+          "id": "risky-invariants",
+          "label": "Risky invariant/residual pressure penalty"
+        },
+        {
+          "amount": 20,
+          "details": [
+            "Auth code requires stronger evidence because it decides authorization."
+          ],
+          "id": "governance",
+          "label": "Governance penalty"
+        },
+        {
+          "amount": 20,
+          "details": [
+            "Auth code requires stronger evidence because it decides authorization."
+          ],
+          "id": "governance",
+          "label": "Governance penalty"
+        }
+      ]
+    },
     "findings": [
       {
         "code": "mutation-score-budget",
@@ -809,5 +991,5 @@
     ],
     "warnings": []
   },
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

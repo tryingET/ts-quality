@@ -84,6 +84,15 @@ export interface MutationResult {
   status: MutationStatus;
   durationMs: number;
   details?: string | undefined;
+  span?: LineSpan | undefined;
+  startOffset?: number | undefined;
+  endOffset?: number | undefined;
+  operator?: string | undefined;
+  original?: string | undefined;
+  replacement?: string | undefined;
+  mutated?: string | undefined;
+  testCommand?: string[] | undefined;
+  assertionHint?: string | undefined;
 }
 
 export interface InvariantSpec {
@@ -511,6 +520,54 @@ export interface CoverageGenerationRecord {
   receipt: ExecutionReceipt;
 }
 
+export interface AnalysisWarning {
+  code: string;
+  message: string;
+  changedFile?: string | undefined;
+  evidence: string[];
+  hint?: string | undefined;
+}
+
+export interface MutationRemediationSurvivor {
+  filePath: string;
+  siteId: string;
+  span?: LineSpan | undefined;
+  operator?: string | undefined;
+  original?: string | undefined;
+  mutated?: string | undefined;
+  replacement?: string | undefined;
+  testCommand?: string[] | undefined;
+  assertionHint?: string | undefined;
+}
+
+export interface MutationRemediation {
+  survivors: MutationRemediationSurvivor[];
+}
+
+export interface ConfidenceContribution {
+  id: string;
+  label: string;
+  amount: number;
+  details: string[];
+}
+
+export interface ConfidenceBreakdown {
+  base: number;
+  penalties: ConfidenceContribution[];
+  credits: ConfidenceContribution[];
+  final: number;
+}
+
+export interface NextEvidenceAction {
+  remainingBlocker: string;
+  bestNextAction: string;
+  coverageStatus: string;
+  witnessStatus: string;
+  mutationStatus: string;
+  governanceStatus: string;
+  artifactPaths: Record<string, string>;
+}
+
 export interface AnalysisContext {
   runId: string;
   createdAt: string;
@@ -554,11 +611,12 @@ export interface Verdict {
   warnings: string[];
   blockedBy: string[];
   bestNextAction?: string | undefined;
+  confidenceBreakdown?: ConfidenceBreakdown | undefined;
   findings: PolicyFinding[];
 }
 
 export interface RunArtifact {
-  version: '0.1.0';
+  version: '0.2.0' | '0.1.0';
   runId: string;
   createdAt: string;
   repo: RepositoryEntity;
@@ -568,6 +626,9 @@ export interface RunArtifact {
   controlPlane?: ControlPlaneSnapshot | undefined;
   executionWitnesses?: ExecutionWitnessRunSummary | undefined;
   coverageGeneration?: CoverageGenerationRecord | undefined;
+  analysisWarnings?: AnalysisWarning[] | undefined;
+  mutationRemediation?: MutationRemediation | undefined;
+  nextEvidenceAction?: NextEvidenceAction | undefined;
   files: FileEntity[];
   symbols: SymbolEntity[];
   coverage: CoverageEvidence[];

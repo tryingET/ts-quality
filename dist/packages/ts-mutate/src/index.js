@@ -385,16 +385,55 @@ function writeRuntimeMirrors(repoRoot, tempDir, site, mutatedSource, runtimeMirr
         fs_1.default.writeFileSync(mirrorPath, runtimeSource, 'utf8');
     }
 }
+function assertionHintForMutation(site) {
+    const location = `${site.filePath}:${site.span.startLine}`;
+    if (site.operator.includes('equality') || ['===', '!=='].includes(site.original)) {
+        return `Assert both equality and inequality behavior around ${location}; this mutant changed ${site.original} to ${site.replacement}.`;
+    }
+    if (site.operator.includes('greater-than') || site.operator.includes('less-than') || ['>', '>=', '<', '<='].includes(site.original)) {
+        return `Add a boundary assertion around ${location}; this mutant changed ${site.original} to ${site.replacement}.`;
+    }
+    if (site.operator.includes('boolean') || site.original === 'true' || site.original === 'false') {
+        return `Assert the opposite boolean branch around ${location}; this mutant flipped ${site.original} to ${site.replacement}.`;
+    }
+    if (site.operator.includes('and to or') || site.operator.includes('or to and') || ['&&', '||'].includes(site.original)) {
+        return `Assert the combined-condition case around ${location}; this mutant changed ${site.original} to ${site.replacement}.`;
+    }
+    return `Add or tighten a focused assertion around ${location}; this mutant changed ${site.original} to ${site.replacement}.`;
+}
+function mutationResultForSite(site, input) {
+    const result = {
+        kind: 'mutation-result',
+        siteId: site.id,
+        filePath: site.filePath,
+        status: input.status,
+        durationMs: input.durationMs,
+        span: site.span,
+        startOffset: site.startOffset,
+        endOffset: site.endOffset,
+        operator: site.operator,
+        original: site.original,
+        replacement: site.replacement,
+        testCommand: [...input.testCommand],
+        assertionHint: assertionHintForMutation(site)
+    };
+    if (input.details) {
+        result.details = input.details;
+    }
+    if (input.mutatedSource) {
+        result.mutated = input.mutatedSource.slice(site.startOffset, site.startOffset + site.replacement.length);
+    }
+    return result;
+}
 function runSingleMutation(repoRoot, workspace, site, mutatedSource, testCommand, timeoutMs, runtimeMirrorRoots) {
     if (hasSyntaxErrors(site.filePath, mutatedSource)) {
-        return {
-            kind: 'mutation-result',
-            siteId: site.id,
-            filePath: site.filePath,
+        return mutationResultForSite(site, {
             status: 'invalid',
             durationMs: 0,
-            details: 'Mutation produced syntax errors'
-        };
+            details: 'Mutation produced syntax errors',
+            mutatedSource,
+            testCommand
+        });
     }
     try {
         const targetPath = path_1.default.join(workspace.tempDir, site.filePath);
@@ -402,14 +441,13 @@ function runSingleMutation(repoRoot, workspace, site, mutatedSource, testCommand
         fs_1.default.writeFileSync(targetPath, mutatedSource, 'utf8');
         writeRuntimeMirrors(repoRoot, workspace.tempDir, site, mutatedSource, runtimeMirrorRoots);
         const receipt = runCommandReceipt(workspace.tempDir, testCommand, timeoutMs);
-        return {
-            kind: 'mutation-result',
-            siteId: site.id,
-            filePath: site.filePath,
+        return mutationResultForSite(site, {
             status: receipt.status === 'pass' ? 'survived' : receipt.status === 'fail' ? 'killed' : 'error',
             durationMs: receipt.durationMs,
-            details: receipt.status === 'timeout' ? `test command timed out: ${receipt.details}` : receipt.details
-        };
+            details: receipt.status === 'timeout' ? `test command timed out: ${receipt.details}` : receipt.details,
+            mutatedSource,
+            testCommand
+        });
     }
     finally {
         resetMutationWorkspace(repoRoot, workspace);
@@ -432,13 +470,11 @@ function runMutations(options) {
     const repoFiles = repoFileDigests(options.repoRoot);
     const executionFingerprint = buildExecutionFingerprint(options.testCommand, runtimeMirrorRoots, repoFiles);
     if (baseline.status !== 'pass') {
-        const results = limitedSites.map((site) => ({
-            kind: 'mutation-result',
-            siteId: site.id,
-            filePath: site.filePath,
+        const results = limitedSites.map((site) => mutationResultForSite(site, {
             status: 'error',
             durationMs: baseline.durationMs,
-            details: `Baseline test command must pass before mutation scoring is trusted. ${baseline.details}`.trim().slice(0, 280)
+            details: `Baseline test command must pass before mutation scoring is trusted. ${baseline.details}`.trim().slice(0, 280),
+            testCommand: options.testCommand
         }));
         return {
             sites: limitedSites,
@@ -458,7 +494,18 @@ function runMutations(options) {
             const key = manifestKey(options.repoRoot, site, executionFingerprint);
             const cached = manifest.entries[key];
             if (cached) {
-                results.push(cached);
+                const cachedInput = {
+                    status: cached.status,
+                    durationMs: cached.durationMs,
+                    testCommand: options.testCommand
+                };
+                if (cached.details) {
+                    cachedInput.details = cached.details;
+                }
+                results.push({
+                    ...mutationResultForSite(site, cachedInput),
+                    ...cached
+                });
                 continue;
             }
             workspace ??= prepareMutationWorkspace(options.repoRoot, repoFiles);

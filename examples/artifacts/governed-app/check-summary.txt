@@ -1,6 +1,15 @@
 Merge confidence: 6/100
 Outcome: fail
 Best next action: Add or tighten an assertion covering src/auth/token.js around the surviving mutant.
+Remaining blocker: mutation-pressure
+
+Confidence breakdown: base 100
+-20 Mutation score penalty
+-24 Surviving mutants penalty
+-10 Risky invariant/residual pressure penalty
+-20 Governance penalty
+-20 Governance penalty
+final 6
 
 Invariant evidence at risk: auth.refresh.validity
 Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof

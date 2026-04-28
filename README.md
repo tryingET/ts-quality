@@ -219,7 +219,8 @@ examples/artifacts/governed-app/amend.txt
 ## Top-level commands
 
 ```bash
-npx ts-quality init
+npx ts-quality init [--preset node-test|node-test-ts-dist|vitest]
+npx ts-quality doctor [--changed <a,b,c>]
 npx ts-quality materialize
 npx ts-quality check [--run-id <id>]
 npx ts-quality explain [--run-id <id>]
@@ -236,6 +237,8 @@ npx ts-quality amend --proposal proposal.json
 ```
 
 When `--run-id` is omitted on `explain`, `report`, `plan`, `govern`, or `authorize`, the CLI uses `.ts-quality/latest.json`. Pass an explicit run id whenever multiple reviewed runs coexist and you want to avoid ambient latest-pointer selection.
+
+`doctor` is read-only adoption diagnostics: it inspects package scripts, config presence, changed scope, LCOV presence, `coverage.generateCommand`, mutation command shape, runtime mirror roots, and likely TypeScript `src/**` vs built-output coverage risk without running tests or mutating `package.json`. `init --preset node-test-ts-dist` starts TypeScript/dist repos with source-map coverage guidance and `dist`/`lib`/`build` runtime mirrors; `node-test` and `vitest` provide conservative starter command shapes for common runners.
 
 `run.json` remains the immutable `check`-time bundle. `report --json` emits the selected run plus an additive `decisionContext` block instead of echoing raw `run.json` bytes, so automation can tell whether it is reading the persisted check-time report or a later projected decision view and whether drift was detected.
 
@@ -272,12 +275,18 @@ A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<ru
 - `plan.txt` — governance plan with related invariant evidence provenance for the at-risk claim
 - `govern.txt` — governance findings with related invariant evidence provenance for the at-risk claim
 - optional `execution-witnesses.json` / `execution-witnesses.txt` — additive per-run summary of configured execution witness commands that auto-ran and those skipped by scope
+- optional `coverage-generation.json` / `coverage-generation.txt` — sidecar receipt when configured LCOV generation was attempted
+- optional `mutation-remediation.json` — actionable surviving-mutant payload with file, site id, span, original/replacement snippets, command, and assertion hint when available
+- `next-evidence-action.json` / `next-evidence-action.txt` — focused next-step summary with remaining blocker, coverage/witness/mutation/governance status, and artifact paths to inspect
 
 `run.json` also carries additive execution receipts that make the run boundary explicit instead of implicit:
 
 - `analysis` records the preallocated run id, canonical config path, canonical coverage path, exact changed scope, source file set, runtime mirror roots, and mutation execution fingerprint
 - `controlPlane` records a schema-versioned run-bound snapshot of the config digest, policy defaults, constitution digest + rules, agent digest + grants, and the exact support-path bindings for later approval/waiver/override/attestation lookups
 - `mutationBaseline` records whether the baseline test command was green before mutants were interpreted
+- `coverageGeneration` records configured LCOV generation attempts, and `analysisWarnings` can flag adoption risks such as LCOV that covers `dist/**`/`lib/**`/`build/**` while changed `src/**/*.ts` files have no source-mapped coverage entry
+- `mutationRemediation.survivors[]` makes surviving mutants actionable with exact site metadata and a concise next assertion hint
+- `verdict.confidenceBreakdown` shows base confidence, deterministic penalties/credits, and final confidence so a low merge-confidence number has an auditable arithmetic trail
 
 Each impacted invariant also carries a structured `behaviorClaims[].evidenceSummary` in `run.json`, exposing the invariant-scoped evidence basis directly: `evidenceSemantics` / `evidenceSemanticsSummary`, impacted files, focused tests, optional `executionWitnessFiles`, changed functions, coverage pressure, mutation counts, per-scenario support, and named deterministic sub-signals such as `focused-test-alignment`, `execution-witness`, `scenario-support`, `coverage-pressure`, `mutation-pressure`, and `changed-function-pressure`. Every sub-signal is also labeled as `explicit`, `inferred`, or `missing` so reviewers can tell whether support came from direct configured/artifact evidence or deterministic alignment heuristics.
 
@@ -292,12 +301,12 @@ Authorization artifacts written by `ts-quality authorize` add an additive `evide
 A strong `ts-quality` result depends on explicit inputs, not hidden inference:
 
 - **Explicit changed scope** — provide CLI `--changed <a,b,c>`, `changeSet.files`, or a `changeSet.diffFile` with at least one changed hunk. `check` fails closed when no changed scope is supplied instead of silently widening to the whole repo.
-- **Coverage evidence** — provide `coverage/lcov.info`, or configure `coverage.generateCommand` to create it when missing, so CRAP and covered-only mutation selection are grounded in executed code. Configured generation is fail-closed and recorded as an additive run receipt.
+- **Coverage evidence** — provide `coverage/lcov.info`, or configure `coverage.generateCommand` to create it when missing, so CRAP and covered-only mutation selection are grounded in executed code. Before running that command, `check` creates the parent directory for `coverage.lcovPath`; generation is fail-closed and recorded as additive run and sidecar receipts.
 - **Green mutation baseline** — `mutations.testCommand` must pass before mutation results are trusted. A broken baseline blocks mutation scoring instead of pretending every failing run killed a mutant.
 - **Executable tests** — `mutations.testCommand` must actually fail when behavior changes, or mutants will survive and confidence will drop. The command must contain at least one executable argument.
 - **Hermetic mutation execution** — mutation subprocesses drop inherited nested test-runner recursion context (for example `NODE_TEST_CONTEXT`) so the same repo does not score differently just because `check` was launched from inside `node --test`.
 - **Measured mutation pressure** — if the evaluated scope produces no killed or surviving mutants, `ts-quality` treats that as missing evidence instead of a perfect 1.0 mutation score.
-- **Runtime parity for built-output tests** — when tests execute compiled output from roots such as `dist/` or `lib/`, configured runtime mirrors receive mutated JS directly for JS sources and transpiled JS for TS/TSX sources so mutation pressure stays aligned with the runtime under test.
+- **Runtime parity for built-output tests** — when tests execute compiled output from roots such as `dist/` or `lib/`, configured runtime mirrors receive mutated JS directly for JS sources and transpiled JS for TS/TSX sources so mutation pressure stays aligned with the runtime under test. If LCOV covers built output but changed TypeScript source under `src/**` lacks source-mapped coverage, `check` warns with a `NODE_OPTIONS=--enable-source-maps` style hint instead of pretending coverage mapped to source.
 - **Focused test evidence** — invariant scenarios are matched against tests aligned to the impacted source by file naming/import hints or explicit `requiredTestPatterns`, not by unrelated repo-global keyword hits. Deterministic lexical support also has to come from one assertion-bearing focused test case, not from stitching happy-path and failure-path keywords across separate tests in the same file or relying on setup-only non-asserting cases. That evidence is deterministic lexical alignment unless the scenario also carries a matching execution witness artifact.
 - **Execution-backed witnesses** — when you have a narrow runtime proof command, `ts-quality witness test ... -- <command>` can generate a scoped execution witness artifact under `.ts-quality/witnesses/` so invariant support can graduate from `lexically-supported` to `supported` without hand-authoring JSON. For recurring scenarios, the same witness command/output can now be declared directly on the invariant scenario so `ts-quality check` auto-generates it for impacted scope.
 
