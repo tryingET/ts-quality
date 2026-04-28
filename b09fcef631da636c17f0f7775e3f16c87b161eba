@@ -1,0 +1,25 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "b09fcef631da636c17f0f7775e3f16c87b161eba"
+created_at: "2026-04-28T01:34:37Z"
+intent: "Fix release publication verification after v0.1.6 showed npm view can succeed before npx public install resolution converges."
+files:
+  - ".github/workflows/publish.yml"
+  - "scripts/release-orchestrator.mjs"
+  - "test/adoption-guidance.test.mjs"
+  - "docs/releases/release-workflow.md"
+  - "docs/npm-publishing-checklist.md"
+  - "CHANGELOG.md"
+validation:
+  fast_gate:
+    command: "npm run typecheck:scripts --silent && node --test test/adoption-guidance.test.mjs && npm run lint --silent && node /home/tryinget/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+  full_gate:
+    command: "npm run verify --silent"
+    status: "pass"
+group:
+  index: 1
+  total: 1
+  rationale: "Workflow and local verifier now retry fresh public npm installability and keep release tarball attachment independent of public install propagation lag after npm publish succeeds."
