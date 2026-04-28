@@ -10,9 +10,12 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-04-28
+
 ### Added
 
 - Added first-witness guidance to the top-level CLI help, `witness test --help`, and README quickstart so fresh operators can move from a bounded review to one focused execution witness without reading internals end to end.
+- Added regression coverage asserting `report.json` and `report --json` preserve the selected `run.json` fields exactly, with only additive `decisionContext` metadata layered on top.
 
 ### Changed
 
