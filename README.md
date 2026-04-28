@@ -220,7 +220,7 @@ examples/artifacts/governed-app/amend.txt
 
 ```bash
 npx ts-quality init [--preset node-test|node-test-ts-dist|vitest]
-npx ts-quality doctor [--changed <a,b,c>]
+npx ts-quality doctor [--changed <a,b,c>] [--machine]
 npx ts-quality materialize
 npx ts-quality check [--run-id <id>]
 npx ts-quality explain [--run-id <id>]
@@ -238,7 +238,7 @@ npx ts-quality amend --proposal proposal.json
 
 When `--run-id` is omitted on `explain`, `report`, `plan`, `govern`, or `authorize`, the CLI uses `.ts-quality/latest.json`. Pass an explicit run id whenever multiple reviewed runs coexist and you want to avoid ambient latest-pointer selection.
 
-`doctor` is read-only adoption diagnostics: it inspects package scripts, config presence, changed scope, LCOV presence, `coverage.generateCommand`, mutation command shape, runtime mirror roots, and likely TypeScript `src/**` vs built-output coverage risk without running tests or mutating `package.json`. `init --preset node-test-ts-dist` starts TypeScript/dist repos with source-map coverage guidance and `dist`/`lib`/`build` runtime mirrors; `node-test` and `vitest` provide conservative starter command shapes for common runners.
+`doctor` is read-only adoption diagnostics: it inspects package scripts, config presence, changed scope, LCOV presence, `coverage.generateCommand`, mutation command shape, runtime mirror roots, and likely TypeScript `src/**` vs built-output coverage risk without running tests or mutating `package.json`. Use `doctor --machine` as the compact harnessed-LLM / agent diagnostic line protocol for setup decisions; it intentionally avoids heavy JSON token overhead. Reserve existing `--json` surfaces such as `report --json` and `attest verify --json` for CI-style generic JSON projections. `init --preset node-test-ts-dist` starts TypeScript/dist repos with source-map coverage guidance and `dist`/`lib`/`build` runtime mirrors; `node-test` and `vitest` provide conservative starter command shapes for common runners.
 
 `run.json` remains the immutable `check`-time bundle. `report --json` emits the selected run plus an additive `decisionContext` block instead of echoing raw `run.json` bytes, so automation can tell whether it is reading the persisted check-time report or a later projected decision view and whether drift was detected.
 

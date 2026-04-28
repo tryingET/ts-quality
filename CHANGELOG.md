@@ -10,6 +10,10 @@ type: "reference"
 
 ## [Unreleased]
 
+### Added
+
+- Added `ts-quality doctor --machine` as a compact line protocol for harnessed LLMs and agents, keeping first-contact adoption diagnostics token-light while preserving existing `--json` surfaces for CI-style JSON projections.
+
 ## [0.2.0] - 2026-04-28
 
 ### Breaking Changes

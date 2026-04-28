@@ -39,8 +39,17 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /ts-quality doctor/);
   assert.match(result.stdout, /changed scope: src\/index\.ts/);
-  assert.match(result.stdout, /Coverage risk: changed src\/\*\*\/\*\.ts/);
+  assert.match(result.stdout, /Changed TypeScript source and built runtime roots are present/);
   assert.match(result.stdout, /NODE_OPTIONS=--enable-source-maps/);
+
+  result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'src/index.ts', '--machine'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^TSQ_DOCTOR_MACHINE_V1\n/);
+  assert.match(result.stdout, /\nconfig\tok\tpath=ts-quality\.config\.ts\n/);
+  assert.match(result.stdout, /\nchanged\tok\tfiles=src\/index\.ts\n/);
+  assert.match(result.stdout, /\nrisk\twarn\tsource-dist-coverage-risk\t/);
+  assert.match(result.stdout, /\nrecommend\tsource-map\tsource-map-coverage\t.*NODE_OPTIONS=--enable-source-maps/);
+  assert.doesNotMatch(result.stdout, /^[{[]/);
 });
 
 test('check fails closed when init-generated config has no changed scope', () => {

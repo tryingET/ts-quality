@@ -1703,7 +1703,55 @@ function likelyScriptNames(scripts: Record<string, string>, tokens: string[]): s
   return Object.keys(scripts).filter((name) => tokens.some((token) => name.includes(token) || scripts[name]?.includes(token))).sort();
 }
 
-export function renderDoctor(rootDir: string, options?: { changedFiles?: string[]; configPath?: string }): string {
+interface DoctorDiagnostic {
+  surface: 'ts-quality.doctor';
+  schemaVersion: 1;
+  rootDir: string;
+  config: {
+    loaded: boolean;
+    path?: string | undefined;
+    error?: string | undefined;
+  };
+  changedScope: {
+    present: boolean;
+    files: string[];
+    source: 'cli-or-config';
+  };
+  files: {
+    sourceCount: number;
+    testCount: number;
+  };
+  packageScripts: {
+    names: string[];
+    coverageCandidates: string[];
+    testCandidates: string[];
+  };
+  coverage: {
+    lcovPath: string;
+    lcovExists: boolean;
+    generateCommandConfigured: boolean;
+    generateCommand: string[];
+  };
+  mutations: {
+    testCommand: string[];
+    runtimeMirrorRoots: string[];
+  };
+  risks: Array<{
+    code: string;
+    level: 'info' | 'warn' | 'error';
+    message: string;
+    hint: string;
+    evidence: string[];
+  }>;
+  recommendations: Array<{
+    id: string;
+    kind: 'changed-scope' | 'coverage' | 'source-map' | 'focused-test' | 'witness' | 'script-snippet';
+    summary: string;
+    command?: string[] | undefined;
+  }>;
+}
+
+function buildDoctorDiagnostic(rootDir: string, options?: { changedFiles?: string[]; configPath?: string }): DoctorDiagnostic {
   const scripts = readPackageScripts(rootDir);
   let loaded: ReturnType<typeof loadContext> | undefined;
   let configError: string | undefined;
@@ -1725,39 +1773,90 @@ export function renderDoctor(rootDir: string, options?: { changedFiles?: string[
   const sourceDistRisk = changed.some(isSourceTsFile) && builtOutputRoots(runtimeMirrorRoots).some((root) => fs.existsSync(path.join(rootDir, root)));
   const coverageScripts = likelyScriptNames(scripts, ['coverage', 'lcov']);
   const testScripts = likelyScriptNames(scripts, ['test']);
-  const lines = [
-    'ts-quality doctor',
-    `root: ${rootDir}`,
-    `config: ${loaded ? normalizePath(path.relative(rootDir, loaded.configPath)) : `not loaded (${configError ?? 'missing'})`}`,
-    `changed scope: ${changed.length > 0 ? changed.join(', ') : 'missing'}`,
-    `source files: ${sources.length}`,
-    `test files: ${tests.length}`,
-    `package scripts: ${Object.keys(scripts).length > 0 ? Object.keys(scripts).sort().join(', ') : 'none'}`,
-    `coverage lcovPath: ${lcovPath} (${lcovExists ? 'exists' : 'missing'})`,
-    `coverage.generateCommand: ${generateCommand.length > 0 ? generateCommand.join(' ') : 'not configured'}`,
-    `mutation testCommand: ${config?.mutations.testCommand.join(' ') ?? 'not configured'}`,
-    `runtimeMirrorRoots: ${runtimeMirrorRoots.join(', ')}`,
-    '',
-    'Recommendations:'
-  ];
+  const recommendations: DoctorDiagnostic['recommendations'] = [];
+  const risks: DoctorDiagnostic['risks'] = [];
   if (changed.length === 0) {
-    lines.push('- Add changed scope with --changed <a,b,c>, changeSet.files, or changeSet.diffFile before check.');
+    recommendations.push({ id: 'changed-scope', kind: 'changed-scope', summary: 'Add changed scope with --changed <a,b,c>, changeSet.files, or changeSet.diffFile before check.' });
+    risks.push({ code: 'changed-scope-missing', level: 'error', message: 'Changed scope is missing.', hint: 'Provide --changed <a,b,c> or configure changeSet.files / changeSet.diffFile.', evidence: [] });
   }
   if (!lcovExists && generateCommand.length === 0) {
-    lines.push(coverageScripts.length > 0
-      ? `- Configure coverage.generateCommand to run an existing script such as npm run ${coverageScripts[0]}.`
-      : '- Configure coverage.generateCommand to create coverage/lcov.info, for example node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info.');
+    recommendations.push(coverageScripts.length > 0
+      ? { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run an existing script such as npm run ${coverageScripts[0]}.`, command: ['npm', 'run', coverageScripts[0] ?? 'coverage'] }
+      : { id: 'coverage-generate-command', kind: 'coverage', summary: 'Configure coverage.generateCommand to create coverage/lcov.info.', command: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'] });
+    risks.push({ code: 'coverage-missing-without-generator', level: 'warn', message: 'LCOV is missing and coverage.generateCommand is not configured.', hint: 'Configure a deterministic coverage command or create the LCOV before check.', evidence: [`lcovPath=${lcovPath}`] });
   }
   if (sourceDistRisk) {
-    lines.push('- Coverage risk: changed src/**/*.ts files and built runtime roots are present. Enable source-map coverage mapping, for example NODE_OPTIONS=--enable-source-maps, or configure coverage to map back to src/**.');
+    recommendations.push({ id: 'source-map-coverage', kind: 'source-map', summary: 'Enable source-map coverage mapping, for example NODE_OPTIONS=--enable-source-maps, or configure coverage to map back to src/**.' });
+    risks.push({ code: 'source-dist-coverage-risk', level: 'warn', message: 'Changed TypeScript source and built runtime roots are present.', hint: 'Ensure LCOV maps back to changed src/**/*.ts files rather than only built output.', evidence: [`changed=${changed.join(', ')}`, `runtimeMirrorRoots=${runtimeMirrorRoots.join(', ')}`] });
   }
   if (testScripts.length > 0) {
-    lines.push(`- Candidate focused test command: npm run ${testScripts[0]} -- --runInBand (adjust to the smallest trustworthy slice).`);
+    recommendations.push({ id: 'focused-test-command', kind: 'focused-test', summary: `Candidate focused test command: npm run ${testScripts[0]} -- --runInBand (adjust to the smallest trustworthy slice).`, command: ['npm', 'run', testScripts[0] ?? 'test', '--', '--runInBand'] });
   } else if (tests.length > 0) {
-    lines.push(`- Candidate focused test command: node --test ${tests[0]}.`);
+    recommendations.push({ id: 'focused-test-command', kind: 'focused-test', summary: `Candidate focused test command: node --test ${tests[0]}.`, command: ['node', '--test', tests[0] ?? 'test'] });
   }
-  lines.push('- Candidate witness command shape: ts-quality witness test --invariant <id> --scenario <id> --source-files <src> --test-files <test> --out .ts-quality/witnesses/<id>.json -- <focused command>');
-  lines.push('- Suggested package.json snippets are advisory only: coverage:<slice>, witness:<slice>, quality:<slice>.');
+  recommendations.push({ id: 'witness-command-shape', kind: 'witness', summary: 'Candidate witness command shape: ts-quality witness test --invariant <id> --scenario <id> --source-files <src> --test-files <test> --out .ts-quality/witnesses/<id>.json -- <focused command>' });
+  recommendations.push({ id: 'script-snippets', kind: 'script-snippet', summary: 'Suggested package.json snippets are advisory only: coverage:<slice>, witness:<slice>, quality:<slice>.' });
+  return {
+    surface: 'ts-quality.doctor',
+    schemaVersion: 1,
+    rootDir,
+    config: loaded ? { loaded: true, path: normalizePath(path.relative(rootDir, loaded.configPath)) } : { loaded: false, ...(configError ? { error: configError } : {}) },
+    changedScope: { present: changed.length > 0, files: changed, source: 'cli-or-config' },
+    files: { sourceCount: sources.length, testCount: tests.length },
+    packageScripts: { names: Object.keys(scripts).sort(), coverageCandidates: coverageScripts, testCandidates: testScripts },
+    coverage: { lcovPath, lcovExists, generateCommandConfigured: generateCommand.length > 0, generateCommand },
+    mutations: { testCommand: config?.mutations.testCommand ?? [], runtimeMirrorRoots },
+    risks,
+    recommendations
+  };
+}
+
+export function renderDoctor(rootDir: string, options?: { changedFiles?: string[]; configPath?: string }): string {
+  const diagnostic = buildDoctorDiagnostic(rootDir, options);
+  const lines = [
+    'ts-quality doctor',
+    `root: ${diagnostic.rootDir}`,
+    `config: ${diagnostic.config.loaded ? diagnostic.config.path : `not loaded (${diagnostic.config.error ?? 'missing'})`}`,
+    `changed scope: ${diagnostic.changedScope.present ? diagnostic.changedScope.files.join(', ') : 'missing'}`,
+    `source files: ${diagnostic.files.sourceCount}`,
+    `test files: ${diagnostic.files.testCount}`,
+    `package scripts: ${diagnostic.packageScripts.names.length > 0 ? diagnostic.packageScripts.names.join(', ') : 'none'}`,
+    `coverage lcovPath: ${diagnostic.coverage.lcovPath} (${diagnostic.coverage.lcovExists ? 'exists' : 'missing'})`,
+    `coverage.generateCommand: ${diagnostic.coverage.generateCommandConfigured ? diagnostic.coverage.generateCommand.join(' ') : 'not configured'}`,
+    `mutation testCommand: ${diagnostic.mutations.testCommand.length > 0 ? diagnostic.mutations.testCommand.join(' ') : 'not configured'}`,
+    `runtimeMirrorRoots: ${diagnostic.mutations.runtimeMirrorRoots.join(', ')}`,
+    ...(diagnostic.risks.length > 0 ? ['', 'Risks:', ...diagnostic.risks.map((risk) => `- ${risk.message} ${risk.hint}`)] : []),
+    '',
+    'Recommendations:',
+    ...diagnostic.recommendations.map((item) => `- ${item.summary}`)
+  ];
+  return `${lines.join('\n')}\n`;
+}
+
+function machineValue(value: string): string {
+  return value.replace(/[\t\r\n]/gu, ' ').trim();
+}
+
+function machineList(values: string[]): string {
+  return values.map(machineValue).join(',');
+}
+
+export function renderDoctorMachine(rootDir: string, options?: { changedFiles?: string[]; configPath?: string }): string {
+  const diagnostic = buildDoctorDiagnostic(rootDir, options);
+  const lines = [
+    'TSQ_DOCTOR_MACHINE_V1',
+    `root\t${machineValue(diagnostic.rootDir)}`,
+    diagnostic.config.loaded
+      ? `config\tok\tpath=${machineValue(diagnostic.config.path ?? '')}`
+      : `config\terror\tmessage=${machineValue(diagnostic.config.error ?? 'missing')}`,
+    `changed\t${diagnostic.changedScope.present ? 'ok' : 'missing'}\tfiles=${machineList(diagnostic.changedScope.files)}`,
+    `files\tsources=${diagnostic.files.sourceCount}\ttests=${diagnostic.files.testCount}`,
+    `scripts\tnames=${machineList(diagnostic.packageScripts.names)}\tcoverage=${machineList(diagnostic.packageScripts.coverageCandidates)}\ttests=${machineList(diagnostic.packageScripts.testCandidates)}`,
+    `coverage\t${diagnostic.coverage.lcovExists ? 'ok' : 'missing'}\tlcovPath=${machineValue(diagnostic.coverage.lcovPath)}\tgenerateCommand=${diagnostic.coverage.generateCommandConfigured ? machineList(diagnostic.coverage.generateCommand) : 'none'}`,
+    `mutation\ttestCommand=${machineList(diagnostic.mutations.testCommand)}\truntimeMirrorRoots=${machineList(diagnostic.mutations.runtimeMirrorRoots)}`,
+    ...diagnostic.risks.map((risk) => `risk\t${risk.level}\t${risk.code}\t${machineValue(risk.message)}\thint=${machineValue(risk.hint)}`),
+    ...diagnostic.recommendations.map((recommendation) => `recommend\t${recommendation.kind}\t${recommendation.id}\t${machineValue(recommendation.summary)}`)
+  ];
   return `${lines.join('\n')}\n`;
 }
 

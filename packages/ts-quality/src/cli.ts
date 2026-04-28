@@ -8,6 +8,7 @@ import {
   initProject,
   materializeProject,
   renderDoctor,
+  renderDoctorMachine,
   renderGovernance,
   renderLatestExplain,
   renderLatestReport,
@@ -64,13 +65,14 @@ const OPTION_KINDS = new Map<string, OptionKind>([
   ['--timeout-ms', 'value'],
   ['--observed-at', 'value'],
   ['--json', 'flag'],
+  ['--machine', 'flag'],
   ['--help', 'flag'],
   ['--apply', 'flag']
 ]);
 
 const COMMAND_CONTRACTS = new Map<string, CommandContract>([
   ['init', { allowedValues: ['--root', '--preset'], allowedFlags: [], maxPositionals: 1 }],
-  ['doctor', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: [], maxPositionals: 1 }],
+  ['doctor', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: ['--machine'], maxPositionals: 1 }],
   ['materialize', { allowedValues: ['--root', '--config', '--out-dir'], allowedFlags: [], maxPositionals: 1 }],
   ['check', { allowedValues: ['--root', '--config', '--changed', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
   ['explain', { allowedValues: ['--root', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
@@ -259,7 +261,7 @@ First focused witness:
 
 Core commands:
 - init [--preset <name>]                   create starter control-plane files
-- doctor                                    inspect adoption readiness without running tests
+- doctor [--machine]                       inspect adoption readiness without running tests
 - materialize [--out-dir <dir>]            write boring runtime JSON from config/support files
 - check [--changed <a,b>] [--run-id <id>]  write the immutable evidence run bundle
 - explain|report|plan|govern --run-id <id> project a persisted run without re-checking
@@ -288,10 +290,11 @@ Creates starter control-plane files. Presets only change generated starter confi
 `;
   }
   if (command === 'doctor') {
-    return `Usage: ts-quality doctor [--root <dir>] [--changed <a,b,c>] [--config <file>]
+    return `Usage: ts-quality doctor [--root <dir>] [--changed <a,b,c>] [--config <file>] [--machine]
 
 Inspects package scripts, config, changed scope, LCOV presence, coverage.generateCommand, runtime mirror roots, and likely source-vs-dist coverage risk.
 Read-only: doctor does not run tests or mutate package.json.
+Use --machine for the compact harnessed-LLM / agent diagnostic line protocol; reserve --json on other commands for CI-style generic JSON projections.
 `;
   }
   if (command === 'materialize') {
@@ -442,7 +445,9 @@ function main(): void {
     if (explicitConfigPath) {
       doctorOptions.configPath = explicitConfigPath;
     }
-    process.stdout.write(renderDoctor(cwd, Object.keys(doctorOptions).length > 0 ? doctorOptions : undefined));
+    process.stdout.write(hasFlag(parsed, '--machine')
+      ? renderDoctorMachine(cwd, Object.keys(doctorOptions).length > 0 ? doctorOptions : undefined)
+      : renderDoctor(cwd, Object.keys(doctorOptions).length > 0 ? doctorOptions : undefined));
     return;
   }
 

@@ -164,6 +164,8 @@ For a `check` run:
 
 Always bind downstream review to the exact `--run-id` when automation may see more than one run.
 
+For first-contact target-repo adoption, prefer `ts-quality doctor --machine` before inventing setup steps. It emits a compact line protocol (`TSQ_DOCTOR_MACHINE_V1`) for harnessed LLMs and agents, intentionally not JSON, so the agent can inspect changed-scope, LCOV, source-map, script, and witness-command recommendations without spending tokens on a heavy object tree. Use existing `--json` surfaces such as `report --json` or `attest verify --json` when CI or downstream tooling needs full JSON projections.
+
 ## Editing workflow for harnessed LLMs
 
 1. State the task slice in one sentence.

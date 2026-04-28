@@ -46,6 +46,10 @@ export declare function renderDoctor(rootDir: string, options?: {
     changedFiles?: string[];
     configPath?: string;
 }): string;
+export declare function renderDoctorMachine(rootDir: string, options?: {
+    changedFiles?: string[];
+    configPath?: string;
+}): string;
 export declare function renderLatestReport(rootDir: string, format: 'markdown' | 'json', options?: RunDecisionOptions): string;
 export declare function renderLatestExplain(rootDir: string, options?: RunDecisionOptions): string;
 export declare function renderTrend(rootDir: string): string;

@@ -29,11 +29,11 @@
       "purpose": "Inspect target-repo adoption readiness without executing tests or mutating files.",
       "category": "setup",
       "allowedValueOptions": ["--root", "--config", "--changed"],
-      "allowedFlagOptions": [],
+      "allowedFlagOptions": ["--machine"],
       "reads": ["package.json", "ts-quality.config.* when present", "source/test file tree", "coverage/lcov.info when present"],
       "writes": [],
-      "artifacts": ["human-readable adoption diagnostic text on stdout"],
-      "automationNotes": ["Use before check to discover missing changed scope, missing LCOV/generateCommand, and TypeScript dist source-map coverage risk."]
+      "artifacts": ["human-readable adoption diagnostic text on stdout", "compact harnessed-LLM diagnostic line protocol on stdout when --machine is passed"],
+      "automationNotes": ["Use before check to discover missing changed scope, missing LCOV/generateCommand, and TypeScript dist source-map coverage risk.", "Use --machine for agents and harnessed LLMs because it avoids heavy JSON token overhead; keep --json for generic CI/report projections on commands that already expose it."]
     },
     {
       "name": "materialize",
