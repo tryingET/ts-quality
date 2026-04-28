@@ -10,8 +10,17 @@ type: "reference"
 
 ## [Unreleased]
 
+### Added
+
+- Added first-witness guidance to the top-level CLI help, `witness test --help`, and README quickstart so fresh operators can move from a bounded review to one focused execution witness without reading internals end to end.
+
+### Changed
+
+- Updated the product posture snapshot now that `0.1.6` is public, narrowing the next production-readiness proof to real outside-repo first-witness adoption.
+
 ### Fixed
 
+- Ignored the Pi subagent self-memory file that can be produced by local harness state.
 - Fixed release publication verification so both GitHub Actions and local release verification retry the fresh public `npx -p ts-quality@<version> ts-quality --help` installability check after npm publish, and so the proven tarball still attaches to the GitHub Release once npm publish succeeds.
 
 ## [0.1.6] - 2026-04-28

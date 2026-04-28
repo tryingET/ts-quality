@@ -237,6 +237,10 @@ First bounded review:
   ts-quality explain --run-id review-001
   ts-quality report --run-id review-001
 
+First focused witness:
+  ts-quality witness test --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.ts --test-files test/auth/token.test.ts --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- npm test -- token
+  ts-quality check --changed src/auth/token.ts --run-id review-001
+
 Core commands:
 - init                                      create starter control-plane files
 - materialize [--out-dir <dir>]            write boring runtime JSON from config/support files
@@ -342,13 +346,15 @@ Generates an Ed25519 keypair for local attestation workflows. Do not commit priv
     return `Usage: ts-quality witness test --invariant <id> --scenario <id> --source-files <a,b> [--test-files <a,b>] --out <file> [--timeout-ms <ms>] [--observed-at <iso>] [--root <dir>] -- <command...>
 
 Runs one explicit proof command and writes an execution witness plus receipt sidecar.
-Keep commands narrow: a focused witness is stronger product evidence than a repo-global green test run.
+Use this when a lexical invariant match should graduate to execution-backed support for one scenario.
+Keep commands narrow: one invariant, one scenario, one changed behavior, and one focused test command are stronger product evidence than a repo-global green test run.
 `;
   }
   if (command === 'witness' && subcommand === 'refresh') {
     return `Usage: ts-quality witness refresh [--root <dir>] [--config <file>] [--changed <a,b,c>]
 
 Runs configured execution witness commands impacted by the current changed scope.
+Use this before check when your invariant scenarios already declare witness commands and you want witness artifact churn to be an explicit stage.
 Pass --changed in automation unless config changeSet.files or a diff file supplies scope.
 `;
   }

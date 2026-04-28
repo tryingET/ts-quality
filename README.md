@@ -131,6 +131,19 @@ npx ts-quality report --run-id review-001
 npx ts-quality govern --run-id review-001
 ```
 
+When one invariant scenario needs runtime proof, add one focused witness before the next `check` instead of widening to a repo-global green run:
+
+```bash
+npx ts-quality witness test \
+  --invariant auth.refresh.validity \
+  --scenario expired-boundary \
+  --source-files src/auth/token.ts \
+  --test-files test/auth/token.test.ts \
+  --out .ts-quality/witnesses/auth-refresh-expired-boundary.json \
+  -- npm test -- token
+npx ts-quality check --changed src/auth/token.ts --run-id review-001
+```
+
 Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example and `docs/adoption/agent-integration-how-to.md` for brownfield adoption.
 
 ### 2) Evaluate this repo from source
@@ -228,7 +241,7 @@ When `--run-id` is omitted on `explain`, `report`, `plan`, `govern`, or `authori
 
 `trend` only compares the latest run against the nearest earlier **comparable** run. If changed scope, invariant baseline, or snapped policy/constitution baseline differs, it reports that no comparable prior run exists instead of inventing a misleading delta.
 
-`witness refresh` is the repo-native pre-check surface for running all configured impacted execution-witness commands from the current changed scope and writing their artifacts before `check`. `check` also auto-generates those same configured witnesses when you skip the explicit pre-refresh step, but `witness refresh` is useful in CI or when you want witness artifact churn to be an explicit stage. For the canonical witness contract and config surface, see `docs/invariant-dsl.md` and `docs/config-reference.md`; for the recommended CI/operator flow, see `docs/ci-integration.md`.
+`witness test` is the first-witness surface: use it for one invariant, one scenario, one changed behavior, and one focused proof command when lexical support should become execution-backed support. `witness refresh` is the repo-native pre-check surface for running all configured impacted execution-witness commands from the current changed scope and writing their artifacts before `check`. `check` also auto-generates those same configured witnesses when you skip the explicit pre-refresh step, but `witness refresh` is useful in CI or when you want witness artifact churn to be an explicit stage. For the canonical witness contract and config surface, see `docs/invariant-dsl.md` and `docs/config-reference.md`; for the recommended CI/operator flow, see `docs/ci-integration.md`.
 
 Agent-facing guides are split by job:
 - `docs/harnessed-llm-operator-guide.md` for AI agents maintaining or reviewing this `ts-quality` repo itself: read order, command selection, artifact boundaries, and improvement/removal candidates.

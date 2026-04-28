@@ -891,6 +891,8 @@ test('top-level help teaches the first bounded review trust contract', () => {
   assert.equal(result.status, 0);
   assert.match(result.stdout, /First bounded review:/);
   assert.match(result.stdout, /ts-quality check --changed src\/file\.ts --run-id review-001/);
+  assert.match(result.stdout, /First focused witness:/);
+  assert.match(result.stdout, /ts-quality witness test --invariant auth\.refresh\.validity/);
   assert.match(result.stdout, /check requires explicit changed scope/);
   assert.match(result.stdout, /Machine truth is under \.ts-quality\/runs\/<run-id>\//);
   assert.equal(result.stderr, '');
@@ -958,10 +960,12 @@ test('attest keygen creates a usable key pair and reports exact output paths', (
   assert.match(result.stdout, /^Artifact: verdict\.json$/m);
 });
 
-test('witness test --help renders usage', () => {
+test('witness test --help renders first-witness habit guidance', () => {
   const result = spawnSync('node', [cli, 'witness', 'test', '--help'], { encoding: 'utf8' });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Usage: ts-quality witness test/);
+  assert.match(result.stdout, /lexical invariant match should graduate to execution-backed support/);
+  assert.match(result.stdout, /one invariant, one scenario, one changed behavior/);
   assert.equal(result.stderr, '');
 });
 

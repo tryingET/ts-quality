@@ -27,7 +27,7 @@ This file should be **exceptionally useful**: concise, grounded in shipped truth
 
 ## Posture in one sentence
 
-`ts-quality` already has the core deterministic trust layers in place — scoped evidence, mutation pressure, invariant reasoning, governance, legitimacy, run-bound artifacts, public npm release, Trusted Publishing provenance, representative installed-package proof, production-clean package README presentation, and first-user CLI help — but its main maturity gap is turning those layers into a repeatable outside-repo adoption habit where a fresh operator can create one bounded, witness-backed review without repo-internal scaffolding.
+`ts-quality` already has the core deterministic trust layers in place — scoped evidence, mutation pressure, invariant reasoning, governance, legitimacy, run-bound artifacts, public npm release, Trusted Publishing provenance, representative installed-package proof, production-clean npm README presentation, and first-user CLI help — but its main maturity gap is turning those layers into repeated outside-repo adoption where fresh operators can keep witness-backed reviews habitual across real repos without repo-internal scaffolding.
 
 ## Product maturity map
 
@@ -43,8 +43,8 @@ This file should be **exceptionally useful**: concise, grounded in shipped truth
 | Artifact contract | `run.json`, verdict/report artifacts, decision context, authorization outputs, amendment JSON/text, PR summaries, trend output, and sample artifacts exist. | Artifacts behave like an audit packet: machine-stable, human-inspectable, and projection-aware. | Artifact authority and projection boundaries must stay obvious as outputs multiply. | Concise Markdown and JSON artifacts tell the same story, with no competing authority. |
 | Operator summaries | `pr-summary.md`, check summaries, explain/report/plan/govern/authorize surfaces project key evidence. | A reviewer can start from one concise summary and know the riskiest evidence gap plus next action. | Summaries must stay short while preserving provenance modes and run-bound truth. | The most common review summary names explicit/inferred/missing support for the riskiest claim. |
 | CI integration | Build/test/coverage/witness/check guidance exists and the repo has deterministic verification scripts. | CI gives a reproducible trust packet for each bounded change. | Current docs are truthful but need continued validation against outside-repo usage. | A fresh CI integration can run the documented sequence and produce interpretable artifacts. |
-| Packaged outside-repo use | Public npm publishing now works through GitHub Release + Trusted Publishing/OIDC, `smoke:packaging` proves installed CLI/API/types plus representative review, governance, legitimacy, materialized-config, drift, and monorepo fixture flows, and the staged package README is frontmatter-free/version-neutral. | Installed package use should feel production-clean from the first public page through first bounded review. | The proof is strong, but the public npm README correction still needs the next release, and first-witness adoption needs to become the obvious next habit after the first run. | npm shows the production-clean README for the latest package, and a fresh target repo can follow a minimal bounded review plus one focused witness without hidden repo memory. |
-| CLI first-user guidance | Top-level and command-specific help now teach the first bounded review contract, explicit changed-scope preconditions, `--run-id` habits, and run artifact authority. | Operators can discover the trust contract from the CLI before reading deeper docs. | Help explains the first run; the next maturity gap is making the first useful witness equally discoverable and easy. | A fresh operator can move from `--help` to `check --changed ... --run-id ...` to one focused `witness test`/`witness refresh` proof without hidden repo memory. |
+| Packaged outside-repo use | Public npm publishing now works through GitHub Release + Trusted Publishing/OIDC, `smoke:packaging` proves installed CLI/API/types plus representative review, governance, legitimacy, materialized-config, drift, and monorepo fixture flows, and npm now shows the production-clean frontmatter-free/version-neutral README. | Installed package use should feel production-clean from the first public page through first bounded review. | The proof is strong; the remaining gap is proving the same habit in real outside repos instead of only fixture-backed smoke and docs. | One fresh target repo follows a minimal bounded review plus one focused witness without hidden repo memory, and the resulting artifacts are understandable without maintainer narration. |
+| CLI first-user guidance | Top-level and command-specific help now teach the first bounded review contract, explicit changed-scope preconditions, `--run-id` habits, run artifact authority, and the first focused witness path. | Operators can discover the trust contract and the first witness upgrade from the CLI before reading deeper docs. | The CLI now names the habit; the next maturity gap is validating that first-time outside users can execute it correctly in real target repos. | A fresh operator can move from `--help` to `check --changed ... --run-id ...` to one focused `witness test`/`witness refresh` proof without hidden repo memory. |
 | Adoption / rollout guidance | Greenfield and brownfield adoption guides exist with first-slice/witness/control-plane advice. | Adoption guidance helps repos introduce truthful evidence gradually without fake-green rollout. | Guidance must stay aligned with shipped CLI behavior and sample artifacts. | A new repo can land one narrow, behavior-bearing slice with explicit current vs target rollout truth. |
 
 ## Current strengths
@@ -53,13 +53,13 @@ This file should be **exceptionally useful**: concise, grounded in shipped truth
 - The runtime is consistently fail-closed around missing scope, invalid mutation baselines, control-plane drift, path escapes, and unsupported snapshot schemas.
 - Invariant evidence has a meaningful provenance model: explicit, inferred, and missing support are not silently mixed.
 - Legitimacy is unusually concrete for an alpha tool: grants, attestations, overrides, amendments, and authorization decisions are tied to exact runs.
-- The package path is no longer just conceptual; staged packaging, public npm publication, Trusted Publishing provenance, production-clean packaged README staging, first-user CLI help, and representative installed-package review/governance/legitimacy smoke proof exist.
+- The package path is no longer just conceptual; staged packaging, public npm publication, Trusted Publishing provenance, production-clean npm README presentation, first-user CLI help including the first focused witness path, and representative installed-package review/governance/legitimacy smoke proof exist.
 
 ## Current gaps
 
 - The outside-repo operator story is not yet as mature as the repo-internal architecture.
-- The public npm package still needs the next release before the production-clean README and CLI-help improvements are visible as the latest npm presentation.
-- Execution witnesses are powerful but still feel advanced; the desired first-witness habit loop needs to be simpler than reading internals or adoption docs end to end.
+- Outside-repo adoption still needs real target-repo proof beyond fixture-backed packaging smoke and authored walkthroughs.
+- Execution witnesses are now visible in the first-user CLI/README path, but the desired habit loop still needs validation with fresh operators and real repo slices.
 - Concise summaries must keep improving without becoming a second authority over `run.json`.
 - Adoption docs and sample artifacts must stay synchronized with the richer legitimacy and witness surfaces.
 
@@ -73,14 +73,13 @@ A reviewer should be able to run `ts-quality` on a bounded change and understand
 4. whether governance and legitimacy allow the action,
 5. what exact evidence obligation would improve the decision.
 
-A release operator can now repeat representative review/governance/legitimacy flows from an installed package in fixture-backed smoke proof, and the CLI now teaches the first bounded-review contract directly. The next product-readiness step is making the first useful witness-backed review feel equally obvious to a first-time outside user.
+A release operator can now repeat representative review/governance/legitimacy flows from an installed package in fixture-backed smoke proof, npm now presents the production-clean README, and the CLI/README teach the first bounded-review plus first-witness contract directly. The next product-readiness step is validating that this habit works in real outside repos without maintainer narration.
 
 ## Near-term convergence path
 
-1. Release the production-clean package presentation so npm shows the version-neutral README and first-user CLI help in the latest package.
-2. Make first-witness adoption easier to understand and validate.
-3. Continue making concise summaries downstream of `run.json`, not competing authorities.
-4. Preserve artifact compatibility and exact-run binding as the trust surface grows.
+1. Validate the first bounded-review + first-witness habit in at least one real outside target repo.
+2. Continue making concise summaries downstream of `run.json`, not competing authorities.
+3. Preserve artifact compatibility and exact-run binding as the trust surface grows.
 
 ## Hard rules for status language
 
