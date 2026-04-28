@@ -1,0 +1,17 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "pi"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "d137509d30b5067440710ee3353a8ee12cd96deb"
+created_at: "2026-04-28T15:47:16Z"
+intent: "Record the pi-server pilot rerun proving configured LCOV generation clears missing coverage/CRAP pressure and leaves mutation pressure as the truthful remaining blocker."
+files:
+  - "docs/adoption/second-witness-pilot-pi-server.md"
+  - "docs/project/product_posture.md"
+validation:
+  pilot_gate:
+    command: "Local built ts-quality CLI in /tmp/ts-quality-piserver-lcov-pilot-*; configured coverage.generateCommand; check before witness; witness test; check after witness"
+    status: "pass"
+  docs_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
