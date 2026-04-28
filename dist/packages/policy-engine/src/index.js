@@ -102,7 +102,7 @@ function evaluatePolicy(input) {
                 ...claim.obligations.map((item) => item.description)
             ]));
         }
-        reasons.push(`${riskyClaims.length} invariant(s) need stronger test evidence or failure-path coverage.`);
+        reasons.push(...riskyInvariantReasonLines(riskyClaims));
     }
     for (const governanceFinding of input.governance) {
         mergeConfidence -= governanceFinding.level === 'error' ? 20 : 8;
@@ -190,6 +190,42 @@ function invariantModeSummary(claim) {
         `Invariant evidence modes: ${summary.subSignals.map((item) => `${item.signalId}=${item.mode}`).join('; ')}`
     ].filter((item) => Boolean(item));
     return parts.join('; ');
+}
+const INVARIANT_SUPPORT_SIGNAL_IDS = new Set(['focused-test-alignment', 'execution-witness', 'scenario-support']);
+function uniqueSorted(values) {
+    return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+function residualPressureSignalIds(claim) {
+    const summary = claim.evidenceSummary;
+    if (!summary || summary.evidenceSemantics !== 'execution-backed') {
+        return [];
+    }
+    const supportSignalsClear = summary.subSignals
+        .filter((item) => item.signalId === 'execution-witness' || item.signalId === 'scenario-support')
+        .every((item) => item.level === 'clear' && item.mode !== 'missing');
+    if (!supportSignalsClear) {
+        return [];
+    }
+    return uniqueSorted(summary.subSignals
+        .filter((item) => !INVARIANT_SUPPORT_SIGNAL_IDS.has(item.signalId))
+        .filter((item) => item.level === 'warning' || item.level === 'missing' || item.mode === 'missing')
+        .map((item) => item.signalId));
+}
+function riskyInvariantReasonLines(claims) {
+    const residualPressure = claims
+        .map((claim) => ({ claim, signals: residualPressureSignalIds(claim) }))
+        .filter((item) => item.signals.length > 0);
+    const residualClaimIds = new Set(residualPressure.map((item) => item.claim.id));
+    const lines = [];
+    const evidenceGapCount = claims.filter((claim) => !residualClaimIds.has(claim.id)).length;
+    if (evidenceGapCount > 0) {
+        lines.push(`${evidenceGapCount} invariant(s) need stronger test evidence or failure-path coverage.`);
+    }
+    if (residualPressure.length > 0) {
+        const signals = uniqueSorted(residualPressure.flatMap((item) => item.signals));
+        lines.push(`${residualPressure.length} execution-backed invariant(s) still carry residual evidence pressure: ${signals.join(', ')}.`);
+    }
+    return lines;
 }
 function formatInvariantSubSignal(subSignal) {
     return `${subSignal.signalId} [${subSignal.level}; mode=${subSignal.mode}]: ${subSignal.summary}`;

@@ -1194,6 +1194,8 @@ test('check auto-generates execution witnesses for impacted scenarios with confi
   assert.equal(claim.evidenceSummary.evidenceSemantics, 'execution-backed');
   assert.deepEqual(claim.evidenceSummary.executionWitnessFiles, ['.ts-quality/witnesses/auth-refresh-expired-boundary.json']);
   assert.equal(claim.evidenceSummary.scenarioResults[0].supportKind, 'execution-witness');
+  assert.match(run.verdict.reasons.join('\n'), /execution-backed invariant\(s\) still carry residual evidence pressure: .*mutation-pressure/);
+  assert.doesNotMatch(run.verdict.reasons.join('\n'), /need stronger test evidence or failure-path coverage/);
   assert.equal(run.executionWitnesses.autoRan.length, 1);
   assert.equal(run.executionWitnesses.autoRan[0].receiptPath, '.ts-quality/witnesses/auth-refresh-expired-boundary.receipt.json');
   assert.equal(run.executionWitnesses.autoRan[0].receipt.status, 'pass');

@@ -78,9 +78,8 @@ A release operator can now repeat representative review/governance/legitimacy fl
 ## Near-term convergence path
 
 1. Reduce target-repo proof-command selection friction: make the difference between repo-global tests, module-level proof commands, mutation baseline commands, and witness commands easier to discover.
-2. Refine high-level verdict reasons so execution-backed invariants with clear coverage name the residual blocker directly, such as mutation pressure, instead of saying stronger test evidence or failure-path coverage is needed.
-3. Validate the improved coverage-generation and post-witness residual-pressure wording in the next public release/pilot cycle.
-4. Repeat the first bounded-review + first-witness habit in another real outside target repo with less maintainer narration.
+2. Validate the improved coverage-generation and post-witness residual-pressure wording in the next public release/pilot cycle.
+3. Repeat the first bounded-review + first-witness habit in another real outside target repo with less maintainer narration.
 4. Continue making concise summaries downstream of `run.json`, not competing authorities.
 5. Preserve artifact compatibility and exact-run binding as the trust surface grows.
 

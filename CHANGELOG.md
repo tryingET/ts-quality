@@ -13,6 +13,7 @@ type: "reference"
 ### Added
 
 - Added configured LCOV generation during `check`: when `coverage.lcovPath` is missing and `coverage.generateCommand` is configured, `ts-quality` runs the command, fails closed on generation errors, consumes the generated LCOV, and records a `coverageGeneration` receipt.
+- Added residual-pressure-specific verdict reasons for execution-backed invariants so post-witness failures name remaining blockers such as mutation pressure instead of asking for stronger test evidence or failure-path coverage.
 
 ### Changed
 
