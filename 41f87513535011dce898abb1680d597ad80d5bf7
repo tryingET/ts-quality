@@ -1,0 +1,16 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "41f87513535011dce898abb1680d597ad80d5bf7"
+created_at: "2026-04-28T14:24:41Z"
+intent: "Capture first outside-repo first-witness adoption pilot and update production posture with observed adoption friction."
+files:
+  []
+validation:
+  fast_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+  full_gate:
+    command: "Published ts-quality@0.1.7 pilot in temp copy of designmd-foundry: npm test; ts-quality check before witness; witness test; ts-quality check after witness"
+    status: "pass"
