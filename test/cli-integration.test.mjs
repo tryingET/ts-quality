@@ -8,6 +8,11 @@ import { repoRoot, tempCopyOfFixture, latestRunId, readRun, importDist, forgeAtt
 
 const cli = path.join(repoRoot, 'dist', 'packages', 'ts-quality', 'src', 'cli.js');
 
+function stripDecisionContext(reportJson) {
+  const { decisionContext: _decisionContext, ...runJsonFields } = reportJson;
+  return runJsonFields;
+}
+
 test('init creates starter files in an empty repo', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.rmSync(path.join(target, 'ts-quality.config.ts'), { force: true });
@@ -170,6 +175,14 @@ test('report and explain project the current decision context for the selected r
   assert.equal(persistedRun.governance.some((item) => item.ruleId === 'payments-maintainer-approval'), true);
   assert.equal(persistedReport.decisionContext.projection, 'persisted');
   assert.deepEqual(persistedReport.decisionContext.drift, []);
+  assert.deepEqual(stripDecisionContext(persistedReport), persistedRun);
+
+  const reportBeforeDecisionChange = spawnSync('node', [cli, 'report', '--root', target, '--json', '--run-id', 'payments-run'], { encoding: 'utf8' });
+  assert.equal(reportBeforeDecisionChange.status, 0, reportBeforeDecisionChange.stderr);
+  const projectedReportBeforeDecisionChange = JSON.parse(reportBeforeDecisionChange.stdout);
+  assert.equal(projectedReportBeforeDecisionChange.decisionContext.projection, 'projected');
+  assert.deepEqual(projectedReportBeforeDecisionChange.decisionContext.drift, []);
+  assert.deepEqual(stripDecisionContext(projectedReportBeforeDecisionChange), persistedRun);
 
   fs.writeFileSync(path.join(target, '.ts-quality', 'approvals.json'), `${JSON.stringify([
     {
