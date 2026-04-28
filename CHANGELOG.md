@@ -12,6 +12,10 @@ type: "reference"
 
 ## [0.2.0] - 2026-04-28
 
+### Breaking Changes
+
+- Run artifacts now declare schema version `0.2.0` instead of `0.1.0`. Agents, parsers, fixtures, dashboards, and prompts that hard-code `run.version === "0.1.0"` must accept `0.2.0` and tolerate the new additive fields (`coverageGeneration`, `analysisWarnings`, `mutationRemediation`, `verdict.confidenceBreakdown`, and `nextEvidenceAction`).
+
 ### Added
 
 - Added configured LCOV generation during `check`: when `coverage.lcovPath` is missing and `coverage.generateCommand` is configured, `ts-quality` runs the command, fails closed on generation errors, consumes the generated LCOV, and records a `coverageGeneration` receipt.

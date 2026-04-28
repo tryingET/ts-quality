@@ -193,6 +193,9 @@ function releaseTitleFromNotes(version, notesPath) {
   if (!title.startsWith(`ts-quality v${version} `)) {
     throw new Error(`Release notes title must start with "ts-quality v${version} ", got: ${title}`);
   }
+  if (title === `ts-quality v${version} — deterministic trust for TypeScript changes`) {
+    throw new Error('Release notes title is still the generic fallback; curate a release-specific title before publishing.');
+  }
   return title;
 }
 
@@ -201,6 +204,51 @@ function releaseBodyFromNotes(markdown) {
   const stripped = stripFrontmatter(markdown).trimStart();
   const bodySection = /^## Release body\s+([\s\S]*)$/mu.exec(stripped);
   return `${(bodySection?.[1] ?? stripped).trim()}\n`;
+}
+
+/**
+ * @param {string} markdown
+ * @param {string} heading
+ */
+function markdownSection(markdown, heading) {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  const match = new RegExp(`^### ${escaped}\\s+([\\s\\S]*?)(?:\\n### |$)`, 'mu').exec(markdown);
+  return match?.[1]?.trim() ?? '';
+}
+
+/** @param {string} section */
+function sectionHasMeaningfulContent(section) {
+  const normalized = section.replace(/<!--([\s\S]*?)-->/gu, '').trim();
+  return normalized.length > 0 && !/^(?:[-*]\s*)?(?:none|n\/a|not applicable)\.?$/iu.test(normalized);
+}
+
+/**
+ * @param {string} version
+ * @param {string} notesPath
+ */
+function assertReleaseNotesContract(version, notesPath) {
+  const markdown = stripFrontmatter(fs.readFileSync(notesPath, 'utf8'));
+  const body = releaseBodyFromNotes(markdown);
+  releaseTitleFromNotes(version, notesPath);
+  const requiredSections = ['Breaking Changes'];
+  const changeSections = ['Added', 'Changed', 'Fixed'];
+  const missingRequired = requiredSections.filter((heading) => !new RegExp(`^### ${heading}\\b`, 'mu').test(body));
+  if (missingRequired.length > 0) {
+    throw new Error(`Release notes for v${version} must include release-please-style section(s): ${missingRequired.join(', ')}.`);
+  }
+  if (!changeSections.some((heading) => new RegExp(`^### ${heading}\\b`, 'mu').test(body))) {
+    throw new Error(`Release notes for v${version} must include at least one release-please-style change section: ${changeSections.join(', ')}.`);
+  }
+  if (/^### Highlights\b/mu.test(body) && !changeSections.some((heading) => sectionHasMeaningfulContent(markdownSection(body, heading)))) {
+    throw new Error(`Release notes for v${version} use Highlights without categorized Added/Changed/Fixed content.`);
+  }
+  const breaking = markdownSection(body, 'Breaking Changes');
+  if (sectionHasMeaningfulContent(breaking)) {
+    const agentNotes = markdownSection(body, 'Agent migration notes');
+    if (!sectionHasMeaningfulContent(agentNotes)) {
+      throw new Error(`Release notes for v${version} include Breaking Changes and must include non-empty Agent migration notes for downstream agents/operators.`);
+    }
+  }
 }
 
 /**
@@ -213,6 +261,64 @@ function materializeGithubReleaseNotesBody(version, notesPath) {
   const outputPath = path.join(outputDir, `v${version}.md`);
   fs.writeFileSync(outputPath, releaseBodyFromNotes(fs.readFileSync(notesPath, 'utf8')), 'utf8');
   return outputPath;
+}
+
+/**
+ * @param {string} version
+ * @returns {string}
+ */
+function changelogSectionForVersion(version) {
+  const changelogPath = path.join(root, 'CHANGELOG.md');
+  if (!fs.existsSync(changelogPath)) {
+    return '';
+  }
+  const changelog = fs.readFileSync(changelogPath, 'utf8');
+  const match = new RegExp(`^## \\[?${version.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\]?.*?\\n([\\s\\S]*?)(?=^## )`, 'mu').exec(changelog);
+  return match?.[1]?.trim() ?? '';
+}
+
+/**
+ * @param {string} version
+ * @returns {string}
+ */
+function generatedReleaseBodyFromChangelog(version) {
+  const section = changelogSectionForVersion(version);
+  const breaking = markdownSection(section, 'Breaking Changes');
+  const added = markdownSection(section, 'Added');
+  const changed = markdownSection(section, 'Changed');
+  const fixed = markdownSection(section, 'Fixed');
+  const lines = [
+    `This release is prepared through the repo's GitHub Release authority path. Publishing the GitHub Release for tag \`v${version}\` triggers \`.github/workflows/publish.yml\` in the \`npm-publish\` environment, which validates the tag/version contract, re-runs deterministic package proof, publishes the staged package to npm through Trusted Publishing/OIDC, verifies public installability, and attaches the proven tarball to the GitHub Release.`,
+    '',
+    '### Breaking Changes',
+    breaking || '- None.',
+    '',
+    '### Added',
+    added || '- None.',
+    '',
+    '### Changed',
+    changed || '- None.',
+    '',
+    '### Fixed',
+    fixed || '- None.',
+    '',
+    '### Agent migration notes',
+    breaking ? '- Review each breaking-change bullet above and update any agent prompts, parsers, fixtures, or consumers that depend on the changed public artifact/CLI contract before relying on this release.' : '- No breaking-change migration is required for agents beyond ordinary release-note review.',
+    '',
+    '### Verification before release',
+    '',
+    '```bash',
+    'npm run verify --silent',
+    `RELEASE_TAG=v${version} GITHUB_REF_TYPE=tag npm run release:intent:check --silent`,
+    '```',
+    '',
+    '### Install',
+    '',
+    '```bash',
+    `npx -p ts-quality@${version} ts-quality --help`,
+    '```'
+  ];
+  return lines.join('\n');
 }
 
 /** @param {string} version */
@@ -282,11 +388,13 @@ function writeReleaseNotes(version, apply) {
   const notesPath = existingReleaseNotesPath(version);
   const relativeNotesPath = path.relative(root, notesPath);
   if (fs.existsSync(notesPath)) {
+    assertReleaseNotesContract(version, notesPath);
     return relativeNotesPath;
   }
-  const content = `---\nsummary: "GitHub release notes for ts-quality v${version}."\nread_when:\n  - "When creating the public GitHub Release for ts-quality v${version}"\ntype: "draft"\n---\n\n# GitHub release draft — ts-quality v${version}\n\n## Title\n\n\`ts-quality v${version} — deterministic trust for TypeScript changes\`\n\n## Release body\n\nThis release is prepared through the repo's GitHub Release authority path. Publishing the GitHub Release for tag \`v${version}\` triggers \`.github/workflows/publish.yml\` in the \`npm-publish\` environment, which validates the tag/version contract, re-runs deterministic package proof, publishes the staged package to npm through Trusted Publishing/OIDC, verifies public installability, and attaches the proven tarball to the GitHub Release.\n\n### Verification before release\n\n\`\`\`bash\nnpm run verify --silent\nRELEASE_TAG=v${version} GITHUB_REF_TYPE=tag npm run release:intent:check --silent\n\`\`\`\n\n### Install\n\n\`\`\`bash\nnpx -p ts-quality@${version} ts-quality --help\n\`\`\`\n`;
+  const content = `---\nsummary: "GitHub release notes for ts-quality v${version}."\nread_when:\n  - "When creating the public GitHub Release for ts-quality v${version}"\ntype: "draft"\n---\n\n# GitHub release draft — ts-quality v${version}\n\n## Title\n\n\`ts-quality v${version} — release-ready evidence updates\`\n\n## Release body\n\n${generatedReleaseBodyFromChangelog(version)}\n`;
   if (apply) {
     fs.writeFileSync(notesPath, content, 'utf8');
+    assertReleaseNotesContract(version, notesPath);
   }
   return relativeNotesPath;
 }
@@ -405,6 +513,7 @@ function commandGithub(options) {
   if (external.githubRelease) {
     throw new Error(`GitHub Release ${tag} already exists: ${external.githubRelease.url}`);
   }
+  assertReleaseNotesContract(version, notesPath);
   const releaseTitle = releaseTitleFromNotes(version, notesPath);
   const notesFileForGithub = apply ? path.relative(root, materializeGithubReleaseNotesBody(version, notesPath)) : notesRelative;
   const command = ['release', 'create', tag, '--repo', repoSlug, '--title', releaseTitle, '--notes-file', notesFileForGithub, '--latest'];

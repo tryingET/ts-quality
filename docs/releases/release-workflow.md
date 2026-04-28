@@ -85,7 +85,7 @@ npm run release:github -- --version <next-version> --apply
 
 That creates the GitHub Release with the curated release notes. The release orchestrator reads `## Title` from the notes file for the GitHub Release title and uses only the `## Release body` section as the public release body, so draft scaffolding such as `# GitHub release draft` does not appear on the release page.
 
-Prefer release bodies shaped like the upstream Pi release style: concise categorized sections such as `### New Features`, `### Breaking Changes`, `### Added`, `### Changed`, and `### Fixed`, with bullets that mention the user-visible effect first and link supporting docs or issues when available.
+Release bodies are validated as local release-please-style notes, not freeform highlights. Normal releases must include `### Breaking Changes` plus at least one categorized change section such as `### Added`, `### Changed`, or `### Fixed`; `### Highlights` is not a substitute for those categories. If `### Breaking Changes` contains anything other than `None`, the notes must also include non-empty `### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update before relying on the release.
 
 Publishing the GitHub Release triggers `.github/workflows/publish.yml`.
 

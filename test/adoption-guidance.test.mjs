@@ -119,6 +119,8 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
   expectContainsAll(releaseOrchestrator, [
     'function releaseTitleFromNotes',
     'function releaseBodyFromNotes',
+    'function assertReleaseNotesContract',
+    'function generatedReleaseBodyFromChangelog',
     '^## Release body\\s+([\\s\\S]*)$',
     "const releaseTitle = releaseTitleFromNotes(version, notesPath);",
     "'--title', releaseTitle",
@@ -133,6 +135,8 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     '`npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality --help did not pass`'
   ], 'scripts/release-orchestrator.mjs');
   assert.equal(releaseOrchestrator.includes('`ts-quality v${version} — deterministic trust for TypeScript changes`, \'--notes-file\''), false, 'release create title must come from release notes instead of a hard-coded generic title');
+  assert.equal(releaseOrchestrator.includes('Release notes title is still the generic fallback'), true, 'release notes must reject the generic fallback title');
+  assert.equal(releaseOrchestrator.includes('Agent migration notes'), true, 'release notes with breaking changes must include agent migration guidance');
 
   const workflowDoc = readRepoFile('docs/releases/release-workflow.md');
   expectContainsAll(workflowDoc, [
@@ -146,8 +150,26 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'avoids configuring `actions/setup-node` with `registry-url`',
     'workflow filename: `publish.yml`',
     'environment name: `npm-publish`',
-    'NPM_CONFIG_MIN_RELEASE_AGE=0'
+    'NPM_CONFIG_MIN_RELEASE_AGE=0',
+    'Release bodies are validated as local release-please-style notes',
+    '`### Breaking Changes` plus at least one categorized change section',
+    '`### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update'
   ], 'docs/releases/release-workflow.md');
+});
+
+test('v0.2.0 release notes use categorized breaking-change and agent migration sections', () => {
+  const releaseNotes = readRepoFile('docs/releases/2026-04-28-v0.2.0-github-release.md');
+  expectContainsAll(releaseNotes, [
+    '### Breaking Changes',
+    '### Added',
+    '### Changed',
+    '### Fixed',
+    '### Agent migration notes',
+    'run.version === "0.1.0"',
+    'accept `0.2.0`',
+    'coverage-built-output-without-source-map'
+  ], 'docs/releases/2026-04-28-v0.2.0-github-release.md');
+  assert.equal(releaseNotes.includes('### Highlights'), false);
 });
 
 test('release intent validation binds the release tag to the public package version', () => {
