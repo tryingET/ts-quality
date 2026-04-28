@@ -2,8 +2,8 @@ kind: "ai-society/commit-provenance/v1"
 tool: "/commit"
 actor: "pi"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
-commit: "09ddf2a$(git rev-parse HEAD | cut -c8-)"
-created_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+commit: "09ddf2a0271d729b6675e4b1381b7fc4da0d12dd"
+created_at: "2026-04-28T15:10:15Z"
 intent: "Reduce target-repo proof-command selection friction by clarifying first-witness CLI help, README quickstart, invariant/config references, and the pi-server pilot follow-up."
 files:
   - "packages/ts-quality/src/cli.ts"
@@ -17,6 +17,12 @@ files:
 validation:
   fast_gate:
     command: "node --test test/cli-integration.test.mjs"
+    status: "pass"
+  typecheck_gate:
+    command: "npm run typecheck"
+    status: "pass"
+  lint_gate:
+    command: "npm run lint"
     status: "pass"
   full_gate:
     command: "npm run verify"
