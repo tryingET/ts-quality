@@ -10,6 +10,8 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-28
+
 ### Added
 
 - Added configured LCOV generation during `check`: when `coverage.lcovPath` is missing and `coverage.generateCommand` is configured, `ts-quality` runs the command, fails closed on generation errors, consumes the generated LCOV, and records a `coverageGeneration` receipt.
