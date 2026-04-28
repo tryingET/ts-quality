@@ -1,0 +1,41 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "pi"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "8dc476e7f4e44e7524590ed7732bc336395f1b8d"
+created_at: "2026-04-28T15:30:17Z"
+intent: "Close the LCOV automation gap from outside-repo pilots by generating configured LCOV during check when missing, failing closed on generation errors, and recording a run-local coverageGeneration receipt."
+files:
+  - "packages/ts-quality/src/index.ts"
+  - "packages/ts-quality/src/config.ts"
+  - "packages/ts-quality/src/cli.ts"
+  - "packages/evidence-model/src/index.ts"
+  - "test/cli-integration.test.mjs"
+  - "test/config-loading.test.mjs"
+  - "README.md"
+  - "docs/config-reference.md"
+  - "docs/ci-integration.md"
+  - "docs/adoption/minimal-external-walkthrough.md"
+  - "docs/adoption/second-witness-pilot-pi-server.md"
+  - "CHANGELOG.md"
+validation:
+  build_gate:
+    command: "npm run build"
+    status: "pass"
+  targeted_gates:
+    commands:
+      - "node --test test/cli-integration.test.mjs"
+      - "node --test test/config-loading.test.mjs"
+    status: "pass"
+  typecheck_gate:
+    command: "npm run typecheck"
+    status: "pass"
+  lint_gate:
+    command: "npm run lint"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pass"
+  docs_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
