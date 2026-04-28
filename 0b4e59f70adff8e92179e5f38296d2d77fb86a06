@@ -1,0 +1,16 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "0b4e59f70adff8e92179e5f38296d2d77fb86a06"
+created_at: "2026-04-28T14:39:10Z"
+intent: "Reduce first outside-repo witness pilot friction by clarifying post-witness residual evidence pressure and witness command ergonomics."
+files:
+  []
+validation:
+  fast_gate:
+    command: "node --test test/cli-integration.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pass"
