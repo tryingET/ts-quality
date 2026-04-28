@@ -1,0 +1,16 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "ff7ea6f16c9f06db0b7d34df7b907b1814829e41"
+created_at: "2026-04-28T15:01:36Z"
+intent: "Capture second outside-repo first-witness pilot against pi-server and update production posture with repeated adoption evidence."
+files:
+  []
+validation:
+  fast_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+  full_gate:
+    command: "Published ts-quality@0.1.7 pilot in temp copy of pi-server: build; module test; ts-quality check before witness; witness test; ts-quality check after witness"
+    status: "pass"
