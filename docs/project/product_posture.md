@@ -19,9 +19,7 @@ It does **not** replace:
 
 - shipped runtime/source truth in package code, tests, README, and architecture docs
 - AK task or decision authority
-- `docs/project/strategic_goals.md`
-- `docs/project/tactical_goals.md`
-- `docs/project/operating_plan.md`
+- live queue, sequencing, claim, or completion state
 
 This file should be **exceptionally useful**: concise, grounded in shipped truth, and strong enough to guide strategy without becoming a task log, release log, or mandatory status file for every repo.
 
@@ -90,14 +88,13 @@ A release operator can now repeat representative review/governance/legitimacy fl
 - Say “lexical support is deterministic evidence” rather than “lexical support proves behavior.”
 - Say “authorization is run-bound” rather than “agent trust is ambient.”
 - Say “sample outputs are projections” rather than “sample outputs are a second authority.”
-- Keep this posture file product-level; task-level current truth belongs in AK and `operating_plan.md`.
+- Keep this posture file product-level; task-level current truth belongs in AK tasks, not in a parallel operating-plan document.
 
 ## Authority map
 
 - Durable ambition: `docs/project/vision.md`
 - Product posture: this file
 - Shipped operator/runtime truth: `README.md`, `ARCHITECTURE.md`, `docs/config-reference.md`, `docs/invariant-dsl.md`, `docs/ci-integration.md`, package source, and tests
-- Active direction: `docs/project/strategic_goals.md`, `docs/project/tactical_goals.md`, `docs/project/operating_plan.md`
-- Live execution truth: repo-local AK tasks
+- Live execution and sequencing truth: repo-local AK tasks
 - Raw session evidence: `diary/`
 - Crystallized learning: `docs/learnings/`

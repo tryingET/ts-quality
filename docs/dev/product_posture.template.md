@@ -38,7 +38,7 @@ Do **not** make it the runtime authority for behavior that code, artifacts, AK, 
 summary: "Product posture snapshot for <repo>: current maturity, target product experience, major gaps, and proof signals."
 read_when:
   - "When deciding where <repo> stands relative to its product vision"
-  - "When selecting or reviewing strategic goals from product maturity rather than task history"
+  - "When selecting or reviewing product bets from maturity rather than task history"
   - "When checking whether active work converges on the intended product experience"
 type: "reference"
 ---
@@ -47,7 +47,7 @@ type: "reference"
 
 ## Purpose
 
-This file is the status-bearing bridge between durable vision and active execution.
+This file is the status-bearing bridge between durable vision and product-maturity choices.
 
 It captures where the product stands, what target experience it is converging toward, which gaps matter most, and what proof would close those gaps.
 
@@ -55,11 +55,9 @@ It does **not** replace:
 
 - shipped runtime/source truth
 - AK task or decision authority
-- `docs/project/strategic_goals.md`
-- `docs/project/tactical_goals.md`
-- `docs/project/operating_plan.md`
+- live queue, sequencing, claim, or completion state
 
-This file should be **exceptionally useful**: concise, grounded in shipped truth, and strong enough to guide strategy without becoming a task log or second operating plan.
+This file should be **exceptionally useful**: concise, grounded in shipped truth, and strong enough to guide product choices without becoming a task log or second operating plan.
 
 ## Posture in one sentence
 
@@ -96,15 +94,14 @@ This file should be **exceptionally useful**: concise, grounded in shipped truth
 
 - Say “<truthful current capability>” rather than “<over-claim>.”
 - Say “<target-state phrase>” only when <proof condition> has landed.
-- Keep this file product-level; task-level current truth belongs in AK and `operating_plan.md`.
+- Keep this file product-level; task-level current truth belongs in AK tasks, not in a parallel operating-plan document.
 
 ## Authority map
 
 - Durable ambition: `docs/project/vision.md`
 - Product posture: this file
 - Shipped runtime/operator truth: <README/ARCHITECTURE/runtime docs/source/tests>
-- Active direction: `docs/project/strategic_goals.md`, `docs/project/tactical_goals.md`, `docs/project/operating_plan.md`
-- Live execution truth: <AK or repo-declared task authority>
+- Live execution and sequencing truth: <AK or repo-declared task authority>
 - Raw session evidence: `diary/`
 - Crystallized learning: `docs/learnings/`
 ```

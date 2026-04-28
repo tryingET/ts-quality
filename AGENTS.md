@@ -43,8 +43,7 @@ The monorepo root is the control plane; package-specific runtime behavior belong
   - ready tasks: `ak task ready --format json`
   - inspect repo task detail: `ak task list --format json --verbose | jq '.[] | select(.repo == "/home/tryinget/ai-society/softwareco/owned/ts-quality" and .id == <TASK_ID>)'`
   - claim a repo-scoped task: `ak task claim <TASK_ID> --agent pi`
-- Repo direction lives in `docs/project/*`; when direction docs change or you need current posture, use `ak direction import|check|export` from the repo root.
-- Treat `ak direction check` as the authority-reconciliation gate between repo direction docs and AK’s structured direction substrate.
+- Product posture and durable project intent live in `docs/project/product_posture.md`, `purpose.md`, `mission.md`, and `vision.md`; live execution and sequencing belong in AK tasks rather than SG/TG/OP direction docs.
 
 ## Exact-task shortcut
 When the operator provides an exact AK task id, use exact-task mode.
@@ -80,7 +79,7 @@ For exact shipped behavior, read and keep aligned:
 - relevant regression tests under `test/*.mjs`
 - latest relevant `docs/learnings/` and `diary/` entry for the slice you are touching
 
-`docs/project/*` exists for durable direction. Use `purpose.md`, `mission.md`, `vision.md`, `strategic_goals.md`, `tactical_goals.md`, and `operating_plan.md` as the current direction layer, but do **not** treat project prose as richer authority than the README, architecture, runtime code, or current durable learnings when they diverge.
+`docs/project/*` exists for durable product intent and posture. Use `purpose.md`, `mission.md`, `vision.md`, and `product_posture.md` for orientation, but do **not** treat project prose as richer authority than the README, architecture, runtime code, AK tasks, or current durable learnings when they diverge.
 
 ## Validation contract
 - Root gate: `npm run verify`
