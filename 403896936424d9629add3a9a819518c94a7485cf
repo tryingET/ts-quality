@@ -1,0 +1,27 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "403896936424d9629add3a9a819518c94a7485cf"
+created_at: "2026-04-28T02:21:45Z"
+intent: "Make first-witness adoption achievable from the public CLI and README while updating product posture after v0.1.6 and ignoring local Pi self-memory state."
+files:
+  - ".gitignore"
+  - "CHANGELOG.md"
+  - "README.md"
+  - "docs/project/product_posture.md"
+  - "packages/ts-quality/src/cli.ts"
+  - "dist/packages/ts-quality/src/cli.js"
+  - "dist/packages/ts-quality/src/cli.js.map"
+  - "test/cli-integration.test.mjs"
+validation:
+  fast_gate:
+    command: "npm run typecheck --silent && node --test test/cli-integration.test.mjs && npm run lint --silent && node /home/tryinget/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+  full_gate:
+    command: "npm run verify --silent"
+    status: "pass"
+group:
+  index: 1
+  total: 1
+  rationale: "Product-posture follow-through: v0.1.6 made npm presentation public, so the smallest remaining achievable slice was first-witness discoverability plus local harness ignore hygiene."
