@@ -504,6 +504,13 @@ export interface ExecutionWitnessRunSummary {
   skipped: ExecutionWitnessSkippedRecord[];
 }
 
+export interface CoverageGenerationRecord {
+  lcovPath: string;
+  command: string[];
+  attemptedAt: string;
+  receipt: ExecutionReceipt;
+}
+
 export interface AnalysisContext {
   runId: string;
   createdAt: string;
@@ -560,6 +567,7 @@ export interface RunArtifact {
   analysis?: AnalysisContext | undefined;
   controlPlane?: ControlPlaneSnapshot | undefined;
   executionWitnesses?: ExecutionWitnessRunSummary | undefined;
+  coverageGeneration?: CoverageGenerationRecord | undefined;
   files: FileEntity[];
   symbols: SymbolEntity[];
   coverage: CoverageEvidence[];

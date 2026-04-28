@@ -90,6 +90,9 @@ function renderCheckSummaryText(run) {
         `Outcome: ${run.verdict.outcome}`,
         `Best next action: ${run.verdict.bestNextAction ?? 'none'}`
     ];
+    if (run.coverageGeneration) {
+        lines.push('', `Coverage generation: ${run.coverageGeneration.receipt.status} -> ${run.coverageGeneration.lcovPath}`);
+    }
     if (run.executionWitnesses) {
         lines.push('', ...renderExecutionWitnessSummaryText(run.executionWitnesses).trimEnd().split('\n'));
     }
@@ -898,6 +901,69 @@ function missingChangeScopeError(diffFile) {
         : '';
     return new Error(`Changed scope is required.${detail} Provide --changed <a,b,c> or configure changeSet.files / changeSet.diffFile with at least one changed file or hunk before running ts-quality check.`);
 }
+function runCoverageGenerationCommand(rootDir, input) {
+    const command = input.command.filter((item) => item.length > 0);
+    if (command.length === 0) {
+        throw new Error('coverage.generateCommand must contain at least one executable argument');
+    }
+    const executable = command[0];
+    if (!executable) {
+        throw new Error('coverage.generateCommand must contain an executable argument');
+    }
+    const started = Date.now();
+    const result = (0, child_process_1.spawnSync)(executable, command.slice(1), {
+        cwd: rootDir,
+        encoding: 'utf8',
+        timeout: input.timeoutMs,
+        shell: process.platform === 'win32',
+        env: executionWitnessCommandEnv()
+    });
+    const durationMs = Date.now() - started;
+    const receipt = result.error
+        ? {
+            status: result.error.code === 'ETIMEDOUT' ? 'timeout' : 'error',
+            exitCode: typeof result.status === 'number' ? result.status : undefined,
+            durationMs,
+            details: result.error.message ?? 'unknown coverage generation command error'
+        }
+        : {
+            status: result.status === 0 ? 'pass' : 'fail',
+            exitCode: typeof result.status === 'number' ? result.status : undefined,
+            durationMs,
+            details: executionWitnessCommandDetails(result)
+        };
+    return {
+        lcovPath: input.lcovPath,
+        command,
+        attemptedAt: input.attemptedAt,
+        receipt
+    };
+}
+function readCoverageWithOptionalGeneration(rootDir, input) {
+    const coverageAbsolutePath = path_1.default.join(rootDir, input.coveragePath);
+    if (fs_1.default.existsSync(coverageAbsolutePath)) {
+        return { coverage: (0, index_2.parseLcov)(fs_1.default.readFileSync(coverageAbsolutePath, 'utf8')) };
+    }
+    if (!input.generateCoverage || !input.generateWhenMissing || input.generateCommand.length === 0) {
+        return { coverage: [] };
+    }
+    const coverageGeneration = runCoverageGenerationCommand(rootDir, {
+        lcovPath: input.coveragePath,
+        command: input.generateCommand,
+        timeoutMs: input.generateTimeoutMs,
+        attemptedAt: input.attemptedAt
+    });
+    if (coverageGeneration.receipt.status !== 'pass') {
+        throw new Error(`coverage generation command ${coverageGeneration.receipt.status}; expected LCOV at ${(0, index_1.renderSafeText)(input.coveragePath)}${coverageGeneration.receipt.details ? `\n${(0, index_1.renderSafeText)(coverageGeneration.receipt.details)}` : ''}`);
+    }
+    if (!fs_1.default.existsSync(coverageAbsolutePath)) {
+        throw new Error(`coverage generation command passed but did not create expected LCOV at ${(0, index_1.renderSafeText)(input.coveragePath)}`);
+    }
+    return {
+        coverage: (0, index_2.parseLcov)(fs_1.default.readFileSync(coverageAbsolutePath, 'utf8')),
+        coverageGeneration
+    };
+}
 function buildAnalysisManifest(rootDir, options) {
     const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
     const sourceFiles = (0, index_1.collectSourceFiles)(rootDir, loaded.config.sourcePatterns);
@@ -911,15 +977,22 @@ function buildAnalysisManifest(rootDir, options) {
         throw missingChangeScopeError(loaded.config.changeSet.diffFile || undefined);
     }
     const coveragePath = loaded.config.coverage.lcovPath ?? 'coverage/lcov.info';
-    const coverageAbsolutePath = path_1.default.join(rootDir, coveragePath);
-    const coverage = fs_1.default.existsSync(coverageAbsolutePath) ? (0, index_2.parseLcov)(fs_1.default.readFileSync(coverageAbsolutePath, 'utf8')) : [];
+    const coverageResult = readCoverageWithOptionalGeneration(rootDir, {
+        coveragePath,
+        generateCommand: loaded.config.coverage.generateCommand ?? [],
+        generateWhenMissing: loaded.config.coverage.generateWhenMissing ?? true,
+        generateTimeoutMs: loaded.config.coverage.generateTimeoutMs ?? 60_000,
+        generateCoverage: options?.generateCoverage ?? false,
+        attemptedAt: options?.observedAt ?? (0, index_1.nowIso)()
+    });
     return {
         loaded,
         sourceFiles,
         changedFiles,
         changedRegions,
         coveragePath,
-        coverage,
+        coverage: coverageResult.coverage,
+        ...(coverageResult.coverageGeneration ? { coverageGeneration: coverageResult.coverageGeneration } : {}),
         runtimeMirrorRoots: [...(loaded.config.mutations.runtimeMirrorRoots ?? ['dist'])]
     };
 }
@@ -997,13 +1070,13 @@ function refreshExecutionWitnesses(rootDir, options) {
     });
 }
 function runCheck(rootDir, options) {
-    const manifest = buildAnalysisManifest(rootDir, options);
+    const runId = (0, index_1.assertSafeRunId)(options?.runId ?? (0, index_1.createRunId)());
+    const createdAt = (0, index_1.nowIso)();
+    const manifest = buildAnalysisManifest(rootDir, { ...options, generateCoverage: true, observedAt: createdAt });
     const loaded = manifest.loaded;
     const sourceFiles = manifest.sourceFiles;
     const changedFiles = manifest.changedFiles.map((item) => (0, index_1.normalizePath)(item));
     const changedRegions = manifest.changedRegions;
-    const runId = (0, index_1.assertSafeRunId)(options?.runId ?? (0, index_1.createRunId)());
-    const createdAt = (0, index_1.nowIso)();
     const coverage = manifest.coverage;
     const waivers = (0, config_1.loadWaivers)(rootDir, loaded.config.waiversPath);
     const approvals = (0, config_1.loadApprovals)(rootDir, loaded.config.approvalsPath);
@@ -1122,6 +1195,7 @@ function runCheck(rootDir, options) {
         analysis,
         controlPlane,
         ...(executionWitnessSummary.autoRan.length > 0 || executionWitnessSummary.skipped.length > 0 ? { executionWitnesses: executionWitnessSummary } : {}),
+        ...(manifest.coverageGeneration ? { coverageGeneration: manifest.coverageGeneration } : {}),
         files: fileEntities(rootDir, sourceFiles),
         symbols: symbolEntities(crapReport.hotspots),
         coverage,
@@ -1162,7 +1236,7 @@ function initProject(rootDir) {
     (0, index_1.ensureDir)(path_1.default.join(rootDir, '.ts-quality', 'witnesses'));
     const configPath = path_1.default.join(rootDir, 'ts-quality.config.ts');
     if (!fs_1.default.existsSync(configPath)) {
-        fs_1.default.writeFileSync(configPath, `export default {\n  sourcePatterns: ${(0, index_1.stableStringify)([...index_1.DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${(0, index_1.stableStringify)([...index_1.DEFAULT_TEST_PATTERNS])},\n  coverage: { lcovPath: 'coverage/lcov.info' },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  // Provide --changed <a,b,c> or set changeSet.files / changeSet.diffFile before running check.\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
+        fs_1.default.writeFileSync(configPath, `export default {\n  sourcePatterns: ${(0, index_1.stableStringify)([...index_1.DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${(0, index_1.stableStringify)([...index_1.DEFAULT_TEST_PATTERNS])},\n  coverage: {\n    lcovPath: 'coverage/lcov.info',\n    // Optional: when lcovPath is missing, check can run this command and then consume the generated LCOV.\n    // generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],\n    // generateTimeoutMs: 60000\n  },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  // Provide --changed <a,b,c> or set changeSet.files / changeSet.diffFile before running check.\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
     }
     const invariantsPath = path_1.default.join(rootDir, '.ts-quality', 'invariants.ts');
     if (!fs_1.default.existsSync(invariantsPath)) {

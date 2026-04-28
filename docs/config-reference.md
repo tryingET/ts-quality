@@ -22,7 +22,12 @@ export default {
     '**/*.test.js', '**/*.test.mjs', '**/*.test.cjs', '**/*.test.ts', '**/*.test.tsx',
     '**/*.spec.js', '**/*.spec.mjs', '**/*.spec.cjs', '**/*.spec.ts', '**/*.spec.tsx'
   ],
-  coverage: { lcovPath: 'coverage/lcov.info' },
+  coverage: {
+    lcovPath: 'coverage/lcov.info',
+    generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],
+    generateWhenMissing: true,
+    generateTimeoutMs: 60000
+  },
   mutations: {
     testCommand: ['node', '--test'],
     coveredOnly: true,
@@ -49,6 +54,19 @@ export default {
   trustedKeysDir: '.ts-quality/keys'
 };
 ```
+
+## Coverage generation
+
+`coverage.lcovPath` defaults to `coverage/lcov.info`. If that file is missing during `check` and `coverage.generateCommand` is configured, `check` runs the command from the repo root, requires it to pass, requires `coverage.lcovPath` to exist afterward, then parses the generated LCOV before CRAP, mutation, invariant, and governance evaluation. The run artifact records an additive `coverageGeneration` receipt, and stdout plus `check-summary.txt` show the generation status.
+
+Supported keys:
+
+- `coverage.lcovPath: string` — repo-local LCOV path, default `coverage/lcov.info`.
+- `coverage.generateCommand: string[]` — optional repo-local command to create missing LCOV.
+- `coverage.generateWhenMissing: boolean` — defaults to `true`; set `false` to document the command without allowing automatic generation.
+- `coverage.generateTimeoutMs: number` — defaults to `60000`.
+
+If `generateCommand` is configured and fails, or if it passes without creating the expected LCOV file, `check` fails closed instead of silently continuing with empty coverage evidence. Choose the command the same way you choose witness proof commands: prefer a target-repo script that runs the relevant tests and writes LCOV, and put any required build step before the command or inside the script when tests execute built output.
 
 ## Materialized runtime config
 
@@ -109,7 +127,7 @@ export default [{
 - `mutations.coveredOnly` focuses on covered lines. When a file or line has no LCOV evidence, it is treated as uncovered rather than mutated optimistically.
 - `mutations.runtimeMirrorRoots` tells mutant runs which built-runtime roots should mirror mutated sources into executable runtime trees (default: `['dist']`). JS sources are copied directly; TS/TSX sources are transpiled before being written into matching runtime mirror files. Use this when tests execute built output from `dist/`, `lib/`, `build/`, or another runtime tree. Root-level source files are also mirrored into matching built roots such as `dist/index.js`.
 - `policy` defines default merge gates before constitutional rules add domain-specific constraints. Values are range-checked when config is loaded: `maxChangedCrap >= 0`, `0 <= minMutationScore <= 1`, and `0 <= minMergeConfidence <= 100`.
-- Path-bearing analysis inputs (`coverage.lcovPath`, `changeSet.files`, `changeSet.diffFile`, `mutations.runtimeMirrorRoots`) and config/support artifact paths (`invariantsPath`, `constitutionPath`, `agentsPath`, `approvalsPath`, `waiversPath`, `overridesPath`, `attestationsDir`, `trustedKeysDir`) are canonicalized to repo-local paths. Invariants also canonicalize execution witness output/test-file paths and reject witness outputs that escape `--root`. Paths that escape `--root`, including symlink escapes, are rejected.
+- Path-bearing analysis inputs (`coverage.lcovPath`, `changeSet.files`, `changeSet.diffFile`, `mutations.runtimeMirrorRoots`) and config/support artifact paths (`invariantsPath`, `constitutionPath`, `agentsPath`, `approvalsPath`, `waiversPath`, `overridesPath`, `attestationsDir`, `trustedKeysDir`) are canonicalized to repo-local paths. Invariants also canonicalize execution witness output/test-file paths and reject witness outputs that escape `--root`. Paths that escape `--root`, including symlink escapes, are rejected. `coverage.generateCommand` is an explicit command array rather than a path-bearing input; use a repo-local npm script when the generation command is long or target-specific.
 - The default `testPatterns` intentionally include both `test/**` and `tests/**` trees plus colocated `*.test.*` / `*.spec.*` files for JS and TS variants.
 - CLI commands that load config (`check`, `plan`, `govern`, `authorize`, `amend`) accept `--config <file>` when you need a nonstandard config filename.
 - Downstream run-reading commands (`explain`, `report`, `plan`, `govern`, `authorize`) accept `--run-id <id>` when you need an exact persisted run instead of the repo-local latest pointer. `check` snapshots the decision control plane (schema version, config digest, policy defaults, constitution rules, agent grants, and support-path bindings), so later decision surfaces keep using that run-bound snapshot, reject unsupported or malformed snapshot schemas with a re-run instruction, and refuse the request if the analyzed changed files or snapped config / constitution / agents drift after `check`.

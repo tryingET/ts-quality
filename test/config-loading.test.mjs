@@ -171,6 +171,35 @@ test('loadInvariants rejects execution witness outputs that escape the repositor
   assert.throws(() => config.loadInvariants(rootDir, '.ts-quality/invariants.ts'), /executionWitnessOutput must stay inside repository root/);
 });
 
+test('loadContext accepts coverage generation options', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-config-coverage-generation-'));
+  fs.writeFileSync(path.join(rootDir, 'ts-quality.config.json'), JSON.stringify({
+    coverage: {
+      lcovPath: './coverage/lcov.info',
+      generateCommand: ['npm', 'run', 'coverage:lcov', '--silent'],
+      generateWhenMissing: false,
+      generateTimeoutMs: 1234
+    },
+    mutations: { testCommand: ['node', '--test'] }
+  }, null, 2));
+
+  const loaded = config.loadContext(rootDir);
+  assert.equal(loaded.config.coverage.lcovPath, 'coverage/lcov.info');
+  assert.deepEqual(loaded.config.coverage.generateCommand, ['npm', 'run', 'coverage:lcov', '--silent']);
+  assert.equal(loaded.config.coverage.generateWhenMissing, false);
+  assert.equal(loaded.config.coverage.generateTimeoutMs, 1234);
+});
+
+test('loadContext rejects invalid coverage generation options', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-config-coverage-generation-invalid-'));
+  fs.writeFileSync(path.join(rootDir, 'ts-quality.config.json'), JSON.stringify({
+    coverage: { generateCommand: 'npm test', generateWhenMissing: 'yes', generateTimeoutMs: -1 },
+    mutations: { testCommand: ['node', '--test'] }
+  }, null, 2));
+
+  assert.throws(() => config.loadContext(rootDir), /coverage\.generateCommand must be an array of strings/);
+});
+
 test('loadContext rejects coverage paths that escape the repository root', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-config-coverage-escape-'));
   fs.writeFileSync(path.join(rootDir, 'ts-quality.config.json'), JSON.stringify({

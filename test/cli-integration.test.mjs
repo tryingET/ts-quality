@@ -36,6 +36,46 @@ test('check fails closed when init-generated config has no changed scope', () =>
 });
 
 
+test('check auto-generates configured LCOV when missing before analysis', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const lcovText = fs.readFileSync(path.join(target, 'coverage', 'lcov.info'), 'utf8');
+  fs.rmSync(path.join(target, 'coverage'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(target, 'scripts'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'scripts', 'write-lcov.mjs'), `import fs from 'node:fs';\nfs.mkdirSync('coverage', { recursive: true });\nfs.writeFileSync('coverage/lcov.info', ${JSON.stringify(lcovText)}, 'utf8');\n`, 'utf8');
+  const configPath = path.join(target, 'ts-quality.config.ts');
+  fs.writeFileSync(configPath, fs.readFileSync(configPath, 'utf8').replace(
+    "coverage: { lcovPath: 'coverage/lcov.info' },",
+    "coverage: { lcovPath: 'coverage/lcov.info', generateCommand: ['node', 'scripts/write-lcov.mjs'], generateTimeoutMs: 5000 },"
+  ), 'utf8');
+
+  const result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'generated-lcov'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Coverage generation: pass -> coverage\/lcov\.info/);
+  assert.equal(fs.existsSync(path.join(target, 'coverage', 'lcov.info')), true);
+  const run = readRun(target);
+  assert.equal(run.coverageGeneration?.lcovPath, 'coverage/lcov.info');
+  assert.deepEqual(run.coverageGeneration?.command, ['node', 'scripts/write-lcov.mjs']);
+  assert.equal(run.coverageGeneration?.receipt.status, 'pass');
+  assert.equal(run.coverage.some((item) => item.filePath === 'src/auth/token.js'), true);
+  const checkSummary = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'generated-lcov', 'check-summary.txt'), 'utf8');
+  assert.match(checkSummary, /Coverage generation: pass -> coverage\/lcov\.info/);
+});
+
+test('check fails closed when configured LCOV generation fails', () => {
+  const target = tempCopyOfFixture('governed-app');
+  fs.rmSync(path.join(target, 'coverage'), { recursive: true, force: true });
+  const configPath = path.join(target, 'ts-quality.config.ts');
+  fs.writeFileSync(configPath, fs.readFileSync(configPath, 'utf8').replace(
+    "coverage: { lcovPath: 'coverage/lcov.info' },",
+    "coverage: { lcovPath: 'coverage/lcov.info', generateCommand: ['node', '-e', 'process.exit(2)'], generateTimeoutMs: 5000 },"
+  ), 'utf8');
+
+  const result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'failed-lcov'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /coverage generation command fail; expected LCOV at coverage\/lcov\.info/);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'runs', 'failed-lcov')), false);
+});
+
 test('check accepts diff-only scope and derives changed files from diff hunks', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.writeFileSync(path.join(target, 'changes.diff'), ['+++ b/src/auth/token.js', '@@ -1,1 +1,1 @@'].join('\n'), 'utf8');
@@ -918,6 +958,7 @@ test('check --help renders usage instead of executing analysis', () => {
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Usage: ts-quality check/);
   assert.match(result.stdout, /Required trust precondition: explicit changed scope/);
+  assert.match(result.stdout, /configure coverage\.generateCommand so check can create missing LCOV/);
   assert.match(result.stdout, /Writes: \.ts-quality\/runs\/<run-id>/);
   assert.match(result.stdout, /pass --run-id/i);
   assert.equal(result.stderr, '');

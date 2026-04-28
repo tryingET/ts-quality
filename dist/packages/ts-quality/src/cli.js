@@ -234,7 +234,7 @@ Use this before check when CI or agents should consume generated data instead of
 
 Runs the evidence, mutation, invariant, governance, and verdict pipeline.
 Required trust precondition: explicit changed scope from --changed, config changeSet.files, or a configured diff file.
-Recommended precondition: run the target repo's tests/coverage first so LCOV and mutation evidence are meaningful.
+Recommended precondition: run the target repo's tests/coverage first, or configure coverage.generateCommand so check can create missing LCOV before analysis.
 Writes: .ts-quality/runs/<run-id>/{run.json,verdict.json,report.json,report.md,pr-summary.md,check-summary.txt,explain.txt,plan.txt,govern.txt} and .ts-quality/latest.json.
 Automation: pass --run-id so explain/report/plan/govern/authorize stay bound to this exact run.
 `;
@@ -380,10 +380,13 @@ function main() {
             checkOptions.configPath = explicitConfigPath;
         }
         const result = (0, index_2.runCheck)(cwd, checkOptions);
+        const coverageSummary = result.run.coverageGeneration
+            ? `Coverage generation: ${result.run.coverageGeneration.receipt.status} -> ${result.run.coverageGeneration.lcovPath}\n`
+            : '';
         const witnessSummary = result.run.executionWitnesses
             ? `Execution witnesses: auto-ran ${result.run.executionWitnesses.autoRan.length}, skipped ${result.run.executionWitnesses.skipped.length}\n`
             : '';
-        process.stdout.write(`Merge confidence: ${result.run.verdict.mergeConfidence}/100\nOutcome: ${result.run.verdict.outcome}\n${witnessSummary}Artifacts: ${result.artifactDir}\n`);
+        process.stdout.write(`Merge confidence: ${result.run.verdict.mergeConfidence}/100\nOutcome: ${result.run.verdict.outcome}\n${coverageSummary}${witnessSummary}Artifacts: ${result.artifactDir}\n`);
         return;
     }
     if (command === 'explain') {

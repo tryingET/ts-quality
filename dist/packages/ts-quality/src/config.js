@@ -215,6 +215,15 @@ function validateFiniteNumber(name, value, options = {}) {
     }
     return value;
 }
+function validateBoolean(name, value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (typeof value !== 'boolean') {
+        throw new Error(`${name} must be a boolean`);
+    }
+    return value;
+}
 function validateConfig(raw) {
     const sourcePatterns = validateStringArray('sourcePatterns', raw.sourcePatterns) ?? [...index_1.DEFAULT_SOURCE_PATTERNS];
     const testPatterns = validateStringArray('testPatterns', raw.testPatterns) ?? [...index_1.DEFAULT_TEST_PATTERNS];
@@ -232,7 +241,10 @@ function validateConfig(raw) {
         sourcePatterns,
         testPatterns,
         coverage: {
-            lcovPath: raw.coverage?.lcovPath ?? 'coverage/lcov.info'
+            lcovPath: raw.coverage?.lcovPath ?? 'coverage/lcov.info',
+            generateCommand: validateStringArray('coverage.generateCommand', raw.coverage?.generateCommand) ?? [],
+            generateWhenMissing: validateBoolean('coverage.generateWhenMissing', raw.coverage?.generateWhenMissing) ?? true,
+            generateTimeoutMs: validateFiniteNumber('coverage.generateTimeoutMs', raw.coverage?.generateTimeoutMs, { min: 0 }) ?? 60_000
         },
         mutations: {
             testCommand: mutationCommand,
@@ -278,6 +290,7 @@ function canonicalRepoPatternArray(values, kind) {
 }
 function canonicalizeConfigPaths(rootDir, config) {
     const coverageLcovPath = config.coverage.lcovPath ?? 'coverage/lcov.info';
+    const coverageGenerateCommand = config.coverage.generateCommand ?? [];
     const runtimeMirrorRoots = config.mutations.runtimeMirrorRoots ?? ['dist'];
     const changeSetFiles = config.changeSet.files ?? [];
     const diffFile = config.changeSet.diffFile ?? '';
@@ -293,7 +306,8 @@ function canonicalizeConfigPaths(rootDir, config) {
         ...config,
         coverage: {
             ...config.coverage,
-            lcovPath: canonicalRepoPath(rootDir, coverageLcovPath, 'coverage lcovPath')
+            lcovPath: canonicalRepoPath(rootDir, coverageLcovPath, 'coverage lcovPath'),
+            generateCommand: [...coverageGenerateCommand]
         },
         mutations: {
             ...config.mutations,

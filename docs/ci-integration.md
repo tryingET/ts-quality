@@ -23,7 +23,7 @@ Notes:
 
 - `npm run witness:refresh --silent` is the repo-native CI/operator surface for pre-refreshing configured execution witnesses against the current changed scope before `check`. If you prefer one command, run `npm run check:with-witnesses --silent` after build/test coverage prerequisites are in place.
 - witness commands declared on invariant scenarios do **not** need to repeat `sourceFiles`; `check`/`witness refresh` infer that scope from the impacted invariant slice automatically. Keep the witness command/test-file details in the invariants file and the surrounding config/path rules in `docs/config-reference.md`.
-- `ts-quality check` is strongest when `coverage/lcov.info` exists before the run.
+- `ts-quality check` is strongest when `coverage/lcov.info` exists before the run. If CI does not produce LCOV as a separate step, configure `coverage.generateCommand` so `check` runs the repo-local coverage command when the LCOV file is missing, fails closed on generation errors, and records the generation receipt in the run artifact.
 - Mutation testing uses `mutations.testCommand`; keep that command deterministic and repo-local.
 - Invariant evidence is focused to aligned test files, so use explicit names/imports or `requiredTestPatterns`.
 

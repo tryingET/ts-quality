@@ -5,6 +5,9 @@ export interface TsQualityConfig {
     testPatterns?: string[];
     coverage?: {
         lcovPath?: string;
+        generateCommand?: string[];
+        generateWhenMissing?: boolean;
+        generateTimeoutMs?: number;
     };
     mutations?: {
         testCommand: string[];

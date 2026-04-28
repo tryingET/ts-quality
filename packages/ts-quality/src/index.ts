@@ -13,6 +13,7 @@ import {
   type AuthorizationDecision,
   type ConstitutionRule,
   type ControlPlaneSnapshot,
+  type CoverageGenerationRecord,
   type ExecutionReceipt,
   type ExecutionWitnessRecord,
   type ExecutionWitnessReceiptArtifact,
@@ -180,12 +181,15 @@ function renderExecutionWitnessPressureNote(claim: RunArtifact['behaviorClaims']
   return `${linePrefix}Execution witness is present; remaining risk comes from ${remainingPressure.join(', ')}.`;
 }
 
-function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdict' | 'executionWitnesses'>): string {
+function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdict' | 'executionWitnesses' | 'coverageGeneration'>): string {
   const lines = [
     `Merge confidence: ${run.verdict.mergeConfidence}/100`,
     `Outcome: ${run.verdict.outcome}`,
     `Best next action: ${run.verdict.bestNextAction ?? 'none'}`
   ];
+  if (run.coverageGeneration) {
+    lines.push('', `Coverage generation: ${run.coverageGeneration.receipt.status} -> ${run.coverageGeneration.lcovPath}`);
+  }
   if (run.executionWitnesses) {
     lines.push('', ...renderExecutionWitnessSummaryText(run.executionWitnesses).trimEnd().split('\n'));
   }
@@ -1070,6 +1074,7 @@ interface AnalysisManifest {
   changedRegions: RunArtifact['changedRegions'];
   coveragePath: string;
   coverage: RunArtifact['coverage'];
+  coverageGeneration?: CoverageGenerationRecord | undefined;
   runtimeMirrorRoots: string[];
 }
 
@@ -1101,7 +1106,72 @@ function missingChangeScopeError(diffFile?: string): Error {
   return new Error(`Changed scope is required.${detail} Provide --changed <a,b,c> or configure changeSet.files / changeSet.diffFile with at least one changed file or hunk before running ts-quality check.`);
 }
 
-function buildAnalysisManifest(rootDir: string, options?: { changedFiles?: string[]; configPath?: string }): AnalysisManifest {
+function runCoverageGenerationCommand(rootDir: string, input: { lcovPath: string; command: string[]; timeoutMs: number; attemptedAt: string }): CoverageGenerationRecord {
+  const command = input.command.filter((item) => item.length > 0);
+  if (command.length === 0) {
+    throw new Error('coverage.generateCommand must contain at least one executable argument');
+  }
+  const executable = command[0];
+  if (!executable) {
+    throw new Error('coverage.generateCommand must contain an executable argument');
+  }
+  const started = Date.now();
+  const result = spawnSync(executable, command.slice(1), {
+    cwd: rootDir,
+    encoding: 'utf8',
+    timeout: input.timeoutMs,
+    shell: process.platform === 'win32',
+    env: executionWitnessCommandEnv()
+  });
+  const durationMs = Date.now() - started;
+  const receipt: ExecutionReceipt = result.error
+    ? {
+        status: (result.error as { code?: string }).code === 'ETIMEDOUT' ? 'timeout' : 'error',
+        exitCode: typeof result.status === 'number' ? result.status : undefined,
+        durationMs,
+        details: (result.error as { message?: string }).message ?? 'unknown coverage generation command error'
+      }
+    : {
+        status: result.status === 0 ? 'pass' : 'fail',
+        exitCode: typeof result.status === 'number' ? result.status : undefined,
+        durationMs,
+        details: executionWitnessCommandDetails(result)
+      };
+  return {
+    lcovPath: input.lcovPath,
+    command,
+    attemptedAt: input.attemptedAt,
+    receipt
+  };
+}
+
+function readCoverageWithOptionalGeneration(rootDir: string, input: { coveragePath: string; generateCommand: string[]; generateWhenMissing: boolean; generateTimeoutMs: number; generateCoverage: boolean; attemptedAt: string }): { coverage: RunArtifact['coverage']; coverageGeneration?: CoverageGenerationRecord | undefined } {
+  const coverageAbsolutePath = path.join(rootDir, input.coveragePath);
+  if (fs.existsSync(coverageAbsolutePath)) {
+    return { coverage: parseLcov(fs.readFileSync(coverageAbsolutePath, 'utf8')) };
+  }
+  if (!input.generateCoverage || !input.generateWhenMissing || input.generateCommand.length === 0) {
+    return { coverage: [] };
+  }
+  const coverageGeneration = runCoverageGenerationCommand(rootDir, {
+    lcovPath: input.coveragePath,
+    command: input.generateCommand,
+    timeoutMs: input.generateTimeoutMs,
+    attemptedAt: input.attemptedAt
+  });
+  if (coverageGeneration.receipt.status !== 'pass') {
+    throw new Error(`coverage generation command ${coverageGeneration.receipt.status}; expected LCOV at ${renderSafeText(input.coveragePath)}${coverageGeneration.receipt.details ? `\n${renderSafeText(coverageGeneration.receipt.details)}` : ''}`);
+  }
+  if (!fs.existsSync(coverageAbsolutePath)) {
+    throw new Error(`coverage generation command passed but did not create expected LCOV at ${renderSafeText(input.coveragePath)}`);
+  }
+  return {
+    coverage: parseLcov(fs.readFileSync(coverageAbsolutePath, 'utf8')),
+    coverageGeneration
+  };
+}
+
+function buildAnalysisManifest(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; generateCoverage?: boolean; observedAt?: string }): AnalysisManifest {
   const loaded = loadContext(rootDir, options?.configPath);
   const sourceFiles = collectSourceFiles(rootDir, loaded.config.sourcePatterns);
   const changedRegions = loaded.config.changeSet.diffFile ? loadChangedRegions(rootDir, loaded.config.changeSet.diffFile) : [];
@@ -1114,15 +1184,22 @@ function buildAnalysisManifest(rootDir: string, options?: { changedFiles?: strin
     throw missingChangeScopeError(loaded.config.changeSet.diffFile || undefined);
   }
   const coveragePath = loaded.config.coverage.lcovPath ?? 'coverage/lcov.info';
-  const coverageAbsolutePath = path.join(rootDir, coveragePath);
-  const coverage = fs.existsSync(coverageAbsolutePath) ? parseLcov(fs.readFileSync(coverageAbsolutePath, 'utf8')) : [];
+  const coverageResult = readCoverageWithOptionalGeneration(rootDir, {
+    coveragePath,
+    generateCommand: loaded.config.coverage.generateCommand ?? [],
+    generateWhenMissing: loaded.config.coverage.generateWhenMissing ?? true,
+    generateTimeoutMs: loaded.config.coverage.generateTimeoutMs ?? 60_000,
+    generateCoverage: options?.generateCoverage ?? false,
+    attemptedAt: options?.observedAt ?? nowIso()
+  });
   return {
     loaded,
     sourceFiles,
     changedFiles,
     changedRegions,
     coveragePath,
-    coverage,
+    coverage: coverageResult.coverage,
+    ...(coverageResult.coverageGeneration ? { coverageGeneration: coverageResult.coverageGeneration } : {}),
     runtimeMirrorRoots: [...(loaded.config.mutations.runtimeMirrorRoots ?? ['dist'])]
   };
 }
@@ -1221,13 +1298,13 @@ export function refreshExecutionWitnesses(rootDir: string, options?: { changedFi
 }
 
 export function runCheck(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; runId?: string }): CheckResult {
-  const manifest = buildAnalysisManifest(rootDir, options);
+  const runId = assertSafeRunId(options?.runId ?? createRunId());
+  const createdAt = nowIso();
+  const manifest = buildAnalysisManifest(rootDir, { ...options, generateCoverage: true, observedAt: createdAt });
   const loaded = manifest.loaded;
   const sourceFiles = manifest.sourceFiles;
   const changedFiles = manifest.changedFiles.map((item) => normalizePath(item));
   const changedRegions = manifest.changedRegions;
-  const runId = assertSafeRunId(options?.runId ?? createRunId());
-  const createdAt = nowIso();
   const coverage = manifest.coverage;
   const waivers = loadWaivers(rootDir, loaded.config.waiversPath);
   const approvals = loadApprovals(rootDir, loaded.config.approvalsPath);
@@ -1355,6 +1432,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     analysis,
     controlPlane,
     ...(executionWitnessSummary.autoRan.length > 0 || executionWitnessSummary.skipped.length > 0 ? { executionWitnesses: executionWitnessSummary } : {}),
+    ...(manifest.coverageGeneration ? { coverageGeneration: manifest.coverageGeneration } : {}),
     files: fileEntities(rootDir, sourceFiles),
     symbols: symbolEntities(crapReport.hotspots),
     coverage,
@@ -1397,7 +1475,7 @@ export function initProject(rootDir: string): void {
   ensureDir(path.join(rootDir, '.ts-quality', 'witnesses'));
   const configPath = path.join(rootDir, 'ts-quality.config.ts');
   if (!fs.existsSync(configPath)) {
-    fs.writeFileSync(configPath, `export default {\n  sourcePatterns: ${stableStringify([...DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${stableStringify([...DEFAULT_TEST_PATTERNS])},\n  coverage: { lcovPath: 'coverage/lcov.info' },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  // Provide --changed <a,b,c> or set changeSet.files / changeSet.diffFile before running check.\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
+    fs.writeFileSync(configPath, `export default {\n  sourcePatterns: ${stableStringify([...DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${stableStringify([...DEFAULT_TEST_PATTERNS])},\n  coverage: {\n    lcovPath: 'coverage/lcov.info',\n    // Optional: when lcovPath is missing, check can run this command and then consume the generated LCOV.\n    // generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],\n    // generateTimeoutMs: 60000\n  },\n  mutations: { testCommand: ['node', '--test'], coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ['dist'] },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  // Provide --changed <a,b,c> or set changeSet.files / changeSet.diffFile before running check.\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
   }
   const invariantsPath = path.join(rootDir, '.ts-quality', 'invariants.ts');
   if (!fs.existsSync(invariantsPath)) {

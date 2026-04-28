@@ -9,6 +9,9 @@ export interface TsQualityConfig {
   testPatterns?: string[];
   coverage?: {
     lcovPath?: string;
+    generateCommand?: string[];
+    generateWhenMissing?: boolean;
+    generateTimeoutMs?: number;
   };
   mutations?: {
     testCommand: string[];
@@ -253,6 +256,16 @@ function validateFiniteNumber(name: string, value: unknown, options: { min?: num
   return value;
 }
 
+function validateBoolean(name: string, value: unknown): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== 'boolean') {
+    throw new Error(`${name} must be a boolean`);
+  }
+  return value;
+}
+
 function validateConfig(raw: TsQualityConfig): Required<TsQualityConfig> {
   const sourcePatterns = validateStringArray('sourcePatterns', raw.sourcePatterns) ?? [...DEFAULT_SOURCE_PATTERNS];
   const testPatterns = validateStringArray('testPatterns', raw.testPatterns) ?? [...DEFAULT_TEST_PATTERNS];
@@ -270,7 +283,10 @@ function validateConfig(raw: TsQualityConfig): Required<TsQualityConfig> {
     sourcePatterns,
     testPatterns,
     coverage: {
-      lcovPath: raw.coverage?.lcovPath ?? 'coverage/lcov.info'
+      lcovPath: raw.coverage?.lcovPath ?? 'coverage/lcov.info',
+      generateCommand: validateStringArray('coverage.generateCommand', raw.coverage?.generateCommand) ?? [],
+      generateWhenMissing: validateBoolean('coverage.generateWhenMissing', raw.coverage?.generateWhenMissing) ?? true,
+      generateTimeoutMs: validateFiniteNumber('coverage.generateTimeoutMs', raw.coverage?.generateTimeoutMs, { min: 0 }) ?? 60_000
     },
     mutations: {
       testCommand: mutationCommand,
@@ -321,6 +337,7 @@ function canonicalRepoPatternArray(values: string[], kind: string): string[] {
 
 function canonicalizeConfigPaths(rootDir: string, config: Required<TsQualityConfig>): Required<TsQualityConfig> {
   const coverageLcovPath = config.coverage.lcovPath ?? 'coverage/lcov.info';
+  const coverageGenerateCommand = config.coverage.generateCommand ?? [];
   const runtimeMirrorRoots = config.mutations.runtimeMirrorRoots ?? ['dist'];
   const changeSetFiles = config.changeSet.files ?? [];
   const diffFile = config.changeSet.diffFile ?? '';
@@ -337,7 +354,8 @@ function canonicalizeConfigPaths(rootDir: string, config: Required<TsQualityConf
     ...config,
     coverage: {
       ...config.coverage,
-      lcovPath: canonicalRepoPath(rootDir, coverageLcovPath, 'coverage lcovPath')
+      lcovPath: canonicalRepoPath(rootDir, coverageLcovPath, 'coverage lcovPath'),
+      generateCommand: [...coverageGenerateCommand]
     },
     mutations: {
       ...config.mutations,

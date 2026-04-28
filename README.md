@@ -120,7 +120,7 @@ npx ts-quality init
 npx ts-quality materialize
 ```
 
-Then configure the generated `ts-quality.config.ts` for your repo's test, coverage, changed-scope, invariant, governance, and agent surfaces. `check` intentionally requires explicit changed scope from CLI `--changed`, config `changeSet.files`, or a diff file; it fails closed instead of silently widening to the whole repo.
+Then configure the generated `ts-quality.config.ts` for your repo's test, coverage, changed-scope, invariant, governance, and agent surfaces. `check` intentionally requires explicit changed scope from CLI `--changed`, config `changeSet.files`, or a diff file; it fails closed instead of silently widening to the whole repo. If `coverage/lcov.info` is missing, configure `coverage.generateCommand` so `check` can create and consume LCOV before scoring structural risk.
 
 A typical bounded review command looks like:
 
@@ -292,7 +292,7 @@ Authorization artifacts written by `ts-quality authorize` add an additive `evide
 A strong `ts-quality` result depends on explicit inputs, not hidden inference:
 
 - **Explicit changed scope** — provide CLI `--changed <a,b,c>`, `changeSet.files`, or a `changeSet.diffFile` with at least one changed hunk. `check` fails closed when no changed scope is supplied instead of silently widening to the whole repo.
-- **Coverage evidence** — provide `coverage/lcov.info` so CRAP and covered-only mutation selection are grounded in executed code.
+- **Coverage evidence** — provide `coverage/lcov.info`, or configure `coverage.generateCommand` to create it when missing, so CRAP and covered-only mutation selection are grounded in executed code. Configured generation is fail-closed and recorded as an additive run receipt.
 - **Green mutation baseline** — `mutations.testCommand` must pass before mutation results are trusted. A broken baseline blocks mutation scoring instead of pretending every failing run killed a mutant.
 - **Executable tests** — `mutations.testCommand` must actually fail when behavior changes, or mutants will survive and confidence will drop. The command must contain at least one executable argument.
 - **Hermetic mutation execution** — mutation subprocesses drop inherited nested test-runner recursion context (for example `NODE_TEST_CONTEXT`) so the same repo does not score differently just because `check` was launched from inside `node --test`.

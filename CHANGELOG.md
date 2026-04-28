@@ -10,6 +10,10 @@ type: "reference"
 
 ## [Unreleased]
 
+### Added
+
+- Added configured LCOV generation during `check`: when `coverage.lcovPath` is missing and `coverage.generateCommand` is configured, `ts-quality` runs the command, fails closed on generation errors, consumes the generated LCOV, and records a `coverageGeneration` receipt.
+
 ### Changed
 
 - Clarified first-witness proof-command selection in CLI help, README quickstart, and invariant/config references so target-repo operators choose module-level proof commands or repo-local npm scripts before falling back to broad repo-global tests.
