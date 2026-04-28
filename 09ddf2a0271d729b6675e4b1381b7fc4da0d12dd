@@ -1,0 +1,26 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "pi"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "09ddf2a$(git rev-parse HEAD | cut -c8-)"
+created_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+intent: "Reduce target-repo proof-command selection friction by clarifying first-witness CLI help, README quickstart, invariant/config references, and the pi-server pilot follow-up."
+files:
+  - "packages/ts-quality/src/cli.ts"
+  - "dist/packages/ts-quality/src/cli.js"
+  - "README.md"
+  - "docs/invariant-dsl.md"
+  - "docs/config-reference.md"
+  - "docs/adoption/second-witness-pilot-pi-server.md"
+  - "test/cli-integration.test.mjs"
+  - "CHANGELOG.md"
+validation:
+  fast_gate:
+    command: "node --test test/cli-integration.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pass"
+  docs_gate:
+    command: "node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
