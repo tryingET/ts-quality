@@ -905,7 +905,9 @@ test('top-level help teaches the first bounded review trust contract', () => {
   assert.match(result.stdout, /First bounded review:/);
   assert.match(result.stdout, /ts-quality check --changed src\/file\.ts --run-id review-001/);
   assert.match(result.stdout, /First focused witness:/);
+  assert.match(result.stdout, /Pick a target-repo proof command before writing the witness/);
   assert.match(result.stdout, /ts-quality witness test --invariant auth\.refresh\.validity/);
+  assert.match(result.stdout, /npm run test:auth-refresh --silent/);
   assert.match(result.stdout, /check requires explicit changed scope/);
   assert.match(result.stdout, /Machine truth is under \.ts-quality\/runs\/<run-id>\//);
   assert.equal(result.stderr, '');
@@ -978,8 +980,11 @@ test('witness test --help renders first-witness habit guidance', () => {
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Usage: ts-quality witness test/);
   assert.match(result.stdout, /lexical invariant match should graduate to execution-backed support/);
+  assert.match(result.stdout, /Choosing the command after --:/);
+  assert.match(result.stdout, /Start from the changed source file and the focused test file/);
+  assert.match(result.stdout, /Use a repo-global npm test only as baseline evidence/);
   assert.match(result.stdout, /one invariant, one scenario, one changed behavior/);
-  assert.match(result.stdout, /prefer a repo-local npm script/);
+  assert.match(result.stdout, /put the exact proof command in package\.json/);
   assert.equal(result.stderr, '');
 });
 

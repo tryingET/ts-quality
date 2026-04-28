@@ -110,3 +110,5 @@ Mutation pressure was strong in this pilot: the sampled mutation run killed 6 mu
 This second pilot strengthens the production-readiness evidence: the bounded-review plus focused-witness habit works in two distinct real TypeScript repos from the published package.
 
 The next product slice should make target-repo proof-command selection more discoverable, especially the difference between a repo-global test command, a module-level proof command, and a source-mode TypeScript witness command.
+
+Follow-up slice `#1905` addressed the immediate documentation and CLI-help friction by teaching `witness test --help`, README quickstart guidance, and the invariant/config references to choose the command after `--` deliberately: start from the changed source plus focused test, prefer module-level target-repo commands, reserve repo-global `npm test` for baseline evidence when it cannot focus the slice, run builds before dist-based witnesses, and hide long TypeScript/source-mode loader commands behind repo-local npm scripts.

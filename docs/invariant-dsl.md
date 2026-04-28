@@ -90,6 +90,8 @@ npx ts-quality witness test \
   -- node --test test/token.test.js
 ```
 
+Choose the proof command before writing the witness artifact. Start from the changed source file and the focused test file you would cite in review; prefer a module-level command that proves that behavior over a repo-global `npm test` when the global command cannot focus the slice or leaves long-lived handles. If the proof requires TypeScript source-mode loaders, environment flags, or a long inline assertion, put the exact command in a repo-local npm script and invoke that script after `--`. If the witness imports built output, run the target repo build first so the receipt records a command against current dist bytes.
+
 When evidence is weak, it emits concrete `TestObligation` records.
 
 Each impacted invariant also records an additive `evidenceSummary` in the run artifact. The summary is deterministic and compact: it lists `evidenceSemantics` / `evidenceSemanticsSummary`, impacted files, focused tests, optional `executionWitnessFiles`, changed functions, low-coverage counts, mutation counts, per-scenario support, and named sub-signals (`focused-test-alignment`, `execution-witness`, `scenario-support`, `coverage-pressure`, `mutation-pressure`, `changed-function-pressure`) so reviewers can inspect invariant support without reverse-engineering free-form evidence strings. Every sub-signal is also labeled with a provenance mode: `explicit` when it came from direct configuration or artifact evidence, `inferred` when it depended on deterministic alignment heuristics, and `missing` when that class of support is absent.

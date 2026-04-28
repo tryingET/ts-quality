@@ -96,7 +96,7 @@ export default [{
 }];
 ```
 
-`check` runs that command for impacted scenarios, writes the witness under the configured repo-local output path, writes a sibling `.receipt.json` execution receipt sidecar, then lets invariant evaluation consume it as execution-backed support. The repo-native pre-refresh surface is `npx ts-quality witness refresh` (or `npm run witness:refresh --silent` from this repo), which runs the same configured impacted witness commands before `check` when you want that stage to stay explicit in CI. Keep the witness artifact/receipt semantics in `docs/invariant-dsl.md`; keep CI staging guidance in `docs/ci-integration.md`.
+`check` runs that command for impacted scenarios, writes the witness under the configured repo-local output path, writes a sibling `.receipt.json` execution receipt sidecar, then lets invariant evaluation consume it as execution-backed support. Choose `executionWitnessCommand` the same way you choose the command after manual `witness test --`: prefer a module-level target-repo proof command tied to `executionWitnessTestFiles`, use repo-global `npm test` only as baseline evidence when it cannot focus the slice, and wrap long TypeScript/source-mode loader commands in a repo-local npm script. If the command imports built output, put the target repo build in the CI stage before witness refresh/check. The repo-native pre-refresh surface is `npx ts-quality witness refresh` (or `npm run witness:refresh --silent` from this repo), which runs the same configured impacted witness commands before `check` when you want that stage to stay explicit in CI. Keep the witness artifact/receipt semantics in `docs/invariant-dsl.md`; keep CI staging guidance in `docs/ci-integration.md`.
 
 ## Notes
 

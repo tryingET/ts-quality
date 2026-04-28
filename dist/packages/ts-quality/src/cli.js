@@ -195,8 +195,9 @@ First bounded review:
   ts-quality report --run-id review-001
 
 First focused witness:
-  ts-quality witness test --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.ts --test-files test/auth/token.test.ts --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- npm test -- token
-  # Tip: put long TypeScript/source-mode proof commands in an npm script, then invoke it after --.
+  # Pick a target-repo proof command before writing the witness: prefer a module-level test or a repo-local npm script over a broad npm test when the broad command cannot target the changed slice.
+  ts-quality witness test --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.ts --test-files test/auth/token.test.ts --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- npm run test:auth-refresh --silent
+  # For dist-based TypeScript witnesses, run the target repo build first; for source-mode loaders/env flags, hide the long command behind an npm script.
   ts-quality check --changed src/auth/token.ts --run-id review-001
 
 Core commands:
@@ -305,8 +306,14 @@ Generates an Ed25519 keypair for local attestation workflows. Do not commit priv
 
 Runs one explicit proof command and writes an execution witness plus receipt sidecar.
 Use this when a lexical invariant match should graduate to execution-backed support for one scenario.
+
+Choosing the command after --:
+1. Start from the changed source file and the focused test file you would trust in code review.
+2. Prefer a module-level target-repo command, for example: -- npm run test:auth-refresh --silent or -- node --test test/auth/token.test.js.
+3. Use a repo-global npm test only as baseline evidence when it cannot target the changed behavior or leaves long-lived handles.
+4. For dist-based TypeScript witnesses, run the target repo build first. For source-mode loaders, env flags, or long inline assertions, put the exact proof command in package.json and invoke that script after --.
+
 Keep commands narrow: one invariant, one scenario, one changed behavior, and one focused test command are stronger product evidence than a repo-global green test run.
-For long TypeScript/source-mode proof commands, prefer a repo-local npm script and invoke it after --, for example: -- npm run witness:auth-refresh --silent.
 `;
     }
     if (command === 'witness' && subcommand === 'refresh') {
@@ -482,7 +489,7 @@ function main() {
                 throw new Error('witness test requires --invariant --scenario --source-files --out and a command');
             }
             if (commandArgs.length === 0) {
-                throw new Error('witness test requires a command after options');
+                throw new Error('witness test requires a command after options; choose a focused target-repo proof command after -- (try a module-level test or repo-local npm script before a broad npm test)');
             }
             let timeoutMs;
             if (timeoutMsRaw !== undefined) {

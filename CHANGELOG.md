@@ -10,6 +10,10 @@ type: "reference"
 
 ## [Unreleased]
 
+### Changed
+
+- Clarified first-witness proof-command selection in CLI help, README quickstart, and invariant/config references so target-repo operators choose module-level proof commands or repo-local npm scripts before falling back to broad repo-global tests.
+
 ## [0.1.7] - 2026-04-28
 
 ### Added
