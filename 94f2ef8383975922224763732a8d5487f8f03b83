@@ -1,0 +1,25 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "94f2ef8383975922224763732a8d5487f8f03b83"
+created_at: "2026-04-28T01:03:48Z"
+intent: "Move ts-quality one step nearer production by turning CLI help into a first bounded-review trust contract and aligning product posture/changelog with the narrowed first-witness adoption gap."
+files:
+  - "CHANGELOG.md"
+  - "docs/project/product_posture.md"
+  - "packages/ts-quality/src/cli.ts"
+  - "dist/packages/ts-quality/src/cli.js"
+  - "dist/packages/ts-quality/src/cli.js.map"
+  - "test/cli-integration.test.mjs"
+validation:
+  fast_gate:
+    command: "npm run typecheck --silent && node --test test/cli-integration.test.mjs && npm run lint --silent && node /home/tryinget/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict"
+    status: "pass"
+  full_gate:
+    command: "npm run verify --silent"
+    status: "pass"
+group:
+  index: 1
+  total: 1
+  rationale: "Transcendent loop first actionable slice: first-user CLI trust contract plus product posture convergence; release still requires explicit external publication step."
