@@ -10,6 +10,11 @@ type: "reference"
 
 ## [Unreleased]
 
+### Added
+
+- Added staged-package and public `npx` release verification for the manual `witness test` -> `check` path, requiring execution-backed scenario support without duplicated scenario auto-run config.
+- Added installed-package artifact compatibility proof for legacy `0.1.0` run artifacts without additive `0.2.x` fields, covering report, explain, plan, govern, and authorize projections.
+
 ## [0.2.2] - 2026-04-29
 
 ### Fixed

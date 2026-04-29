@@ -159,6 +159,15 @@ const expectedInstalledCliProofs = {
     outcome: 'fail',
     stderrIncludes: 'Changed scope is required.'
   },
+  manualWitness: {
+    fixture: 'manual-witness-contract',
+    runId: 'public-manual-witness-contract',
+    witnessPath: '.ts-quality/witnesses/auth-refresh-expired-boundary.json',
+    evidenceSemantics: 'execution-backed',
+    scenarioSupportKind: 'execution-witness',
+    nextEvidenceWitnessStatus: 'execution-backed witness considered',
+    autoRanExecutionWitnesses: false
+  },
   keygen: {
     runId: 'packaging-installed-keygen-run',
     outDir: '.ts-quality/generated-keys',
@@ -231,6 +240,25 @@ const expectedInstalledReviewSurfaceProofs = {
     selectedAuthorizeOutcome: 'approve',
     selectedAuthorizeRunId: 'packaging-installed-review-run',
     selectedAuthorizeOverride: 'maintainer'
+  },
+  legacyArtifactCompatibility: {
+    runId: 'packaging-installed-legacy-artifact-run',
+    version: '0.1.0',
+    removedAdditiveFields: [
+      'controlPlane',
+      'coverageGeneration',
+      'analysisWarnings',
+      'mutationRemediation',
+      'nextEvidenceAction',
+      'executionWitnesses',
+      'verdict.confidenceBreakdown'
+    ],
+    reportJsonRunId: 'packaging-installed-legacy-artifact-run',
+    explainIncludes: ['Reasons:'],
+    planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
+    governIncludes: ['auth-risk-budget'],
+    authorizeOutcome: 'deny',
+    authorizeRunId: 'packaging-installed-legacy-artifact-run'
   },
   materializedConfig: {
     configPath: '.ts-quality/materialized/ts-quality.config.json',
@@ -356,6 +384,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.cli.initCreated, expectedInitFiles);
   assert.equal(summary.cli.materializedConfig, '.ts-quality/materialized/ts-quality.config.json');
   assert.deepEqual(summary.cli.checkRequiresScope, expectedInstalledCliProofs.checkRequiresScope);
+  assert.deepEqual(summary.cli.manualWitness, expectedInstalledCliProofs.manualWitness);
   assert.deepEqual(summary.cli.keygen, expectedInstalledCliProofs.keygen);
   assert.deepEqual(summary.api.exportTypes, {
     initProject: 'function',
@@ -379,6 +408,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.reviewFlow.trend, expectedInstalledReviewSurfaceProofs.trend);
   assert.deepEqual(summary.reviewFlow.runSelection, expectedInstalledReviewSurfaceProofs.runSelection);
   assert.deepEqual(summary.reviewFlow.materializedConfig, expectedInstalledReviewSurfaceProofs.materializedConfig);
+  assert.deepEqual(summary.reviewFlow.legacyArtifactCompatibility, expectedInstalledReviewSurfaceProofs.legacyArtifactCompatibility);
   assert.deepEqual(summary.reviewFlow.driftDetection, expectedInstalledReviewSurfaceProofs.driftDetection);
   assert.equal(summary.reviewFlow.governIncludes, 'auth-risk-budget');
   assert.deepEqual(summary.reviewFlow.attestation, {

@@ -5,7 +5,7 @@ import path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { assertPackedTarballFileSetContract, assertStagedPackageFileBoundaryContract, assertStagedPackageManifestContract } from './pack-ts-quality.mjs';
-import { summarizePublicCliContract, verifyPublicCliContract } from './public-cli-contract.mjs';
+import { summarizePublicCliContract, verifyManualWitnessContract, verifyPublicCliContract } from './public-cli-contract.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -36,6 +36,7 @@ const reviewFixtureName = 'governed-app';
 const monorepoFixtureName = 'mini-monorepo';
 const reviewRunId = 'packaging-installed-review-run';
 const reviewTrendRunId = 'packaging-installed-review-trend-run';
+const reviewLegacyArtifactRunId = 'packaging-installed-legacy-artifact-run';
 const reviewMaterializedSourceRunId = 'packaging-installed-materialized-source-run';
 const reviewMaterializedRunId = 'packaging-installed-materialized-config-run';
 const reviewDriftRunId = 'packaging-installed-drift-run';
@@ -243,6 +244,33 @@ function assertTextIncludes(text, label, fragments) {
   }
 }
 
+/**
+ * @param {string} projectRoot
+ * @param {string} sourceRunId
+ * @param {string} targetRunId
+ */
+function writeLegacyCompatibilityRun(projectRoot, sourceRunId, targetRunId) {
+  const sourceRunPath = path.join(projectRoot, '.ts-quality', 'runs', sourceRunId, 'run.json');
+  const sourceRun = readJson(sourceRunPath);
+  const legacyRun = {
+    ...sourceRun,
+    version: '0.1.0',
+    runId: targetRunId,
+    createdAt: '2026-01-01T00:20:00.000Z',
+    verdict: { ...sourceRun.verdict }
+  };
+  delete legacyRun.controlPlane;
+  delete legacyRun.coverageGeneration;
+  delete legacyRun.analysisWarnings;
+  delete legacyRun.mutationRemediation;
+  delete legacyRun.nextEvidenceAction;
+  delete legacyRun.executionWitnesses;
+  delete legacyRun.verdict.confidenceBreakdown;
+  const targetRunDir = path.join(projectRoot, '.ts-quality', 'runs', targetRunId);
+  fs.mkdirSync(targetRunDir, { recursive: true });
+  fs.writeFileSync(path.join(targetRunDir, 'run.json'), `${JSON.stringify(legacyRun, null, 2)}\n`, 'utf8');
+}
+
 export function runPackagingSmoke() {
   const packSummary = JSON.parse(run('node', ['scripts/pack-ts-quality.mjs'], root));
   const tarballPath = path.join(root, packSummary.tarball);
@@ -391,6 +419,8 @@ export function runPackagingSmoke() {
     ].join('\n'), 'utf8');
     run(installedTscBinPath, ['--module', 'commonjs', '--moduleResolution', 'node', '--target', 'ES2022', '--esModuleInterop', '--noEmit', path.basename(typeSmokePath)], installRoot);
 
+    const manualWitness = verifyManualWitnessContract((args, cwd) => run(installedCliBinPath, args, cwd), { baseDir: installRoot });
+
     const reviewProjectRoot = prepareInstalledReviewProject(installRoot);
     run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewRunId], installRoot);
     ensureRelativeFiles(reviewProjectRoot, expectedReviewRunArtifacts, 'Installed review flow');
@@ -420,6 +450,22 @@ export function runPackagingSmoke() {
     const governText = run(installedCliBinPath, ['govern', '--root', reviewProjectRoot], installRoot);
     if (!governText.includes('auth-risk-budget')) {
       throw new Error(`Unexpected ts-quality govern output from installed package:\n${governText}`);
+    }
+
+    writeLegacyCompatibilityRun(reviewProjectRoot, reviewRunId, reviewLegacyArtifactRunId);
+    const legacyReportJson = JSON.parse(run(installedCliBinPath, ['report', '--root', reviewProjectRoot, '--json', '--run-id', reviewLegacyArtifactRunId], installRoot));
+    const legacyExplainText = run(installedCliBinPath, ['explain', '--root', reviewProjectRoot, '--run-id', reviewLegacyArtifactRunId], installRoot);
+    const legacyPlanText = run(installedCliBinPath, ['plan', '--root', reviewProjectRoot, '--run-id', reviewLegacyArtifactRunId], installRoot);
+    const legacyGovernText = run(installedCliBinPath, ['govern', '--root', reviewProjectRoot, '--run-id', reviewLegacyArtifactRunId], installRoot);
+    const legacyAuthorizeDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'release-bot', '--run-id', reviewLegacyArtifactRunId], installRoot));
+    if (legacyReportJson.version !== '0.1.0' || legacyReportJson.runId !== reviewLegacyArtifactRunId) {
+      throw new Error(`Installed legacy artifact report did not preserve legacy run identity:\n${JSON.stringify(legacyReportJson, null, 2)}`);
+    }
+    assertTextIncludes(legacyExplainText, 'legacy explain', ['Reasons:']);
+    assertTextIncludes(legacyPlanText, 'legacy plan', ['Invariant evidence at risk: auth.refresh.validity']);
+    assertTextIncludes(legacyGovernText, 'legacy govern', ['auth-risk-budget']);
+    if (typeof legacyAuthorizeDecision.outcome !== 'string' || legacyAuthorizeDecision.evidenceContext?.runId !== reviewLegacyArtifactRunId) {
+      throw new Error(`Installed legacy artifact authorize did not bind to ${reviewLegacyArtifactRunId}:\n${JSON.stringify(legacyAuthorizeDecision, null, 2)}`);
     }
 
     run(installedCliBinPath, [
@@ -658,7 +704,8 @@ export function runPackagingSmoke() {
           ],
           attestationPath: keygenAttestationPath,
           verifiedIssuer: 'ci.generated'
-        }
+        },
+        manualWitness
       },
       api: {
         exportTypes: apiSummary.exportTypes,
@@ -767,6 +814,25 @@ export function runPackagingSmoke() {
           }
         },
         governIncludes: 'auth-risk-budget',
+        legacyArtifactCompatibility: {
+          runId: reviewLegacyArtifactRunId,
+          version: legacyReportJson.version,
+          removedAdditiveFields: [
+            'controlPlane',
+            'coverageGeneration',
+            'analysisWarnings',
+            'mutationRemediation',
+            'nextEvidenceAction',
+            'executionWitnesses',
+            'verdict.confidenceBreakdown'
+          ],
+          reportJsonRunId: legacyReportJson.runId,
+          explainIncludes: ['Reasons:'],
+          planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
+          governIncludes: ['auth-risk-budget'],
+          authorizeOutcome: legacyAuthorizeDecision.outcome,
+          authorizeRunId: legacyAuthorizeDecision.evidenceContext?.runId
+        },
         attestation: {
           subject: `.ts-quality/runs/${reviewRunId}/verdict.json`,
           runId: reviewRunId,

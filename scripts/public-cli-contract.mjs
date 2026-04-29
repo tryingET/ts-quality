@@ -1,11 +1,14 @@
 // @ts-check
 
+import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const publicCliContractSchemaVersion = 1;
 export const doctorMachineHeader = 'TSQ_DOCTOR_MACHINE_V1';
+export const manualWitnessContractRunId = 'public-manual-witness-contract';
+export const manualWitnessContractPath = '.ts-quality/witnesses/auth-refresh-expired-boundary.json';
 
 /**
  * @typedef {{ id: string, args: string[], summary: string, validate: (stdout: string) => Record<string, string> }} PublicCliContractCase
@@ -107,6 +110,123 @@ function sleep(milliseconds) {
 }
 
 /**
+ * @param {string} rootDir
+ */
+export function writeManualWitnessContractProject(rootDir) {
+  fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'test'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, '.ts-quality'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'package.json'), `${JSON.stringify({ name: 'ts-quality-manual-witness-contract', private: true, type: 'module' }, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'src', 'token.js'), `export function isExpired(expiresAt, now = 10) {\n  return now >= expiresAt;\n}\n`, 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'test', 'token.test.js'), [
+    "import test from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "import { isExpired } from '../src/token.js';",
+    "test('exact boundary denies access', () => { assert.equal(isExpired(10, 10), true); });",
+    ''
+  ].join('\n'), 'utf8');
+  fs.writeFileSync(path.join(rootDir, '.ts-quality', 'invariants.ts'), `export default [{\n  id: 'auth.refresh.validity',\n  title: 'Refresh token validity',\n  description: 'Expired refresh tokens must never authorize access.',\n  severity: 'high',\n  selectors: ['path:src/token.js', 'symbol:isExpired'],\n  scenarios: [{\n    id: 'expired-boundary',\n    description: 'exact expiry boundary denies access',\n    keywords: ['exact boundary'],\n    failurePathKeywords: ['denies access'],\n    expected: 'deny'\n  }]\n}];\n`, 'utf8');
+  fs.writeFileSync(path.join(rootDir, '.ts-quality', 'constitution.ts'), 'export default [];\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, '.ts-quality', 'agents.ts'), 'export default [];\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'ts-quality.config.ts'), `export default {\n  sourcePatterns: ['src/**/*.js'],\n  testPatterns: ['test/**/*.js'],\n  coverage: { lcovPath: 'coverage/lcov.info' },\n  mutations: { testCommand: ['node', '--test', 'test/token.test.js'], coveredOnly: false, timeoutMs: 10000, maxSites: 2 },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  changeSet: { files: ['src/token.js'] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`, 'utf8');
+}
+
+/**
+ * @param {(args: string[], cwd: string) => string} runCli
+ * @param {{ baseDir: string }} options
+ */
+export function verifyManualWitnessContract(runCli, options) {
+  const projectRoot = fs.mkdtempSync(path.join(options.baseDir, 'tsq-manual-witness-contract-'));
+  try {
+    writeManualWitnessContractProject(projectRoot);
+    runCli([
+      'witness',
+      'test',
+      '--root', projectRoot,
+      '--invariant', 'auth.refresh.validity',
+      '--scenario', 'expired-boundary',
+      '--source-files', 'src/token.js',
+      '--test-files', 'test/token.test.js',
+      '--out', manualWitnessContractPath,
+      '--',
+      'node', '--test', 'test/token.test.js'
+    ], projectRoot);
+    runCli(['check', '--root', projectRoot, '--run-id', manualWitnessContractRunId], projectRoot);
+    const run = JSON.parse(fs.readFileSync(path.join(projectRoot, '.ts-quality', 'runs', manualWitnessContractRunId, 'run.json'), 'utf8'));
+    const claim = /** @type {any[] | undefined} */ (run.behaviorClaims)?.find((item) => item.invariantId === 'auth.refresh.validity');
+    const scenario = /** @type {any[] | undefined} */ (claim?.evidenceSummary?.scenarioResults)?.find((item) => item.scenarioId === 'expired-boundary');
+    const witnessFiles = claim?.evidenceSummary?.executionWitnessFiles ?? [];
+    if (claim?.evidenceSummary?.evidenceSemantics !== 'execution-backed') {
+      throw new Error(`Manual witness contract did not produce execution-backed evidence: ${JSON.stringify(claim?.evidenceSummary, null, 2)}`);
+    }
+    if (scenario?.supportKind !== 'execution-witness' || scenario?.supported !== true) {
+      throw new Error(`Manual witness contract did not mark the scenario as execution-witness support: ${JSON.stringify(scenario, null, 2)}`);
+    }
+    if (JSON.stringify(witnessFiles) !== JSON.stringify([manualWitnessContractPath])) {
+      throw new Error(`Manual witness contract consumed unexpected witness files: ${JSON.stringify(witnessFiles)}`);
+    }
+    if (run.executionWitnesses !== undefined) {
+      throw new Error(`Manual witness contract should not auto-run configured execution witnesses: ${JSON.stringify(run.executionWitnesses, null, 2)}`);
+    }
+    if (run.nextEvidenceAction?.witnessStatus !== 'execution-backed witness considered') {
+      throw new Error(`Manual witness contract did not update next evidence witness status: ${run.nextEvidenceAction?.witnessStatus}`);
+    }
+    return {
+      fixture: 'manual-witness-contract',
+      runId: manualWitnessContractRunId,
+      witnessPath: manualWitnessContractPath,
+      evidenceSemantics: claim.evidenceSummary.evidenceSemantics,
+      scenarioSupportKind: scenario.supportKind,
+      nextEvidenceWitnessStatus: run.nextEvidenceAction.witnessStatus,
+      autoRanExecutionWitnesses: false
+    };
+  } finally {
+    fs.rmSync(projectRoot, { recursive: true, force: true });
+  }
+}
+
+/**
+ * @param {{ packageSpec: string, attempts?: number, cwd?: string, env?: Record<string, string> }} options
+ */
+export function verifyPublicNpxManualWitnessContract(options) {
+  const attempts = options.attempts ?? 1;
+  const baseDir = fs.mkdtempSync(path.join(options.cwd ?? process.cwd(), '.tsq-public-manual-witness-'));
+  try {
+    return verifyManualWitnessContract((args, cwd) => {
+      let lastStdout = '';
+      let lastStderr = '';
+      let lastStatus = null;
+      for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        const result = spawnSync('npx', ['-y', '-p', options.packageSpec, 'ts-quality', ...args], {
+          cwd,
+          encoding: 'utf8',
+          env: { ...process.env, ...(options.env ?? {}) }
+        });
+        lastStdout = result.stdout ?? '';
+        lastStderr = result.stderr ?? '';
+        lastStatus = result.status;
+        if (result.status === 0) {
+          return lastStdout;
+        }
+        if (attempt < attempts) {
+          console.error(`public manual witness contract attempt ${attempt}/${attempts} failed; retrying after ${attempt * 15}s.`);
+          if (lastStdout.trim()) {
+            console.error(lastStdout.trim());
+          }
+          if (lastStderr.trim()) {
+            console.error(lastStderr.trim());
+          }
+          sleep(attempt * 15_000);
+        }
+      }
+      throw new Error(`public manual witness contract failed after ${attempts} attempt(s) with status ${lastStatus}.\n${lastStdout}\n${lastStderr}`.trim());
+    }, { baseDir });
+  } finally {
+    fs.rmSync(baseDir, { recursive: true, force: true });
+  }
+}
+
+/**
  * @param {string[]} argv
  * @returns {{ command: string | undefined, options: Record<string, string | boolean> }}
  */
@@ -205,13 +325,24 @@ if (invokedPath === modulePath) {
       throw new Error('Missing required --package <name@version>.');
     }
     const attempts = positiveIntegerOption(options['attempts'], 1);
+    const cwd = path.resolve(path.dirname(modulePath), '..');
+    const env = { NPM_CONFIG_MIN_RELEASE_AGE: '0' };
     const contract = verifyPublicNpxCliContract({
       packageSpec,
       attempts,
-      cwd: path.resolve(path.dirname(modulePath), '..'),
-      env: { NPM_CONFIG_MIN_RELEASE_AGE: '0' }
+      cwd,
+      env
     });
-    console.log(JSON.stringify(summarizePublicCliContract(contract), null, 2));
+    const manualWitness = verifyPublicNpxManualWitnessContract({
+      packageSpec,
+      attempts,
+      cwd,
+      env
+    });
+    console.log(JSON.stringify({
+      ...summarizePublicCliContract(contract),
+      manualWitness
+    }, null, 2));
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);

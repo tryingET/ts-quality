@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { npxArgsForPublicCliContractCase, summarizePublicCliContract, verifyPublicCliContract } from './public-cli-contract.mjs';
+import { npxArgsForPublicCliContractCase, summarizePublicCliContract, verifyPublicCliContract, verifyPublicNpxManualWitnessContract } from './public-cli-contract.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -562,12 +562,19 @@ function commandVerifyPublic(options) {
     `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality ${contractCase.args.join(' ')} did not pass`
   ));
   const publicCliSummary = summarizePublicCliContract(publicCliContract);
+  const manualWitness = verifyPublicNpxManualWitnessContract({
+    packageSpec,
+    attempts: 8,
+    cwd: root,
+    env: freshSelfPublishEnv
+  });
   const release = runRequired('gh', ['release', 'view', `v${version}`, '--repo', repoSlug, '--json', 'tagName,url,publishedAt,isPrerelease']);
   console.log(JSON.stringify({
     action: 'verify-public',
     version,
     npmVersion,
     publicCliContract: publicCliSummary,
+    manualWitness,
     githubRelease: JSON.parse(release)
   }, null, 2));
 }
