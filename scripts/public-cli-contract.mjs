@@ -29,9 +29,23 @@ export const publicCliContractCases = [
     }
   },
   {
+    id: 'doctor-help',
+    args: ['doctor', '--help'],
+    summary: 'doctor help exposes compact machine flag',
+    validate(stdout) {
+      if (!stdout.startsWith('Usage: ts-quality doctor ')) {
+        throw new Error('ts-quality doctor --help did not start with doctor usage.');
+      }
+      if (!stdout.includes('--machine')) {
+        throw new Error('ts-quality doctor --help did not list --machine.');
+      }
+      return { flag: '--machine' };
+    }
+  },
+  {
     id: 'doctor-machine',
     args: ['doctor', '--machine', '--changed', 'src/index.ts'],
-    summary: 'compact doctor line protocol starts with its exact header',
+    summary: 'compact doctor line protocol starts with its exact header and exact command fields',
     validate(stdout) {
       if (!stdout.startsWith(`${doctorMachineHeader}\n`)) {
         throw new Error(`ts-quality doctor --machine did not start with ${doctorMachineHeader}.`);
@@ -39,7 +53,10 @@ export const publicCliContractCases = [
       if (/^[{[]/u.test(stdout)) {
         throw new Error('ts-quality doctor --machine emitted JSON-looking output instead of the compact line protocol.');
       }
-      return { header: stdout.split('\n')[0] ?? '' };
+      if (!stdout.includes('\tcommand_arg=')) {
+        throw new Error('ts-quality doctor --machine did not emit any exact command_arg fields.');
+      }
+      return { header: stdout.split('\n')[0] ?? '', commandField: 'command_arg' };
     }
   }
 ];

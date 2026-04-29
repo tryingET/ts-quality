@@ -1889,7 +1889,7 @@ export function renderDoctorMachine(rootDir: string, options?: { changedFiles?: 
     ...diagnostic.risks.map((risk) => `risk\t${risk.level}\t${risk.code}\t${machineValue(risk.message)}\thint=${machineValue(risk.hint)}`),
     ...diagnostic.recommendations.map((recommendation) => [
       `recommend\t${recommendation.kind}\t${recommendation.id}\t${machineValue(recommendation.summary)}`,
-      ...(recommendation.command ? [`command=${machineList(recommendation.command)}`] : [])
+      ...(recommendation.command ? recommendation.command.map((arg) => `command_arg=${machineValue(arg)}`) : [])
     ].join('\t'))
   ];
   return `${lines.join('\n')}\n`;

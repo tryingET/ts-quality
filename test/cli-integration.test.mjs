@@ -51,8 +51,8 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /\nchanged\tok\tfiles=src\/index\.ts\n/);
   assert.match(result.stdout, /\nrisk\twarn\tsource-dist-coverage-risk\t/);
   assert.match(result.stdout, /\nrecommend\tsource-map\tsource-map-coverage\t.*NODE_OPTIONS=--enable-source-maps/);
-  assert.match(result.stdout, /\nrecommend\tfocused-test\tfocused-test-command\tCandidate focused test command: npm run test \(adjust to the smallest trustworthy slice\)\.\tcommand=npm,run,test/);
-  assert.match(result.stdout, /\nrecommend\twitness\twitness-command-shape\t.*\tcommand=ts-quality,witness,test/);
+  assert.match(result.stdout, /\nrecommend\tfocused-test\tfocused-test-command\tCandidate focused test command: npm run test \(adjust to the smallest trustworthy slice\)\.\tcommand_arg=npm\tcommand_arg=run\tcommand_arg=test/);
+  assert.match(result.stdout, /\nrecommend\twitness\twitness-command-shape\t.*\tcommand_arg=ts-quality\tcommand_arg=witness\tcommand_arg=test/);
   assert.doesNotMatch(result.stdout, /--runInBand/);
   assert.doesNotMatch(result.stdout, /^[{[]/);
 });

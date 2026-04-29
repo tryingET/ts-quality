@@ -143,8 +143,11 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
   expectContainsAll(publicCliContract, [
     'publicCliContractCases',
     "stdout.startsWith('ts-quality commands:\\n')",
+    "id: 'doctor-help'",
+    "args: ['doctor', '--help']",
     'TSQ_DOCTOR_MACHINE_V1',
     'stdout.startsWith(`${doctorMachineHeader}\\n`)',
+    "'\\tcommand_arg='",
     'npxArgsForPublicCliContractCase'
   ], 'scripts/public-cli-contract.mjs');
 
@@ -162,8 +165,9 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'environment name: `npm-publish`',
     'NPM_CONFIG_MIN_RELEASE_AGE=0',
     'scripts/public-cli-contract.mjs',
+    'ts-quality doctor --help',
     'ts-quality doctor --machine --changed src/index.ts',
-    'compact `doctor --machine` protocol header',
+    'compact `doctor --machine` protocol header plus exact command fields',
     'Release bodies are validated as local release-please-style notes',
     '`### Breaking Changes` plus at least one categorized change section',
     '`### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update'
@@ -183,8 +187,21 @@ test('shared public CLI contract rejects noisy help and doctor-machine preambles
     if (contractCase.id === 'help') {
       return 'ts-quality commands:\n';
     }
+    if (contractCase.id === 'doctor-help') {
+      return 'Usage: ts-quality doctor [--machine]\n';
+    }
     return 'warning before protocol\nTSQ_DOCTOR_MACHINE_V1\n';
   }), /did not start with TSQ_DOCTOR_MACHINE_V1/);
+
+  assert.throws(() => verifyPublicCliContract((contractCase) => {
+    if (contractCase.id === 'help') {
+      return 'ts-quality commands:\n';
+    }
+    if (contractCase.id === 'doctor-help') {
+      return 'Usage: ts-quality doctor [--machine]\n';
+    }
+    return 'TSQ_DOCTOR_MACHINE_V1\nrecommend\tfocused-test\tfocused-test-command\tCandidate focused test command\n';
+  }), /did not emit any exact command_arg fields/);
 });
 
 test('v0.2.0 release notes use categorized breaking-change and agent migration sections', () => {

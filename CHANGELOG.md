@@ -16,8 +16,8 @@ type: "reference"
 
 ### Fixed
 
-- Fixed release verification so future public package checks require exact first-line headers for both top-level help and the compact `doctor --machine` protocol through one shared public CLI contract verifier, preventing docs or adoption plans from claiming a CLI path that the published tarball does not expose.
-- Fixed `doctor --machine` recommendation lines to include compact exact command fields when the diagnostic model has a command, reducing fragile prose parsing for harnessed agents.
+- Fixed release verification so future public package checks require exact top-level help, `doctor --help` exposure of `--machine`, and the compact `doctor --machine` protocol through one shared public CLI contract verifier, preventing docs or adoption plans from claiming a CLI path that the published tarball does not expose.
+- Fixed `doctor --machine` recommendation lines to include repeated compact `command_arg=` fields when the diagnostic model has a command, reducing fragile prose parsing and comma-splitting ambiguity for harnessed agents.
 - Fixed doctor script ranking so scripts named for tests or coverage outrank unrelated scripts whose command bodies merely mention test files, and generic Node test scripts no longer receive a Jest-specific `--runInBand` suffix.
 
 ## [0.2.0] - 2026-04-28

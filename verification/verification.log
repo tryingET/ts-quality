@@ -242,6 +242,17 @@ $ npm run smoke:packaging --silent
           }
         },
         {
+          "id": "doctor-help",
+          "args": [
+            "doctor",
+            "--help"
+          ],
+          "summary": "doctor help exposes compact machine flag",
+          "details": {
+            "flag": "--machine"
+          }
+        },
+        {
           "id": "doctor-machine",
           "args": [
             "doctor",
@@ -249,9 +260,10 @@ $ npm run smoke:packaging --silent
             "--changed",
             "src/index.ts"
           ],
-          "summary": "compact doctor line protocol starts with its exact header",
+          "summary": "compact doctor line protocol starts with its exact header and exact command fields",
           "details": {
-            "header": "TSQ_DOCTOR_MACHINE_V1"
+            "header": "TSQ_DOCTOR_MACHINE_V1",
+            "commandField": "command_arg"
           }
         }
       ]
