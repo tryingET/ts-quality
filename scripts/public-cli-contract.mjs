@@ -26,7 +26,10 @@ export const manualWitnessContractPath = '.ts-quality/witnesses/auth-refresh-exp
  * @typedef {{ id: string, args: string[], summary: string, stdout: string, details: Record<string, string> }} PublicCliContractCheck
  */
 
-/** @param {string} field */
+/**
+ * @param {string} field
+ * @returns {[string, string] | undefined}
+ */
 function splitMachineKeyValue(field) {
   const equalsIndex = field.indexOf('=');
   if (equalsIndex <= 0) {
@@ -59,6 +62,7 @@ export function parseDoctorMachineProtocol(stdout) {
     if (!/^[a-z][a-z0-9_-]*$/u.test(kind)) {
       throw new Error(`ts-quality doctor --machine emitted invalid record kind '${kind}'.`);
     }
+    /** @type {Map<string, string[]>} */
     const keyValues = new Map();
     for (const field of fields) {
       if (field.includes('\n') || field.includes('\r') || field.includes('\t')) {
