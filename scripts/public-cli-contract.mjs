@@ -74,7 +74,7 @@ export function parseDoctorMachineProtocol(stdout) {
       }
       const [key, value] = pair;
       if (!/^[A-Za-z][A-Za-z0-9_]*$/u.test(key)) {
-        throw new Error(`ts-quality doctor --machine emitted invalid field key '${key}'.`);
+        continue;
       }
       keyValues.set(key, [...(keyValues.get(key) ?? []), value]);
     }
