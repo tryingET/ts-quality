@@ -280,6 +280,22 @@ test('release orchestrator dry-run prepare reports release artifacts without mut
   assert.equal(parsed.changedFiles.includes('CHANGELOG.md'), true);
 });
 
+test('minimal external walkthrough folds pilot friction back into the first-run recipe', () => {
+  const walkthrough = readRepoFile('docs/adoption/minimal-external-walkthrough.md');
+
+  expectContainsAll(walkthrough, [
+    '"generateCommand": ["npm", "run", "quality", "--silent"]',
+    'ts-quality check` creates the parent directory for `coverage/lcov.info`',
+    '"quality": "mkdir -p coverage && node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info"',
+    '"screening:witness": "ts-quality witness test --invariant auth.refresh.validity',
+    'npm run screening:doctor -- --changed src/auth/token.js',
+    'npm run screening:witness',
+    'npm run screening:check -- --changed src/auth/token.js --run-id auth-token-first-slice'
+  ], 'docs/adoption/minimal-external-walkthrough.md');
+  assert.equal(walkthrough.includes('"screening:witness": "ts-quality witness test --config'), false, 'witness test walkthrough should not claim --config is accepted');
+  assert.equal(walkthrough.includes('```bash\nnpm run quality\nnpm run screening:doctor'), false, 'first-run recipe should let check invoke coverage.generateCommand instead of requiring pre-run coverage');
+});
+
 test('first-release decision keeps SG6 adoption surfaces explicit without changing authority', () => {
   const decision = readRepoFile('docs/releases/2026-04-19-first-release-decision.md');
 

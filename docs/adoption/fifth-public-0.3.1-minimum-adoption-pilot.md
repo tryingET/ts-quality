@@ -119,11 +119,11 @@ Artifacts: /tmp/ts-quality-031-minimum-adoption-efoKUG/.ts-quality/runs/pilot-03
 - `run.executionWitnesses` stayed absent, confirming this was manual witness consumption rather than auto-run witness config.
 - `report --run-id` and `explain --run-id` rendered the selected run from the public package.
 
-### Adoption friction observed
+### Adoption friction observed and folded back
 
-- This harness environment required `NPM_CONFIG_MIN_RELEASE_AGE=0` for immediate use of a just-published version. That is release-freshness policy, not a package contract failure.
-- Node's LCOV reporter did not create the `coverage/` directory automatically; the pilot needed `mkdir -p coverage` before `npm run coverage:slice`.
-- `witness test` does not need `--config`; it binds directly through invariant/scenario/source/test/out flags plus the focused command after `--`.
+- This harness environment required `NPM_CONFIG_MIN_RELEASE_AGE=0` for immediate use of a just-published version. That is release-freshness policy, not a package contract failure; fresh-release pilots should set the variable explicitly.
+- Node's LCOV reporter did not create the `coverage/` directory automatically when the coverage script was run directly. The minimal walkthrough now relies on `coverage.generateCommand` during `ts-quality check`, which creates the LCOV parent directory before running the configured command. If operators run the coverage script directly, they should keep a `mkdir -p coverage` guard.
+- `witness test` does not need `--config`; it binds directly through invariant/scenario/source/test/out flags plus the focused command after `--`. The minimal walkthrough now reflects that.
 
 ## Conclusion
 

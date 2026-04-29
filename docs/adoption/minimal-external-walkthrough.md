@@ -24,8 +24,9 @@ Assume the target repo has this behavior-bearing file and focused test:
 ```text
 src/auth/token.js
 test/token.test.js
-coverage/lcov.info
 ```
+
+The walkthrough lets `ts-quality check` create `coverage/lcov.info` through `coverage.generateCommand` when it is missing, so the first run does not depend on a pre-existing coverage directory.
 
 The first slice is `src/auth/token.js`. Do not screen a facade barrel such as `src/index.js` when the behavior lives in `src/auth/token.js`.
 
@@ -37,7 +38,10 @@ Create `ts-quality.config.json`:
 {
   "sourcePatterns": ["src/**/*.js"],
   "testPatterns": ["test/**/*.js"],
-  "coverage": { "lcovPath": "coverage/lcov.info" },
+  "coverage": {
+    "lcovPath": "coverage/lcov.info",
+    "generateCommand": ["npm", "run", "quality", "--silent"]
+  },
   "mutations": {
     "testCommand": ["node", "--test", "test/token.test.js"],
     "coveredOnly": true,
@@ -144,12 +148,11 @@ In the target repo's `package.json`, add scripts that make the run boundary bori
 }
 ```
 
-Use whatever normal quality command the target repo already has; the important part is that coverage exists before `ts-quality check` or that `coverage.generateCommand` is configured so `check` can create missing LCOV itself before analysis. Some LCOV reporters do not create the destination directory automatically, so create `coverage/` explicitly when needed.
+Use whatever normal quality command the target repo already has. In this walkthrough `coverage.generateCommand` is configured, so `ts-quality check` creates the parent directory for `coverage/lcov.info` and runs the quality command when LCOV is missing. If you run the quality script directly outside `ts-quality check`, keep the `mkdir -p coverage` guard because some LCOV reporters do not create the destination directory automatically.
 
 ## 4) Run one truthful slice
 
 ```bash
-npm run quality
 npm run screening:doctor -- --changed src/auth/token.js
 npm run screening:witness
 npm run screening:check -- --changed src/auth/token.js --run-id auth-token-first-slice
