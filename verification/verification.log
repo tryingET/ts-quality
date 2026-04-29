@@ -238,7 +238,7 @@ $ npm run smoke:packaging --silent
           ],
           "summary": "top-level help exposes command list",
           "details": {
-            "includes": "ts-quality commands:"
+            "header": "ts-quality commands:"
           }
         },
         {

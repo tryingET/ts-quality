@@ -19,10 +19,13 @@ export const publicCliContractCases = [
     args: ['--help'],
     summary: 'top-level help exposes command list',
     validate(stdout) {
-      if (!stdout.includes('ts-quality commands:')) {
-        throw new Error('ts-quality --help did not include "ts-quality commands:".');
+      if (!stdout.startsWith('ts-quality commands:\n')) {
+        throw new Error('ts-quality --help did not start with "ts-quality commands:".');
       }
-      return { includes: 'ts-quality commands:' };
+      if (/^[{[]/u.test(stdout)) {
+        throw new Error('ts-quality --help emitted JSON-looking output instead of human-readable command help.');
+      }
+      return { header: stdout.split('\n')[0] ?? '' };
     }
   },
   {

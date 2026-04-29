@@ -142,7 +142,7 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
   assert.equal(releaseOrchestrator.includes('Agent migration notes'), true, 'release notes with breaking changes must include agent migration guidance');
   expectContainsAll(publicCliContract, [
     'publicCliContractCases',
-    'ts-quality commands:',
+    "stdout.startsWith('ts-quality commands:\\n')",
     'TSQ_DOCTOR_MACHINE_V1',
     'stdout.startsWith(`${doctorMachineHeader}\\n`)',
     'npxArgsForPublicCliContractCase'
@@ -171,7 +171,14 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
 });
 
 
-test('shared public CLI contract rejects noisy doctor-machine preambles', () => {
+test('shared public CLI contract rejects noisy help and doctor-machine preambles', () => {
+  assert.throws(() => verifyPublicCliContract((contractCase) => {
+    if (contractCase.id === 'help') {
+      return 'warning before help\nts-quality commands:\n';
+    }
+    return 'TSQ_DOCTOR_MACHINE_V1\n';
+  }), /help did not start with "ts-quality commands:"/);
+
   assert.throws(() => verifyPublicCliContract((contractCase) => {
     if (contractCase.id === 'help') {
       return 'ts-quality commands:\n';
