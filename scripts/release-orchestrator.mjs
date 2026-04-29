@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { npxArgsForPublicCliContractCase, summarizePublicCliContract, verifyPublicCliContract } from './public-cli-contract.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -551,34 +552,22 @@ function commandVerifyPublic(options) {
   if (npmVersion.trim() !== version) {
     throw new Error(`npm registry returned an unexpected version for ${packageSpec}: ${npmVersion}`);
   }
-  const help = runRequiredWithRetry(
-    'public npx CLI smoke',
+  const publicCliContract = verifyPublicCliContract((contractCase) => runRequiredWithRetry(
+    `public CLI contract ${contractCase.id}`,
     'npx',
-    ['-y', '-p', packageSpec, 'ts-quality', '--help'],
+    npxArgsForPublicCliContractCase(packageSpec, contractCase),
     freshSelfPublishEnv,
     8,
     'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
-    `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality --help did not pass`
-  );
-  const doctorMachine = runRequiredWithRetry(
-    'public doctor machine smoke',
-    'npx',
-    ['-y', '-p', packageSpec, 'ts-quality', 'doctor', '--machine', '--changed', 'src/index.ts'],
-    freshSelfPublishEnv,
-    8,
-    'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
-    `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality doctor --machine did not pass`
-  );
-  if (!doctorMachine.startsWith('TSQ_DOCTOR_MACHINE_V1\n')) {
-    throw new Error(`Public ${packageSpec} doctor --machine did not emit TSQ_DOCTOR_MACHINE_V1.`);
-  }
+    `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality ${contractCase.args.join(' ')} did not pass`
+  ));
+  const publicCliSummary = summarizePublicCliContract(publicCliContract);
   const release = runRequired('gh', ['release', 'view', `v${version}`, '--repo', repoSlug, '--json', 'tagName,url,publishedAt,isPrerelease']);
   console.log(JSON.stringify({
     action: 'verify-public',
     version,
     npmVersion,
-    cliHelpIncludesCommands: help.includes('ts-quality commands:'),
-    doctorMachineHeader: doctorMachine.split('\n')[0],
+    publicCliContract: publicCliSummary,
     githubRelease: JSON.parse(release)
   }, null, 2));
 }

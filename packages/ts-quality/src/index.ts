@@ -1821,7 +1821,12 @@ function buildDoctorDiagnostic(rootDir: string, options?: { changedFiles?: strin
   } else if (tests.length > 0) {
     recommendations.push({ id: 'focused-test-command', kind: 'focused-test', summary: `Candidate focused test command: node --test ${tests[0]}.`, command: ['node', '--test', tests[0] ?? 'test'] });
   }
-  recommendations.push({ id: 'witness-command-shape', kind: 'witness', summary: 'Candidate witness command shape: ts-quality witness test --invariant <id> --scenario <id> --source-files <src> --test-files <test> --out .ts-quality/witnesses/<id>.json -- <focused command>' });
+  recommendations.push({
+    id: 'witness-command-shape',
+    kind: 'witness',
+    summary: 'Candidate witness command shape: ts-quality witness test --invariant <id> --scenario <id> --source-files <src> --test-files <test> --out .ts-quality/witnesses/<id>.json -- <focused command>',
+    command: ['ts-quality', 'witness', 'test', '--invariant', '<id>', '--scenario', '<id>', '--source-files', '<src>', '--test-files', '<test>', '--out', '.ts-quality/witnesses/<id>.json', '--', '<focused command>']
+  });
   recommendations.push({ id: 'script-snippets', kind: 'script-snippet', summary: 'Suggested package.json snippets are advisory only: coverage:<slice>, witness:<slice>, quality:<slice>.' });
   return {
     surface: 'ts-quality.doctor',
@@ -1882,7 +1887,10 @@ export function renderDoctorMachine(rootDir: string, options?: { changedFiles?: 
     `coverage\t${diagnostic.coverage.lcovExists ? 'ok' : 'missing'}\tlcovPath=${machineValue(diagnostic.coverage.lcovPath)}\tgenerateCommand=${diagnostic.coverage.generateCommandConfigured ? machineList(diagnostic.coverage.generateCommand) : 'none'}`,
     `mutation\ttestCommand=${machineList(diagnostic.mutations.testCommand)}\truntimeMirrorRoots=${machineList(diagnostic.mutations.runtimeMirrorRoots)}`,
     ...diagnostic.risks.map((risk) => `risk\t${risk.level}\t${risk.code}\t${machineValue(risk.message)}\thint=${machineValue(risk.hint)}`),
-    ...diagnostic.recommendations.map((recommendation) => `recommend\t${recommendation.kind}\t${recommendation.id}\t${machineValue(recommendation.summary)}`)
+    ...diagnostic.recommendations.map((recommendation) => [
+      `recommend\t${recommendation.kind}\t${recommendation.id}\t${machineValue(recommendation.summary)}`,
+      ...(recommendation.command ? [`command=${machineList(recommendation.command)}`] : [])
+    ].join('\t'))
   ];
   return `${lines.join('\n')}\n`;
 }

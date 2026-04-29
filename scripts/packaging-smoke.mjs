@@ -5,6 +5,7 @@ import path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { assertPackedTarballFileSetContract, assertStagedPackageFileBoundaryContract, assertStagedPackageManifestContract } from './pack-ts-quality.mjs';
+import { summarizePublicCliContract, verifyPublicCliContract } from './public-cli-contract.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -305,14 +306,8 @@ export function runPackagingSmoke() {
       ensureFile(path.join(installedPackageDir, normalizePackageRelative(relativePath)), `Installed ${label} entrypoint`);
     }
 
-    const cliHelp = run(installedCliBinPath, ['--help'], installRoot);
-    if (!cliHelp.includes('ts-quality commands:')) {
-      throw new Error(`Unexpected ts-quality --help output:\n${cliHelp}`);
-    }
-    const cliDoctorMachine = run(installedCliBinPath, ['doctor', '--machine', '--changed', 'src/index.ts'], installRoot);
-    if (!cliDoctorMachine.startsWith('TSQ_DOCTOR_MACHINE_V1\n')) {
-      throw new Error(`Unexpected ts-quality doctor --machine output from installed package:\n${cliDoctorMachine}`);
-    }
+    const installedCliContract = verifyPublicCliContract((contractCase) => run(installedCliBinPath, contractCase.args, installRoot));
+    const installedCliContractSummary = summarizePublicCliContract(installedCliContract);
 
     const cliProjectRoot = path.join(installRoot, 'cli-project');
     fs.mkdirSync(cliProjectRoot, { recursive: true });
@@ -645,8 +640,7 @@ export function runPackagingSmoke() {
       stagedFiles: stagedBoundary.files,
       tarballFiles: tarballBoundary.files,
       cli: {
-        helpIncludes: 'ts-quality commands:',
-        doctorMachineHeader: cliDoctorMachine.split('\n')[0],
+        publicContract: installedCliContractSummary,
         initCreated: [...expectedInitFiles],
         materializedConfig: '.ts-quality/materialized/ts-quality.config.json',
         checkRequiresScope: {

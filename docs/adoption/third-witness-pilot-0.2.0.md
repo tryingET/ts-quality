@@ -84,11 +84,12 @@ The attempt also exposed a doctor recommendation smell already present on `main`
 The follow-up hardening is intentionally narrower than a new feature:
 
 1. Public release verification must fail closed when a critical advertised CLI subcommand is absent from the tarball.
-2. The publish workflow and local `release:verify-public` must verify both:
+2. The staged-package smoke, publish workflow, and local `release:verify-public` must share one public CLI contract verifier for both:
    - `ts-quality --help`
    - `ts-quality doctor --machine --changed src/index.ts` starts with `TSQ_DOCTOR_MACHINE_V1`
-3. Doctor script ranking should prefer script names that explicitly match `test` / `coverage` before scripts whose command bodies merely mention those words, and it should not append Jest-only `--runInBand` to generic Node test scripts.
-4. Product posture should distinguish public `0.2.0` truth from unreleased `main` truth until the next package is published.
+3. `doctor --machine` should include compact exact command fields when the diagnostic model has a command, so harnessed agents do not parse prose when a deterministic command list is available.
+4. Doctor script ranking should prefer script names that explicitly match `test` / `coverage` before scripts whose command bodies merely mention those words, and it should not append Jest-only `--runInBand` to generic Node test scripts.
+5. Product posture should distinguish public `0.2.0` truth from unreleased `main` truth until the next package is published.
 
 ## Closure signal
 

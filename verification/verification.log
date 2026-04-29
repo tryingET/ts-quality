@@ -228,8 +228,34 @@ $ npm run smoke:packaging --silent
     "package/README.md"
   ],
   "cli": {
-    "helpIncludes": "ts-quality commands:",
-    "doctorMachineHeader": "TSQ_DOCTOR_MACHINE_V1",
+    "publicContract": {
+      "schemaVersion": 1,
+      "checks": [
+        {
+          "id": "help",
+          "args": [
+            "--help"
+          ],
+          "summary": "top-level help exposes command list",
+          "details": {
+            "includes": "ts-quality commands:"
+          }
+        },
+        {
+          "id": "doctor-machine",
+          "args": [
+            "doctor",
+            "--machine",
+            "--changed",
+            "src/index.ts"
+          ],
+          "summary": "compact doctor line protocol starts with its exact header",
+          "details": {
+            "header": "TSQ_DOCTOR_MACHINE_V1"
+          }
+        }
+      ]
+    },
     "initCreated": [
       "ts-quality.config.ts",
       ".ts-quality/invariants.ts",

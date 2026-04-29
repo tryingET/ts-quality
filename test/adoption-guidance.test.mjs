@@ -3,6 +3,7 @@ import path from 'path';
 import test from 'node:test';
 import assert from 'assert/strict';
 import { spawnSync } from 'child_process';
+import { verifyPublicCliContract } from '../scripts/public-cli-contract.mjs';
 
 const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 
@@ -95,11 +96,7 @@ test('publish workflow makes GitHub Release the single npm publication intent', 
     'npm registry visibility attempt ${attempt}/8 for ${PACKAGE_SPEC}',
     'npm registry propagation pending for ${PACKAGE_SPEC}:',
     '::error title=npm propagation pending::npm publish succeeded, but npm view ${PACKAGE_SPEC} did not resolve the exact version after bounded retries.',
-    'Public npx CLI verification attempt ${attempt}/8 for ${PACKAGE_SPEC}',
-    'npx -y -p "${PACKAGE_SPEC}" ts-quality --help',
-    'ts-quality doctor --machine --changed src/index.ts',
-    '^TSQ_DOCTOR_MACHINE_V1$',
-    '::error title=public CLI verification failed::npm registry resolves ${PACKAGE_SPEC}, but npx -p ${PACKAGE_SPEC} ts-quality --help or doctor --machine failed after bounded retries.',
+    'node scripts/public-cli-contract.mjs public --package "${PACKAGE_SPEC}" --attempts 8',
     "NPM_CONFIG_MIN_RELEASE_AGE: '0'",
     "if: ${{ !cancelled() && steps.publish_npm.outcome == 'success' }}"
   ], '.github/workflows/publish.yml');
@@ -113,6 +110,7 @@ test('publish workflow makes GitHub Release the single npm publication intent', 
 test('local release orchestration scripts expose plan/prepare/github/verify surfaces', () => {
   const packageJson = JSON.parse(readRepoFile('package.json'));
   const releaseOrchestrator = readRepoFile('scripts/release-orchestrator.mjs');
+  const publicCliContract = readRepoFile('scripts/public-cli-contract.mjs');
   assert.equal(packageJson.scripts['release:plan'], 'node scripts/release-orchestrator.mjs plan');
   assert.equal(packageJson.scripts['release:prepare'], 'node scripts/release-orchestrator.mjs prepare');
   assert.equal(packageJson.scripts['release:github'], 'node scripts/release-orchestrator.mjs github');
@@ -132,16 +130,23 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'const packageSpec = `${packageName}@${version}`;',
     "'npm registry exact-version lookup'",
     'npm registry propagation may still be pending',
-    "'public npx CLI smoke'",
-    "'public doctor machine smoke'",
+    'verifyPublicCliContract',
+    'npxArgsForPublicCliContractCase',
+    'summarizePublicCliContract',
+    '`public CLI contract ${contractCase.id}`',
     'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
-    '`npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality --help did not pass`',
-    '`npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality doctor --machine did not pass`',
-    "doctorMachineHeader: doctorMachine.split('\\n')[0]"
+    'publicCliContract: publicCliSummary'
   ], 'scripts/release-orchestrator.mjs');
   assert.equal(releaseOrchestrator.includes('`ts-quality v${version} — deterministic trust for TypeScript changes`, \'--notes-file\''), false, 'release create title must come from release notes instead of a hard-coded generic title');
   assert.equal(releaseOrchestrator.includes('Release notes title is still the generic fallback'), true, 'release notes must reject the generic fallback title');
   assert.equal(releaseOrchestrator.includes('Agent migration notes'), true, 'release notes with breaking changes must include agent migration guidance');
+  expectContainsAll(publicCliContract, [
+    'publicCliContractCases',
+    'ts-quality commands:',
+    'TSQ_DOCTOR_MACHINE_V1',
+    'stdout.startsWith(`${doctorMachineHeader}\\n`)',
+    'npxArgsForPublicCliContractCase'
+  ], 'scripts/public-cli-contract.mjs');
 
   const workflowDoc = readRepoFile('docs/releases/release-workflow.md');
   expectContainsAll(workflowDoc, [
@@ -156,12 +161,23 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'workflow filename: `publish.yml`',
     'environment name: `npm-publish`',
     'NPM_CONFIG_MIN_RELEASE_AGE=0',
+    'scripts/public-cli-contract.mjs',
     'ts-quality doctor --machine --changed src/index.ts',
     'compact `doctor --machine` protocol header',
     'Release bodies are validated as local release-please-style notes',
     '`### Breaking Changes` plus at least one categorized change section',
     '`### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update'
   ], 'docs/releases/release-workflow.md');
+});
+
+
+test('shared public CLI contract rejects noisy doctor-machine preambles', () => {
+  assert.throws(() => verifyPublicCliContract((contractCase) => {
+    if (contractCase.id === 'help') {
+      return 'ts-quality commands:\n';
+    }
+    return 'warning before protocol\nTSQ_DOCTOR_MACHINE_V1\n';
+  }), /did not start with TSQ_DOCTOR_MACHINE_V1/);
 });
 
 test('v0.2.0 release notes use categorized breaking-change and agent migration sections', () => {
