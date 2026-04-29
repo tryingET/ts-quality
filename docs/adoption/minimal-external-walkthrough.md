@@ -136,15 +136,15 @@ In the target repo's `package.json`, add scripts that make the run boundary bori
 ```json
 {
   "scripts": {
-    "quality": "node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info",
+    "quality": "mkdir -p coverage && node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info",
     "screening:doctor": "ts-quality doctor --config ts-quality.config.json --machine",
-    "screening:witness": "ts-quality witness test --config ts-quality.config.json --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.js --test-files test/token.test.js --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- node --test test/token.test.js",
+    "screening:witness": "ts-quality witness test --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.js --test-files test/token.test.js --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- node --test test/token.test.js",
     "screening:check": "ts-quality check --config ts-quality.config.json"
   }
 }
 ```
 
-Use whatever normal quality command the target repo already has; the important part is that coverage exists before `ts-quality check` or that `coverage.generateCommand` is configured so `check` can create missing LCOV itself before analysis.
+Use whatever normal quality command the target repo already has; the important part is that coverage exists before `ts-quality check` or that `coverage.generateCommand` is configured so `check` can create missing LCOV itself before analysis. Some LCOV reporters do not create the destination directory automatically, so create `coverage/` explicitly when needed.
 
 ## 4) Run one truthful slice
 
