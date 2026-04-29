@@ -10,6 +10,8 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-04-29
+
 ### Fixed
 
 - Made manually-created `.ts-quality/witnesses/**/*.json` pass witnesses first-class `check` evidence when they match invariant id, scenario id, and impacted source scope, aligning the README first-witness habit with invariant evaluation without requiring duplicated scenario auto-run config.
