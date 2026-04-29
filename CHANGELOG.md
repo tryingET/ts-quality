@@ -10,6 +10,12 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-29
+
+### Fixed
+
+- Fixed the public release verifier's compact doctor parser so prose fields containing `=` (for example `NODE_OPTIONS=--enable-source-maps`) do not fail an otherwise valid `doctor --machine` protocol packet.
+
 ## [0.3.0] - 2026-04-29
 
 ### Added
