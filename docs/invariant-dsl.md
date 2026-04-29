@@ -52,9 +52,9 @@ Focused tests are selected by either:
 - explicit `requiredTestPatterns`, or
 - deterministic alignment to the impacted source via file-name/import hints
 
-Scenarios may also declare explicit `executionWitnessPatterns`. Matching witness files are stronger than lexical alignment: when a witness artifact matches the invariant id, scenario id, passing status, and impacted source scope, the scenario can graduate to execution-backed support even if no focused lexical test document was found.
+Scenarios may also declare explicit `executionWitnessPatterns`. Matching witness files are stronger than lexical alignment: when a witness artifact matches the invariant id, scenario id, passing status, and impacted source scope, the scenario can graduate to execution-backed support even if no focused lexical test document was found. When no explicit patterns are declared, `check` still discovers manual witnesses under `.ts-quality/witnesses/**/*.json` and ignores sibling `.receipt.json` sidecars while matching by invariant id, scenario id, `status: "pass"`, and impacted source scope.
 
-If a scenario also declares `executionWitnessCommand` plus `executionWitnessOutput`, `ts-quality check` auto-generates that witness for impacted scenarios before invariant evaluation runs. That makes execution-backed support an opt-in repo-native workflow, not just a manual artifact drop.
+If a scenario also declares `executionWitnessCommand` plus `executionWitnessOutput`, `ts-quality check` auto-generates that witness for impacted scenarios before invariant evaluation runs. That makes execution-backed support available both as a manual first-witness artifact and as an opt-in repo-native auto-run workflow.
 
 Unrelated tests elsewhere in the repo do not satisfy an invariant just because they contain the same words or mention selector text in free-form prose.
 A scenario also needs a **single assertion-bearing focused test-case witness**: happy-path and failure-path keywords may not be stitched together across separate test files or across separate test cases in the same file to manufacture support, and a non-asserting setup-only test case does not count as lexical support.
@@ -76,7 +76,7 @@ Minimal execution witness artifact contract:
 }
 ```
 
-A matching witness must bind to the same invariant id + scenario id, declare `status: "pass"`, and cover the impacted source scope through exact repo-relative `sourceFiles`. Every generated witness now also gets a sibling `.receipt.json` artifact recording the exact command, scoped source/test files, and execution receipt that produced it. The additive `evidenceSemantics` fields keep this distinction explicit in artifacts and reports.
+A matching witness must bind to the same invariant id + scenario id, declare `status: "pass"`, and cover the impacted source scope through exact repo-relative `sourceFiles`. Manual witnesses written by `ts-quality witness test --out .ts-quality/witnesses/<name>.json` are consumed by the next `check` without requiring `executionWitnessPatterns`; explicit patterns remain available when a repo stores witnesses somewhere else or wants narrower matching. Every generated witness now also gets a sibling `.receipt.json` artifact recording the exact command, scoped source/test files, and execution receipt that produced it. The additive `evidenceSemantics` fields keep this distinction explicit in artifacts and reports.
 
 When the witness should come from a real deterministic proof command instead of a hand-authored file, generate it with:
 

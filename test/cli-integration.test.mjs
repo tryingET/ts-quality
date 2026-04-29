@@ -1204,6 +1204,38 @@ test('witness test writes a pass execution witness from a passing runtime proof 
   assert.deepEqual(receipt.command, ['node', '--test', 'test/token.test.js']);
 });
 
+test('check consumes manual execution witnesses from the default witness directory', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const out = '.ts-quality/witnesses/auth-refresh-expired-boundary.json';
+  const witness = spawnSync('node', [
+    cli,
+    'witness',
+    'test',
+    '--root', target,
+    '--invariant', 'auth.refresh.validity',
+    '--scenario', 'expired-boundary',
+    '--source-files', 'src/auth/token.js',
+    '--test-files', 'test/token.test.js',
+    '--out', out,
+    '--',
+    'node', '--test', 'test/token.test.js'
+  ], { encoding: 'utf8' });
+  assert.equal(witness.status, 0, witness.stderr);
+
+  const check = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'manual-witness-consumed'], { encoding: 'utf8' });
+  assert.equal(check.status, 0, check.stderr);
+  const run = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'manual-witness-consumed', 'run.json'), 'utf8'));
+  const claim = run.behaviorClaims.find((item) => item.invariantId === 'auth.refresh.validity');
+  assert.ok(claim);
+  assert.equal(claim.evidenceSummary.evidenceSemantics, 'execution-backed');
+  assert.deepEqual(claim.evidenceSummary.executionWitnessFiles, [out]);
+  assert.equal(claim.evidenceSummary.scenarioResults[0].supportKind, 'execution-witness');
+  assert.equal(run.nextEvidenceAction.witnessStatus, 'execution-backed witness considered');
+  assert.equal(run.executionWitnesses, undefined);
+  const checkSummaryText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'manual-witness-consumed', 'check-summary.txt'), 'utf8');
+  assert.match(checkSummaryText, /Execution witness is present; remaining risk comes from/);
+});
+
 test('witness test writes a fail execution witness when the runtime proof command fails', () => {
   const target = tempCopyOfFixture('governed-app');
   const out = '.ts-quality/witnesses/auth-refresh-expired-boundary.fail.json';

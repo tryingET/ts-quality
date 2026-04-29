@@ -13,6 +13,7 @@ const index_1 = require("../../evidence-model/src/index");
 const INVARIANT_EVIDENCE_SEMANTICS = 'deterministic-lexical';
 const INVARIANT_EVIDENCE_SEMANTICS_SUMMARY = 'deterministic lexical alignment over focused tests; not execution-backed behavioral proof';
 const EXECUTION_BACKED_EVIDENCE_SEMANTICS_SUMMARY = 'execution-backed witness artifacts matched the invariant scenario scope';
+const DEFAULT_EXECUTION_WITNESS_PATTERNS = ['.ts-quality/witnesses/**/*.json'];
 const ASSERTION_MODULE_SPECIFIERS = new Set(['assert', 'assert/strict', 'node:assert', 'node:assert/strict']);
 const TEST_CONTEXT_ASSERTION_METHOD_NAMES = new Set(['assert', 'deepEqual', 'deepStrictEqual', 'doesNotMatch', 'equal', 'fail', 'ifError', 'match', 'notDeepEqual', 'notEqual', 'notStrictEqual', 'ok', 'rejects', 'strictEqual', 'throws']);
 function baselineInvariantStatus(evidenceSemantics) {
@@ -65,41 +66,60 @@ function parseExecutionWitnessRecord(rootDir, filePath) {
     };
 }
 function executionWitnessSelection(rootDir, invariant, scenario, files) {
-    const patterns = unique(scenario.executionWitnessPatterns ?? []);
-    if (patterns.length === 0) {
+    const configuredPatterns = unique(scenario.executionWitnessPatterns ?? []);
+    const patterns = configuredPatterns.length > 0 ? configuredPatterns : DEFAULT_EXECUTION_WITNESS_PATTERNS;
+    const usingDefaultDiscovery = configuredPatterns.length === 0;
+    const candidateFiles = (0, index_1.listFiles)(rootDir, { include: /\.json$/, excludeDirs: ['node_modules', 'dist', '.git'] })
+        .filter((filePath) => !filePath.endsWith('.receipt.json'))
+        .filter((filePath) => patterns.some((pattern) => (0, index_1.matchPattern)(pattern, filePath)));
+    if (candidateFiles.length === 0) {
+        return {
+            configured: !usingDefaultDiscovery,
+            matched: false,
+            witnessFiles: [],
+            mode: 'missing',
+            modeReason: usingDefaultDiscovery
+                ? `no default execution witness artifacts discovered (${DEFAULT_EXECUTION_WITNESS_PATTERNS.join(', ')})`
+                : `executionWitnessPatterns matched no witness files (${patterns.join(', ')})`
+        };
+    }
+    const candidateRecords = candidateFiles.flatMap((filePath) => {
+        try {
+            return [{ filePath, record: parseExecutionWitnessRecord(rootDir, filePath) }];
+        }
+        catch (error) {
+            if (usingDefaultDiscovery) {
+                return [];
+            }
+            throw error;
+        }
+    });
+    const relevantRecords = candidateRecords.filter(({ record }) => record.invariantId === invariant.id && record.scenarioId === scenario.id);
+    if (usingDefaultDiscovery && relevantRecords.length === 0) {
         return {
             configured: false,
             matched: false,
             witnessFiles: [],
             mode: 'missing',
-            modeReason: 'no execution witness patterns configured for this scenario'
+            modeReason: `no default execution witness artifacts discovered for ${invariant.id}:${scenario.id}`
         };
     }
-    const candidateFiles = (0, index_1.listFiles)(rootDir, { include: /\.json$/, excludeDirs: ['node_modules', 'dist', '.git'] }).filter((filePath) => patterns.some((pattern) => (0, index_1.matchPattern)(pattern, filePath)));
-    if (candidateFiles.length === 0) {
-        return {
-            configured: true,
-            matched: false,
-            witnessFiles: [],
-            mode: 'missing',
-            modeReason: `executionWitnessPatterns matched no witness files (${patterns.join(', ')})`
-        };
-    }
-    const witnessFiles = candidateFiles.filter((filePath) => {
-        const record = parseExecutionWitnessRecord(rootDir, filePath);
-        if (record.invariantId !== invariant.id || record.scenarioId !== scenario.id || record.status !== 'pass') {
-            return false;
-        }
-        return files.every((impactedFile) => record.sourceFiles.includes(impactedFile));
-    });
+    const witnessFiles = relevantRecords
+        .filter(({ record }) => record.status === 'pass' && files.every((impactedFile) => record.sourceFiles.includes(impactedFile)))
+        .map(({ filePath }) => filePath)
+        .sort();
     return {
         configured: true,
         matched: witnessFiles.length > 0,
         witnessFiles,
         mode: witnessFiles.length > 0 ? 'explicit' : 'missing',
         modeReason: witnessFiles.length > 0
-            ? 'execution witness artifacts matched invariant id, scenario id, pass status, and impacted source scope'
-            : 'execution witness artifacts did not match invariant id, scenario id, pass status, and impacted source scope'
+            ? (usingDefaultDiscovery
+                ? 'default .ts-quality/witnesses artifacts matched invariant id, scenario id, pass status, and impacted source scope'
+                : 'execution witness artifacts matched invariant id, scenario id, pass status, and impacted source scope')
+            : (usingDefaultDiscovery
+                ? 'default .ts-quality/witnesses artifacts did not match invariant id, scenario id, pass status, and impacted source scope'
+                : 'execution witness artifacts did not match invariant id, scenario id, pass status, and impacted source scope')
     };
 }
 function selectorMatchesInvariant(selector, filePath, symbols) {

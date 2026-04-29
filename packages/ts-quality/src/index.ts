@@ -1397,7 +1397,7 @@ function statusFromCount(clear: boolean, clearText: string, missingText: string)
   return clear ? clearText : missingText;
 }
 
-function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'executionWitnesses' | 'mutations' | 'governance' | 'verdict'>): NextEvidenceAction {
+function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'executionWitnesses' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction {
   const surviving = run.mutations.filter((item) => item.status === 'survived');
   const mutationErrors = run.mutations.filter((item) => item.status === 'error' || item.status === 'invalid');
   const remainingBlocker = run.verdict.findings.find((item) => item.code === 'surviving-mutant' || item.code === 'mutation-score-budget')
@@ -1413,7 +1413,7 @@ function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | '
     remainingBlocker,
     bestNextAction: run.verdict.bestNextAction ?? 'No next evidence action is currently required.',
     coverageStatus: statusFromCount(run.coverage.length > 0, 'coverage evidence present', run.coverageGeneration ? `coverage generation ${run.coverageGeneration.receipt.status}` : 'coverage evidence missing'),
-    witnessStatus: run.executionWitnesses && run.executionWitnesses.autoRan.length > 0 ? 'execution-backed witness considered' : 'no execution witness auto-ran',
+    witnessStatus: run.behaviorClaims.some((claim) => (claim.evidenceSummary?.executionWitnessFiles ?? []).length > 0) ? 'execution-backed witness considered' : 'no execution witness auto-ran',
     mutationStatus: surviving.length > 0
       ? `${surviving.length} surviving mutant(s); tighten focused assertions`
       : mutationErrors.length > 0

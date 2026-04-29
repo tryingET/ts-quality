@@ -1174,7 +1174,7 @@ function buildNextEvidenceAction(run) {
         remainingBlocker,
         bestNextAction: run.verdict.bestNextAction ?? 'No next evidence action is currently required.',
         coverageStatus: statusFromCount(run.coverage.length > 0, 'coverage evidence present', run.coverageGeneration ? `coverage generation ${run.coverageGeneration.receipt.status}` : 'coverage evidence missing'),
-        witnessStatus: run.executionWitnesses && run.executionWitnesses.autoRan.length > 0 ? 'execution-backed witness considered' : 'no execution witness auto-ran',
+        witnessStatus: run.behaviorClaims.some((claim) => (claim.evidenceSummary?.executionWitnessFiles ?? []).length > 0) ? 'execution-backed witness considered' : 'no execution witness auto-ran',
         mutationStatus: surviving.length > 0
             ? `${surviving.length} surviving mutant(s); tighten focused assertions`
             : mutationErrors.length > 0

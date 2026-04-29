@@ -131,7 +131,7 @@ npx ts-quality report --run-id review-001
 npx ts-quality govern --run-id review-001
 ```
 
-When one invariant scenario needs runtime proof, add one focused witness before the next `check` instead of widening to a repo-global green run. Choose the command after `--` from the target repo evidence you would trust in review: prefer a module-level test or repo-local npm script, use repo-global `npm test` only as baseline evidence when it cannot target the changed behavior, and run the target repo build first when the witness imports built TypeScript output.
+When one invariant scenario needs runtime proof, add one focused witness before the next `check` instead of widening to a repo-global green run. Choose the command after `--` from the target repo evidence you would trust in review: prefer a module-level test or repo-local npm script, use repo-global `npm test` only as baseline evidence when it cannot target the changed behavior, and run the target repo build first when the witness imports built TypeScript output. `check` discovers matching pass witnesses under `.ts-quality/witnesses/**/*.json` by invariant id, scenario id, and impacted source scope, so the manual witness path below is first-class evidence without duplicating the path in invariant config.
 
 ```bash
 npx ts-quality witness test \

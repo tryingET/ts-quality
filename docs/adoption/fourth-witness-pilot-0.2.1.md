@@ -160,3 +160,7 @@ The better product behavior is option 1: manual focused witnesses should become 
 `0.2.1` successfully fixes the compact public diagnostics gap and proves the public package can guide a target repo from setup diagnostics to generated coverage, mutation remediation, and execution-backed witness evidence.
 
 The next high-leverage patch is not another release-contract fix; it is making the manual witness habit match the documented adoption path.
+
+## Follow-up status
+
+Task `#1938` closes this pilot gap on `main`: `check` now discovers matching pass witnesses under `.ts-quality/witnesses/**/*.json` by invariant id, scenario id, and impacted source scope, while ignoring sibling receipt sidecars. The next public proof should verify the manual `witness test` -> `check` upgrade from the next released package in a target repo.
