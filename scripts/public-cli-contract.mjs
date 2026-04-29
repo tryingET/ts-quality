@@ -213,6 +213,13 @@ export function verifyManualWitnessContract(runCli, options) {
   const projectRoot = fs.mkdtempSync(path.join(options.baseDir, 'tsq-manual-witness-contract-'));
   try {
     writeManualWitnessContractProject(projectRoot);
+    const doctorMachine = runCli(['doctor', '--root', projectRoot, '--machine', '--changed', 'src/token.js'], projectRoot);
+    const parsedDoctorMachine = parseDoctorMachineProtocol(doctorMachine);
+    const doctorRecordKinds = [...new Set(parsedDoctorMachine.records.map((record) => record.kind))];
+    const doctorCommandArgRecordCount = parsedDoctorMachine.records.filter((record) => (record.keyValues.get('command_arg') ?? []).length > 0).length;
+    if (!doctorRecordKinds.includes('recommend') || doctorCommandArgRecordCount === 0) {
+      throw new Error(`Minimum adoption contract doctor output did not include command recommendations:\n${doctorMachine}`);
+    }
     runCli([
       'witness',
       'test',
@@ -226,6 +233,14 @@ export function verifyManualWitnessContract(runCli, options) {
       'node', '--test', 'test/token.test.js'
     ], projectRoot);
     runCli(['check', '--root', projectRoot, '--run-id', manualWitnessContractRunId], projectRoot);
+    const reportText = runCli(['report', '--root', projectRoot, '--run-id', manualWitnessContractRunId], projectRoot);
+    const explainText = runCli(['explain', '--root', projectRoot, '--run-id', manualWitnessContractRunId], projectRoot);
+    if (!reportText.includes('# ts-quality report')) {
+      throw new Error(`Minimum adoption contract report did not render the selected run:\n${reportText}`);
+    }
+    if (!explainText.includes('Reasons:')) {
+      throw new Error(`Minimum adoption contract explain did not render reasons for the selected run:\n${explainText}`);
+    }
     const run = JSON.parse(fs.readFileSync(path.join(projectRoot, '.ts-quality', 'runs', manualWitnessContractRunId, 'run.json'), 'utf8'));
     const claim = /** @type {any[] | undefined} */ (run.behaviorClaims)?.find((item) => item.invariantId === 'auth.refresh.validity');
     const scenario = /** @type {any[] | undefined} */ (claim?.evidenceSummary?.scenarioResults)?.find((item) => item.scenarioId === 'expired-boundary');
@@ -247,12 +262,22 @@ export function verifyManualWitnessContract(runCli, options) {
     }
     return {
       fixture: 'manual-witness-contract',
+      story: 'doctor-machine -> manual witness -> check -> report/explain by run id',
       runId: manualWitnessContractRunId,
       witnessPath: manualWitnessContractPath,
+      doctorMachine: {
+        header: parsedDoctorMachine.header,
+        recordKinds: doctorRecordKinds,
+        commandArgRecordCount: doctorCommandArgRecordCount
+      },
       evidenceSemantics: claim.evidenceSummary.evidenceSemantics,
       scenarioSupportKind: scenario.supportKind,
       nextEvidenceWitnessStatus: run.nextEvidenceAction.witnessStatus,
-      autoRanExecutionWitnesses: false
+      autoRanExecutionWitnesses: false,
+      projections: {
+        reportByRunId: true,
+        explainByRunId: true
+      }
     };
   } finally {
     fs.rmSync(projectRoot, { recursive: true, force: true });

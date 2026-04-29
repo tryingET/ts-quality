@@ -144,7 +144,7 @@ npx ts-quality witness test \
 npx ts-quality check --changed src/auth/token.ts --run-id review-001
 ```
 
-Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example, `docs/adoption/agent-integration-how-to.md` for brownfield adoption, and `docs/public-contract.md` for the protected 0.3 public CLI/artifact/witness contract.
+Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example built around `doctor --machine`, one manual witness, one `check`, and run-bound `report`/`explain`; use `docs/adoption/agent-integration-how-to.md` for brownfield adoption, and `docs/public-contract.md` for the protected 0.3 public CLI/artifact/witness contract.
 
 ### 2) Evaluate this repo from source
 

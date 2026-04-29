@@ -89,6 +89,17 @@ A successful manual witness upgrade must surface as:
 - scenario `supportKind: "execution-witness"`
 - `nextEvidenceAction.witnessStatus: "execution-backed witness considered"`
 
+## Minimum viable adoption story
+
+The protected minimum public adoption story is:
+
+1. run `doctor --machine --changed <slice>` to obtain a compact setup packet before inventing setup steps
+2. create one manual `witness test` artifact for the behavior-bearing slice
+3. run `check --run-id <id>` and confirm the matching witness is consumed as execution-backed evidence
+4. read `report --run-id <id>` and `explain --run-id <id>` as the operator-facing projections
+
+The shared public CLI contract fixture proves that sequence from an installed package and records it as `doctor-machine -> manual witness -> check -> report/explain by run id`.
+
 ## Protected run-artifact compatibility expectation
 
 Current run artifacts declare `version: "0.2.0"` because `0.2.0` introduced additive run fields. The `0.3.x` public contract does not require downstream parsers to understand every optional field, but it does require repo-owned projections to tolerate older run packets without newer additive fields.

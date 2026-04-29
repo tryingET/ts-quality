@@ -161,12 +161,22 @@ const expectedInstalledCliProofs = {
   },
   manualWitness: {
     fixture: 'manual-witness-contract',
+    story: 'doctor-machine -> manual witness -> check -> report/explain by run id',
     runId: 'public-manual-witness-contract',
     witnessPath: '.ts-quality/witnesses/auth-refresh-expired-boundary.json',
+    doctorMachine: {
+      header: 'TSQ_DOCTOR_MACHINE_V1',
+      recordKinds: ['root', 'config', 'changed', 'files', 'scripts', 'coverage', 'mutation', 'risk', 'recommend'],
+      commandArgRecordCount: 3
+    },
     evidenceSemantics: 'execution-backed',
     scenarioSupportKind: 'execution-witness',
     nextEvidenceWitnessStatus: 'execution-backed witness considered',
-    autoRanExecutionWitnesses: false
+    autoRanExecutionWitnesses: false,
+    projections: {
+      reportByRunId: true,
+      explainByRunId: true
+    }
   },
   keygen: {
     runId: 'packaging-installed-keygen-run',
