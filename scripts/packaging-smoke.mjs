@@ -37,6 +37,9 @@ const monorepoFixtureName = 'mini-monorepo';
 const reviewRunId = 'packaging-installed-review-run';
 const reviewTrendRunId = 'packaging-installed-review-trend-run';
 const reviewLegacyArtifactRunId = 'packaging-installed-legacy-artifact-run';
+const reviewAdditiveArtifactRunId = 'packaging-installed-additive-artifact-run';
+const reviewUnsupportedSnapshotRunId = 'packaging-installed-unsupported-snapshot-run';
+const reviewMalformedSnapshotRunId = 'packaging-installed-malformed-snapshot-run';
 const reviewMaterializedSourceRunId = 'packaging-installed-materialized-source-run';
 const reviewMaterializedRunId = 'packaging-installed-materialized-config-run';
 const reviewDriftRunId = 'packaging-installed-drift-run';
@@ -244,31 +247,174 @@ function assertTextIncludes(text, label, fragments) {
   }
 }
 
+const legacyRemovedAdditiveFields = [
+  'controlPlane',
+  'coverageGeneration',
+  'analysisWarnings',
+  'mutationRemediation',
+  'nextEvidenceAction',
+  'executionWitnesses',
+  'verdict.confidenceBreakdown'
+];
+
+/**
+ * @param {string} projectRoot
+ * @param {string} sourceRunId
+ * @param {string} targetRunId
+ * @param {(run: any) => any} transform
+ */
+function writeCompatibilityRun(projectRoot, sourceRunId, targetRunId, transform) {
+  const sourceRunPath = path.join(projectRoot, '.ts-quality', 'runs', sourceRunId, 'run.json');
+  const sourceRun = readJson(sourceRunPath);
+  const targetRun = transform(structuredClone(sourceRun));
+  const targetRunDir = path.join(projectRoot, '.ts-quality', 'runs', targetRunId);
+  fs.mkdirSync(targetRunDir, { recursive: true });
+  fs.writeFileSync(path.join(targetRunDir, 'run.json'), `${JSON.stringify(targetRun, null, 2)}
+`, 'utf8');
+}
+
 /**
  * @param {string} projectRoot
  * @param {string} sourceRunId
  * @param {string} targetRunId
  */
 function writeLegacyCompatibilityRun(projectRoot, sourceRunId, targetRunId) {
-  const sourceRunPath = path.join(projectRoot, '.ts-quality', 'runs', sourceRunId, 'run.json');
-  const sourceRun = readJson(sourceRunPath);
-  const legacyRun = {
+  writeCompatibilityRun(projectRoot, sourceRunId, targetRunId, (sourceRun) => {
+    const legacyRun = {
+      ...sourceRun,
+      version: '0.1.0',
+      runId: targetRunId,
+      createdAt: '2026-01-01T00:20:00.000Z',
+      verdict: { ...sourceRun.verdict }
+    };
+    delete legacyRun.controlPlane;
+    delete legacyRun.coverageGeneration;
+    delete legacyRun.analysisWarnings;
+    delete legacyRun.mutationRemediation;
+    delete legacyRun.nextEvidenceAction;
+    delete legacyRun.executionWitnesses;
+    delete legacyRun.verdict.confidenceBreakdown;
+    return legacyRun;
+  });
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} sourceRunId
+ * @param {string} targetRunId
+ */
+function writeAdditiveCompatibilityRun(projectRoot, sourceRunId, targetRunId) {
+  writeCompatibilityRun(projectRoot, sourceRunId, targetRunId, (sourceRun) => ({
     ...sourceRun,
-    version: '0.1.0',
     runId: targetRunId,
-    createdAt: '2026-01-01T00:20:00.000Z',
-    verdict: { ...sourceRun.verdict }
+    createdAt: '2026-01-01T00:21:00.000Z',
+    futureOptionalEvidencePacket: {
+      schema: 'ts-quality.future-additive-smoke',
+      note: 'Downstream projections must ignore optional additive fields they do not understand.'
+    },
+    verdict: {
+      ...sourceRun.verdict,
+      futureOptionalVerdictSignal: 'ignored-by-current-projections'
+    }
+  }));
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} sourceRunId
+ * @param {string} targetRunId
+ */
+function writeUnsupportedSnapshotCompatibilityRun(projectRoot, sourceRunId, targetRunId) {
+  writeCompatibilityRun(projectRoot, sourceRunId, targetRunId, (sourceRun) => ({
+    ...sourceRun,
+    runId: targetRunId,
+    createdAt: '2026-01-01T00:22:00.000Z',
+    controlPlane: {
+      ...sourceRun.controlPlane,
+      schemaVersion: 999
+    }
+  }));
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} sourceRunId
+ * @param {string} targetRunId
+ */
+function writeMalformedSnapshotCompatibilityRun(projectRoot, sourceRunId, targetRunId) {
+  writeCompatibilityRun(projectRoot, sourceRunId, targetRunId, (sourceRun) => ({
+    ...sourceRun,
+    runId: targetRunId,
+    createdAt: '2026-01-01T00:23:00.000Z',
+    controlPlane: {
+      ...sourceRun.controlPlane,
+      schemaVersion: 1,
+      configPath: ''
+    }
+  }));
+}
+
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @param {string} cwd
+ * @param {string} label
+ * @param {string[]} fragments
+ */
+function expectCommandFailure(command, args, cwd, label, fragments) {
+  const result = spawnSync(command, args, { cwd, encoding: 'utf8' });
+  if (result.status === 0) {
+    throw new Error(`Expected ${label} to fail closed, got success:
+${result.stdout}`);
+  }
+  const output = `${result.stdout}
+${result.stderr}`;
+  assertTextIncludes(output, label, fragments);
+  return {
+    command: path.basename(command),
+    subcommand: args[0],
+    runId: args[args.indexOf('--run-id') + 1],
+    exitStatus: result.status,
+    includes: fragments
   };
-  delete legacyRun.controlPlane;
-  delete legacyRun.coverageGeneration;
-  delete legacyRun.analysisWarnings;
-  delete legacyRun.mutationRemediation;
-  delete legacyRun.nextEvidenceAction;
-  delete legacyRun.executionWitnesses;
-  delete legacyRun.verdict.confidenceBreakdown;
-  const targetRunDir = path.join(projectRoot, '.ts-quality', 'runs', targetRunId);
-  fs.mkdirSync(targetRunDir, { recursive: true });
-  fs.writeFileSync(path.join(targetRunDir, 'run.json'), `${JSON.stringify(legacyRun, null, 2)}\n`, 'utf8');
+}
+
+/**
+ * @param {string} installedCliBinPath
+ * @param {string} installRoot
+ * @param {string} projectRoot
+ * @param {string} runId
+ * @param {string} version
+ * @param {string[]} expectation
+ */
+function verifyCompatibleRunArtifactProjection(installedCliBinPath, installRoot, projectRoot, runId, version, expectation) {
+  const reportJson = JSON.parse(run(installedCliBinPath, ['report', '--root', projectRoot, '--json', '--run-id', runId], installRoot));
+  const explainText = run(installedCliBinPath, ['explain', '--root', projectRoot, '--run-id', runId], installRoot);
+  const planText = run(installedCliBinPath, ['plan', '--root', projectRoot, '--run-id', runId], installRoot);
+  const governText = run(installedCliBinPath, ['govern', '--root', projectRoot, '--run-id', runId], installRoot);
+  const authorizeDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', projectRoot, '--agent', 'release-bot', '--run-id', runId], installRoot));
+  if (reportJson.version !== version || reportJson.runId !== runId) {
+    throw new Error(`Installed compatibility artifact report did not preserve run identity for ${runId}:
+${JSON.stringify(reportJson, null, 2)}`);
+  }
+  assertTextIncludes(explainText, `${runId} explain`, ['Reasons:']);
+  assertTextIncludes(planText, `${runId} plan`, ['Invariant evidence at risk: auth.refresh.validity']);
+  assertTextIncludes(governText, `${runId} govern`, ['auth-risk-budget']);
+  if (typeof authorizeDecision.outcome !== 'string' || authorizeDecision.evidenceContext?.runId !== runId) {
+    throw new Error(`Installed compatibility artifact authorize did not bind to ${runId}:
+${JSON.stringify(authorizeDecision, null, 2)}`);
+  }
+  return {
+    runId,
+    version,
+    expectation,
+    reportJsonRunId: reportJson.runId,
+    explainIncludes: ['Reasons:'],
+    planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
+    governIncludes: ['auth-risk-budget'],
+    authorizeOutcome: authorizeDecision.outcome,
+    authorizeRunId: authorizeDecision.evidenceContext?.runId
+  };
 }
 
 export function runPackagingSmoke() {
@@ -453,20 +599,28 @@ export function runPackagingSmoke() {
     }
 
     writeLegacyCompatibilityRun(reviewProjectRoot, reviewRunId, reviewLegacyArtifactRunId);
-    const legacyReportJson = JSON.parse(run(installedCliBinPath, ['report', '--root', reviewProjectRoot, '--json', '--run-id', reviewLegacyArtifactRunId], installRoot));
-    const legacyExplainText = run(installedCliBinPath, ['explain', '--root', reviewProjectRoot, '--run-id', reviewLegacyArtifactRunId], installRoot);
-    const legacyPlanText = run(installedCliBinPath, ['plan', '--root', reviewProjectRoot, '--run-id', reviewLegacyArtifactRunId], installRoot);
-    const legacyGovernText = run(installedCliBinPath, ['govern', '--root', reviewProjectRoot, '--run-id', reviewLegacyArtifactRunId], installRoot);
-    const legacyAuthorizeDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'release-bot', '--run-id', reviewLegacyArtifactRunId], installRoot));
-    if (legacyReportJson.version !== '0.1.0' || legacyReportJson.runId !== reviewLegacyArtifactRunId) {
-      throw new Error(`Installed legacy artifact report did not preserve legacy run identity:\n${JSON.stringify(legacyReportJson, null, 2)}`);
-    }
-    assertTextIncludes(legacyExplainText, 'legacy explain', ['Reasons:']);
-    assertTextIncludes(legacyPlanText, 'legacy plan', ['Invariant evidence at risk: auth.refresh.validity']);
-    assertTextIncludes(legacyGovernText, 'legacy govern', ['auth-risk-budget']);
-    if (typeof legacyAuthorizeDecision.outcome !== 'string' || legacyAuthorizeDecision.evidenceContext?.runId !== reviewLegacyArtifactRunId) {
-      throw new Error(`Installed legacy artifact authorize did not bind to ${reviewLegacyArtifactRunId}:\n${JSON.stringify(legacyAuthorizeDecision, null, 2)}`);
-    }
+    const legacyCompatibility = verifyCompatibleRunArtifactProjection(installedCliBinPath, installRoot, reviewProjectRoot, reviewLegacyArtifactRunId, '0.1.0', [
+      'legacy 0.1.0-style packet without additive 0.2.x fields',
+      'repo projections tolerate missing optional additive fields'
+    ]);
+
+    writeAdditiveCompatibilityRun(reviewProjectRoot, reviewRunId, reviewAdditiveArtifactRunId);
+    const additiveCompatibility = verifyCompatibleRunArtifactProjection(installedCliBinPath, installRoot, reviewProjectRoot, reviewAdditiveArtifactRunId, '0.2.0', [
+      'current packet with future optional additive fields',
+      'repo projections ignore optional fields they do not understand'
+    ]);
+
+    writeUnsupportedSnapshotCompatibilityRun(reviewProjectRoot, reviewRunId, reviewUnsupportedSnapshotRunId);
+    const unsupportedSnapshotCompatibility = expectCommandFailure(installedCliBinPath, ['plan', '--root', reviewProjectRoot, '--run-id', reviewUnsupportedSnapshotRunId], installRoot, 'unsupported control-plane snapshot projection', [
+      `Run ${reviewUnsupportedSnapshotRunId} carries unsupported control-plane snapshot schema 999.`,
+      'Re-run ts-quality check before trusting downstream decision surfaces.'
+    ]);
+
+    writeMalformedSnapshotCompatibilityRun(reviewProjectRoot, reviewRunId, reviewMalformedSnapshotRunId);
+    const malformedSnapshotCompatibility = expectCommandFailure(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'release-bot', '--run-id', reviewMalformedSnapshotRunId], installRoot, 'malformed control-plane snapshot authorization', [
+      `Run ${reviewMalformedSnapshotRunId} carries malformed control-plane snapshot schema 1: field configPath must be a non-empty string.`,
+      'Re-run ts-quality check before trusting downstream decision surfaces.'
+    ]);
 
     run(installedCliBinPath, [
       'attest',
@@ -814,24 +968,22 @@ export function runPackagingSmoke() {
           }
         },
         governIncludes: 'auth-risk-budget',
+        runArtifactCompatibility: {
+          compatible: {
+            legacy010: {
+              ...legacyCompatibility,
+              removedAdditiveFields: [...legacyRemovedAdditiveFields]
+            },
+            additive020: additiveCompatibility
+          },
+          rejected: {
+            unsupportedControlPlaneSnapshot: unsupportedSnapshotCompatibility,
+            malformedControlPlaneSnapshot: malformedSnapshotCompatibility
+          }
+        },
         legacyArtifactCompatibility: {
-          runId: reviewLegacyArtifactRunId,
-          version: legacyReportJson.version,
-          removedAdditiveFields: [
-            'controlPlane',
-            'coverageGeneration',
-            'analysisWarnings',
-            'mutationRemediation',
-            'nextEvidenceAction',
-            'executionWitnesses',
-            'verdict.confidenceBreakdown'
-          ],
-          reportJsonRunId: legacyReportJson.runId,
-          explainIncludes: ['Reasons:'],
-          planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
-          governIncludes: ['auth-risk-budget'],
-          authorizeOutcome: legacyAuthorizeDecision.outcome,
-          authorizeRunId: legacyAuthorizeDecision.evidenceContext?.runId
+          ...legacyCompatibility,
+          removedAdditiveFields: [...legacyRemovedAdditiveFields]
         },
         attestation: {
           subject: `.ts-quality/runs/${reviewRunId}/verdict.json`,

@@ -244,6 +244,16 @@ const expectedInstalledReviewSurfaceProofs = {
   legacyArtifactCompatibility: {
     runId: 'packaging-installed-legacy-artifact-run',
     version: '0.1.0',
+    expectation: [
+      'legacy 0.1.0-style packet without additive 0.2.x fields',
+      'repo projections tolerate missing optional additive fields'
+    ],
+    reportJsonRunId: 'packaging-installed-legacy-artifact-run',
+    explainIncludes: ['Reasons:'],
+    planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
+    governIncludes: ['auth-risk-budget'],
+    authorizeOutcome: 'deny',
+    authorizeRunId: 'packaging-installed-legacy-artifact-run',
     removedAdditiveFields: [
       'controlPlane',
       'coverageGeneration',
@@ -252,13 +262,70 @@ const expectedInstalledReviewSurfaceProofs = {
       'nextEvidenceAction',
       'executionWitnesses',
       'verdict.confidenceBreakdown'
-    ],
-    reportJsonRunId: 'packaging-installed-legacy-artifact-run',
-    explainIncludes: ['Reasons:'],
-    planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
-    governIncludes: ['auth-risk-budget'],
-    authorizeOutcome: 'deny',
-    authorizeRunId: 'packaging-installed-legacy-artifact-run'
+    ]
+  },
+  runArtifactCompatibility: {
+    compatible: {
+      legacy010: {
+        runId: 'packaging-installed-legacy-artifact-run',
+        version: '0.1.0',
+        expectation: [
+          'legacy 0.1.0-style packet without additive 0.2.x fields',
+          'repo projections tolerate missing optional additive fields'
+        ],
+        reportJsonRunId: 'packaging-installed-legacy-artifact-run',
+        explainIncludes: ['Reasons:'],
+        planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
+        governIncludes: ['auth-risk-budget'],
+        authorizeOutcome: 'deny',
+        authorizeRunId: 'packaging-installed-legacy-artifact-run',
+        removedAdditiveFields: [
+          'controlPlane',
+          'coverageGeneration',
+          'analysisWarnings',
+          'mutationRemediation',
+          'nextEvidenceAction',
+          'executionWitnesses',
+          'verdict.confidenceBreakdown'
+        ]
+      },
+      additive020: {
+        runId: 'packaging-installed-additive-artifact-run',
+        version: '0.2.0',
+        expectation: [
+          'current packet with future optional additive fields',
+          'repo projections ignore optional fields they do not understand'
+        ],
+        reportJsonRunId: 'packaging-installed-additive-artifact-run',
+        explainIncludes: ['Reasons:'],
+        planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
+        governIncludes: ['auth-risk-budget'],
+        authorizeOutcome: 'deny',
+        authorizeRunId: 'packaging-installed-additive-artifact-run'
+      }
+    },
+    rejected: {
+      unsupportedControlPlaneSnapshot: {
+        command: 'ts-quality',
+        subcommand: 'plan',
+        runId: 'packaging-installed-unsupported-snapshot-run',
+        exitStatus: 1,
+        includes: [
+          'Run packaging-installed-unsupported-snapshot-run carries unsupported control-plane snapshot schema 999.',
+          'Re-run ts-quality check before trusting downstream decision surfaces.'
+        ]
+      },
+      malformedControlPlaneSnapshot: {
+        command: 'ts-quality',
+        subcommand: 'authorize',
+        runId: 'packaging-installed-malformed-snapshot-run',
+        exitStatus: 1,
+        includes: [
+          'Run packaging-installed-malformed-snapshot-run carries malformed control-plane snapshot schema 1: field configPath must be a non-empty string.',
+          'Re-run ts-quality check before trusting downstream decision surfaces.'
+        ]
+      }
+    }
   },
   materializedConfig: {
     configPath: '.ts-quality/materialized/ts-quality.config.json',
@@ -408,6 +475,7 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.reviewFlow.trend, expectedInstalledReviewSurfaceProofs.trend);
   assert.deepEqual(summary.reviewFlow.runSelection, expectedInstalledReviewSurfaceProofs.runSelection);
   assert.deepEqual(summary.reviewFlow.materializedConfig, expectedInstalledReviewSurfaceProofs.materializedConfig);
+  assert.deepEqual(summary.reviewFlow.runArtifactCompatibility, expectedInstalledReviewSurfaceProofs.runArtifactCompatibility);
   assert.deepEqual(summary.reviewFlow.legacyArtifactCompatibility, expectedInstalledReviewSurfaceProofs.legacyArtifactCompatibility);
   assert.deepEqual(summary.reviewFlow.driftDetection, expectedInstalledReviewSurfaceProofs.driftDetection);
   assert.equal(summary.reviewFlow.governIncludes, 'auth-risk-budget');

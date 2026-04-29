@@ -85,13 +85,11 @@ A successful manual witness upgrade must surface as:
 
 Current run artifacts declare `version: "0.2.0"` because `0.2.0` introduced additive run fields. The `0.3.x` public contract does not require downstream parsers to understand every optional field, but it does require repo-owned projections to tolerate older run packets without newer additive fields.
 
-Installed-package smoke currently proves a legacy `0.1.0`-style run packet without these additive fields still projects through:
+Installed-package smoke currently proves a run-artifact compatibility matrix:
 
-- `report --json`
-- `explain`
-- `plan`
-- `govern`
-- `authorize`
+- a legacy `0.1.0`-style run packet without additive `0.2.x` fields still projects through `report --json`, `explain`, `plan`, `govern`, and `authorize`
+- a current `0.2.0` packet carrying unknown future optional fields still projects through those same surfaces without requiring downstream parsers or repo projections to understand the unknown fields
+- unsupported or malformed control-plane snapshots fail closed with a re-run instruction instead of being silently projected into authorization or governance decisions
 
 Protected compatibility principle:
 
