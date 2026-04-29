@@ -10,6 +10,8 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-04-29
+
 ### Added
 
 - Added staged-package and public `npx` release verification for the manual `witness test` -> `check` path, requiring execution-backed scenario support without duplicated scenario auto-run config.
