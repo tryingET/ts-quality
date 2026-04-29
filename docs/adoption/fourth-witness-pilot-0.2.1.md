@@ -163,4 +163,4 @@ The next high-leverage patch is not another release-contract fix; it is making t
 
 ## Follow-up status
 
-Task `#1938` closes this pilot gap on `main`: `check` now discovers matching pass witnesses under `.ts-quality/witnesses/**/*.json` by invariant id, scenario id, and impacted source scope, while ignoring sibling receipt sidecars. The next public proof should verify the manual `witness test` -> `check` upgrade from the next released package in a target repo.
+Task `#1938` closed this pilot gap on `main`, and `ts-quality@0.2.2` made it public: `check` now discovers matching pass witnesses under `.ts-quality/witnesses/**/*.json` by invariant id, scenario id, and impacted source scope, while ignoring sibling receipt sidecars. A follow-up public-package proof against the pi-server pilot copy verified `npx --package ts-quality@0.2.2 ts-quality check` consumed `.ts-quality/witnesses/command-classification-safe-defaults.json` without scenario-level `executionWitnessCommand` / `executionWitnessOutput` config, yielding `evidenceSemantics: execution-backed` and `supportKind: execution-witness` for the scenario.
