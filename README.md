@@ -144,7 +144,7 @@ npx ts-quality witness test \
 npx ts-quality check --changed src/auth/token.ts --run-id review-001
 ```
 
-Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example and `docs/adoption/agent-integration-how-to.md` for brownfield adoption.
+Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example, `docs/adoption/agent-integration-how-to.md` for brownfield adoption, and `docs/public-contract.md` for the protected 0.3 public CLI/artifact/witness contract.
 
 ### 2) Evaluate this repo from source
 
@@ -164,7 +164,7 @@ npm run build
 npm run smoke:packaging
 ```
 
-This stages the package under `.ts-quality/npm/ts-quality/package`, validates the staged manifest contract, validates staged and packed file boundaries, installs the tarball into a fresh temp project, and proves shipped CLI/API/types plus representative review, governance, legitimacy, materialized-config, drift, and monorepo fixture flows.
+This stages the package under `.ts-quality/npm/ts-quality/package`, validates the staged manifest contract, validates staged and packed file boundaries, installs the tarball into a fresh temp project, and proves shipped CLI/API/types plus representative review, governance, legitimacy, materialized-config, drift, manual witness consumption, legacy artifact projection compatibility, and monorepo fixture flows.
 
 If you are preparing a public release, do **not** publish from a local shell. Use `npm run release:plan -- --version <next-version>` and `npm run release:prepare -- --version <next-version> --apply`, then create a GitHub Release whose tag exactly matches the public package version. The publish workflow re-runs the packaging proof and publishes the staged package to npm through Trusted Publishing/OIDC.
 

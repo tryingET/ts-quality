@@ -10,6 +10,14 @@ type: "reference"
 
 ## [Unreleased]
 
+### Added
+
+- Added `docs/public-contract.md` as the 0.3 public contract baseline for protected CLI discovery, compact doctor diagnostics, manual witness semantics, run-artifact projection compatibility, and release-note migration expectations.
+
+### Changed
+
+- Updated the README and product posture to frame the `0.3.x` line around public contract baseline hardening rather than new feature breadth.
+
 ## [0.2.3] - 2026-04-29
 
 ### Added
