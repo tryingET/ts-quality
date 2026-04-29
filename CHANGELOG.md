@@ -17,6 +17,7 @@ type: "reference"
 ### Changed
 
 - Expanded staged-package run-artifact compatibility proof from a single legacy projection check into a matrix covering legacy missing additive fields, unknown future optional fields, and fail-closed malformed/unsupported control-plane snapshots.
+- Formalized compact `doctor --machine` protocol v1 as LF-delimited, TAB-field records with `key=value` fields and repeated `command_arg=` argv items for command recommendations.
 - Updated the README and product posture to frame the `0.3.x` line around public contract baseline hardening rather than new feature breadth.
 
 ## [0.2.3] - 2026-04-29

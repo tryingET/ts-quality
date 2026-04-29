@@ -49,7 +49,15 @@ ts-quality commands:
 TSQ_DOCTOR_MACHINE_V1
 ```
 
-Command recommendations in the compact machine protocol use repeated `command_arg=` fields instead of comma-joined command strings.
+Compact machine protocol v1 grammar:
+
+- the first line is exactly `TSQ_DOCTOR_MACHINE_V1`
+- records are LF-delimited; fields inside a record are TAB-delimited
+- the first field is the record kind, for example `root`, `config`, `changed`, `files`, `scripts`, `coverage`, `mutation`, `risk`, or `recommend`
+- key/value fields use `key=value`; consumers split on the first equals sign
+- v1 values are token-light safe text: producers replace TAB/CR/LF with spaces and trim
+- list-valued status fields may use comma-joined safe text when they are advisory
+- command recommendations use repeated `command_arg=<argv item>` fields in order instead of comma-joined command strings; harnessed agents must not split command recommendations on commas
 
 ## Protected manual witness contract
 

@@ -7,13 +7,77 @@ import { fileURLToPath } from 'node:url';
 
 export const publicCliContractSchemaVersion = 1;
 export const doctorMachineHeader = 'TSQ_DOCTOR_MACHINE_V1';
+export const doctorMachineProtocol = {
+  version: 1,
+  header: doctorMachineHeader,
+  lineDelimiter: 'LF',
+  fieldDelimiter: 'TAB',
+  keyValueSeparator: '=',
+  valueEncoding: 'V1 values are token-light safe text: producers replace TAB/CR/LF with spaces and trim; consumers split key/value fields on the first equals sign.',
+  commandEncoding: 'Commands use repeated command_arg=<argv-item> fields in order; consumers must not split command recommendations on commas.'
+};
 export const manualWitnessContractRunId = 'public-manual-witness-contract';
 export const manualWitnessContractPath = '.ts-quality/witnesses/auth-refresh-expired-boundary.json';
 
 /**
+ * @typedef {{ kind: string, fields: string[], keyValues: Map<string, string[]> }} DoctorMachineRecord
+ * @typedef {{ header: string, records: DoctorMachineRecord[] }} DoctorMachineDocument
  * @typedef {{ id: string, args: string[], summary: string, validate: (stdout: string) => Record<string, string> }} PublicCliContractCase
  * @typedef {{ id: string, args: string[], summary: string, stdout: string, details: Record<string, string> }} PublicCliContractCheck
  */
+
+/** @param {string} field */
+function splitMachineKeyValue(field) {
+  const equalsIndex = field.indexOf('=');
+  if (equalsIndex <= 0) {
+    return undefined;
+  }
+  return [field.slice(0, equalsIndex), field.slice(equalsIndex + 1)];
+}
+
+/**
+ * @param {string} stdout
+ * @returns {DoctorMachineDocument}
+ */
+export function parseDoctorMachineProtocol(stdout) {
+  if (!stdout.startsWith(`${doctorMachineHeader}\n`)) {
+    throw new Error(`ts-quality doctor --machine did not start with ${doctorMachineHeader}.`);
+  }
+  if (/^[{[]/u.test(stdout)) {
+    throw new Error('ts-quality doctor --machine emitted JSON-looking output instead of the compact line protocol.');
+  }
+  const lines = stdout.replace(/\n$/u, '').split('\n');
+  const [header, ...body] = lines;
+  const records = body.map((line, index) => {
+    if (line.length === 0) {
+      throw new Error(`ts-quality doctor --machine emitted a blank protocol line at body line ${index + 1}.`);
+    }
+    if (line.includes('\r')) {
+      throw new Error(`ts-quality doctor --machine emitted CR in body line ${index + 1}.`);
+    }
+    const [kind = '', ...fields] = line.split('\t');
+    if (!/^[a-z][a-z0-9_-]*$/u.test(kind)) {
+      throw new Error(`ts-quality doctor --machine emitted invalid record kind '${kind}'.`);
+    }
+    const keyValues = new Map();
+    for (const field of fields) {
+      if (field.includes('\n') || field.includes('\r') || field.includes('\t')) {
+        throw new Error(`ts-quality doctor --machine emitted an unescaped control character in ${kind}.`);
+      }
+      const pair = splitMachineKeyValue(field);
+      if (!pair) {
+        continue;
+      }
+      const [key, value] = pair;
+      if (!/^[A-Za-z][A-Za-z0-9_]*$/u.test(key)) {
+        throw new Error(`ts-quality doctor --machine emitted invalid field key '${key}'.`);
+      }
+      keyValues.set(key, [...(keyValues.get(key) ?? []), value]);
+    }
+    return { kind, fields, keyValues };
+  });
+  return { header: header ?? '', records };
+}
 
 /** @type {PublicCliContractCase[]} */
 export const publicCliContractCases = [
@@ -50,16 +114,26 @@ export const publicCliContractCases = [
     args: ['doctor', '--machine', '--changed', 'src/index.ts'],
     summary: 'compact doctor line protocol starts with its exact header and exact command fields',
     validate(stdout) {
-      if (!stdout.startsWith(`${doctorMachineHeader}\n`)) {
-        throw new Error(`ts-quality doctor --machine did not start with ${doctorMachineHeader}.`);
+      const parsed = parseDoctorMachineProtocol(stdout);
+      const recordKinds = parsed.records.map((record) => record.kind);
+      for (const requiredKind of ['root', 'config', 'changed', 'files', 'scripts', 'coverage', 'mutation', 'recommend']) {
+        if (!recordKinds.includes(requiredKind)) {
+          throw new Error(`ts-quality doctor --machine omitted required ${requiredKind} record.`);
+        }
       }
-      if (/^[{[]/u.test(stdout)) {
-        throw new Error('ts-quality doctor --machine emitted JSON-looking output instead of the compact line protocol.');
-      }
-      if (!stdout.includes('\tcommand_arg=')) {
+      const commandArgRecords = parsed.records.filter((record) => (record.keyValues.get('command_arg') ?? []).length > 0);
+      if (commandArgRecords.length === 0) {
         throw new Error('ts-quality doctor --machine did not emit any exact command_arg fields.');
       }
-      return { header: stdout.split('\n')[0] ?? '', commandField: 'command_arg' };
+      if (commandArgRecords.some((record) => record.fields.some((field) => field.startsWith('command=')))) {
+        throw new Error('ts-quality doctor --machine emitted a command= field; v1 requires repeated command_arg= fields.');
+      }
+      return {
+        header: parsed.header,
+        commandField: 'command_arg',
+        commandEncoding: 'repeated-field',
+        recordKinds: [...new Set(recordKinds)].join(',')
+      };
     }
   }
 ];

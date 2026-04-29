@@ -146,8 +146,9 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     "id: 'doctor-help'",
     "args: ['doctor', '--help']",
     'TSQ_DOCTOR_MACHINE_V1',
-    'stdout.startsWith(`${doctorMachineHeader}\\n`)',
-    "'\\tcommand_arg='",
+    'parseDoctorMachineProtocol',
+    "commandEncoding: 'repeated-field'",
+    'command_arg',
     'npxArgsForPublicCliContractCase'
   ], 'scripts/public-cli-contract.mjs');
 
@@ -200,7 +201,18 @@ test('shared public CLI contract rejects noisy help and doctor-machine preambles
     if (contractCase.id === 'doctor-help') {
       return 'Usage: ts-quality doctor [--machine]\n';
     }
-    return 'TSQ_DOCTOR_MACHINE_V1\nrecommend\tfocused-test\tfocused-test-command\tCandidate focused test command\n';
+    return [
+      'TSQ_DOCTOR_MACHINE_V1',
+      'root\t/tmp/example',
+      'config\terror\tmessage=missing',
+      'changed\tok\tfiles=src/index.ts',
+      'files\tsources=0\ttests=0',
+      'scripts\tnames=\tcoverage=\ttests=',
+      'coverage\tmissing\tlcovPath=coverage/lcov.info\tgenerateCommand=none',
+      'mutation\ttestCommand=\truntimeMirrorRoots=',
+      'recommend\tfocused-test\tfocused-test-command\tCandidate focused test command',
+      ''
+    ].join('\n');
   }), /did not emit any exact command_arg fields/);
 });
 
