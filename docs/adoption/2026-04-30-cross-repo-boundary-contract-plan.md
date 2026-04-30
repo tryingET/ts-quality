@@ -11,15 +11,23 @@ type: "plan"
 ## Pipeline boundary model
 
 ```text
+softwareco/contrib/gardener
+  -> contributes static dependency graph + centrality / dependency-importance evidence
+
 runtime-trace-insights
   -> captures/normalizes runtime evidence
 
 dep-diet
-  -> combines static/runtime/dependency evidence and decides dependency risk/actionability
+  -> combines Gardener static evidence, runtime evidence, manifest/lock/security/policy evidence
+  -> decides dependency risk/actionability and produces depmodel
 
 dep-viz
   -> visualizes/explains depmodel evidence for humans/operators
 ```
+
+Gardener should remain a contrib/upstream analyzer. Dep-diet should consume Gardener output through a subprocess/JSON adapter and translate it into evidence; it should not absorb Gardener or treat Gardener's funding-oriented centrality as dependency-removal authority.
+
+Detailed opportunity note: `docs/adoption/2026-04-30-gardener-dep-diet-integration-opportunity.md`.
 
 ## Recommended target docs
 
@@ -113,7 +121,7 @@ Create these repo-local docs in follow-up target-repo changes. Do not push `runt
 
 ### This repo consumes
 
-- Static dependency evidence.
+- Static dependency evidence, including Gardener graph/centrality output when available.
 - Runtime evidence from `runtime-trace-insights` or compatible runtime-record adapters.
 - Vulnerability findings and policy inputs.
 - Domain mapping inputs and allow/block configuration.
@@ -122,6 +130,7 @@ Create these repo-local docs in follow-up target-repo changes. Do not push `runt
 
 - Depmodel artifacts.
 - Dependency risk/actionability decisions.
+- Static-importance evidence mapped from Gardener without converting it directly into removal authority.
 - Justification and evidence links for prune/remove proposals.
 - Safety-gate outputs for downstream reporting and operator review.
 
@@ -135,8 +144,10 @@ Create these repo-local docs in follow-up target-repo changes. Do not push `runt
 ### Compatibility expectations
 
 - Consumed runtime-record artifacts should be treated as evidence, not as actionability conclusions.
+- Consumed Gardener artifacts should be treated as static importance evidence, not as prune-safety or vulnerability-policy conclusions.
 - Produced depmodels should remain schema-versioned and additive-first for `dep-viz` consumers.
 - Mapping quality should be supported by focused evidence rather than broad keyword coincidence.
+- Evidence conflicts should be explicit: for example, direct manifest dependency + no Gardener import + no runtime observation is a candidate `dead-branch`, while transitive manifest dependency + central Gardener path + runtime observation is a candidate `hidden-root`.
 
 ### First ts-quality slice
 
@@ -165,7 +176,7 @@ Create these repo-local docs in follow-up target-repo changes. Do not push `runt
 ### This repo consumes
 
 - Depmodel artifacts from `dep-diet` or compatible producers.
-- Vulnerability and dependency relationship fields already present in the depmodel.
+- Vulnerability, dependency relationship, runtime usage, and static-importance fields already present in the depmodel.
 - Operator-facing configuration needed to choose report views and filters.
 
 ### This repo produces
@@ -185,6 +196,7 @@ Create these repo-local docs in follow-up target-repo changes. Do not push `runt
 
 - Report-model primitives should be stable and tested; additive fields such as `sbomFailedModules` need explicit test acceptance when they become durable UI contract.
 - Filters must preserve module/severity/ecosystem/directness semantics from the depmodel.
+- Static-importance rendering should explain Gardener-derived centrality as evidence, not as actionability or removal authority.
 - UI/report copy should explain evidence without turning visualization into the policy authority.
 
 ### First ts-quality slice
@@ -205,5 +217,7 @@ Create these repo-local docs in follow-up target-repo changes. Do not push `runt
 
 1. Add or tighten `runtime-trace-insights` focused assertions for runtime-record survivor groups, then rerun the same public-package ts-quality slice.
 2. Resolve the `dep-viz` report-model contract around `sbomFailedModules`, then rerun the same public-package ts-quality slice.
-3. Add the three boundary-contract docs in the target repos once the first slices have accepted local wording and retention posture.
-4. Add cross-repo fixture compatibility tests: runtime-record adapter fixture -> dep-diet runtime evidence input -> depmodel fixture -> dep-viz loading/filtering fixture.
+3. Run a non-invasive Gardener spike against a temp copy of `dep-diet`; do not update the divergent Gardener checkout blindly.
+4. Draft a bounded dep-diet Gardener adapter contract from observed JSON: Gardener output -> dep-diet static evidence -> depmodel fragment.
+5. Add the three boundary-contract docs in the target repos once the first slices have accepted local wording and retention posture.
+6. Add cross-repo fixture compatibility tests: Gardener static fixture + runtime-record adapter fixture -> dep-diet runtime/static evidence input -> depmodel fixture -> dep-viz loading/filtering fixture.
