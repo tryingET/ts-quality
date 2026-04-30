@@ -12,7 +12,9 @@ type: "handoff"
 
 Three local candidate branches are ready for review. Each candidate branch is clean, locally committed, focused-test verified, repo-gate checked, and public `ts-quality@0.5.0` dogfooded from a temp copy with 90/100 merge confidence.
 
-No candidate has been merged into the parent repo `main` checkout, and no candidate branch has been pushed externally.
+After operator approval to proceed, three clean local integration branches/worktrees were created from the target repos' `main` HEADs. The candidate commits were cherry-picked there, stale repo-local `AGENTS.md` workflow text was corrected in separate commits, and the repo gates passed again from the integration branches.
+
+No candidate has been merged into the parent repo `main` checkout, and no branch has been pushed externally.
 
 ## Policy clarification
 
@@ -22,7 +24,7 @@ Current operational interpretation for this packet:
 
 - local main integration is allowed after review when the parent checkout is safe;
 - external pushes still require explicit operator approval;
-- the stale repo-local AGENTS lines should be cleaned up in a separate small follow-up because they created process confusion.
+- stale repo-local AGENTS workflow text is corrected in the local integration branches, not in the dirty parent checkouts.
 
 ## Parent checkout posture
 
@@ -31,9 +33,71 @@ The parent `main` checkouts for all three target repos are currently dirty with 
 Safe next integration options:
 
 1. keep the candidate branches as review branches until parent checkouts are cleaned/rebaselined;
-2. create clean integration worktrees/branches from each repo's intended base and cherry-pick the candidate commits there;
-3. after explicit approval, push candidate branches for external review;
+2. create clean integration worktrees/branches from each repo's intended base and cherry-pick the candidate commits there — **done locally**;
+3. after explicit approval, push integration/candidate branches for external review;
 4. only merge into local `main` once unrelated parent dirtiness is resolved or intentionally carried.
+
+## Local integration branches created after operator approval
+
+### dep-diet
+
+- Integration worktree: `/home/tryinget/.local/state/pi-quests/worktrees/dep-diet-integration-gardener-20260430`
+- Integration branch: `integration/depdiet-gardener-static-adapter-20260430`
+- Candidate cherry-pick commit: `bda59b2 feat: add gardener static evidence adapter`
+- Policy cleanup commit: `2ebf67c docs: align agent policy with main-first workflow`
+- Validation after integration:
+
+```bash
+cd /home/tryinget/.local/state/pi-quests/worktrees/dep-diet-integration-gardener-20260430
+npm ci
+npm test
+```
+
+Result:
+
+```text
+ci-targeted: ok (27 files)
+```
+
+Note: `npm ci` reported existing dependency audit findings (`54 vulnerabilities`) but no audit remediation was attempted because that is outside this integration slice.
+
+### dep-viz
+
+- Integration worktree: `/home/tryinget/.local/state/pi-quests/worktrees/dep-viz-integration-sbom-20260430`
+- Integration branch: `integration/depviz-sbom-overview-contract-20260430`
+- Candidate cherry-pick commit: `c456620 feat: document sbom failed module report contract`
+- Policy cleanup commit: `59fd294 docs: align agent policy with main-first workflow`
+- Validation after integration:
+
+```bash
+cd /home/tryinget/.local/state/pi-quests/worktrees/dep-viz-integration-sbom-20260430
+npm test
+```
+
+Result:
+
+```text
+83 pass / 0 fail
+```
+
+### runtime-trace-insights
+
+- Integration worktree: `/home/tryinget/.local/state/pi-quests/worktrees/runtime-trace-integration-survivors-20260430`
+- Integration branch: `integration/runtime-trace-tsq-survivors-20260430`
+- Candidate cherry-pick commit: `4b4c19d test: harden runtime record flow evidence`
+- Policy cleanup commit: `7355129 docs: align agent policy with main-first workflow`
+- Validation after integration:
+
+```bash
+cd /home/tryinget/.local/state/pi-quests/worktrees/runtime-trace-integration-survivors-20260430
+npm test
+```
+
+Result:
+
+```text
+runtime-record-tests: ok (3 files)
+```
 
 ## Candidate 1: dep-diet Gardener static-evidence adapter
 
