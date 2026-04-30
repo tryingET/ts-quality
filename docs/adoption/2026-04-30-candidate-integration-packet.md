@@ -14,7 +14,7 @@ Three local candidate branches are ready for review. Each candidate branch is cl
 
 After operator approval to proceed, three clean local integration branches/worktrees were created from the target repos' `main` HEADs. The candidate commits were cherry-picked there, stale repo-local `AGENTS.md` workflow text was corrected in separate commits, and the repo gates passed again from the integration branches.
 
-No candidate has been merged into the parent repo `main` checkout, and no branch has been pushed externally.
+The verified changes are now integrated into the parent repo `main` checkouts. No branch has been pushed externally.
 
 ## Policy clarification
 
@@ -22,20 +22,21 @@ Earlier notes treated `runtime-trace-insights` and `dep-viz` as "MR only" becaus
 
 Current operational interpretation for this packet:
 
-- local main integration is allowed after review when the parent checkout is safe;
+- local main integration is allowed for this normal owned-repo work;
 - external pushes still require explicit operator approval;
-- stale repo-local AGENTS workflow text is corrected in the local integration branches, not in the dirty parent checkouts.
+- stale repo-local AGENTS workflow text is now corrected on local `main` through the integration commits.
 
 ## Parent checkout posture
 
-The parent `main` checkouts for all three target repos are currently dirty with pre-existing unrelated work, mostly ontology/ROCS/tooling/projection files. Therefore this packet does **not** recommend blind cherry-pick into those parent checkouts.
+The parent `main` checkouts for all three target repos had pre-existing unrelated dirty work, mostly ontology/ROCS/tooling/projection files. To avoid losing that work, the dirty state was preserved with a local stash in each repo, the verified integration branch was fast-forward merged into `main`, and the preserved dirty state was re-applied.
 
-Safe next integration options:
+Preservation stashes intentionally remain available as backup:
 
-1. keep the candidate branches as review branches until parent checkouts are cleaned/rebaselined;
-2. create clean integration worktrees/branches from each repo's intended base and cherry-pick the candidate commits there — **done locally**;
-3. after explicit approval, push integration/candidate branches for external review;
-4. only merge into local `main` once unrelated parent dirtiness is resolved or intentionally carried.
+- dep-diet: `stash@{0}: On main: pre-integration-preserve-dirty-state-dep-diet-20260430`
+- dep-viz: `stash@{0}: On main: pre-integration-preserve-dirty-state-dep-viz-20260430`
+- runtime-trace-insights: `stash@{0}: On main: pre-integration-preserve-dirty-state-runtime-trace-insights-20260430`
+
+The dirty pre-existing files are still present in the parent checkouts after integration. No push was performed.
 
 ## Local integration branches created after operator approval
 
@@ -98,6 +99,50 @@ Result:
 ```text
 runtime-record-tests: ok (3 files)
 ```
+
+## Local main integration and cleanup
+
+After review and verification, the integration branches were fast-forward merged into the parent `main` branches:
+
+- dep-diet `main`: `2ebf67c docs: align agent policy with main-first workflow`
+- dep-viz `main`: `59fd294 docs: align agent policy with main-first workflow`
+- runtime-trace-insights `main`: `7355129 docs: align agent policy with main-first workflow`
+
+The original candidate worktrees and temporary integration worktrees were removed after verification. The candidate and integration branch refs remain as local backup refs, but no extra worktree directories remain:
+
+```text
+dep-diet worktrees:
+/home/tryinget/ai-society/softwareco/owned/dep-diet 2ebf67c [main]
+
+dep-viz worktrees:
+/home/tryinget/ai-society/softwareco/owned/dep-viz 59fd294 [main]
+
+runtime-trace-insights worktrees:
+/home/tryinget/ai-society/softwareco/owned/runtime-trace-insights 7355129 [main]
+```
+
+Post-main verification with the preserved dirty state re-applied:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-diet && git diff --check && npm test
+cd /home/tryinget/ai-society/softwareco/owned/dep-viz && git diff --check && npm test
+cd /home/tryinget/ai-society/softwareco/owned/runtime-trace-insights && git diff --check && npm test
+```
+
+Results:
+
+```text
+dep-diet: ci-targeted: ok (27 files)
+dep-viz: 83 pass / 0 fail
+runtime-trace-insights: runtime-record-tests: ok (3 files)
+```
+
+Review pass:
+
+- no conflict markers found in the three repos;
+- `git diff --check` passed in all three repos;
+- reviewer found no blocking issues in the integrated commits;
+- known remaining caveat: broad pre-existing dirty ROCS/ontology/tooling state remains outside this integration slice.
 
 ## Candidate 1: dep-diet Gardener static-evidence adapter
 
