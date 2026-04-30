@@ -87,6 +87,25 @@ That creates the GitHub Release with the curated release notes. The release orch
 
 Release bodies are validated as local release-please-style notes, not freeform highlights. Normal releases must include `### Breaking Changes` plus at least one categorized change section such as `### Added`, `### Changed`, or `### Fixed`; `### Highlights` is not a substitute for those categories. If `### Breaking Changes` contains anything other than `None`, the notes must also include non-empty `### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update before relying on the release.
 
+## Versioned migration maps for breaking changes
+
+When a release introduces a breaking change, keep the breaking-change statement in `CHANGELOG.md` under that version's `### Breaking Changes` section. Then create a version-specific AI-agent migration map before cutting the release:
+
+```text
+docs/releases/migrations/v<version>.md
+```
+
+The migration map is not the authoritative release-history record of the break; it is the resolution playbook for agents and operators. It should describe:
+
+- which earlier versions the instructions apply to
+- which consumers must be updated, including agents, parsers, prompts, dashboards, fixtures, and operator scripts
+- how to find affected reads or commands
+- the field-by-field or command-by-command replacement steps when applicable
+- validation commands or artifact checks that prove the consumer has migrated
+- any explicit instruction not to copy version-specific upgrade ballast into evergreen first-contact docs
+
+The corresponding `CHANGELOG.md` breaking-change entry must link to the migration map for resolution guidance. The GitHub Release notes should link to the same migration map from `### Agent migration notes` when the release has downstream agent/operator impact.
+
 Publishing the GitHub Release triggers `.github/workflows/publish.yml`.
 
 ## Workflow publication

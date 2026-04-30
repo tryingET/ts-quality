@@ -14,7 +14,7 @@ type: "reference"
 
 ### Breaking Changes
 
-- Replaced the old compatibility-oriented `nextEvidenceAction` summary fields (`remainingBlocker`, `bestNextAction`, `coverageStatus`, `witnessStatus`, `mutationStatus`, `governanceStatus`, and top-level `artifactPaths`) with the alpha evidence-closure contract: consumers must read `nextEvidenceAction.primaryAction` and `nextEvidenceAction.evidenceBasis` instead.
+- Replaced the old compatibility-oriented `nextEvidenceAction` summary fields (`remainingBlocker`, `bestNextAction`, `coverageStatus`, `witnessStatus`, `mutationStatus`, `governanceStatus`, and top-level `artifactPaths`) with the alpha evidence-closure contract: consumers must read `nextEvidenceAction.primaryAction` and `nextEvidenceAction.evidenceBasis` instead. See the versioned [v0.4.0 migration map](docs/releases/migrations/v0.4.0.md) for field-by-field upgrade guidance.
 
 ### Added
 
