@@ -47,7 +47,7 @@ npm run release:plan -- --version <next-version>
 npm run release:prepare -- --version <next-version> --apply
 ```
 
-Local preparation proof is owned by `release:prepare --apply`: it refreshes `VERIFICATION.md` plus `verification/verification.log`, proves the same `verify:ci` artifact gate used by publish CI, and validates the tag/version intent. Do not tag a release commit unless the printed `git add` follow-up includes any refreshed verification artifacts.
+Local preparation proof is owned by `release:prepare --apply`: it refreshes `VERIFICATION.md` plus `verification/verification.log`, includes those verification artifacts in the printed `git add` follow-up, and validates the tag/version intent. Do not tag a release commit until the prepared commit has passed the printed post-commit `npm run verify:ci --silent` gate.
 
 Keep these guardrails in mind:
 

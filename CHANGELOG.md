@@ -12,7 +12,7 @@ type: "reference"
 
 ### Changed
 
-- Hardened `release:prepare --apply` so local release prep refreshes `VERIFICATION.md` / `verification/verification.log`, proves the same `verify:ci` artifact gate used by publish CI, and includes verification artifacts in the generated release commit file list.
+- Hardened `release:prepare --apply` so local release prep refreshes `VERIFICATION.md` / `verification/verification.log`, includes verification artifacts in the generated release commit file list, and prints a post-commit `verify:ci` gate before tagging.
 
 ### Fixed
 

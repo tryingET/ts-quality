@@ -140,7 +140,7 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'publicCliContract: publicCliSummary',
     "const verificationArtifactFiles = ['VERIFICATION.md', 'verification/verification.log'];",
     "runRequired('npm', ['run', 'verify', '--silent']);",
-    "runRequired('npm', ['run', 'verify:ci', '--silent']);",
+    "`npm run verify:ci --silent`",
     'Release notes for v${version} include Breaking Changes and must have a migration map',
     'CHANGELOG.md v${version} Breaking Changes must link to ${migrationRelativePath}',
     '[v${version} migration map](migrations/v${version}.md)'
@@ -181,6 +181,7 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     '`### Breaking Changes` plus at least one categorized change section',
     '`### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update',
     'refreshes `VERIFICATION.md` plus `verification/verification.log`',
+    'run the printed `verify:ci` post-commit gate',
     'docs/releases/migrations/v<version>.md',
     'The migration map is not the authoritative release-history record of the break'
   ], 'docs/releases/release-workflow.md');

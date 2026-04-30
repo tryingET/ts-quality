@@ -63,11 +63,12 @@ Use:
 npm run release:prepare -- --version <next-version> --apply
 ```
 
-This prepares local release files, refreshes `VERIFICATION.md` plus `verification/verification.log`, proves the same verification artifact gate that publish CI will run, and prints the exact `git add` follow-up for the release-ready commit set. Then commit and tag the prepared state using the printed file list. At minimum, version releases normally include:
+This prepares local release files, refreshes `VERIFICATION.md` plus `verification/verification.log`, and prints the exact `git add` follow-up for the release-ready commit set. Commit the prepared state using the printed file list, run the printed `verify:ci` post-commit gate, then tag only after that gate passes. At minimum, version releases normally include:
 
 ```bash
 git add package.json packages/ts-quality/package.json package-lock.json CHANGELOG.md docs/releases/ VERIFICATION.md verification/verification.log
 git commit -m "chore(release): v<next-version>"
+npm run verify:ci --silent
 git tag -a v<next-version> -m "ts-quality v<next-version>"
 ```
 

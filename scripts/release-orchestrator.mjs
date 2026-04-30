@@ -507,7 +507,6 @@ function commandPrepare(options) {
   ];
   if (apply) {
     runRequired('npm', ['run', 'verify', '--silent']);
-    runRequired('npm', ['run', 'verify:ci', '--silent']);
     runRequired('npm', ['run', 'release:intent:check', '--silent'], { RELEASE_TAG: `v${version}`, GITHUB_REF_TYPE: 'tag' });
   }
   console.log(JSON.stringify({
@@ -519,6 +518,7 @@ function commandPrepare(options) {
     followUp: apply ? [
       `git add ${[...new Set(changedFiles)].join(' ')}`,
       `git commit -m "chore(release): v${version}"`,
+      `npm run verify:ci --silent`,
       `git tag -a v${version} -m "ts-quality v${version}"`,
       `npm run release:github -- --version ${version} --apply`
     ] : [`rerun with --apply to write release prep for v${version}`]
