@@ -10,6 +10,8 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-04-30
+
 ### Changed
 
 - Hardened `release:prepare --apply` so local release prep refreshes `VERIFICATION.md` / `verification/verification.log`, includes verification artifacts in the generated release commit file list, and prints a post-commit `verify:ci` gate before tagging.

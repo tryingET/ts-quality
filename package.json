@@ -1,6 +1,6 @@
 {
   "name": "ts-quality-workspace",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "ts-quality alpha - evidence, judgment, understanding, governance, legitimacy for TypeScript changes",
   "license": "MIT",
