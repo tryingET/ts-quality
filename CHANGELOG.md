@@ -10,6 +10,28 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-30
+
+### Added
+
+- Added `ts-quality adopt --from-run <run-dir-or-run.json>` to turn temporary pilot runs into repo-local reusable setup by copying missing config, control-plane, witness, and trusted public-key files while omitting generated run artifacts, latest pointers, mutation manifests, coverage output, witness receipt sidecars, and private keys.
+- Added `ts-quality retention [--config <file>] [--machine]` with human-readable output and the compact `TSQ_RETENTION_PLAN_V1` protocol so agents can distinguish commit-worthy adoption assets from ephemeral/generated/sensitive artifacts.
+- Added a documented external `dep-diet` dogfood run proving the post-adoption flow across `doctor --machine`, `retention --machine`, focused witness generation, `check`, `report`, and `explain`.
+
+### Changed
+
+- Enriched adoption docs, public contract notes, and the CLI command manifest so `adopt` and `retention` are visible as first-class setup/adoption surfaces.
+- Tightened mutation survivor closure guidance and fixture coverage so masked behavior deltas, sidecar sufficiency, and next-evidence artifact compatibility stay regression-tested.
+
+### Fixed
+
+- Hardened mutation workspace fingerprinting so symlinked excluded directories such as `node_modules` are skipped before digesting, avoiding `EISDIR` failures in package-manager or temp-copy dogfood setups.
+- Improved installed-package compatibility tests for older `nextEvidenceAction` packets and future additive run fields.
+
+### Agent migration notes
+
+- No breaking migration is required. Agents adopting `ts-quality` should prefer `doctor --machine` before setup, use `adopt --from-run` when converting a pilot run into repo assets, and run `retention --machine` before deciding which generated artifacts to commit or ignore.
+
 ## [0.4.2] - 2026-04-30
 
 ### Changed
