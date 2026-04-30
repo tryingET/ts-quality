@@ -10,6 +10,8 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-30
+
 ### Breaking Changes
 
 - Replaced the old compatibility-oriented `nextEvidenceAction` summary fields (`remainingBlocker`, `bestNextAction`, `coverageStatus`, `witnessStatus`, `mutationStatus`, `governanceStatus`, and top-level `artifactPaths`) with the alpha evidence-closure contract: consumers must read `nextEvidenceAction.primaryAction` and `nextEvidenceAction.evidenceBasis` instead.
