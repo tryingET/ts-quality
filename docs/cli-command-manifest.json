@@ -47,6 +47,28 @@
       "automationNotes": ["Use before check when a boring JSON runtime control plane is preferred."]
     },
     {
+      "name": "adopt",
+      "purpose": "Copy reusable config/control-plane/witness files from a pilot run into a target repo without copying ephemeral run artifacts.",
+      "category": "setup",
+      "allowedValueOptions": ["--root", "--from-run"],
+      "allowedFlagOptions": [],
+      "reads": ["source .ts-quality/runs/<run-id>/run.json", "source ts-quality.config.*", "source configured control-plane files", "source witness JSON records", "source trusted public keys"],
+      "writes": ["missing target config/control-plane/witness/public-key files only"],
+      "artifacts": ["stdout copy/skip/omission summary"],
+      "automationNotes": ["Never overwrites existing target files.", "Copies trusted public keys (*.pub.pem) only; private keys, run directories, latest pointers, mutation manifests, coverage output, and witness receipt sidecars are omitted."]
+    },
+    {
+      "name": "retention",
+      "purpose": "Project read-only commit-vs-ephemeral artifact retention guidance for adoption and review.",
+      "category": "setup",
+      "allowedValueOptions": ["--root", "--config"],
+      "allowedFlagOptions": ["--machine"],
+      "reads": ["ts-quality.config.* when present", ".ts-quality/witnesses/**/*.json", "configured trusted public/private key directory", "configured coverage path"],
+      "writes": [],
+      "artifacts": ["human-readable retention plan on stdout", "compact TSQ_RETENTION_PLAN_V1 line protocol on stdout when --machine is passed"],
+      "automationNotes": ["Use after adoption or pilot runs to distinguish reusable config/control-plane/witness/public-key files from generated run artifacts, latest pointers, mutation scratch files, coverage output, receipt sidecars, and private keys.", "The projection is advisory and read-only; repository policy and run artifacts remain authoritative."]
+    },
+    {
       "name": "check",
       "purpose": "Run the evidence, mutation, invariant, governance, and verdict pipeline for an explicit changed scope.",
       "category": "evaluation",

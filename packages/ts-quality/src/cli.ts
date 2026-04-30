@@ -8,6 +8,8 @@ import {
   attestVerify,
   initProject,
   materializeProject,
+  renderArtifactRetentionPlan,
+  renderArtifactRetentionPlanMachine,
   renderDoctor,
   renderDoctorMachine,
   renderGovernance,
@@ -77,6 +79,7 @@ const COMMAND_CONTRACTS = new Map<string, CommandContract>([
   ['doctor', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: ['--machine'], maxPositionals: 1 }],
   ['materialize', { allowedValues: ['--root', '--config', '--out-dir'], allowedFlags: [], maxPositionals: 1 }],
   ['adopt', { allowedValues: ['--root', '--from-run'], allowedFlags: [], maxPositionals: 1 }],
+  ['retention', { allowedValues: ['--root', '--config'], allowedFlags: ['--machine'], maxPositionals: 1 }],
   ['check', { allowedValues: ['--root', '--config', '--changed', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
   ['explain', { allowedValues: ['--root', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
   ['report', { allowedValues: ['--root', '--run-id'], allowedFlags: ['--json'], maxPositionals: 1 }],
@@ -271,6 +274,7 @@ Core commands:
 - doctor [--machine]                       inspect adoption readiness without running tests
 - materialize [--out-dir <dir>]            write boring runtime JSON from config/support files
 - adopt --from-run <run-dir>               copy reusable config/control-plane/witness files from a pilot run
+- retention [--machine]                    project commit-vs-ephemeral artifact retention guidance
 - check [--changed <a,b>] [--run-id <id>]  write the immutable evidence run bundle
 - explain|report|plan|govern --run-id <id> project a persisted run without re-checking
 - authorize --agent <id> [--action merge] --run-id <id>
@@ -322,6 +326,15 @@ Reads: <source>/.ts-quality/runs/<run-id>/run.json plus referenced config/contro
 Writes missing target files only; existing target files are skipped rather than overwritten.
 Copies trusted public keys (*.pub.pem) only; private key material is never adopted.
 Omits: .ts-quality/runs/, .ts-quality/latest.json, .ts-quality/mutation-manifest.json, coverage output, private keys, and witness receipt sidecars.
+`;
+  }
+  if (command === 'retention') {
+    return `Usage: ts-quality retention [--root <dir>] [--config <file>] [--machine]
+
+Projects a read-only artifact retention plan for adoption and review.
+Commit/review: reusable config, control-plane files, witness JSON records, and trusted public keys (*.pub.pem).
+Keep ephemeral or gitignored: .ts-quality/runs/, latest.json, mutation-manifest.json, coverage output, witness receipt sidecars, and private keys.
+Use --machine for the compact TSQ_RETENTION_PLAN_V1 line protocol.
 `;
   }
   if (command === 'check') {
@@ -500,6 +513,15 @@ function main(): void {
       'Omitted ephemeral artifacts:',
       ...result.omittedEphemeral.map((filePath) => `- ${filePath}`)
     ].join('\n') + '\n');
+    return;
+  }
+
+  if (command === 'retention') {
+    const explicitConfigPath = configPath(parsed);
+    const retentionOptions = explicitConfigPath ? { configPath: explicitConfigPath } : undefined;
+    process.stdout.write(hasFlag(parsed, '--machine')
+      ? renderArtifactRetentionPlanMachine(cwd, retentionOptions)
+      : renderArtifactRetentionPlan(cwd, retentionOptions));
     return;
   }
 

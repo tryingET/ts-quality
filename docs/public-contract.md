@@ -58,7 +58,7 @@ AX means Agent Experience: the agent-facing experience across both structured ma
 - `--json` — structured AX for deterministic parsers, CI systems, dashboards, and programmatic agents
 - `--compact` — compact AX for harnessed LLMs and agent workbenches where token budget and next-action clarity matter
 
-Both modes should derive from the same durable artifact contract. The durable truth stays in run artifacts such as `run.json`; compact outputs are token-efficient projections, not separate authority. Existing command-specific compact protocols such as `doctor --machine` follow this compact AX principle even before every command exposes a `--compact` flag.
+Both modes should derive from the same durable artifact contract. The durable truth stays in run artifacts such as `run.json`; compact outputs are token-efficient projections, not separate authority. Existing command-specific compact protocols such as `doctor --machine` and `retention --machine` follow this compact AX principle even before every command exposes a `--compact` flag.
 
 Compact machine protocol v1 grammar:
 
@@ -142,8 +142,9 @@ The protected minimum public adoption story is:
 2. create one manual `witness test` artifact for the behavior-bearing slice
 3. run `check --run-id <id>` and confirm the matching witness is consumed as execution-backed evidence
 4. read `report --run-id <id>` and `explain --run-id <id>` as the operator-facing projections
+5. run `retention [--config <file>] [--machine]` when converting pilot output into repo assets so reusable config/control-plane/witness/public-key files are distinguished from generated run artifacts, latest pointers, mutation scratch files, coverage output, receipt sidecars, and private keys
 
-The shared public CLI contract fixture proves that sequence from an installed package and records it as `doctor-machine -> manual witness -> check -> report/explain by run id`.
+The shared public CLI contract fixture proves the core evidence sequence from an installed package and records it as `doctor-machine -> manual witness -> check -> report/explain by run id`. The retention projection is an additive read-only adoption aid, not a new authority over `run.json` or repository policy.
 
 ## Protected run-artifact compatibility expectation
 

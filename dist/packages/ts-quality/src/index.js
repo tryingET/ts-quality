@@ -9,6 +9,9 @@ exports.loadVerifiedAttestations = loadVerifiedAttestations;
 exports.refreshExecutionWitnesses = refreshExecutionWitnesses;
 exports.runCheck = runCheck;
 exports.initProject = initProject;
+exports.buildArtifactRetentionPlan = buildArtifactRetentionPlan;
+exports.renderArtifactRetentionPlan = renderArtifactRetentionPlan;
+exports.renderArtifactRetentionPlanMachine = renderArtifactRetentionPlanMachine;
 exports.renderDoctor = renderDoctor;
 exports.renderDoctorMachine = renderDoctorMachine;
 exports.renderLatestReport = renderLatestReport;
@@ -2094,6 +2097,130 @@ function initProject(rootDir, options) {
         fs_1.default.writeFileSync(`${keyBase}.pem`, pair.privateKeyPem, 'utf8');
         fs_1.default.writeFileSync(`${keyBase}.pub.pem`, pair.publicKeyPem, 'utf8');
     }
+}
+function repoFileStatus(rootDir, relativePath) {
+    try {
+        const resolved = (0, index_1.resolveRepoLocalPath)(rootDir, relativePath, { allowMissing: true, kind: 'retention path' });
+        return fs_1.default.existsSync(resolved.absolutePath) ? 'present' : 'missing';
+    }
+    catch {
+        return 'missing';
+    }
+}
+function retentionEntry(rootDir, relativePath, reason) {
+    return { path: (0, index_1.normalizePath)(relativePath), reason, status: repoFileStatus(rootDir, relativePath) };
+}
+function listRetentionFiles(rootDir, relativeDir, predicate) {
+    const directory = (0, index_1.resolveRepoLocalPath)(rootDir, relativeDir, { allowMissing: true, kind: 'retention directory' }).absolutePath;
+    const output = [];
+    function visit(currentDir) {
+        for (const entry of fs_1.default.readdirSync(currentDir, { withFileTypes: true })) {
+            const absolutePath = path_1.default.join(currentDir, entry.name);
+            const relativePath = (0, index_1.normalizePath)(path_1.default.relative(rootDir, absolutePath));
+            if (entry.isDirectory()) {
+                visit(absolutePath);
+                continue;
+            }
+            if (entry.isFile() && predicate(relativePath)) {
+                output.push(relativePath);
+            }
+        }
+    }
+    if (fs_1.default.existsSync(directory) && fs_1.default.statSync(directory).isDirectory()) {
+        visit(directory);
+    }
+    return output.sort();
+}
+function buildArtifactRetentionPlan(rootDir, options) {
+    let loaded;
+    let configError;
+    try {
+        loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
+    }
+    catch (error) {
+        configError = error instanceof Error ? error.message : String(error);
+    }
+    const keep = [];
+    if (loaded) {
+        keep.push(retentionEntry(rootDir, relativeToRoot(rootDir, loaded.configPath), 'ts-quality configuration'));
+        keep.push(retentionEntry(rootDir, loaded.config.invariantsPath, 'invariant definitions'));
+        keep.push(retentionEntry(rootDir, loaded.config.constitutionPath, 'constitution rules'));
+        keep.push(retentionEntry(rootDir, loaded.config.agentsPath, 'agent policy'));
+        keep.push(retentionEntry(rootDir, loaded.config.approvalsPath, 'repo-local approvals'));
+        keep.push(retentionEntry(rootDir, loaded.config.waiversPath, 'repo-local waivers'));
+        keep.push(retentionEntry(rootDir, loaded.config.overridesPath, 'repo-local overrides'));
+    }
+    else {
+        keep.push({ path: 'ts-quality.config.*', reason: 'ts-quality configuration once initialized', status: 'pattern' });
+        keep.push({ path: '.ts-quality/{invariants,constitution,agents}.*', reason: 'control-plane source files once initialized', status: 'pattern' });
+        keep.push({ path: '.ts-quality/{approvals,waivers,overrides}.json', reason: 'governance control-plane data once initialized', status: 'pattern' });
+    }
+    const witnessFiles = listRetentionFiles(rootDir, '.ts-quality/witnesses', (relativePath) => relativePath.endsWith('.json') && !relativePath.endsWith('.receipt.json'));
+    keep.push(...witnessFiles.map((relativePath) => retentionEntry(rootDir, relativePath, 'execution witness record')));
+    if (witnessFiles.length === 0) {
+        keep.push({ path: '.ts-quality/witnesses/<witness>.json', reason: 'execution witness records after they exist; exclude *.receipt.json sidecars', status: 'pattern' });
+    }
+    const publicKeyDir = loaded?.config.trustedKeysDir ?? '.ts-quality/keys';
+    const publicKeys = listRetentionFiles(rootDir, publicKeyDir, (relativePath) => relativePath.endsWith('.pub.pem'));
+    keep.push(...publicKeys.map((relativePath) => retentionEntry(rootDir, relativePath, 'trusted public verification key')));
+    if (publicKeys.length === 0) {
+        keep.push({ path: `${publicKeyDir}/**/*.pub.pem`, reason: 'trusted public verification keys after they exist', status: 'pattern' });
+    }
+    const coveragePath = loaded?.config.coverage.lcovPath ?? 'coverage/lcov.info';
+    const privateKeys = listRetentionFiles(rootDir, publicKeyDir, (relativePath) => relativePath.endsWith('.pem') && !relativePath.endsWith('.pub.pem'));
+    const ignore = [
+        { path: '.ts-quality/runs/', reason: 'generated immutable run bundles; snapshot deliberately only for reviewed examples', status: 'pattern' },
+        { path: '.ts-quality/latest.json', reason: 'ambient pointer to latest run, not durable authority', status: repoFileStatus(rootDir, '.ts-quality/latest.json') },
+        { path: '.ts-quality/mutation-manifest.json', reason: 'generated mutation execution scratch artifact', status: repoFileStatus(rootDir, '.ts-quality/mutation-manifest.json') },
+        { path: coveragePath, reason: 'generated LCOV output', status: repoFileStatus(rootDir, coveragePath) },
+        { path: '.ts-quality/witnesses/**/*.receipt.json', reason: 'execution receipt sidecars; witness JSON is the reusable evidence record', status: 'pattern' },
+        ...(privateKeys.length > 0
+            ? privateKeys.map((relativePath) => retentionEntry(rootDir, relativePath, 'private signing key material; commit only matching *.pub.pem public keys'))
+            : [{ path: `${publicKeyDir}/<key-id>.pem`, reason: 'private signing key material; commit only matching *.pub.pem public keys', status: 'pattern' }])
+    ];
+    const warnings = [
+        ...(configError ? [`config not loaded: ${configError}`] : []),
+        ...privateKeys.map((relativePath) => `private key material should not be committed: ${relativePath}`)
+    ];
+    return {
+        surface: 'ts-quality.artifact-retention',
+        schemaVersion: 1,
+        rootDir,
+        config: loaded ? { loaded: true, path: relativeToRoot(rootDir, loaded.configPath) } : { loaded: false, ...(configError ? { error: configError } : {}) },
+        keep,
+        ignore,
+        warnings
+    };
+}
+function renderArtifactRetentionPlan(rootDir, options) {
+    const plan = buildArtifactRetentionPlan(rootDir, options);
+    const lines = [
+        'ts-quality artifact retention plan',
+        `root: ${plan.rootDir}`,
+        `config: ${plan.config.loaded ? plan.config.path : `not loaded (${plan.config.error ?? 'missing'})`}`,
+        '',
+        'Commit/review reusable artifacts:',
+        ...plan.keep.map((entry) => `- [${entry.status ?? 'pattern'}] ${entry.path} — ${entry.reason}`),
+        '',
+        'Keep ephemeral/generated artifacts out of commits unless deliberately snapshotting reviewed examples:',
+        ...plan.ignore.map((entry) => `- [${entry.status ?? 'pattern'}] ${entry.path} — ${entry.reason}`),
+        ...(plan.warnings.length > 0 ? ['', 'Warnings:', ...plan.warnings.map((warning) => `- ${warning}`)] : [])
+    ];
+    return `${lines.join('\n')}\n`;
+}
+function renderArtifactRetentionPlanMachine(rootDir, options) {
+    const plan = buildArtifactRetentionPlan(rootDir, options);
+    const lines = [
+        'TSQ_RETENTION_PLAN_V1',
+        `root\t${machineValue(plan.rootDir)}`,
+        plan.config.loaded
+            ? `config\tok\tpath=${machineValue(plan.config.path ?? '')}`
+            : `config\terror\tmessage=${machineValue(plan.config.error ?? 'missing')}`,
+        ...plan.keep.map((entry) => `keep\t${machineValue(entry.status ?? 'pattern')}\t${machineValue(entry.path)}\treason=${machineValue(entry.reason)}`),
+        ...plan.ignore.map((entry) => `ignore\t${machineValue(entry.status ?? 'pattern')}\t${machineValue(entry.path)}\treason=${machineValue(entry.reason)}`),
+        ...plan.warnings.map((warning) => `warning\t${machineValue(warning)}`)
+    ];
+    return `${lines.join('\n')}\n`;
 }
 function readPackageScripts(rootDir) {
     const packagePath = path_1.default.join(rootDir, 'package.json');

@@ -57,6 +57,27 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /\nrecommend\tartifact-retention\tartifact-retention-policy\tCommit reusable ts-quality config\/control-plane\/witness files/);
   assert.doesNotMatch(result.stdout, /--runInBand/);
   assert.doesNotMatch(result.stdout, /^[{[]/);
+
+  result = spawnSync('node', [cli, 'retention', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /ts-quality artifact retention plan/);
+  assert.match(result.stdout, /Commit\/review reusable artifacts:/);
+  assert.match(result.stdout, /ts-quality\.config\.ts/);
+  assert.match(result.stdout, /\.ts-quality\/keys\/sample\.pub\.pem/);
+  assert.doesNotMatch(result.stdout, /- \[present\] \.ts-quality\/keys\/sample\.pem — trusted public verification key/);
+  assert.match(result.stdout, /- \[present\] \.ts-quality\/keys\/sample\.pem — private signing key material/);
+  assert.match(result.stdout, /\.ts-quality\/runs\//);
+  assert.match(result.stdout, /private key material should not be committed: \.ts-quality\/keys\/sample\.pem/);
+
+  result = spawnSync('node', [cli, 'retention', '--root', target, '--machine'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^TSQ_RETENTION_PLAN_V1\n/);
+  assert.match(result.stdout, /\nkeep\tpresent\tts-quality\.config\.ts\treason=ts-quality configuration/);
+  assert.match(result.stdout, /\nkeep\tpresent\t\.ts-quality\/keys\/sample\.pub\.pem\treason=trusted public verification key/);
+  assert.doesNotMatch(result.stdout, /\nkeep\tpresent\t\.ts-quality\/keys\/sample\.pem/);
+  assert.match(result.stdout, /\nignore\tpresent\t\.ts-quality\/keys\/sample\.pem\treason=private signing key material/);
+  assert.match(result.stdout, /\nignore\tpattern\t\.ts-quality\/runs\//);
+  assert.match(result.stdout, /\nwarning\tprivate key material should not be committed: \.ts-quality\/keys\/sample\.pem/);
 });
 
 test('check fails closed when init-generated config has no changed scope', () => {
@@ -1162,6 +1183,16 @@ test('top-level help teaches the first bounded review trust contract', () => {
   assert.match(result.stdout, /npm run test:auth-refresh --silent/);
   assert.match(result.stdout, /check requires explicit changed scope/);
   assert.match(result.stdout, /Machine truth is under \.ts-quality\/runs\/<run-id>\//);
+  assert.match(result.stdout, /retention \[--machine\]/);
+  assert.equal(result.stderr, '');
+});
+
+test('retention --help renders artifact retention projection guidance', () => {
+  const result = spawnSync('node', [cli, 'retention', '--help'], { encoding: 'utf8' });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Usage: ts-quality retention/);
+  assert.match(result.stdout, /TSQ_RETENTION_PLAN_V1/);
+  assert.match(result.stdout, /private keys/);
   assert.equal(result.stderr, '');
 });
 
