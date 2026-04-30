@@ -184,21 +184,22 @@ runtime trace confirms command path
 
 ## Immediate non-invasive spike
 
-Do not update the divergent local Gardener `main` blindly. Use the existing checkout as-is for a quick local read, or create a clean worktree/branch from `origin/main` for upstream-current analysis.
+Status: completed as a temp-copy spike and captured in `docs/adoption/2026-04-30-gardener-dep-diet-spike.md`.
 
-Suggested spike:
+The spike reset the normal local Gardener checkout to upstream-current `origin/main` only after preserving the divergent local commits as `backup/gardener-divergent-main-20260430`. It then ran Gardener at `6d077bf` against a temp copy of dep-diet.
 
-1. Use `/home/tryinget/ai-society/softwareco/contrib/gardener` as the Gardener source.
-2. Create a temp copy of `/home/tryinget/ai-society/softwareco/owned/dep-diet`.
-3. Run Gardener against the temp copy.
-4. Inspect JSON for:
-   - external packages
-   - graph nodes/edges
-   - top dependencies
-   - language detection
-   - repository URL resolution
-5. Draft `dep-diet/docs/project/gardener-integration-spike.md` with the observed JSON shape and proposed adapter contract.
-6. Create a bounded AK task for the adapter only after the spike proves the output shape.
+Observed high-level result:
+
+- 170 JavaScript source files analyzed
+- 5 manifest files
+- 10 unique external packages
+- dependency graph with 216 nodes and 1135 links
+- top dependency centrality included Node builtins, `zod`, `chalk`, `lodash`, and fixture/dev packages
+
+Follow-up:
+
+1. Draft `dep-diet/docs/project/gardener-integration-spike.md` with the observed JSON shape and proposed adapter contract.
+2. Create a bounded AK task for the adapter now that the spike proves the output shape.
 
 ## Risks and guardrails
 
