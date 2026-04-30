@@ -42,6 +42,7 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /Changed TypeScript source and built runtime roots are present/);
   assert.match(result.stdout, /NODE_OPTIONS=--enable-source-maps/);
   assert.match(result.stdout, /Candidate focused test command: npm run test \(adjust to the smallest trustworthy slice\)\./);
+  assert.match(result.stdout, /Commit reusable ts-quality config\/control-plane\/witness files/);
   assert.doesNotMatch(result.stdout, /--runInBand/);
 
   result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'src/index.ts', '--machine'], { encoding: 'utf8' });
@@ -53,6 +54,7 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /\nrecommend\tsource-map\tsource-map-coverage\t.*NODE_OPTIONS=--enable-source-maps/);
   assert.match(result.stdout, /\nrecommend\tfocused-test\tfocused-test-command\tCandidate focused test command: npm run test \(adjust to the smallest trustworthy slice\)\.\tcommand_arg=npm\tcommand_arg=run\tcommand_arg=test/);
   assert.match(result.stdout, /\nrecommend\twitness\twitness-command-shape\t.*\tcommand_arg=ts-quality\tcommand_arg=witness\tcommand_arg=test/);
+  assert.match(result.stdout, /\nrecommend\tartifact-retention\tartifact-retention-policy\tCommit reusable ts-quality config\/control-plane\/witness files/);
   assert.doesNotMatch(result.stdout, /--runInBand/);
   assert.doesNotMatch(result.stdout, /^[{[]/);
 });

@@ -2016,6 +2016,11 @@ function buildDoctorDiagnostic(rootDir, options) {
         summary: 'Candidate witness command shape: ts-quality witness test --invariant <id> --scenario <id> --source-files <src> --test-files <test> --out .ts-quality/witnesses/<id>.json -- <focused command>',
         command: ['ts-quality', 'witness', 'test', '--invariant', '<id>', '--scenario', '<id>', '--source-files', '<src>', '--test-files', '<test>', '--out', '.ts-quality/witnesses/<id>.json', '--', '<focused command>']
     });
+    recommendations.push({
+        id: 'artifact-retention-policy',
+        kind: 'artifact-retention',
+        summary: 'Commit reusable ts-quality config/control-plane/witness files; keep generated run artifacts, latest.json, mutation-manifest.json, and coverage outputs ephemeral or gitignored unless your repo deliberately snapshots reviewed samples.'
+    });
     recommendations.push({ id: 'script-snippets', kind: 'script-snippet', summary: 'Suggested package.json snippets are advisory only: coverage:<slice>, witness:<slice>, quality:<slice>.' });
     return {
         surface: 'ts-quality.doctor',
