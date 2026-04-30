@@ -168,14 +168,7 @@ For first-contact target-repo adoption, prefer `ts-quality doctor --machine` bef
 
 ### AX projection terminology
 
-AX means Agent Experience: the agent-facing experience across both structured machine consumers and token-sensitive harnessed LLMs.
-
-Use this distinction when choosing or designing command output:
-
-- `--json` is structured AX for deterministic parsers, CI systems, dashboards, and programmatic agents.
-- `--compact` is compact AX for harnessed LLMs and agent workbenches where token budget and next-action clarity matter.
-
-Do not treat AX as synonymous with JSON. JSON is one AX projection; compact line-oriented output is another. The durable authority should still be the run artifact (`run.json` and linked sidecars), while compact output should preserve the same action semantics with fewer tokens. Existing compact protocols such as `doctor --machine` follow the compact AX principle even where the command name predates a general `--compact` flag.
+Use the canonical AX terminology from [Public Contract Baseline](public-contract.md#agent-experience-ax-terminology): `--json` is structured AX, `--compact` is compact AX, and neither projection replaces durable run-artifact authority. Existing compact protocols such as `doctor --machine` follow the same compact AX principle even where the command name predates a general `--compact` flag.
 
 ### Evidence closure for agents
 

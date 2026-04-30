@@ -51,7 +51,7 @@ TSQ_DOCTOR_MACHINE_V1
 
 ## Agent Experience (AX) terminology
 
-AX means Agent Experience: the agent-facing experience across both structured machine consumers and token-sensitive harnessed LLMs.
+AX means Agent Experience: the agent-facing experience across both structured machine consumers and token-sensitive harnessed LLMs. This repo uses the core ontology concept `core.AgentExperience` for the shared term.
 
 `ts-quality` treats these as AX projection modes:
 
