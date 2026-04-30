@@ -121,6 +121,8 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'function releaseBodyFromNotes',
     'function assertReleaseNotesContract',
     'function generatedReleaseBodyFromChangelog',
+    'function migrationMapRelativePath',
+    'function markdownLinksMigrationMap',
     '^## Release body\\s+([\\s\\S]*)$',
     "const releaseTitle = releaseTitleFromNotes(version, notesPath);",
     "'--title', releaseTitle",
@@ -135,7 +137,13 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'summarizePublicCliContract',
     '`public CLI contract ${contractCase.id}`',
     'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
-    'publicCliContract: publicCliSummary'
+    'publicCliContract: publicCliSummary',
+    "const verificationArtifactFiles = ['VERIFICATION.md', 'verification/verification.log'];",
+    "runRequired('npm', ['run', 'verify', '--silent']);",
+    "runRequired('npm', ['run', 'verify:ci', '--silent']);",
+    'Release notes for v${version} include Breaking Changes and must have a migration map',
+    'CHANGELOG.md v${version} Breaking Changes must link to ${migrationRelativePath}',
+    '[v${version} migration map](migrations/v${version}.md)'
   ], 'scripts/release-orchestrator.mjs');
   assert.equal(releaseOrchestrator.includes('`ts-quality v${version} — deterministic trust for TypeScript changes`, \'--notes-file\''), false, 'release create title must come from release notes instead of a hard-coded generic title');
   assert.equal(releaseOrchestrator.includes('Release notes title is still the generic fallback'), true, 'release notes must reject the generic fallback title');
@@ -171,7 +179,10 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
     'compact `doctor --machine` protocol header plus exact command fields',
     'Release bodies are validated as local release-please-style notes',
     '`### Breaking Changes` plus at least one categorized change section',
-    '`### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update'
+    '`### Agent migration notes` explaining what downstream agents, parsers, prompts, fixtures, or operators need to update',
+    'refreshes `VERIFICATION.md` plus `verification/verification.log`',
+    'docs/releases/migrations/v<version>.md',
+    'The migration map is not the authoritative release-history record of the break'
   ], 'docs/releases/release-workflow.md');
 });
 
@@ -278,6 +289,8 @@ test('release orchestrator dry-run prepare reports release artifacts without mut
   assert.equal(parsed.changedFiles.includes('package.json'), true);
   assert.equal(parsed.changedFiles.includes('packages/ts-quality/package.json'), true);
   assert.equal(parsed.changedFiles.includes('CHANGELOG.md'), true);
+  assert.equal(parsed.changedFiles.includes('VERIFICATION.md'), true);
+  assert.equal(parsed.changedFiles.includes('verification/verification.log'), true);
 });
 
 test('minimal external walkthrough folds pilot friction back into the first-run recipe', () => {

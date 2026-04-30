@@ -47,14 +47,7 @@ npm run release:plan -- --version <next-version>
 npm run release:prepare -- --version <next-version> --apply
 ```
 
-Local preparation proof remains:
-
-```bash
-npm run build
-npm run pack:ts-quality
-npm run smoke:packaging
-RELEASE_TAG=v<next-version> GITHUB_REF_TYPE=tag npm run release:intent:check
-```
+Local preparation proof is owned by `release:prepare --apply`: it refreshes `VERIFICATION.md` plus `verification/verification.log`, proves the same `verify:ci` artifact gate used by publish CI, and validates the tag/version intent. Do not tag a release commit unless the printed `git add` follow-up includes any refreshed verification artifacts.
 
 Keep these guardrails in mind:
 

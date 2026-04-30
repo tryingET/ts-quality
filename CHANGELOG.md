@@ -10,6 +10,14 @@ type: "reference"
 
 ## [Unreleased]
 
+### Changed
+
+- Hardened `release:prepare --apply` so local release prep refreshes `VERIFICATION.md` / `verification/verification.log`, proves the same `verify:ci` artifact gate used by publish CI, and includes verification artifacts in the generated release commit file list.
+
+### Fixed
+
+- Made breaking-release migration maps an enforced release-note contract: breaking releases must have `docs/releases/migrations/v<version>.md`, and both changelog and release notes must link to it for AI/operator resolution guidance.
+
 ## [0.4.1] - 2026-04-30
 
 ### Added

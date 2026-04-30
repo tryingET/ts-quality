@@ -10,6 +10,7 @@ const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
 const packageName = 'ts-quality';
 const repoSlug = 'tryingET/ts-quality';
+const verificationArtifactFiles = ['VERIFICATION.md', 'verification/verification.log'];
 
 /** @typedef {{ status: number | null, stdout: string, stderr: string }} CommandResult */
 /** @typedef {Record<string, string | boolean>} CliOptions */
@@ -160,6 +161,24 @@ function releaseNotesPath(version) {
 }
 
 /** @param {string} version */
+function migrationMapRelativePath(version) {
+  return `docs/releases/migrations/v${version}.md`;
+}
+
+/** @param {string} version */
+function migrationMapPath(version) {
+  return path.join(root, 'docs', 'releases', 'migrations', `v${version}.md`);
+}
+
+/**
+ * @param {string} markdown
+ * @param {string} version
+ */
+function markdownLinksMigrationMap(markdown, version) {
+  return markdown.includes(migrationMapRelativePath(version)) || markdown.includes(`migrations/v${version}.md`);
+}
+
+/** @param {string} version */
 function existingReleaseNotesPath(version) {
   const releaseDir = path.join(root, 'docs', 'releases');
   if (!fs.existsSync(releaseDir)) {
@@ -249,6 +268,17 @@ function assertReleaseNotesContract(version, notesPath) {
     if (!sectionHasMeaningfulContent(agentNotes)) {
       throw new Error(`Release notes for v${version} include Breaking Changes and must include non-empty Agent migration notes for downstream agents/operators.`);
     }
+    const migrationRelativePath = migrationMapRelativePath(version);
+    if (!fs.existsSync(migrationMapPath(version))) {
+      throw new Error(`Release notes for v${version} include Breaking Changes and must have a migration map at ${migrationRelativePath}.`);
+    }
+    const changelogSection = changelogSectionForVersion(version);
+    if (!markdownLinksMigrationMap(changelogSection, version)) {
+      throw new Error(`CHANGELOG.md v${version} Breaking Changes must link to ${migrationRelativePath}.`);
+    }
+    if (!markdownLinksMigrationMap(body, version)) {
+      throw new Error(`Release notes for v${version} Breaking Changes or Agent migration notes must link to ${migrationRelativePath}.`);
+    }
   }
 }
 
@@ -304,7 +334,7 @@ function generatedReleaseBodyFromChangelog(version) {
     fixed || '- None.',
     '',
     '### Agent migration notes',
-    breaking ? '- Review each breaking-change bullet above and update any agent prompts, parsers, fixtures, or consumers that depend on the changed public artifact/CLI contract before relying on this release.' : '- No breaking-change migration is required for agents beyond ordinary release-note review.',
+    breaking ? `- Resolve the breaking-change migration with [v${version} migration map](migrations/v${version}.md) before relying on this release in downstream agents, parsers, prompts, fixtures, or operators.` : '- No breaking-change migration is required for agents beyond ordinary release-note review.',
     '',
     '### Verification before release',
     '',
@@ -407,7 +437,8 @@ function writeReleaseNotes(version, apply) {
 function updateChangelog(version, apply) {
   const changelogPath = path.join(root, 'CHANGELOG.md');
   const changelog = fs.readFileSync(changelogPath, 'utf8');
-  if (changelog.includes(`## ${version}`)) {
+  const escapedVersion = version.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  if (new RegExp(`^## \\[?${escapedVersion}\\]?.*$`, 'mu').test(changelog)) {
     return path.relative(root, changelogPath);
   }
   const date = new Date().toISOString().slice(0, 10);
@@ -471,11 +502,12 @@ function commandPrepare(options) {
   const changedFiles = [
     ...updateVersions(version, apply),
     updateChangelog(version, apply),
-    writeReleaseNotes(version, apply)
+    writeReleaseNotes(version, apply),
+    ...verificationArtifactFiles
   ];
   if (apply) {
-    runRequired('npm', ['run', 'build', '--silent']);
-    runRequired('npm', ['run', 'smoke:packaging', '--silent']);
+    runRequired('npm', ['run', 'verify', '--silent']);
+    runRequired('npm', ['run', 'verify:ci', '--silent']);
     runRequired('npm', ['run', 'release:intent:check', '--silent'], { RELEASE_TAG: `v${version}`, GITHUB_REF_TYPE: 'tag' });
   }
   console.log(JSON.stringify({
