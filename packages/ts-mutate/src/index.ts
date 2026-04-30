@@ -277,8 +277,23 @@ function canonicalRuntimeMirrorRoots(runtimeMirrorRoots: string[] | undefined): 
   return roots.length > 0 ? roots : ['dist'];
 }
 
-function repoFileDigests(repoRoot: string): RepoFileDigest[] {
+function mutationFingerprintFilePaths(repoRoot: string): string[] {
   return listFiles(repoRoot, { excludeDirs: MUTATION_WORKSPACE_EXCLUDES })
+    .filter((filePath) => {
+      if (filePath.split('/').some((segment) => MUTATION_WORKSPACE_EXCLUDE_SET.has(segment))) {
+        return false;
+      }
+      const absolutePath = path.join(repoRoot, filePath);
+      try {
+        return fs.lstatSync(absolutePath).isFile();
+      } catch {
+        return false;
+      }
+    });
+}
+
+function repoFileDigests(repoRoot: string): RepoFileDigest[] {
+  return mutationFingerprintFilePaths(repoRoot)
     .map((filePath) => ({ filePath, digest: fileDigest(path.join(repoRoot, filePath)) }));
 }
 

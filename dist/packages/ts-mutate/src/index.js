@@ -207,8 +207,23 @@ function canonicalRuntimeMirrorRoots(runtimeMirrorRoots) {
     }
     return roots.length > 0 ? roots : ['dist'];
 }
-function repoFileDigests(repoRoot) {
+function mutationFingerprintFilePaths(repoRoot) {
     return (0, index_1.listFiles)(repoRoot, { excludeDirs: MUTATION_WORKSPACE_EXCLUDES })
+        .filter((filePath) => {
+        if (filePath.split('/').some((segment) => MUTATION_WORKSPACE_EXCLUDE_SET.has(segment))) {
+            return false;
+        }
+        const absolutePath = path_1.default.join(repoRoot, filePath);
+        try {
+            return fs_1.default.lstatSync(absolutePath).isFile();
+        }
+        catch {
+            return false;
+        }
+    });
+}
+function repoFileDigests(repoRoot) {
+    return mutationFingerprintFilePaths(repoRoot)
         .map((filePath) => ({ filePath, digest: (0, index_1.fileDigest)(path_1.default.join(repoRoot, filePath)) }));
 }
 function buildExecutionFingerprint(testCommand, runtimeMirrorRoots, repoFiles) {

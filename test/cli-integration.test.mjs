@@ -299,6 +299,18 @@ test('check fails closed when changed scope has no measurable mutation pressure'
   assert.equal(run.verdict.bestNextAction, 'Add executable tests or broaden measurable mutation scope so changed code produces explicit mutation pressure.');
 });
 
+test('check ignores symlinked excluded directories during mutation fingerprinting', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const externalModules = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-external-node-modules-'));
+  fs.writeFileSync(path.join(externalModules, 'package-marker.txt'), 'outside dependency cache\n', 'utf8');
+  fs.symlinkSync(externalModules, path.join(target, 'node_modules'), 'dir');
+
+  const result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'symlinked-excluded-dir'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stderr, /EISDIR/);
+  assert.match(result.stdout, /Mutation basis:/);
+});
+
 test('check, report, explain, plan, and govern produce aligned artifacts', () => {
   const target = tempCopyOfFixture('governed-app');
   const check = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });
