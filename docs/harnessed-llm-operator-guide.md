@@ -166,25 +166,25 @@ Always bind downstream review to the exact `--run-id` when automation may see mo
 
 For first-contact target-repo adoption, prefer `ts-quality doctor --machine` before inventing setup steps when the installed version supports it (`ts-quality doctor --help` lists `--machine`). It emits compact line protocol v1 (`TSQ_DOCTOR_MACHINE_V1`) for harnessed LLMs and agents, intentionally not JSON, so the agent can inspect changed-scope, LCOV, source-map, script, and witness-command recommendations without spending tokens on a heavy object tree. Parse it as LF-delimited records with TAB-delimited fields: the first field is the record kind, key/value fields use `key=value`, and command recommendations use repeated `command_arg=<argv item>` fields in order. Do not comma-split recommended commands. Use existing `--json` surfaces such as `report --json` or `attest verify --json` when CI or downstream tooling needs full JSON projections.
 
-### Evidence closure migration for agents
+### AX projection terminology
 
-When a run fails, do not scrape verdict prose or the removed alpha fields from older `nextEvidenceAction` packets. Use the canonical closure contract:
+AX means Agent Experience: the agent-facing experience across both structured machine consumers and token-sensitive harnessed LLMs.
+
+Use this distinction when choosing or designing command output:
+
+- `--json` is structured AX for deterministic parsers, CI systems, dashboards, and programmatic agents.
+- `--compact` is compact AX for harnessed LLMs and agent workbenches where token budget and next-action clarity matter.
+
+Do not treat AX as synonymous with JSON. JSON is one AX projection; compact line-oriented output is another. The durable authority should still be the run artifact (`run.json` and linked sidecars), while compact output should preserve the same action semantics with fewer tokens. Existing compact protocols such as `doctor --machine` follow the compact AX principle even where the command name predates a general `--compact` flag.
+
+### Evidence closure for agents
+
+When a run fails, start with the canonical closure artifacts instead of scraping report prose:
 
 - action: `run.nextEvidenceAction.primaryAction`
 - evidence basis: `run.nextEvidenceAction.evidenceBasis`
 - LLM handoff: `.ts-quality/runs/<run-id>/next-evidence-action.prompt.md`
 - AK-ready task projection: `.ts-quality/runs/<run-id>/next-evidence-action.ak-task.json`
-
-Migration map:
-
-| Old field | New field |
-|---|---|
-| `nextEvidenceAction.bestNextAction` | `nextEvidenceAction.primaryAction.title`, `.rationale`, `.steps[]` |
-| `nextEvidenceAction.witnessStatus` | `nextEvidenceAction.evidenceBasis.witness.status` |
-| `nextEvidenceAction.mutationStatus` | `nextEvidenceAction.evidenceBasis.mutation.{status,killed,sites,survived,errors}` |
-| `nextEvidenceAction.coverageStatus` | `nextEvidenceAction.evidenceBasis.coverage.{status,fileCount,minPct,changedFunctionMinPct,changedFunctionsUnder80}` |
-| `nextEvidenceAction.governanceStatus` | `nextEvidenceAction.evidenceBasis.governance.{status,errors,warnings}` |
-| top-level `nextEvidenceAction.artifactPaths` | `nextEvidenceAction.primaryAction.artifactPaths` plus per-step `artifactPaths` |
 
 For survivor failures, prefer `primaryAction.suggestedEditFiles` over guessing whether to edit tests or source. Use `primaryAction.groups` to avoid duplicating equivalent survivor fixes, `primaryAction.expectedConfidenceLift` to understand why this is the highest-leverage action, and `evidenceBasis.nonBlockingSignals` to avoid wasting time on evidence layers that are already clear.
 

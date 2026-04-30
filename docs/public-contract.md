@@ -3,7 +3,7 @@ summary: "Public contract baseline for ts-quality 0.3: stable operator paths, ma
 read_when:
   - "When preparing or reviewing a 0.3.x release"
   - "When deciding whether a CLI, artifact, or machine-output change is breaking"
-  - "When writing agent or downstream-parser migration guidance"
+  - "When writing or validating current public artifact consumers"
 type: "reference"
 ---
 
@@ -49,6 +49,17 @@ ts-quality commands:
 TSQ_DOCTOR_MACHINE_V1
 ```
 
+## Agent Experience (AX) terminology
+
+AX means Agent Experience: the agent-facing experience across both structured machine consumers and token-sensitive harnessed LLMs.
+
+`ts-quality` treats these as AX projection modes:
+
+- `--json` — structured AX for deterministic parsers, CI systems, dashboards, and programmatic agents
+- `--compact` — compact AX for harnessed LLMs and agent workbenches where token budget and next-action clarity matter
+
+Both modes should derive from the same durable artifact contract. The durable truth stays in run artifacts such as `run.json`; compact outputs are token-efficient projections, not separate authority. Existing command-specific compact protocols such as `doctor --machine` follow this compact AX principle even before every command exposes a `--compact` flag.
+
 Compact machine protocol v1 grammar:
 
 - the first line is exactly `TSQ_DOCTOR_MACHINE_V1`
@@ -92,8 +103,6 @@ A successful manual witness upgrade must surface as:
 ## Protected actionable evidence closure contract
 
 Every `check` run emits one canonical `nextEvidenceAction` packet in `run.json` and `.ts-quality/runs/<run-id>/next-evidence-action.{json,txt}`. It also writes `.ts-quality/runs/<run-id>/next-evidence-action.prompt.md` for LLM handoff and `.ts-quality/runs/<run-id>/next-evidence-action.ak-task.json` as an AK-ready task manifest projection. This packet is the public next-step surface for humans and LLM agents; downstream operators should prefer it over scraping verdict prose.
-
-This is a breaking alpha cleanup of the older `nextEvidenceAction` shape: consumers must stop reading the removed compatibility summary fields (`remainingBlocker`, `bestNextAction`, `coverageStatus`, `witnessStatus`, `mutationStatus`, `governanceStatus`, and top-level `artifactPaths`) and read the closure contract below instead.
 
 The packet contains:
 
