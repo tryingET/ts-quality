@@ -16,6 +16,7 @@ const OPTION_KINDS = new Map([
     ['--run-id', 'value'],
     ['--config', 'value'],
     ['--out-dir', 'value'],
+    ['--from-run', 'value'],
     ['--preset', 'value'],
     ['--agent', 'value'],
     ['--action', 'value'],
@@ -43,6 +44,7 @@ const COMMAND_CONTRACTS = new Map([
     ['init', { allowedValues: ['--root', '--preset'], allowedFlags: [], maxPositionals: 1 }],
     ['doctor', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: ['--machine'], maxPositionals: 1 }],
     ['materialize', { allowedValues: ['--root', '--config', '--out-dir'], allowedFlags: [], maxPositionals: 1 }],
+    ['adopt', { allowedValues: ['--root', '--from-run'], allowedFlags: [], maxPositionals: 1 }],
     ['check', { allowedValues: ['--root', '--config', '--changed', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
     ['explain', { allowedValues: ['--root', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
     ['report', { allowedValues: ['--root', '--run-id'], allowedFlags: ['--json'], maxPositionals: 1 }],
@@ -182,6 +184,9 @@ function configPath(parsed) {
 function outDir(parsed) {
     return takeOption(parsed, '--out-dir');
 }
+function fromRun(parsed) {
+    return takeOption(parsed, '--from-run');
+}
 function preset(parsed) {
     const value = takeOption(parsed, '--preset');
     if (!value) {
@@ -217,6 +222,7 @@ Core commands:
 - init [--preset <name>]                   create starter control-plane files
 - doctor [--machine]                       inspect adoption readiness without running tests
 - materialize [--out-dir <dir>]            write boring runtime JSON from config/support files
+- adopt --from-run <run-dir>               copy reusable config/control-plane/witness files from a pilot run
 - check [--changed <a,b>] [--run-id <id>]  write the immutable evidence run bundle
 - explain|report|plan|govern --run-id <id> project a persisted run without re-checking
 - authorize --agent <id> [--action merge] --run-id <id>
@@ -258,6 +264,16 @@ Exports author-authored config/support data into canonical runtime JSON.
 Reads: ts-quality.config.* and configured support files.
 Writes: .ts-quality/materialized/ts-quality.config.json and related support JSON.
 Use this before check when CI or agents should consume generated data instead of source config.
+`;
+    }
+    if (command === 'adopt') {
+        return `Usage: ts-quality adopt --from-run <run-dir-or-run.json> [--root <dir>]
+
+Copies reusable ts-quality config/control-plane/witness files from a pilot run into this repo without copying ephemeral run artifacts.
+Reads: <source>/.ts-quality/runs/<run-id>/run.json plus referenced config/control-plane/witness files.
+Writes missing target files only; existing target files are skipped rather than overwritten.
+Copies trusted public keys (*.pub.pem) only; private key material is never adopted.
+Omits: .ts-quality/runs/, .ts-quality/latest.json, .ts-quality/mutation-manifest.json, coverage output, private keys, and witness receipt sidecars.
 `;
     }
     if (command === 'check') {
@@ -410,6 +426,24 @@ function main() {
         }
         const result = (0, index_2.materializeProject)(cwd, materializeOptions);
         process.stdout.write(`Materialized runtime config: ${result.configPath}\nOutput dir: ${result.outDir}\nFiles:\n- ${result.files.join('\n- ')}\n`);
+        return;
+    }
+    if (command === 'adopt') {
+        const requestedFromRun = fromRun(parsed);
+        if (!requestedFromRun) {
+            throw new Error('adopt requires --from-run <run-dir-or-run.json>');
+        }
+        const result = (0, index_2.adoptFromRun)(cwd, { fromRun: requestedFromRun });
+        process.stdout.write([
+            `Adopted ts-quality pilot run: ${result.sourceRunId}`,
+            `Source root: ${result.sourceRoot}`,
+            `Copied files: ${result.copied.length}`,
+            ...result.copied.map((filePath) => `- copied ${filePath}`),
+            `Skipped files: ${result.skipped.length}`,
+            ...result.skipped.map((item) => `- skipped ${item.path} (${item.reason})`),
+            'Omitted ephemeral artifacts:',
+            ...result.omittedEphemeral.map((filePath) => `- ${filePath}`)
+        ].join('\n') + '\n');
         return;
     }
     if (command === 'check') {

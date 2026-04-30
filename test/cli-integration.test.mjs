@@ -148,6 +148,80 @@ test('check fails closed when configured LCOV generation fails', () => {
   assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'runs', 'failed-lcov')), false);
 });
 
+test('adopt copies reusable pilot assets from a run without ephemeral artifacts', () => {
+  const source = tempCopyOfFixture('governed-app');
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-adopt-target-'));
+  const customInvariants = path.join(source, 'quality', 'custom-invariants.ts');
+  fs.mkdirSync(path.dirname(customInvariants), { recursive: true });
+  fs.copyFileSync(path.join(source, '.ts-quality', 'invariants.ts'), customInvariants);
+  fs.rmSync(path.join(source, '.ts-quality', 'invariants.ts'));
+  fs.writeFileSync(
+    path.join(source, 'ts-quality.config.ts'),
+    fs.readFileSync(path.join(source, 'ts-quality.config.ts'), 'utf8').replace("invariantsPath: '.ts-quality/invariants.ts'", "invariantsPath: 'quality/custom-invariants.ts'"),
+    'utf8'
+  );
+  const out = '.ts-quality/witnesses/auth-refresh-expired-boundary.json';
+  const witness = spawnSync('node', [
+    cli,
+    'witness',
+    'test',
+    '--root', source,
+    '--invariant', 'auth.refresh.validity',
+    '--scenario', 'expired-boundary',
+    '--source-files', 'src/auth/token.js',
+    '--test-files', 'test/token.test.js',
+    '--out', out,
+    '--',
+    'node', '--test', 'test/token.test.js'
+  ], { encoding: 'utf8' });
+  assert.equal(witness.status, 0, witness.stderr);
+  const check = spawnSync('node', [cli, 'check', '--root', source, '--run-id', 'adopt-source-run'], { encoding: 'utf8' });
+  assert.equal(check.status, 0, check.stderr);
+  const runJsonPath = path.join(source, '.ts-quality', 'runs', 'adopt-source-run', 'run.json');
+  const unsafeWitness = path.join(source, '.ts-quality', 'witnesses', 'unsafe-outside-root.json');
+  fs.symlinkSync('/etc/hosts', unsafeWitness);
+  const runJson = JSON.parse(fs.readFileSync(runJsonPath, 'utf8'));
+  runJson.behaviorClaims[0].evidenceSummary.executionWitnessFiles.push('.ts-quality/witnesses/unsafe-outside-root.json');
+  fs.writeFileSync(runJsonPath, `${JSON.stringify(runJson, null, 2)}\n`, 'utf8');
+
+  fs.mkdirSync(path.join(target, '.ts-quality'), { recursive: true });
+  fs.copyFileSync(path.join(source, '.ts-quality', 'agents.ts'), path.join(target, '.ts-quality', 'agents.ts'));
+  fs.writeFileSync(path.join(target, '.ts-quality', 'waivers.json'), '{"kept":true}\n', 'utf8');
+
+  const adopt = spawnSync('node', [cli, 'adopt', '--root', target, '--from-run', path.join(source, '.ts-quality', 'runs', 'adopt-source-run')], { encoding: 'utf8' });
+  assert.equal(adopt.status, 0, adopt.stderr);
+  assert.match(adopt.stdout, /Adopted ts-quality pilot run: adopt-source-run/);
+  assert.match(adopt.stdout, /copied ts-quality\.config\.ts/);
+  assert.match(adopt.stdout, /copied quality\/custom-invariants\.ts/);
+  assert.match(adopt.stdout, /copied \.ts-quality\/witnesses\/auth-refresh-expired-boundary\.json/);
+  assert.match(adopt.stdout, /copied \.ts-quality\/keys\/sample\.pub\.pem/);
+  assert.match(adopt.stdout, /skipped \.ts-quality\/agents\.ts \(already-exists-identical\)/);
+  assert.match(adopt.stdout, /skipped \.ts-quality\/waivers\.json \(already-exists-different\)/);
+  assert.match(adopt.stdout, /Omitted ephemeral artifacts:/);
+  assert.match(adopt.stdout, /\.ts-quality\/runs\//);
+  assert.match(adopt.stdout, /\.ts-quality\/mutation-manifest\.json/);
+
+  assert.equal(fs.existsSync(path.join(target, 'ts-quality.config.ts')), true);
+  assert.equal(fs.existsSync(path.join(target, 'quality', 'custom-invariants.ts')), true);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'invariants.ts')), false);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'agents.ts')), true);
+  assert.equal(fs.readFileSync(path.join(target, '.ts-quality', 'waivers.json'), 'utf8'), '{"kept":true}\n');
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'keys', 'sample.pub.pem')), true);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'keys', 'sample.pem')), false);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'witnesses', 'auth-refresh-expired-boundary.json')), true);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'witnesses', 'auth-refresh-expired-boundary.receipt.json')), false);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'witnesses', 'unsafe-outside-root.json')), false);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'runs')), false);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'latest.json')), false);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'mutation-manifest.json')), false);
+  assert.equal(fs.existsSync(path.join(target, 'coverage')), false);
+
+  const jsonTarget = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-adopt-json-target-'));
+  const adoptFromJson = spawnSync('node', [cli, 'adopt', '--root', jsonTarget, '--from-run', runJsonPath], { encoding: 'utf8' });
+  assert.equal(adoptFromJson.status, 0, adoptFromJson.stderr);
+  assert.equal(fs.existsSync(path.join(jsonTarget, 'quality', 'custom-invariants.ts')), true);
+});
+
 test('check accepts diff-only scope and derives changed files from diff hunks', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.writeFileSync(path.join(target, 'changes.diff'), ['+++ b/src/auth/token.js', '@@ -1,1 +1,1 @@'].join('\n'), 'utf8');

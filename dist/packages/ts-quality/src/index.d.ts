@@ -8,6 +8,16 @@ export interface MaterializeResult {
     outDir: string;
     files: string[];
 }
+export interface AdoptFromRunResult {
+    sourceRunId: string;
+    sourceRoot: string;
+    copied: string[];
+    skipped: Array<{
+        path: string;
+        reason: string;
+    }>;
+    omittedEphemeral: string[];
+}
 interface RunSelectionOptions {
     runId?: string;
 }
@@ -18,6 +28,9 @@ export declare function materializeProject(rootDir: string, options?: {
     configPath?: string;
     outDir?: string;
 }): MaterializeResult;
+export declare function adoptFromRun(rootDir: string, options: {
+    fromRun: string;
+}): AdoptFromRunResult;
 export declare function loadVerifiedAttestations(rootDir: string, attestationsDir: string, trustedKeysDir: string): {
     attestations: Attestation[];
     verification: AttestationVerificationRecord[];

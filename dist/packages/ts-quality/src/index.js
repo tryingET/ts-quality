@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.materializeProject = materializeProject;
+exports.adoptFromRun = adoptFromRun;
 exports.loadVerifiedAttestations = loadVerifiedAttestations;
 exports.refreshExecutionWitnesses = refreshExecutionWitnesses;
 exports.runCheck = runCheck;
@@ -1011,6 +1012,138 @@ function materializeProject(rootDir, options) {
         outDir: relativeToRoot(rootDir, outputDir),
         files
     };
+}
+function sourceRunPath(inputPath) {
+    const absoluteInput = path_1.default.resolve(inputPath);
+    if (fs_1.default.existsSync(absoluteInput) && fs_1.default.statSync(absoluteInput).isFile()) {
+        if (path_1.default.basename(absoluteInput) !== 'run.json') {
+            throw new Error(`adoption source must be a run.json file or run directory: ${inputPath}`);
+        }
+        return absoluteInput;
+    }
+    const candidate = path_1.default.join(absoluteInput, 'run.json');
+    if (!fs_1.default.existsSync(candidate)) {
+        throw new Error(`adoption source run.json not found: ${inputPath}`);
+    }
+    return candidate;
+}
+function sourceRootForRunPath(runJsonPath) {
+    const runDir = path_1.default.dirname(runJsonPath);
+    const runsDir = path_1.default.dirname(runDir);
+    const tsQualityDir = path_1.default.dirname(runsDir);
+    if (path_1.default.basename(runsDir) !== 'runs' || path_1.default.basename(tsQualityDir) !== '.ts-quality') {
+        throw new Error(`adoption source must be under .ts-quality/runs/<run-id>/run.json: ${runJsonPath}`);
+    }
+    return path_1.default.dirname(tsQualityDir);
+}
+function sourceFileExistsInside(sourceRoot, relativePath) {
+    if (relativePath.endsWith('.receipt.json')) {
+        return false;
+    }
+    try {
+        const source = (0, index_1.resolveRepoLocalPath)(sourceRoot, relativePath, { kind: 'adoption source' });
+        return fs_1.default.existsSync(source.absolutePath) && fs_1.default.statSync(source.absolutePath).isFile();
+    }
+    catch {
+        return false;
+    }
+}
+function sourceConfigAdoptionPaths(sourceRoot, run) {
+    const explicitConfigPath = run.controlPlane?.configPath ?? run.analysis?.configPath;
+    try {
+        const loaded = (0, config_1.loadContext)(sourceRoot, explicitConfigPath);
+        return [
+            relativeToRoot(sourceRoot, loaded.configPath),
+            loaded.config.invariantsPath,
+            loaded.config.constitutionPath,
+            loaded.config.agentsPath,
+            loaded.config.approvalsPath,
+            loaded.config.waiversPath,
+            loaded.config.overridesPath,
+            ...trustedPublicKeyFiles(sourceRoot, loaded.config.trustedKeysDir)
+        ];
+    }
+    catch {
+        return [
+            run.controlPlane?.configPath,
+            run.analysis?.configPath,
+            '.ts-quality/invariants.ts',
+            '.ts-quality/invariants.js',
+            '.ts-quality/invariants.json',
+            run.controlPlane?.constitutionPath,
+            run.controlPlane?.agentsPath,
+            run.controlPlane?.approvalsPath,
+            run.controlPlane?.waiversPath,
+            run.controlPlane?.overridesPath
+        ].filter((item) => typeof item === 'string' && item.length > 0);
+    }
+}
+function trustedPublicKeyFiles(sourceRoot, trustedKeysDir) {
+    try {
+        const directory = (0, index_1.resolveRepoLocalPath)(sourceRoot, trustedKeysDir, { allowMissing: true, kind: 'trusted keys dir' });
+        if (!fs_1.default.existsSync(directory.absolutePath) || !fs_1.default.statSync(directory.absolutePath).isDirectory()) {
+            return [];
+        }
+        return fs_1.default.readdirSync(directory.absolutePath, { withFileTypes: true })
+            .filter((entry) => entry.isFile() && entry.name.endsWith('.pub.pem'))
+            .map((entry) => (0, index_1.normalizePath)(path_1.default.join(directory.relativePath, entry.name)))
+            .filter((relativePath) => sourceFileExistsInside(sourceRoot, relativePath));
+    }
+    catch {
+        return [];
+    }
+}
+function existingAdoptionSourceFiles(sourceRoot, run) {
+    const candidates = uniqueStrings([
+        ...sourceConfigAdoptionPaths(sourceRoot, run),
+        ...run.behaviorClaims.flatMap((claim) => claim.evidenceSummary?.executionWitnessFiles ?? [])
+    ].filter((item) => typeof item === 'string' && item.length > 0));
+    return candidates.filter((relativePath) => sourceFileExistsInside(sourceRoot, relativePath));
+}
+function copyAdoptionFile(sourceRoot, targetRoot, relativePath, result) {
+    const source = (0, index_1.resolveRepoLocalPath)(sourceRoot, relativePath, { kind: 'adoption source' });
+    const target = (0, index_1.resolveRepoLocalPath)(targetRoot, relativePath, { allowMissing: true, kind: 'adoption target' });
+    if (fs_1.default.existsSync(target.absolutePath)) {
+        if (!fs_1.default.statSync(target.absolutePath).isFile()) {
+            result.skipped.push({ path: relativePath, reason: 'already-exists-non-file' });
+            return;
+        }
+        const existing = fs_1.default.readFileSync(target.absolutePath);
+        const incoming = fs_1.default.readFileSync(source.absolutePath);
+        result.skipped.push({ path: relativePath, reason: existing.equals(incoming) ? 'already-exists-identical' : 'already-exists-different' });
+        return;
+    }
+    (0, index_1.ensureDir)(path_1.default.dirname(target.absolutePath));
+    fs_1.default.copyFileSync(source.absolutePath, target.absolutePath);
+    result.copied.push(relativePath);
+}
+function adoptFromRun(rootDir, options) {
+    const runJsonPath = sourceRunPath(options.fromRun);
+    const sourceRoot = sourceRootForRunPath(runJsonPath);
+    const run = (0, index_1.readJson)(runJsonPath);
+    const runDirectoryId = path_1.default.basename(path_1.default.dirname(runJsonPath));
+    if (run.runId !== runDirectoryId) {
+        throw new Error(`adoption source run id mismatch: run.json says ${run.runId} but directory is ${runDirectoryId}`);
+    }
+    const result = {
+        sourceRunId: run.runId,
+        sourceRoot,
+        copied: [],
+        skipped: [],
+        omittedEphemeral: uniqueStrings([
+            '.ts-quality/runs/',
+            '.ts-quality/latest.json',
+            '.ts-quality/mutation-manifest.json',
+            run.analysis?.coverageLcovPath,
+            ...run.behaviorClaims.flatMap((claim) => (claim.evidenceSummary?.executionWitnessFiles ?? []).map((filePath) => filePath.replace(/\.json$/u, '.receipt.json')))
+        ].filter((item) => typeof item === 'string' && item.length > 0))
+    };
+    for (const relativePath of existingAdoptionSourceFiles(sourceRoot, run)) {
+        copyAdoptionFile(sourceRoot, rootDir, relativePath, result);
+    }
+    result.copied.sort();
+    result.skipped.sort((left, right) => left.path.localeCompare(right.path));
+    return result;
 }
 function loadVerifiedAttestations(rootDir, attestationsDir, trustedKeysDir) {
     const keysDir = (0, index_1.resolveRepoLocalPath)(rootDir, trustedKeysDir, { allowMissing: true, kind: 'trusted keys dir' }).absolutePath;
