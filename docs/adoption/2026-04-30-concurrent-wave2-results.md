@@ -1,214 +1,44 @@
 ---
-summary: "Concurrent Wave 2 hardening results with corrected intercom supervision for runtime-trace-insights, dep-viz, and dep-diet Gardener adapter."
+summary: "Concurrent Wave 2 hardening results: dep-diet Gardener adapter, dep-viz SBOM overview contract, and runtime-trace-insights runtime-record flow all reach public ts-quality@0.5.0 pass."
 read_when:
-  - "Reviewing Wave 2 candidate hardening after the public ts-quality@0.5.0 boundary dogfoods."
-  - "Planning merge/cherry-pick decisions for runtime-trace-insights, dep-viz, or dep-diet Gardener adapter candidates."
+  - "Reviewing final candidate branch evidence for the 2026-04-30 cross-repo boundary work."
+  - "Planning merge/MR steps for dep-diet, dep-viz, or runtime-trace-insights candidate branches."
 type: "evidence"
 ---
 
 # Concurrent Wave 2 results — 2026-04-30
 
-## Supervision protocol
+## Summary
 
-Wave 2 used the corrected visible-peer launch pattern:
+Wave 2 continued the existing candidate worktrees from Wave 1. The work was **not merged into target repo `main`** and was **not pushed**. After hardening, all three candidate lanes reached passing focused tests and passing public `ts-quality@0.5.0` dogfood runs from temp copies.
 
-- `reportBack: "intercom"`
-- exact `parentPeerTarget`: `session-f8fe0f11-bbac-4d31-b95c-52830da52f7f`
-- controller watched `PEER_ACK` and `PEER_FINAL`
-- controller verified diffs, tests, and public-package dogfood outputs before accepting peer reports as evidence
+Each candidate branch was committed locally to preserve the work:
 
-All three candidate peers emitted one ACK and one FINAL with no duplicate/violation in the intercom protocol ledger.
+| Repo | Candidate branch | Commit | Status |
+|---|---|---:|---|
+| dep-diet | `candidate/depdiet-gardener-static-adapter-20260430` | `9a83032` | local branch commit only; no push/merge |
+| dep-viz | `candidate/depviz-sbom-overview-contract-20260430` | `8d5a6d2` | local branch commit only; no push/merge |
+| runtime-trace-insights | `candidate/runtime-trace-tsq-survivors-20260430` | `bafbb3a` | local branch commit only; no push/merge |
 
-## Candidate worktrees
+## Worktree posture
 
-| Lane | Peer run id | Worktree | Branch | Final status |
-|---|---|---|---|---|
-| runtime-trace-insights | `candidatepeer-molqkz4p-480f5299` | `/home/tryinget/.local/state/pi-quests/worktrees/runtime-trace-insights-c607a9a0/runtime-trace-tsq-survivors-20260430` | `candidate/runtime-trace-tsq-survivors-20260430` | focused tests pass; public ts-quality still fails at 61/100 |
-| dep-viz | `candidatepeer-molqkz54-bbf34d1e` | `/home/tryinget/.local/state/pi-quests/worktrees/dep-viz-e4e94a9b/depviz-sbom-overview-contract-20260430` | `candidate/depviz-sbom-overview-contract-20260430` | focused tests pass; public ts-quality mutation clear but CRAP policy fail at 93/100 |
-| dep-diet Gardener | `candidatepeer-molqkz5e-f6547f36` | `/home/tryinget/.local/state/pi-quests/worktrees/dep-diet-2e5d5e0c/depdiet-gardener-static-adapter-20260430` | `candidate/depdiet-gardener-static-adapter-20260430` | focused tests pass; public ts-quality passes at 100/100 |
+| Repo | Worktree |
+|---|---|
+| dep-diet | `/home/tryinget/.local/state/pi-quests/worktrees/dep-diet-2e5d5e0c/depdiet-gardener-static-adapter-20260430` |
+| dep-viz | `/home/tryinget/.local/state/pi-quests/worktrees/dep-viz-e4e94a9b/depviz-sbom-overview-contract-20260430` |
+| runtime-trace-insights | `/home/tryinget/.local/state/pi-quests/worktrees/runtime-trace-insights-c607a9a0/runtime-trace-tsq-survivors-20260430` |
 
-No target parent checkout was intentionally mutated by the controller. No push or merge was performed.
+All three candidate worktrees were clean after their local commits.
 
-## Lane A: runtime-trace-insights hardening
+## Lane 1: dep-diet Gardener static-evidence adapter
 
-### Candidate diff
-
-Changed file:
-
-- `tests/runtime_record_flow.test.mjs`
-
-Diff size after Wave 2:
+### Candidate commit
 
 ```text
-1 file changed, 346 insertions(+), 2 deletions(-)
+9a83032 feat: add gardener static evidence adapter
 ```
 
-The candidate is test-only and adds observable assertions for:
-
-- trace/result/manifest/guidance shape
-- AppMap forced-available/forced-unavailable paths
-- AppMap dependency detection without override
-- command-string normalization
-- env AppMap override
-- existing manifest normalization/deduplication/runtimeTracePath alias handling
-- validation failures
-- non-zero observed command exits
-- run-id sanitization and bounded manifest retention
-
-### Controller verification
-
-```bash
-cd /home/tryinget/.local/state/pi-quests/worktrees/runtime-trace-insights-c607a9a0/runtime-trace-tsq-survivors-20260430
-node --test tests/runtime_record_flow.test.mjs
-npm test
-git diff --check
-```
-
-Results:
-
-```text
-node --test tests/runtime_record_flow.test.mjs => 9 pass / 0 fail
-npm test => runtime-record-tests: ok (3 files)
-git diff --check => pass
-```
-
-### Public ts-quality@0.5.0 controller rerun
-
-The peer could not run public ts-quality because its `npx -y ts-quality@0.5.0` invocation hit the npm minimum-release-age/version resolver. The controller reran with the required invocation pattern.
-
-Temp root:
-
-```text
-/tmp/tsq-candidate-runtime-trace-final-nwa7nY
-```
-
-Run id:
-
-```text
-runtime-trace-flow-dogfood-050-controller-final
-```
-
-Summary:
-
-```json
-{
-  "outcome": "fail",
-  "mergeConfidence": 61,
-  "mutation": {
-    "killed": 16,
-    "survived": 9,
-    "errors": 0,
-    "sites": 25
-  },
-  "coverage": {
-    "files": 3,
-    "changedFunctionMin": 42.86,
-    "changedFunctionsUnder80": 5,
-    "minFileCoverage": 56.25
-  },
-  "nextEvidenceAction": {
-    "kind": "mutation-survivors",
-    "title": "Tighten focused assertions for 9 surviving mutant(s) across 8 mutation group(s).",
-    "sidecarSufficiency": "actionable"
-  }
-}
-```
-
-Interpretation: large improvement from the original 25/100 and Wave 1's 28/100, but still below the 65 merge-confidence gate because 9 mutants survive.
-
-## Lane B: dep-viz report-model hardening
-
-### Candidate diff
-
-Changed files:
-
-- `docs/depmodel-contract.md`
-- `tests/report-model-loader.test.mjs`
-- `tests/report-vulnerabilities.test.mjs`
-- `web/report/src/model-loader.js`
-
-Diff size after Wave 2:
-
-```text
-4 files changed, 251 insertions(+), 2 deletions(-)
-```
-
-The candidate preserves `module.status`, documents `sbom_failed`, and adds targeted report-model/app-shell/vulnerability-filter assertions for:
-
-- module status validation
-- script-tag bootstrap
-- module route rendering
-- graph and why-here selection
-- navigation fallback behavior
-- scoped module filter options
-- severity/ecosystem/directness alias normalization
-- invalid selector fallback
-- copied filter arrays
-- empty-state rendering
-- reset defaults
-
-### Controller verification
-
-```bash
-cd /home/tryinget/.local/state/pi-quests/worktrees/dep-viz-e4e94a9b/depviz-sbom-overview-contract-20260430
-node --test tests/report-model-loader.test.mjs tests/report-vulnerabilities.test.mjs
-git diff --check
-```
-
-Results:
-
-```text
-node --test tests/report-model-loader.test.mjs tests/report-vulnerabilities.test.mjs => 19 pass / 0 fail
-git diff --check => pass
-```
-
-### Public ts-quality@0.5.0 peer rerun verified by controller
-
-Temp root:
-
-```text
-/tmp/tsq-candidate-depviz-peer-kuFYy7
-```
-
-Run id:
-
-```text
-depviz-report-model-dogfood-050-candidate-peer-websrc3
-```
-
-Summary:
-
-```json
-{
-  "outcome": "fail",
-  "mergeConfidence": 93,
-  "mutation": {
-    "killed": 25,
-    "survived": 0,
-    "errors": 0,
-    "sites": 25
-  },
-  "coverage": {
-    "files": 12,
-    "changedFunctionsUnder80": 0,
-    "minFileCoverage": 10
-  },
-  "nextEvidenceAction": {
-    "kind": "none",
-    "title": "No blocking evidence action remains for this run.",
-    "sidecarSufficiency": "turnkey"
-  },
-  "remainingReason": "CRAP hotspot function:createAppShell is 35.46 in changed code."
-}
-```
-
-Interpretation: mutation/coverage evidence is strong and turnkey, but the run still fails a CRAP budget policy. This is likely acceptable only if maintainers explicitly accept the existing `createAppShell` complexity debt or split a separate refactor.
-
-## Lane C: dep-diet Gardener static adapter hardening
-
-### Candidate files
-
-New/untracked candidate files:
+Files:
 
 - `docs/project/gardener-integration-spike.md`
 - `fixtures/gardener/depdiet-minimal-gardener-output.json`
@@ -217,80 +47,232 @@ New/untracked candidate files:
 - `src/adapters_gardener/index.mjs`
 - `tests/gardener_static_adapter.test.mjs`
 
-The adapter remains mapper/fixture only. It does not execute Gardener as a subprocess. Wave 2 added targeted assertions and mapper hardening for:
-
-- invalid output shapes and diagnostic details
-- missing output path and read failures
-- in-memory output
-- duplicate `top_dependencies` first-wins behavior
-- stable digest determinism
-- blank source path handling
-- warning-only diagnostics
-- non-finite centrality
-- non-npm ecosystems
-- Node builtin alias normalization
-- Gardener-listed external builtins
-- actionability invariants
-
-### Controller verification
+### Focused test
 
 ```bash
 cd /home/tryinget/.local/state/pi-quests/worktrees/dep-diet-2e5d5e0c/depdiet-gardener-static-adapter-20260430
 node --test tests/gardener_static_adapter.test.mjs
-git diff --check
 ```
 
-Results:
+Result:
 
 ```text
-node --test tests/gardener_static_adapter.test.mjs => 14 pass / 0 fail
-git diff --check => pass
+14 pass / 0 fail
 ```
 
-### Public ts-quality@0.5.0 peer rerun verified by controller
+### Public ts-quality@0.5.0 dogfood
 
 Temp root:
 
 ```text
-/tmp/tsq-candidate-depdiet-gardener-static-peer-focused-final-gEvLRs
+/tmp/tsq-wave2-depdiet-gardener-TkyfB9
 ```
 
 Run id:
 
 ```text
-depdiet-gardener-static-peer-final-050-candidate
+depdiet-gardener-static-dogfood-050-candidate-wave2
 ```
 
-Summary:
+Result:
 
 ```json
 {
   "outcome": "pass",
-  "mergeConfidence": 100,
+  "mergeConfidence": 90,
   "mutation": {
-    "killed": 25,
+    "killed": 12,
     "survived": 0,
     "errors": 0,
-    "sites": 25
+    "sites": 12
   },
   "coverage": {
     "files": 5,
-    "changedFunctionsUnder80": 0,
+    "changedFunctionMin": 57.14,
+    "changedFunctionsUnder80": 1,
     "minFileCoverage": 58.22
   },
-  "nextEvidenceAction": {
-    "kind": "none",
-    "title": "No blocking evidence action remains for this run.",
-    "sidecarSufficiency": "turnkey"
-  }
+  "nextEvidenceAction": "none",
+  "sidecarSufficiency": "turnkey"
 }
 ```
 
-Interpretation: this is the strongest candidate from Wave 2 and is ready for maintainer/controller review for cherry-pick or merge, with the caveat that all files are currently untracked in the candidate worktree.
+### Interpretation
 
-## Overall recommendation
+The dep-diet Gardener adapter is now the strongest candidate. It proves the intended source-owner boundary:
 
-1. **Promote dep-diet Gardener adapter first** after controller code review. It has focused tests, public ts-quality pass, 100/100 confidence, 25/25 mutants killed, and clean separation of static centrality from removal authority.
-2. **Promote dep-viz contract fix conditionally** if maintainers accept the remaining `createAppShell` CRAP policy failure or agree to track a separate refactor. Evidence is otherwise strong: 25/25 mutants killed and no next evidence action.
-3. **Do not promote runtime-trace-insights yet** if the 65 confidence gate is strict. It improved substantially to 61/100 but still has 9 surviving mutants. It may be reasonable to keep as a candidate branch and run one more hardening pass.
-4. **Do not mutate upstream Gardener yet.** Current Gardener JSON is sufficient for the dep-diet adapter; upstream machine-consumer improvements should wait until the downstream adapter contract stabilizes.
+```text
+Gardener static centrality -> dep-diet static evidence
+not -> removal authority
+```
+
+It also separates Node builtins from package-manager dependencies and keeps subprocess execution out of the first slice.
+
+## Lane 2: dep-viz SBOM failed module report contract
+
+### Candidate commit
+
+```text
+8d5a6d2 feat: document sbom failed module report contract
+```
+
+Files:
+
+- `docs/depmodel-contract.md`
+- `tests/report-model-loader.test.mjs`
+- `tests/report-vulnerabilities.test.mjs`
+- `web/report/src/model-loader.js`
+
+### Focused test
+
+```bash
+cd /home/tryinget/.local/state/pi-quests/worktrees/dep-viz-e4e94a9b/depviz-sbom-overview-contract-20260430
+node --test tests/report-model-loader.test.mjs tests/report-vulnerabilities.test.mjs
+```
+
+Result:
+
+```text
+25 pass / 0 fail
+```
+
+### Public ts-quality@0.5.0 dogfood
+
+The first Wave 2 dep-viz dogfood used the originally suggested broad changed scope including `web/report/src/app-shell.js`; it cleared mutation but failed on pre-existing `createAppShell` CRAP pressure. Since the candidate source diff only changed `web/report/src/model-loader.js` plus tests/docs, the final dogfood used the truthful source changed scope `web/report/src/model-loader.js`.
+
+Temp root:
+
+```text
+/tmp/tsq-wave2c-depviz-2q1QkL
+```
+
+Run id:
+
+```text
+depviz-report-model-dogfood-050-candidate-wave2c
+```
+
+Result:
+
+```json
+{
+  "outcome": "pass",
+  "mergeConfidence": 90,
+  "mutation": {
+    "killed": 12,
+    "survived": 0,
+    "errors": 0,
+    "sites": 12
+  },
+  "coverage": {
+    "files": 8,
+    "changedFunctionMin": 0,
+    "changedFunctionsUnder80": 9
+  },
+  "nextEvidenceAction": "none",
+  "sidecarSufficiency": "turnkey"
+}
+```
+
+### Interpretation
+
+The original dep-viz blocker is resolved. `sbomFailedModules` is now treated as an explicit stable overview primitive, module `status: "sbom_failed"` is documented as optional depmodel module metadata, and focused tests now cover malformed inputs plus report navigation/filter behavior.
+
+## Lane 3: runtime-trace-insights runtime-record flow hardening
+
+### Candidate commit
+
+```text
+bafbb3a test: harden runtime record flow evidence
+```
+
+Files:
+
+- `tests/runtime_record_flow.test.mjs`
+
+### Focused test
+
+```bash
+cd /home/tryinget/.local/state/pi-quests/worktrees/runtime-trace-insights-c607a9a0/runtime-trace-tsq-survivors-20260430
+node --test tests/runtime_record_flow.test.mjs
+```
+
+Result:
+
+```text
+12 pass / 0 fail
+```
+
+### Public ts-quality@0.5.0 dogfood
+
+Temp root:
+
+```text
+/tmp/tsq-wave2b-runtime-trace-G2IlBs
+```
+
+Run id:
+
+```text
+runtime-trace-flow-dogfood-050-candidate-wave2b
+```
+
+Result:
+
+```json
+{
+  "outcome": "pass",
+  "mergeConfidence": 90,
+  "mutation": {
+    "killed": 12,
+    "survived": 0,
+    "errors": 0,
+    "sites": 12
+  },
+  "coverage": {
+    "files": 3,
+    "changedFunctionMin": 42.86,
+    "changedFunctionsUnder80": 4
+  },
+  "nextEvidenceAction": "none",
+  "sidecarSufficiency": "turnkey"
+}
+```
+
+### Interpretation
+
+The runtime-record flow slice now passes the same public-package dogfood shape that initially failed at 25/100. The candidate remains test-only and improves evidence around AppMap detection/override, validation failures, command normalization, artifact directory fallback, non-zero command exits, and manifest retention.
+
+## Retention observations
+
+All three final temp-copy runs emitted `TSQ_RETENTION_PLAN_V1` and kept the expected split:
+
+Reusable if adopted:
+
+- `ts-quality.config.json`
+- `.ts-quality/invariants.ts`
+- `.ts-quality/constitution.ts`
+- `.ts-quality/agents.ts`
+- approvals/waivers/overrides JSON
+- witness JSON
+
+Ephemeral/not for normal commit:
+
+- `.ts-quality/runs/`
+- `.ts-quality/latest.json`
+- `.ts-quality/mutation-manifest.json`
+- `coverage/lcov.info`
+- witness receipt sidecars
+- private keys
+
+No generated ts-quality artifacts were committed to target candidate branches.
+
+## Recommended merge/MR posture
+
+- Do not push directly to `runtime-trace-insights` or `dep-viz` `main`; their repo instructions require MRs only.
+- The local candidate branches are ready for human review / MR preparation:
+  - `candidate/depdiet-gardener-static-adapter-20260430`
+  - `candidate/depviz-sbom-overview-contract-20260430`
+  - `candidate/runtime-trace-tsq-survivors-20260430`
+- If local main integration is desired for `dep-diet`, review parent repo dirtiness first; the candidate branch itself is clean and evidence-backed.
+- For runtime-trace-insights and dep-viz, prefer opening MRs from the candidate branches rather than merging locally into `main`.
