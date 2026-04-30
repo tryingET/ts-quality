@@ -10,6 +10,21 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-04-30
+
+### Added
+
+- Added `docs/releases/migrations/v0.4.0.md` as the AI-agent migration playbook for resolving the `0.4.0` `nextEvidenceAction` contract change.
+- Documented AX (Agent Experience) terminology: `--json` is structured AX for deterministic parsers and programmatic agents, while `--compact` is compact AX for token-sensitive harnessed LLMs; AX should not be treated as JSON-only.
+
+### Changed
+
+- Updated the release workflow so future breaking releases keep the breaking-change statement in `CHANGELOG.md` and put AI/operator resolution steps in `docs/releases/migrations/v<version>.md`.
+
+### Fixed
+
+- Kept evergreen LLM/operator docs focused on the current contract by moving version-specific migration guidance into release-scoped migration docs.
+
 ## [0.4.0] - 2026-04-30
 
 ### Breaking Changes
@@ -19,7 +34,6 @@ type: "reference"
 ### Added
 
 - Added a canonical actionable evidence-closure contract to `nextEvidenceAction`, including one prioritized `primaryAction`, compact evidence-basis facts, completion criteria, focused commands when available, and richer `check`/report/explain projections for LLM and operator follow-up.
-- Documented AX (Agent Experience) terminology: `--json` is structured AX for deterministic parsers and programmatic agents, while `--compact` is compact AX for token-sensitive harnessed LLMs; AX should not be treated as JSON-only.
 - Added LLM/AK closure projections through `next-evidence-action.prompt.md` and `next-evidence-action.ak-task.json`, plus survivor grouping, likely test edit targets, non-blocking evidence signals, and expected confidence-lift hints.
 
 ## [0.3.1] - 2026-04-29
