@@ -204,8 +204,8 @@ function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdi
     `Best next action: ${run.verdict.bestNextAction ?? 'none'}`
   ];
   if (run.nextEvidenceAction) {
-    lines.push(`Remaining blocker: ${run.nextEvidenceAction.remainingBlocker}`);
     lines.push(`Evidence closure: ${run.nextEvidenceAction.primaryAction.title}`);
+    lines.push(`Evidence closure kind: ${run.nextEvidenceAction.primaryAction.kind}`);
     const basis = run.nextEvidenceAction.evidenceBasis;
     lines.push(`Coverage basis: ${basis.coverage.fileCount} file(s)${typeof basis.coverage.changedFunctionMinPct === 'number' ? `, changed-function min ${basis.coverage.changedFunctionMinPct}%` : typeof basis.coverage.minPct === 'number' ? `, min ${basis.coverage.minPct}%` : ''}, changed functions under80 ${basis.coverage.changedFunctionsUnder80}`);
     lines.push(`Mutation basis: ${basis.mutation.killed} killed / ${basis.mutation.sites} site(s), ${basis.mutation.survived} survived, ${basis.mutation.errors} error(s)`);
@@ -246,19 +246,14 @@ function renderCoverageGenerationText(record: CoverageGenerationRecord): string 
 
 function renderNextEvidenceActionText(action: NextEvidenceAction): string {
   const lines = [
-    `remainingBlocker: ${action.remainingBlocker}`,
-    `bestNextAction: ${action.bestNextAction}`,
     `primaryAction: ${action.primaryAction.id}`,
     `primaryActionKind: ${action.primaryAction.kind}`,
     `primaryActionTitle: ${action.primaryAction.title}`,
     `primaryActionRationale: ${action.primaryAction.rationale}`,
-    `coverage: ${action.coverageStatus}`,
-    `coverageBasis: files=${action.evidenceBasis.coverage.fileCount}${typeof action.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? ` changedFunctionMinPct=${action.evidenceBasis.coverage.changedFunctionMinPct}` : typeof action.evidenceBasis.coverage.minPct === 'number' ? ` minPct=${action.evidenceBasis.coverage.minPct}` : ''} changedFunctionsUnder80=${action.evidenceBasis.coverage.changedFunctionsUnder80}`,
-    `witness: ${action.witnessStatus}`,
-    `witnessBasis: files=${action.evidenceBasis.witness.executionWitnessFiles.length}`,
-    `mutation: ${action.mutationStatus}`,
-    `mutationBasis: killed=${action.evidenceBasis.mutation.killed} sites=${action.evidenceBasis.mutation.sites} survived=${action.evidenceBasis.mutation.survived} errors=${action.evidenceBasis.mutation.errors}`,
-    `governance: ${action.governanceStatus}`,
+    `coverageBasis: status=${action.evidenceBasis.coverage.status} files=${action.evidenceBasis.coverage.fileCount}${typeof action.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? ` changedFunctionMinPct=${action.evidenceBasis.coverage.changedFunctionMinPct}` : typeof action.evidenceBasis.coverage.minPct === 'number' ? ` minPct=${action.evidenceBasis.coverage.minPct}` : ''} changedFunctionsUnder80=${action.evidenceBasis.coverage.changedFunctionsUnder80}`,
+    `witnessBasis: status=${action.evidenceBasis.witness.status} files=${action.evidenceBasis.witness.executionWitnessFiles.length}`,
+    `mutationBasis: status=${action.evidenceBasis.mutation.status} killed=${action.evidenceBasis.mutation.killed} sites=${action.evidenceBasis.mutation.sites} survived=${action.evidenceBasis.mutation.survived} errors=${action.evidenceBasis.mutation.errors}`,
+    `governanceBasis: status=${action.evidenceBasis.governance.status} errors=${action.evidenceBasis.governance.errors} warnings=${action.evidenceBasis.governance.warnings}`,
     `confidenceBasis: final=${action.evidenceBasis.confidence.final} penalties=${action.evidenceBasis.confidence.penalties.length} credits=${action.evidenceBasis.confidence.credits.length}`
   ];
   if (action.primaryAction.targetFiles.length > 0) {
@@ -278,7 +273,7 @@ function renderNextEvidenceActionText(action: NextEvidenceAction): string {
     }
   }
   lines.push('completionCriteria:', ...action.primaryAction.completionCriteria.map((item) => `- ${item}`));
-  lines.push('artifacts:', ...Object.entries(action.artifactPaths).map(([key, value]) => `- ${key}: ${value}`));
+  lines.push('artifacts:', ...Object.entries(action.primaryAction.artifactPaths).map(([key, value]) => `- ${key}: ${value}`));
   return `${lines.join('\n')}\n`;
 }
 
@@ -1422,10 +1417,6 @@ function buildMutationRemediation(mutations: RunArtifact['mutations']): Mutation
   return survivors.length > 0 ? { survivors } : undefined;
 }
 
-function statusFromCount(clear: boolean, clearText: string, missingText: string): string {
-  return clear ? clearText : missingText;
-}
-
 function uniqueStrings(values: string[]): string[] {
   return [...new Set(values.filter((value) => value.length > 0))];
 }
@@ -1622,8 +1613,6 @@ function buildPrimaryEvidenceClosureAction(
 }
 
 function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'executionWitnesses' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction {
-  const surviving = run.mutations.filter((item) => item.status === 'survived');
-  const mutationErrors = run.mutations.filter((item) => item.status === 'error' || item.status === 'invalid');
   const remainingBlocker = run.verdict.findings.find((item) => item.code === 'surviving-mutant' || item.code === 'mutation-score-budget')
     ? 'mutation-pressure'
     : run.verdict.findings.find((item) => item.code === 'mutation-baseline')
@@ -1643,19 +1632,8 @@ function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | '
     coverageGeneration: `.ts-quality/runs/${run.runId}/coverage-generation.json`
   };
   return {
-    remainingBlocker,
-    bestNextAction: run.verdict.bestNextAction ?? 'No next evidence action is currently required.',
-    coverageStatus: statusFromCount(run.coverage.length > 0, 'coverage evidence present', run.coverageGeneration ? `coverage generation ${run.coverageGeneration.receipt.status}` : 'coverage evidence missing'),
-    witnessStatus: run.behaviorClaims.some((claim) => (claim.evidenceSummary?.executionWitnessFiles ?? []).length > 0) ? 'execution-backed witness considered' : 'no execution witness auto-ran',
-    mutationStatus: surviving.length > 0
-      ? `${surviving.length} surviving mutant(s); tighten focused assertions`
-      : mutationErrors.length > 0
-        ? `${mutationErrors.length} mutation execution error(s)`
-        : 'mutation pressure clear or not blocking',
-    governanceStatus: run.governance.some((item) => item.level === 'error') ? `blocked by ${run.governance.filter((item) => item.level === 'error').length} governance error(s)` : 'no governance errors',
     primaryAction: buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths),
-    evidenceBasis: buildEvidenceBasis(run),
-    artifactPaths: { ...artifactPaths }
+    evidenceBasis: buildEvidenceBasis(run)
   };
 }
 

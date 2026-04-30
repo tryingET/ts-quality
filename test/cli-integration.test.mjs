@@ -221,14 +221,13 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.equal(run.version, '0.2.0');
   assert.equal(run.verdict.confidenceBreakdown.base, 100);
   assert.equal(typeof run.verdict.confidenceBreakdown.final, 'number');
-  assert.equal(run.nextEvidenceAction.artifactPaths.run, `.ts-quality/runs/${runId}/run.json`);
   assert.equal(fs.existsSync(path.join(runDir, 'next-evidence-action.txt')), true);
   assert.equal(typeof run.nextEvidenceAction.primaryAction.title, 'string');
   assert.equal(run.nextEvidenceAction.primaryAction.completionCriteria.length > 0, true);
   assert.equal(typeof run.nextEvidenceAction.evidenceBasis.confidence.final, 'number');
   assert.equal(typeof run.nextEvidenceAction.evidenceBasis.mutation.survived, 'number');
   assert.match(fs.readFileSync(path.join(runDir, 'next-evidence-action.txt'), 'utf8'), /primaryActionTitle:/);
-  assert.match(fs.readFileSync(path.join(runDir, 'next-evidence-action.txt'), 'utf8'), /mutationBasis: killed=[0-9]+ sites=[0-9]+ survived=[0-9]+ errors=[0-9]+/);
+  assert.match(fs.readFileSync(path.join(runDir, 'next-evidence-action.txt'), 'utf8'), /mutationBasis: status=\S+ killed=[0-9]+ sites=[0-9]+ survived=[0-9]+ errors=[0-9]+/);
   assert.match(check.stdout, /Evidence closure:/);
   assert.match(check.stdout, /Coverage basis:/);
   assert.match(check.stdout, /Mutation basis:/);
@@ -260,7 +259,7 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.match(report.stdout, /focused-test-alignment \[clear; mode=inferred\]: 1 focused test file aligned to invariant scope/);
   assert.match(report.stdout, /mutation-pressure \[warning; mode=explicit\]: [0-9]+ surviving mutants? across [0-9]+ mutation sites?/);
   assert.match(explain.stdout, /Confidence breakdown: base 100/);
-  assert.match(explain.stdout, /Next evidence action:/);
+  assert.match(explain.stdout, /Evidence closure:/);
   assert.match(explain.stdout, /Reasons:/);
   assert.match(explain.stdout, /focused tests: test\/token.test.js/);
   assert.match(explain.stdout, /evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof/);
@@ -1239,7 +1238,7 @@ test('check consumes manual execution witnesses from the default witness directo
   assert.equal(claim.evidenceSummary.evidenceSemantics, 'execution-backed');
   assert.deepEqual(claim.evidenceSummary.executionWitnessFiles, [out]);
   assert.equal(claim.evidenceSummary.scenarioResults[0].supportKind, 'execution-witness');
-  assert.equal(run.nextEvidenceAction.witnessStatus, 'execution-backed witness considered');
+  assert.equal(run.nextEvidenceAction.evidenceBasis.witness.status, 'execution-backed');
   assert.equal(run.executionWitnesses, undefined);
   const checkSummaryText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'manual-witness-consumed', 'check-summary.txt'), 'utf8');
   assert.match(checkSummaryText, /Execution witness is present; remaining risk comes from/);

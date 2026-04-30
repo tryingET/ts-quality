@@ -438,9 +438,8 @@ function renderExplainText(run) {
     }
     if (run.nextEvidenceAction) {
         lines.push('');
-        lines.push(`Next evidence action: ${run.nextEvidenceAction.bestNextAction}`);
-        lines.push(`Remaining blocker: ${run.nextEvidenceAction.remainingBlocker}`);
         lines.push(`Evidence closure: ${run.nextEvidenceAction.primaryAction.title}`);
+        lines.push(`Evidence closure kind: ${run.nextEvidenceAction.primaryAction.kind}`);
         lines.push(`Coverage basis: ${run.nextEvidenceAction.evidenceBasis.coverage.fileCount} file(s)${typeof run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? `, changed-function min ${run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct}%` : typeof run.nextEvidenceAction.evidenceBasis.coverage.minPct === 'number' ? `, min ${run.nextEvidenceAction.evidenceBasis.coverage.minPct}%` : ''}, changed functions under80 ${run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionsUnder80}`);
         lines.push(`Mutation basis: ${run.nextEvidenceAction.evidenceBasis.mutation.killed} killed / ${run.nextEvidenceAction.evidenceBasis.mutation.sites} site(s), ${run.nextEvidenceAction.evidenceBasis.mutation.survived} survived`);
     }
@@ -496,8 +495,8 @@ function renderMarkdownReport(run) {
     lines.push(`- Outcome: **${run.verdict.outcome}**`);
     lines.push(`- Changed files: ${run.changedFiles.join(', ') || 'none'}`);
     if (run.nextEvidenceAction) {
-        lines.push(`- Next evidence action: ${run.nextEvidenceAction.bestNextAction}`);
         lines.push(`- Evidence closure: ${run.nextEvidenceAction.primaryAction.title}`);
+        lines.push(`- Evidence closure kind: ${run.nextEvidenceAction.primaryAction.kind}`);
         lines.push(`- Evidence basis: coverage ${run.nextEvidenceAction.evidenceBasis.coverage.fileCount} file(s)${typeof run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? `, changed-function min ${run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct}%` : typeof run.nextEvidenceAction.evidenceBasis.coverage.minPct === 'number' ? `, min ${run.nextEvidenceAction.evidenceBasis.coverage.minPct}%` : ''}; mutation ${run.nextEvidenceAction.evidenceBasis.mutation.killed}/${run.nextEvidenceAction.evidenceBasis.mutation.sites} killed, ${run.nextEvidenceAction.evidenceBasis.mutation.survived} survived`);
     }
     if (run.verdict.confidenceBreakdown) {

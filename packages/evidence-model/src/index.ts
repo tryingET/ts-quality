@@ -619,15 +619,8 @@ export interface EvidenceBasisSummary {
 }
 
 export interface NextEvidenceAction {
-  remainingBlocker: string;
-  bestNextAction: string;
-  coverageStatus: string;
-  witnessStatus: string;
-  mutationStatus: string;
-  governanceStatus: string;
   primaryAction: EvidenceClosurePrimaryAction;
   evidenceBasis: EvidenceBasisSummary;
-  artifactPaths: Record<string, string>;
 }
 
 export interface AnalysisContext {

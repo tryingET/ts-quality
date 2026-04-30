@@ -261,8 +261,8 @@ export function verifyManualWitnessContract(runCli, options) {
     if (run.executionWitnesses !== undefined) {
       throw new Error(`Manual witness contract should not auto-run configured execution witnesses: ${JSON.stringify(run.executionWitnesses, null, 2)}`);
     }
-    if (run.nextEvidenceAction?.witnessStatus !== 'execution-backed witness considered') {
-      throw new Error(`Manual witness contract did not update next evidence witness status: ${run.nextEvidenceAction?.witnessStatus}`);
+    if (run.nextEvidenceAction?.evidenceBasis?.witness?.status !== 'execution-backed') {
+      throw new Error(`Manual witness contract did not update next evidence witness basis: ${JSON.stringify(run.nextEvidenceAction?.evidenceBasis?.witness)}`);
     }
     return {
       fixture: 'manual-witness-contract',
@@ -276,7 +276,7 @@ export function verifyManualWitnessContract(runCli, options) {
       },
       evidenceSemantics: claim.evidenceSummary.evidenceSemantics,
       scenarioSupportKind: scenario.supportKind,
-      nextEvidenceWitnessStatus: run.nextEvidenceAction.witnessStatus,
+      nextEvidenceWitnessStatus: run.nextEvidenceAction.evidenceBasis.witness.status,
       autoRanExecutionWitnesses: false,
       projections: {
         reportByRunId: true,

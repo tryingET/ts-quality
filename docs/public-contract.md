@@ -87,15 +87,16 @@ A successful manual witness upgrade must surface as:
 
 - `evidenceSemantics: "execution-backed"`
 - scenario `supportKind: "execution-witness"`
-- `nextEvidenceAction.witnessStatus: "execution-backed witness considered"`
+- `nextEvidenceAction.evidenceBasis.witness.status: "execution-backed"`
 
 ## Protected actionable evidence closure contract
 
 Every `check` run emits one canonical `nextEvidenceAction` packet in `run.json` and `.ts-quality/runs/<run-id>/next-evidence-action.{json,txt}`. This packet is the public next-step surface for humans and LLM agents; downstream operators should prefer it over scraping verdict prose.
 
-The packet is additive to older `0.2.0` run artifacts and contains:
+This is a breaking alpha cleanup of the older `nextEvidenceAction` shape: consumers must stop reading the removed compatibility summary fields (`remainingBlocker`, `bestNextAction`, `coverageStatus`, `witnessStatus`, `mutationStatus`, `governanceStatus`, and top-level `artifactPaths`) and read the closure contract below instead.
 
-- `remainingBlocker` and `bestNextAction` for backward-compatible operator summaries
+The packet contains:
+
 - exactly one `primaryAction` with `id`, `kind`, `title`, `rationale`, `targetFiles`, `commands`, `artifactPaths`, `completionCriteria`, and ordered `steps`
 - `evidenceBasis` with compact coverage, mutation, witness, governance, and confidence facts
 - artifact links back to `run.json`, `report.md`, `explain.txt`, `govern.txt`, `check-summary.txt`, and optional remediation receipts

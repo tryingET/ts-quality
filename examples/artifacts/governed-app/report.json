@@ -730,17 +730,6 @@
     }
   ],
   "nextEvidenceAction": {
-    "artifactPaths": {
-      "checkSummary": ".ts-quality/runs/sample-governed-app-run/check-summary.txt",
-      "coverageGeneration": ".ts-quality/runs/sample-governed-app-run/coverage-generation.json",
-      "explain": ".ts-quality/runs/sample-governed-app-run/explain.txt",
-      "govern": ".ts-quality/runs/sample-governed-app-run/govern.txt",
-      "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json",
-      "report": ".ts-quality/runs/sample-governed-app-run/report.md",
-      "run": ".ts-quality/runs/sample-governed-app-run/run.json"
-    },
-    "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
-    "coverageStatus": "coverage evidence present",
     "evidenceBasis": {
       "confidence": {
         "base": 100,
@@ -818,8 +807,6 @@
         "status": "missing-or-not-required"
       }
     },
-    "governanceStatus": "blocked by 2 governance error(s)",
-    "mutationStatus": "3 surviving mutant(s); tighten focused assertions",
     "primaryAction": {
       "artifactPaths": {
         "explain": ".ts-quality/runs/sample-governed-app-run/explain.txt",
@@ -909,9 +896,7 @@
         "src/auth/token.js"
       ],
       "title": "Tighten focused assertions for 3 surviving mutant(s)."
-    },
-    "remainingBlocker": "mutation-pressure",
-    "witnessStatus": "no execution witness auto-ran"
+    }
   },
   "overrides": [],
   "repo": {

@@ -12,8 +12,8 @@ type: "reference"
 - Merge confidence: **6/100**
 - Outcome: **fail**
 - Changed files: src/auth/token.js
-- Next evidence action: Add or tighten an assertion covering src/auth/token.js around the surviving mutant.
 - Evidence closure: Tighten focused assertions for 3 surviving mutant(s).
+- Evidence closure kind: mutation-survivors
 - Evidence basis: coverage 2 file(s), changed-function min 100%; mutation 1/4 killed, 3 survived
 
 ## Confidence breakdown

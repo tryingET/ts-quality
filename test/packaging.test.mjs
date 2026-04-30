@@ -171,7 +171,7 @@ const expectedInstalledCliProofs = {
     },
     evidenceSemantics: 'execution-backed',
     scenarioSupportKind: 'execution-witness',
-    nextEvidenceWitnessStatus: 'execution-backed witness considered',
+    nextEvidenceWitnessStatus: 'execution-backed',
     autoRanExecutionWitnesses: false,
     projections: {
       reportByRunId: true,

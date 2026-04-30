@@ -1,8 +1,8 @@
 Merge confidence: 6/100
 Outcome: fail
 Best next action: Add or tighten an assertion covering src/auth/token.js around the surviving mutant.
-Remaining blocker: mutation-pressure
 Evidence closure: Tighten focused assertions for 3 surviving mutant(s).
+Evidence closure kind: mutation-survivors
 Coverage basis: 2 file(s), changed-function min 100%, changed functions under80 0
 Mutation basis: 1 killed / 4 site(s), 3 survived, 0 error(s)
 
