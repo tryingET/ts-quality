@@ -17,6 +17,7 @@ type: "reference"
 ### Added
 
 - Added a canonical actionable evidence-closure contract to `nextEvidenceAction`, including one prioritized `primaryAction`, compact evidence-basis facts, completion criteria, focused commands when available, and richer `check`/report/explain projections for LLM and operator follow-up.
+- Added LLM/AK closure projections through `next-evidence-action.prompt.md` and `next-evidence-action.ak-task.json`, plus survivor grouping, likely test edit targets, non-blocking evidence signals, and expected confidence-lift hints.
 
 ## [0.3.1] - 2026-04-29
 

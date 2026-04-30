@@ -798,6 +798,9 @@
         "status": "survivors",
         "survived": 3
       },
+      "nonBlockingSignals": [
+        "coverage is present; changed functions under 80% coverage: 0"
+      ],
       "witness": {
         "executionWitnessFiles": [],
         "status": "missing-or-not-required"
@@ -807,7 +810,9 @@
       "artifactPaths": {
         "explain": ".ts-quality/runs/sample-governed-app-run/explain.txt",
         "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json",
-        "report": ".ts-quality/runs/sample-governed-app-run/report.md"
+        "prompt": ".ts-quality/runs/sample-governed-app-run/next-evidence-action.prompt.md",
+        "report": ".ts-quality/runs/sample-governed-app-run/report.md",
+        "taskManifest": ".ts-quality/runs/sample-governed-app-run/next-evidence-action.ak-task.json"
       },
       "commands": [
         {
@@ -819,9 +824,66 @@
         }
       ],
       "completionCriteria": [
-        "Add assertions that fail for each listed surviving mutation.",
+        "Add assertions that fail for each listed surviving mutation group.",
         "Rerun the focused test command and then ts-quality check for the same changed scope.",
         "The next run reports zero surviving mutants for this scope."
+      ],
+      "evidenceTargets": [
+        "src/auth/token.js"
+      ],
+      "expectedConfidenceLift": 54,
+      "groups": [
+        {
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "mutation-group-1",
+          "stepIds": [
+            "survivor-group-1"
+          ],
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >."
+        },
+        {
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "mutation-group-2",
+          "stepIds": [
+            "survivor-group-2"
+          ],
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||."
+        },
+        {
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "mutation-group-3",
+          "stepIds": [
+            "survivor-group-3"
+          ],
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||."
+        }
       ],
       "id": "close-mutation-survivors",
       "kind": "mutation-survivors",
@@ -837,11 +899,17 @@
                 "node",
                 "--test"
               ],
-              "reason": "Verify the added assertion kills this survivor."
+              "reason": "Verify the added assertion kills this survivor group."
             }
           ],
-          "id": "survivor-1",
-          "rationale": "This mutant changed >= to >; the focused test command still passed.",
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "survivor-group-1",
+          "rationale": "This mutation group changed >= to >; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
           "targetFiles": [
             "src/auth/token.js"
           ],
@@ -857,11 +925,17 @@
                 "node",
                 "--test"
               ],
-              "reason": "Verify the added assertion kills this survivor."
+              "reason": "Verify the added assertion kills this survivor group."
             }
           ],
-          "id": "survivor-2",
-          "rationale": "This mutant changed && to ||; the focused test command still passed.",
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "survivor-group-2",
+          "rationale": "This mutation group changed && to ||; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
           "targetFiles": [
             "src/auth/token.js"
           ],
@@ -877,21 +951,54 @@
                 "node",
                 "--test"
               ],
-              "reason": "Verify the added assertion kills this survivor."
+              "reason": "Verify the added assertion kills this survivor group."
             }
           ],
-          "id": "survivor-3",
-          "rationale": "This mutant changed && to ||; the focused test command still passed.",
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "survivor-group-3",
+          "rationale": "This mutation group changed && to ||; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
           "targetFiles": [
             "src/auth/token.js"
           ],
           "title": "Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||."
         }
       ],
+      "suggestedEditFiles": [
+        "test/token.test.js"
+      ],
       "targetFiles": [
         "src/auth/token.js"
       ],
-      "title": "Tighten focused assertions for 3 surviving mutant(s)."
+      "taskManifest": {
+        "allowedPaths": [
+          "src/auth/token.js",
+          "test/token.test.js"
+        ],
+        "commands": [
+          {
+            "command": [
+              "node",
+              "--test"
+            ],
+            "reason": "Rerun the focused test command after adding the missing assertion."
+          }
+        ],
+        "completionCriteria": [
+          "Add assertions that fail for each listed surviving mutation group.",
+          "Rerun the focused test command and then ts-quality check for the same changed scope.",
+          "The next run reports zero surviving mutants for this scope."
+        ],
+        "requiredPaths": [
+          "test/token.test.js"
+        ],
+        "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
+      },
+      "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
     }
   },
   "overrides": [],

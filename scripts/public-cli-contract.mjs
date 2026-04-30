@@ -261,8 +261,22 @@ export function verifyManualWitnessContract(runCli, options) {
     if (run.executionWitnesses !== undefined) {
       throw new Error(`Manual witness contract should not auto-run configured execution witnesses: ${JSON.stringify(run.executionWitnesses, null, 2)}`);
     }
+    const forbiddenNextEvidenceFields = ['remainingBlocker', 'bestNextAction', 'coverageStatus', 'witnessStatus', 'mutationStatus', 'governanceStatus', 'artifactPaths'];
+    for (const field of forbiddenNextEvidenceFields) {
+      if (Object.prototype.hasOwnProperty.call(run.nextEvidenceAction ?? {}, field)) {
+        throw new Error(`Manual witness contract emitted removed nextEvidenceAction field ${field}`);
+      }
+    }
     if (run.nextEvidenceAction?.evidenceBasis?.witness?.status !== 'execution-backed') {
       throw new Error(`Manual witness contract did not update next evidence witness basis: ${JSON.stringify(run.nextEvidenceAction?.evidenceBasis?.witness)}`);
+    }
+    if (typeof run.nextEvidenceAction?.primaryAction?.title !== 'string' || typeof run.nextEvidenceAction?.primaryAction?.kind !== 'string') {
+      throw new Error(`Manual witness contract did not emit primaryAction: ${JSON.stringify(run.nextEvidenceAction?.primaryAction)}`);
+    }
+    for (const artifactName of ['next-evidence-action.prompt.md', 'next-evidence-action.ak-task.json']) {
+      if (!fs.existsSync(path.join(projectRoot, '.ts-quality', 'runs', manualWitnessContractRunId, artifactName))) {
+        throw new Error(`Manual witness contract did not write ${artifactName}`);
+      }
     }
     return {
       fixture: 'manual-witness-contract',

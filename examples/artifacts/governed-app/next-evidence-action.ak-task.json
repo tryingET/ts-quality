@@ -1,0 +1,24 @@
+{
+  "allowedPaths": [
+    "src/auth/token.js",
+    "test/token.test.js"
+  ],
+  "commands": [
+    {
+      "command": [
+        "node",
+        "--test"
+      ],
+      "reason": "Rerun the focused test command after adding the missing assertion."
+    }
+  ],
+  "completionCriteria": [
+    "Add assertions that fail for each listed surviving mutation group.",
+    "Rerun the focused test command and then ts-quality check for the same changed scope.",
+    "The next run reports zero surviving mutants for this scope."
+  ],
+  "requiredPaths": [
+    "test/token.test.js"
+  ],
+  "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
+}

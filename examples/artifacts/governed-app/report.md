@@ -12,8 +12,10 @@ type: "reference"
 - Merge confidence: **6/100**
 - Outcome: **fail**
 - Changed files: src/auth/token.js
-- Evidence closure: Tighten focused assertions for 3 surviving mutant(s).
+- Evidence closure: Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s).
 - Evidence closure kind: mutation-survivors
+- Expected confidence lift: +54
+- Suggested edit files: test/token.test.js
 - Evidence basis: coverage 2 file(s), changed-function min 100%; mutation 1/4 killed, 3 survived
 
 ## Confidence breakdown

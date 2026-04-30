@@ -31,6 +31,10 @@ test('authorize projects run-bound governance and invariant evidence into the de
   assert.match(denied.evidenceContext.riskyInvariant.evidenceSemanticsSummary, /not execution-backed behavioral proof/);
   assert.deepEqual(denied.evidenceContext.riskyInvariant.evidenceProvenance, { explicit: 3, inferred: 1, missing: 1 });
   assert.equal(denied.evidenceContext.riskyInvariant.signals.some((item) => item.signalId === 'scenario-support' && item.mode === 'missing'), true);
+  assert.equal(denied.evidenceContext.evidenceClosure.kind, 'mutation-survivors');
+  assert.match(denied.evidenceContext.evidenceClosure.title, /Tighten focused assertions/);
+  assert.equal(typeof denied.evidenceContext.evidenceClosure.expectedConfidenceLift, 'number');
+  assert.match(denied.evidenceContext.evidenceClosure.artifactPaths.prompt, /next-evidence-action\.prompt\.md$/);
 
   const overridesPath = path.join(target, '.ts-quality', 'overrides.json');
   fs.writeFileSync(overridesPath, JSON.stringify([

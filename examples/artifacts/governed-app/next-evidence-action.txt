@@ -1,0 +1,45 @@
+primaryAction: close-mutation-survivors
+primaryActionKind: mutation-survivors
+primaryActionTitle: Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s).
+primaryActionRationale: Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.
+expectedConfidenceLift: 54
+coverageBasis: status=present files=2 changedFunctionMinPct=100 changedFunctionsUnder80=0
+witnessBasis: status=missing-or-not-required files=0
+mutationBasis: status=survivors killed=1 sites=4 survived=3 errors=0
+governanceBasis: status=errors errors=2 warnings=0
+confidenceBasis: final=6 penalties=5 credits=0
+targetFiles:
+- src/auth/token.js
+suggestedEditFiles:
+- test/token.test.js
+commands:
+- node --test # Rerun the focused test command after adding the missing assertion.
+groups:
+- mutation-group-1: Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >. (1 survivor(s))
+- mutation-group-2: Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||. (1 survivor(s))
+- mutation-group-3: Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||. (1 survivor(s))
+steps:
+- survivor-group-1: Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >.
+  rationale: This mutation group changed >= to >; the focused test command still passed.
+  suggestedEditFiles: test/token.test.js
+  command: node --test # Verify the added assertion kills this survivor group.
+- survivor-group-2: Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.
+  rationale: This mutation group changed && to ||; the focused test command still passed.
+  suggestedEditFiles: test/token.test.js
+  command: node --test # Verify the added assertion kills this survivor group.
+- survivor-group-3: Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.
+  rationale: This mutation group changed && to ||; the focused test command still passed.
+  suggestedEditFiles: test/token.test.js
+  command: node --test # Verify the added assertion kills this survivor group.
+completionCriteria:
+- Add assertions that fail for each listed surviving mutation group.
+- Rerun the focused test command and then ts-quality check for the same changed scope.
+- The next run reports zero surviving mutants for this scope.
+notTheProblem:
+- coverage is present; changed functions under 80% coverage: 0
+artifacts:
+- mutationRemediation: .ts-quality/runs/sample-governed-app-run/mutation-remediation.json
+- prompt: .ts-quality/runs/sample-governed-app-run/next-evidence-action.prompt.md
+- taskManifest: .ts-quality/runs/sample-governed-app-run/next-evidence-action.ak-task.json
+- report: .ts-quality/runs/sample-governed-app-run/report.md
+- explain: .ts-quality/runs/sample-governed-app-run/explain.txt

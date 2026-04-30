@@ -28,6 +28,18 @@
       "verifiedCount": 1
     },
     "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
+    "evidenceClosure": {
+      "artifactPaths": {
+        "explain": ".ts-quality/runs/sample-governed-app-run/explain.txt",
+        "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json",
+        "prompt": ".ts-quality/runs/sample-governed-app-run/next-evidence-action.prompt.md",
+        "report": ".ts-quality/runs/sample-governed-app-run/report.md",
+        "taskManifest": ".ts-quality/runs/sample-governed-app-run/next-evidence-action.ak-task.json"
+      },
+      "expectedConfidenceLift": 54,
+      "kind": "mutation-survivors",
+      "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
+    },
     "governanceErrors": [
       {
         "evidence": [

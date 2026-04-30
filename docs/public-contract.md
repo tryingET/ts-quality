@@ -91,17 +91,28 @@ A successful manual witness upgrade must surface as:
 
 ## Protected actionable evidence closure contract
 
-Every `check` run emits one canonical `nextEvidenceAction` packet in `run.json` and `.ts-quality/runs/<run-id>/next-evidence-action.{json,txt}`. This packet is the public next-step surface for humans and LLM agents; downstream operators should prefer it over scraping verdict prose.
+Every `check` run emits one canonical `nextEvidenceAction` packet in `run.json` and `.ts-quality/runs/<run-id>/next-evidence-action.{json,txt}`. It also writes `.ts-quality/runs/<run-id>/next-evidence-action.prompt.md` for LLM handoff and `.ts-quality/runs/<run-id>/next-evidence-action.ak-task.json` as an AK-ready task manifest projection. This packet is the public next-step surface for humans and LLM agents; downstream operators should prefer it over scraping verdict prose.
 
 This is a breaking alpha cleanup of the older `nextEvidenceAction` shape: consumers must stop reading the removed compatibility summary fields (`remainingBlocker`, `bestNextAction`, `coverageStatus`, `witnessStatus`, `mutationStatus`, `governanceStatus`, and top-level `artifactPaths`) and read the closure contract below instead.
 
 The packet contains:
 
-- exactly one `primaryAction` with `id`, `kind`, `title`, `rationale`, `targetFiles`, `commands`, `artifactPaths`, `completionCriteria`, and ordered `steps`
-- `evidenceBasis` with compact coverage, mutation, witness, governance, and confidence facts
+- exactly one `primaryAction` with `id`, `kind`, `title`, `rationale`, optional `expectedConfidenceLift`, `targetFiles`, `suggestedEditFiles`, `evidenceTargets`, `commands`, `artifactPaths`, `completionCriteria`, grouped/ordered `steps`, `groups`, and a `taskManifest`
+- `evidenceBasis` with compact coverage, mutation, witness, governance, confidence, and `nonBlockingSignals` facts
 - artifact links back to `run.json`, `report.md`, `explain.txt`, `govern.txt`, `check-summary.txt`, and optional remediation receipts
 
-For survivor-driven failures, `primaryAction.kind` is `mutation-survivors`, the action points to `mutation-remediation.json`, and each step includes the assertion hint plus focused test command when available.
+Protected `primaryAction.kind` values:
+
+- `mutation-survivors` — surviving mutants remain; steps point at grouped survivor assertions and likely test edit files
+- `mutation-baseline` — the baseline test command failed before mutation interpretation
+- `mutation-missing` — no killed or surviving mutation evidence was measured
+- `governance` — blocking governance findings remain
+- `coverage` — LCOV coverage evidence is missing or failed to generate
+- `witness` — execution-backed invariant witness evidence is missing
+- `analysis-warning` — reserved for future source/dist or analysis-risk closure actions
+- `none` — no blocking evidence action remains
+
+For survivor-driven failures, `primaryAction.kind` is `mutation-survivors`, the action points to `mutation-remediation.json`, groups equivalent survivors, includes likely `suggestedEditFiles`, includes a focused rerun command when available, and publishes the same plan through the prompt and AK-task sidecar artifacts.
 
 The compact `check` stdout and generated `check-summary.txt` must surface the same closure headline plus coverage and mutation basis, so a user can distinguish coverage percentage from merge confidence without opening `run.json` first.
 

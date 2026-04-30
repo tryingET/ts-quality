@@ -323,7 +323,7 @@ assertSampleAmendmentDecision(persistedAmendDecision);
 const outDir = path.join(root, 'examples', 'artifacts', SAMPLE_FIXTURE);
 fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
-for (const fileName of ['run.json', 'verdict.json', 'report.md', 'report.json', 'pr-summary.md', 'check-summary.txt', 'explain.txt', 'plan.txt', 'govern.txt', 'execution-witnesses.json', 'execution-witnesses.txt']) {
+for (const fileName of ['run.json', 'verdict.json', 'report.md', 'report.json', 'pr-summary.md', 'check-summary.txt', 'explain.txt', 'plan.txt', 'govern.txt', 'next-evidence-action.json', 'next-evidence-action.txt', 'next-evidence-action.prompt.md', 'next-evidence-action.ak-task.json', 'execution-witnesses.json', 'execution-witnesses.txt']) {
   const sourcePath = path.join(runDir, fileName);
   if (!fs.existsSync(sourcePath)) {
     continue;

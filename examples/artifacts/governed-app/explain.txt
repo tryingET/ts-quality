@@ -10,8 +10,10 @@ Confidence breakdown: base 100
 - -20 Governance penalty (Auth code requires stronger evidence because it decides authorization.)
 - final 6
 
-Evidence closure: Tighten focused assertions for 3 surviving mutant(s).
+Evidence closure: Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s).
 Evidence closure kind: mutation-survivors
+Expected confidence lift: +54
+Suggested edit files: test/token.test.js
 Coverage basis: 2 file(s), changed-function min 100%, changed functions under80 0
 Mutation basis: 1 killed / 4 site(s), 3 survived
 

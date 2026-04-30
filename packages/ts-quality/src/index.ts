@@ -206,6 +206,12 @@ function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdi
   if (run.nextEvidenceAction) {
     lines.push(`Evidence closure: ${run.nextEvidenceAction.primaryAction.title}`);
     lines.push(`Evidence closure kind: ${run.nextEvidenceAction.primaryAction.kind}`);
+    if (typeof run.nextEvidenceAction.primaryAction.expectedConfidenceLift === 'number') {
+      lines.push(`Expected confidence lift: +${run.nextEvidenceAction.primaryAction.expectedConfidenceLift}`);
+    }
+    if (run.nextEvidenceAction.primaryAction.suggestedEditFiles.length > 0) {
+      lines.push(`Suggested edit files: ${run.nextEvidenceAction.primaryAction.suggestedEditFiles.join(', ')}`);
+    }
     const basis = run.nextEvidenceAction.evidenceBasis;
     lines.push(`Coverage basis: ${basis.coverage.fileCount} file(s)${typeof basis.coverage.changedFunctionMinPct === 'number' ? `, changed-function min ${basis.coverage.changedFunctionMinPct}%` : typeof basis.coverage.minPct === 'number' ? `, min ${basis.coverage.minPct}%` : ''}, changed functions under80 ${basis.coverage.changedFunctionsUnder80}`);
     lines.push(`Mutation basis: ${basis.mutation.killed} killed / ${basis.mutation.sites} site(s), ${basis.mutation.survived} survived, ${basis.mutation.errors} error(s)`);
@@ -250,6 +256,7 @@ function renderNextEvidenceActionText(action: NextEvidenceAction): string {
     `primaryActionKind: ${action.primaryAction.kind}`,
     `primaryActionTitle: ${action.primaryAction.title}`,
     `primaryActionRationale: ${action.primaryAction.rationale}`,
+    ...(typeof action.primaryAction.expectedConfidenceLift === 'number' ? [`expectedConfidenceLift: ${action.primaryAction.expectedConfidenceLift}`] : []),
     `coverageBasis: status=${action.evidenceBasis.coverage.status} files=${action.evidenceBasis.coverage.fileCount}${typeof action.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? ` changedFunctionMinPct=${action.evidenceBasis.coverage.changedFunctionMinPct}` : typeof action.evidenceBasis.coverage.minPct === 'number' ? ` minPct=${action.evidenceBasis.coverage.minPct}` : ''} changedFunctionsUnder80=${action.evidenceBasis.coverage.changedFunctionsUnder80}`,
     `witnessBasis: status=${action.evidenceBasis.witness.status} files=${action.evidenceBasis.witness.executionWitnessFiles.length}`,
     `mutationBasis: status=${action.evidenceBasis.mutation.status} killed=${action.evidenceBasis.mutation.killed} sites=${action.evidenceBasis.mutation.sites} survived=${action.evidenceBasis.mutation.survived} errors=${action.evidenceBasis.mutation.errors}`,
@@ -259,22 +266,87 @@ function renderNextEvidenceActionText(action: NextEvidenceAction): string {
   if (action.primaryAction.targetFiles.length > 0) {
     lines.push('targetFiles:', ...action.primaryAction.targetFiles.map((filePath) => `- ${filePath}`));
   }
+  if (action.primaryAction.suggestedEditFiles.length > 0) {
+    lines.push('suggestedEditFiles:', ...action.primaryAction.suggestedEditFiles.map((filePath) => `- ${filePath}`));
+  }
   if (action.primaryAction.commands.length > 0) {
     lines.push('commands:', ...action.primaryAction.commands.map((item) => `- ${item.command.join(' ')} # ${item.reason}`));
+  }
+  if (action.primaryAction.groups.length > 0) {
+    lines.push('groups:', ...action.primaryAction.groups.map((group) => `- ${group.id}: ${group.title}${typeof group.survivorCount === 'number' ? ` (${group.survivorCount} survivor(s))` : ''}`));
   }
   if (action.primaryAction.steps.length > 0) {
     lines.push('steps:');
     for (const step of action.primaryAction.steps) {
       lines.push(`- ${step.id}: ${step.title}`);
       lines.push(`  rationale: ${step.rationale}`);
+      if (step.suggestedEditFiles.length > 0) {
+        lines.push(`  suggestedEditFiles: ${step.suggestedEditFiles.join(', ')}`);
+      }
       if (step.commands.length > 0) {
         lines.push(...step.commands.map((item) => `  command: ${item.command.join(' ')} # ${item.reason}`));
       }
     }
   }
   lines.push('completionCriteria:', ...action.primaryAction.completionCriteria.map((item) => `- ${item}`));
+  if (action.evidenceBasis.nonBlockingSignals.length > 0) {
+    lines.push('notTheProblem:', ...action.evidenceBasis.nonBlockingSignals.map((item) => `- ${item}`));
+  }
   lines.push('artifacts:', ...Object.entries(action.primaryAction.artifactPaths).map(([key, value]) => `- ${key}: ${value}`));
   return `${lines.join('\n')}\n`;
+}
+
+function renderEvidenceClosurePromptMarkdown(action: NextEvidenceAction): string {
+  const lines = [
+    '---',
+    'summary: "LLM-facing next evidence closure prompt for one ts-quality run."',
+    'read_when:',
+    '  - "When an agent needs to close the next evidence gap for this run"',
+    '  - "When turning ts-quality evidence into a bounded repair task"',
+    'type: "handoff"',
+    '---',
+    '',
+    '# Next Evidence Closure',
+    '',
+    `Primary action: ${action.primaryAction.title}`,
+    `Kind: ${action.primaryAction.kind}`,
+    `Why: ${action.primaryAction.rationale}`,
+    ...(typeof action.primaryAction.expectedConfidenceLift === 'number' ? [`Expected confidence lift if closed: +${action.primaryAction.expectedConfidenceLift}`] : []),
+    '',
+    '## Evidence basis',
+    `- Coverage: ${action.evidenceBasis.coverage.status}; files ${action.evidenceBasis.coverage.fileCount}${typeof action.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? `; changed-function min ${action.evidenceBasis.coverage.changedFunctionMinPct}%` : ''}; changed functions under80 ${action.evidenceBasis.coverage.changedFunctionsUnder80}`,
+    `- Mutation: ${action.evidenceBasis.mutation.killed}/${action.evidenceBasis.mutation.sites} killed; ${action.evidenceBasis.mutation.survived} survived; ${action.evidenceBasis.mutation.errors} errors`,
+    `- Witness: ${action.evidenceBasis.witness.status}`,
+    `- Governance: ${action.evidenceBasis.governance.status}; errors ${action.evidenceBasis.governance.errors}; warnings ${action.evidenceBasis.governance.warnings}`,
+    `- Confidence: ${action.evidenceBasis.confidence.final}/100`,
+    '',
+    '## Edit targets',
+    ...(action.primaryAction.suggestedEditFiles.length > 0 ? action.primaryAction.suggestedEditFiles.map((item) => `- ${item}`) : ['- none inferred; inspect target files below']),
+    '',
+    '## Evidence targets',
+    ...(action.primaryAction.evidenceTargets.length > 0 ? action.primaryAction.evidenceTargets.map((item) => `- ${item}`) : ['- none']),
+    '',
+    '## Steps',
+    ...(action.primaryAction.steps.length > 0
+      ? action.primaryAction.steps.flatMap((step, index) => [
+          `${index + 1}. ${step.title}`,
+          `   - rationale: ${step.rationale}`,
+          ...(step.suggestedEditFiles.length > 0 ? [`   - edit: ${step.suggestedEditFiles.join(', ')}`] : []),
+          ...(step.commands.length > 0 ? step.commands.map((item) => `   - run: ${item.command.join(' ')}`) : [])
+        ])
+      : ['1. No required closure step remains.']),
+    '',
+    '## Completion criteria',
+    ...action.primaryAction.completionCriteria.map((item) => `- ${item}`)
+  ];
+  if (action.evidenceBasis.nonBlockingSignals.length > 0) {
+    lines.push('', '## Not the problem', ...action.evidenceBasis.nonBlockingSignals.map((item) => `- ${item}`));
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function renderEvidenceClosureTaskManifest(action: NextEvidenceAction): string {
+  return `${stableStringify(action.primaryAction.taskManifest)}\n`;
 }
 
 function renderPlanText(run: RunArtifact, plan: ReturnType<typeof generateGovernancePlan>): string {
@@ -339,7 +411,7 @@ function authorizationRiskSignals(claim: RunArtifact['behaviorClaims'][number]):
 }
 
 function buildAuthorizationEvidenceContext(
-  run: Pick<RunArtifact, 'runId' | 'behaviorClaims' | 'governance' | 'verdict'>,
+  run: Pick<RunArtifact, 'runId' | 'behaviorClaims' | 'governance' | 'verdict' | 'nextEvidenceAction'>,
   agentId: string,
   action: string,
   attestationVerification: AuthorizationAttestationVerificationSummary
@@ -364,6 +436,14 @@ function buildAuthorizationEvidenceContext(
       governance: `.ts-quality/runs/${run.runId}/govern.txt`,
       bundle: `.ts-quality/runs/${run.runId}/bundle.${agentId}.${action}.json`
     },
+    ...(run.nextEvidenceAction ? {
+      evidenceClosure: {
+        kind: run.nextEvidenceAction.primaryAction.kind,
+        title: run.nextEvidenceAction.primaryAction.title,
+        ...(typeof run.nextEvidenceAction.primaryAction.expectedConfidenceLift === 'number' ? { expectedConfidenceLift: run.nextEvidenceAction.primaryAction.expectedConfidenceLift } : {}),
+        artifactPaths: run.nextEvidenceAction.primaryAction.artifactPaths
+      }
+    } : {}),
     governanceErrors: run.governance
       .filter((item) => item.level === 'error')
       .map(({ ruleId, message, evidence, scope }) => ({ ruleId, message, evidence, scope })),
@@ -1425,6 +1505,58 @@ function mutationCommandFor(survivor: RunArtifact['mutations'][number]): string[
   return survivor.testCommand && survivor.testCommand.length > 0 ? survivor.testCommand : [];
 }
 
+function focusedTestsForFile(run: Pick<RunArtifact, 'behaviorClaims'>, filePath: string): string[] {
+  const normalized = normalizePath(filePath);
+  return uniqueStrings(run.behaviorClaims
+    .filter((claim) => (claim.evidenceSummary?.impactedFiles ?? []).map((item) => normalizePath(item)).includes(normalized))
+    .flatMap((claim) => claim.evidenceSummary?.focusedTests ?? []));
+}
+
+function survivorGroupKey(survivor: RunArtifact['mutations'][number]): string {
+  return [
+    normalizePath(survivor.filePath),
+    survivor.span?.startLine ?? 'unknown',
+    survivor.original ?? survivor.operator ?? 'unknown',
+    survivor.replacement ?? survivor.mutated ?? 'unknown'
+  ].join(':');
+}
+
+function expectedConfidenceLiftFor(run: Pick<RunArtifact, 'verdict'>, actionKind: NextEvidenceAction['primaryAction']['kind']): number | undefined {
+  const penalties = run.verdict.confidenceBreakdown?.penalties ?? [];
+  const ids = actionKind === 'mutation-survivors'
+    ? ['surviving-mutants', 'mutation-score', 'risky-invariants']
+    : actionKind === 'mutation-baseline'
+      ? ['mutation-baseline']
+      : actionKind === 'mutation-missing'
+        ? ['mutation-missing']
+        : actionKind === 'governance'
+          ? ['governance']
+          : actionKind === 'coverage'
+            ? ['crap']
+            : actionKind === 'witness'
+              ? ['lexical-invariants', 'risky-invariants']
+              : [];
+  const amount = penalties.filter((item) => ids.includes(item.id)).reduce((total, item) => total + item.amount, 0);
+  return amount > 0 ? amount : undefined;
+}
+
+function buildEvidenceClosureTaskManifest(input: {
+  title: string;
+  targetFiles: string[];
+  suggestedEditFiles: string[];
+  commands: NextEvidenceAction['primaryAction']['commands'];
+  completionCriteria: string[];
+}): NextEvidenceAction['primaryAction']['taskManifest'] {
+  const requiredPaths = uniqueStrings(input.suggestedEditFiles.length > 0 ? input.suggestedEditFiles : input.targetFiles);
+  return {
+    title: input.title,
+    allowedPaths: uniqueStrings([...input.targetFiles, ...input.suggestedEditFiles]),
+    requiredPaths,
+    commands: input.commands,
+    completionCriteria: input.completionCriteria
+  };
+}
+
 function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGeneration' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction['evidenceBasis'] {
   const coveragePct = run.coverage.map((item) => item.pct).filter((value) => Number.isFinite(value));
   const changedFunctionCoveragePct = run.behaviorClaims.flatMap((claim) => claim.evidenceSummary?.changedFunctions ?? []).map((item) => item.coveragePct).filter((value) => Number.isFinite(value));
@@ -1435,6 +1567,12 @@ function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGenerat
   const executionWitnessFiles = uniqueStrings(run.behaviorClaims.flatMap((claim) => claim.evidenceSummary?.executionWitnessFiles ?? []));
   const governanceErrors = run.governance.filter((item) => item.level === 'error').length;
   const governanceWarnings = run.governance.filter((item) => item.level === 'warn').length;
+  const nonBlockingSignals = [
+    ...(run.coverage.length > 0 && changedFunctionsUnder80 === 0 ? [`coverage is present; changed functions under 80% coverage: ${changedFunctionsUnder80}`] : []),
+    ...(executionWitnessFiles.length > 0 ? [`execution witness evidence is present (${executionWitnessFiles.length} file(s))`] : []),
+    ...(governanceErrors === 0 ? ['governance has no blocking errors'] : []),
+    ...(survived === 0 && errors === 0 && run.mutations.length > 0 ? ['mutation pressure has no survivors or execution errors'] : [])
+  ];
   return {
     coverage: {
       status: run.coverage.length > 0 ? 'present' : (run.coverageGeneration ? `generation-${run.coverageGeneration.receipt.status}` : 'missing'),
@@ -1465,7 +1603,8 @@ function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGenerat
       penalties: run.verdict.confidenceBreakdown?.penalties ?? [],
       credits: run.verdict.confidenceBreakdown?.credits ?? [],
       final: run.verdict.mergeConfidence
-    }
+    },
+    nonBlockingSignals
   };
 }
 
@@ -1477,6 +1616,8 @@ interface RunArtifactPaths {
   checkSummary: string;
   mutationRemediation: string;
   coverageGeneration: string;
+  nextEvidenceActionPrompt: string;
+  nextEvidenceActionTask: string;
 }
 
 function buildPrimaryEvidenceClosureAction(
@@ -1486,129 +1627,211 @@ function buildPrimaryEvidenceClosureAction(
 ): NextEvidenceAction['primaryAction'] {
   const surviving = run.mutations.filter((item) => item.status === 'survived');
   if (surviving.length > 0) {
-    const targetFiles = uniqueStrings(surviving.map((item) => item.filePath));
+    const targetFiles = uniqueStrings(surviving.map((item) => normalizePath(item.filePath)));
+    const suggestedEditFiles = uniqueStrings(targetFiles.flatMap((filePath) => focusedTestsForFile(run, filePath)));
     const commands = uniqueStrings(surviving.map((item) => JSON.stringify(mutationCommandFor(item))).filter((item) => item !== '[]'))
       .map((item) => JSON.parse(item) as string[])
       .map((command) => ({ command, reason: 'Rerun the focused test command after adding the missing assertion.' }));
+    const completionCriteria = [
+      'Add assertions that fail for each listed surviving mutation group.',
+      'Rerun the focused test command and then ts-quality check for the same changed scope.',
+      'The next run reports zero surviving mutants for this scope.'
+    ];
+    const grouped = new Map<string, RunArtifact['mutations']>();
+    for (const survivor of surviving) {
+      const key = survivorGroupKey(survivor);
+      grouped.set(key, [...(grouped.get(key) ?? []), survivor]);
+    }
+    const groupEntries = [...grouped.entries()].slice(0, 8);
+    const steps = groupEntries.map(([, group], index) => {
+      const survivor = group[0];
+      const survivorTargetFiles = uniqueStrings(group.map((item) => normalizePath(item.filePath)));
+      const survivorEditFiles = uniqueStrings(survivorTargetFiles.flatMap((filePath) => focusedTestsForFile(run, filePath)));
+      const title = `${survivor?.assertionHint ?? `Add an assertion around ${survivor?.filePath ?? 'unknown'}:${survivor?.span?.startLine ?? 'unknown'}.`}${group.length > 1 ? ` (covers ${group.length} equivalent survivors)` : ''}`;
+      return {
+        id: `survivor-group-${index + 1}`,
+        title,
+        rationale: survivor?.original && survivor.replacement
+          ? `This mutation group changed ${survivor.original} to ${survivor.replacement}; the focused test command still passed.`
+          : 'The focused test command still passed after this mutation group.',
+        targetFiles: survivorTargetFiles,
+        suggestedEditFiles: survivorEditFiles,
+        evidenceTargets: survivorTargetFiles,
+        commands: survivor && mutationCommandFor(survivor).length > 0 ? [{ command: mutationCommandFor(survivor), reason: 'Verify the added assertion kills this survivor group.' }] : [],
+        artifactPaths: { mutationRemediation: artifactPaths.mutationRemediation }
+      };
+    });
+    const groups = steps.map((step, index) => ({
+      id: `mutation-group-${index + 1}`,
+      title: step.title,
+      survivorCount: groupEntries[index]?.[1].length ?? 1,
+      targetFiles: step.targetFiles,
+      suggestedEditFiles: step.suggestedEditFiles,
+      evidenceTargets: step.evidenceTargets,
+      stepIds: [step.id]
+    }));
+    const title = `Tighten focused assertions for ${surviving.length} surviving mutant(s) across ${groupEntries.length} mutation group(s).`;
     return {
       id: 'close-mutation-survivors',
       kind: 'mutation-survivors',
-      title: `Tighten focused assertions for ${surviving.length} surviving mutant(s).`,
+      title,
       rationale: 'Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.',
+      expectedConfidenceLift: expectedConfidenceLiftFor(run, 'mutation-survivors'),
       targetFiles,
+      suggestedEditFiles,
+      evidenceTargets: targetFiles,
       commands,
       artifactPaths: {
         mutationRemediation: artifactPaths.mutationRemediation,
+        prompt: artifactPaths.nextEvidenceActionPrompt,
+        taskManifest: artifactPaths.nextEvidenceActionTask,
         report: artifactPaths.report,
         explain: artifactPaths.explain
       },
-      completionCriteria: [
-        'Add assertions that fail for each listed surviving mutation.',
-        'Rerun the focused test command and then ts-quality check for the same changed scope.',
-        'The next run reports zero surviving mutants for this scope.'
-      ],
-      steps: surviving.slice(0, 8).map((survivor, index) => ({
-        id: `survivor-${index + 1}`,
-        title: survivor.assertionHint ?? `Add an assertion around ${survivor.filePath}:${survivor.span?.startLine ?? 'unknown'}.`,
-        rationale: survivor.original && survivor.replacement
-          ? `This mutant changed ${survivor.original} to ${survivor.replacement}; the focused test command still passed.`
-          : 'The focused test command still passed after this mutation.',
-        targetFiles: [survivor.filePath],
-        commands: mutationCommandFor(survivor).length > 0 ? [{ command: mutationCommandFor(survivor), reason: 'Verify the added assertion kills this survivor.' }] : [],
-        artifactPaths: { mutationRemediation: artifactPaths.mutationRemediation }
-      }))
+      completionCriteria,
+      steps,
+      groups,
+      taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles, suggestedEditFiles, commands, completionCriteria })
     };
   }
 
   if (remainingBlocker === 'mutation-baseline') {
+    const title = 'Fix the baseline test command before trusting mutation evidence.';
+    const completionCriteria = ['Make the configured mutation test command pass without mutations.', 'Rerun ts-quality check.'];
     return {
       id: 'fix-mutation-baseline',
       kind: 'mutation-baseline',
-      title: 'Fix the baseline test command before trusting mutation evidence.',
+      title,
       rationale: 'The configured test command did not pass before mutation execution, so mutation results are not trustworthy.',
+      expectedConfidenceLift: expectedConfidenceLiftFor(run, 'mutation-baseline'),
       targetFiles: [],
+      suggestedEditFiles: [],
+      evidenceTargets: [],
       commands: [],
-      artifactPaths: { run: artifactPaths.run, explain: artifactPaths.explain },
-      completionCriteria: ['Make the configured mutation test command pass without mutations.', 'Rerun ts-quality check.'],
-      steps: []
+      artifactPaths: { prompt: artifactPaths.nextEvidenceActionPrompt, taskManifest: artifactPaths.nextEvidenceActionTask, run: artifactPaths.run, explain: artifactPaths.explain },
+      completionCriteria,
+      steps: [],
+      groups: [],
+      taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles: [], suggestedEditFiles: [], commands: [], completionCriteria })
     };
   }
 
   if (remainingBlocker === 'mutation-evidence-missing') {
+    const title = 'Add executable tests or broaden measurable mutation scope.';
+    const completionCriteria = ['Configure a focused test command that exercises changed code.', 'Rerun ts-quality check until killed or surviving mutants are measured.'];
     return {
       id: 'add-mutation-evidence',
       kind: 'mutation-missing',
-      title: 'Add executable tests or broaden measurable mutation scope.',
+      title,
       rationale: 'No killed or surviving mutants were measured, so the changed code lacks explicit mutation pressure.',
+      expectedConfidenceLift: expectedConfidenceLiftFor(run, 'mutation-missing'),
       targetFiles: [],
+      suggestedEditFiles: [],
+      evidenceTargets: [],
       commands: [],
-      artifactPaths: { run: artifactPaths.run, explain: artifactPaths.explain },
-      completionCriteria: ['Configure a focused test command that exercises changed code.', 'Rerun ts-quality check until killed or surviving mutants are measured.'],
-      steps: []
+      artifactPaths: { prompt: artifactPaths.nextEvidenceActionPrompt, taskManifest: artifactPaths.nextEvidenceActionTask, run: artifactPaths.run, explain: artifactPaths.explain },
+      completionCriteria,
+      steps: [],
+      groups: [],
+      taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles: [], suggestedEditFiles: [], commands: [], completionCriteria })
     };
   }
 
   if (remainingBlocker === 'governance') {
     const governanceErrors = run.governance.filter((item) => item.level === 'error');
+    const targetFiles = uniqueStrings(governanceErrors.flatMap((item) => item.scope));
+    const title = `Resolve ${governanceErrors.length} governance error(s).`;
+    const completionCriteria = ['Satisfy or explicitly waive the blocking governance finding.', 'Rerun ts-quality check and govern for the same run scope.'];
+    const steps = governanceErrors.slice(0, 8).map((finding, index) => ({
+      id: `governance-${index + 1}`,
+      title: finding.message,
+      rationale: finding.evidence.join('; ') || 'Governance rule emitted an error.',
+      targetFiles: finding.scope,
+      suggestedEditFiles: finding.scope,
+      evidenceTargets: finding.scope,
+      commands: [],
+      artifactPaths: { govern: artifactPaths.govern }
+    }));
     return {
       id: 'resolve-governance-errors',
       kind: 'governance',
-      title: `Resolve ${governanceErrors.length} governance error(s).`,
+      title,
       rationale: 'Governance controls blocked the run even if code evidence may be otherwise available.',
-      targetFiles: uniqueStrings(governanceErrors.flatMap((item) => item.scope)),
+      expectedConfidenceLift: expectedConfidenceLiftFor(run, 'governance'),
+      targetFiles,
+      suggestedEditFiles: targetFiles,
+      evidenceTargets: targetFiles,
       commands: [],
-      artifactPaths: { govern: artifactPaths.govern, run: artifactPaths.run },
-      completionCriteria: ['Satisfy or explicitly waive the blocking governance finding.', 'Rerun ts-quality check and govern for the same run scope.'],
-      steps: governanceErrors.slice(0, 8).map((finding, index) => ({
-        id: `governance-${index + 1}`,
-        title: finding.message,
-        rationale: finding.evidence.join('; ') || 'Governance rule emitted an error.',
-        targetFiles: finding.scope,
-        commands: [],
-        artifactPaths: { govern: artifactPaths.govern }
-      }))
+      artifactPaths: { prompt: artifactPaths.nextEvidenceActionPrompt, taskManifest: artifactPaths.nextEvidenceActionTask, govern: artifactPaths.govern, run: artifactPaths.run },
+      completionCriteria,
+      steps,
+      groups: [],
+      taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles, suggestedEditFiles: targetFiles, commands: [], completionCriteria })
     };
   }
 
   if (run.coverage.length === 0 && (!run.coverageGeneration || run.coverageGeneration.receipt.status !== 'pass')) {
+    const title = 'Create LCOV coverage evidence for the changed scope.';
+    const commands = run.coverageGeneration?.command && run.coverageGeneration.command.length > 0 ? [{ command: run.coverageGeneration.command, reason: 'Generate the configured LCOV artifact.' }] : [];
+    const completionCriteria = ['Create the configured LCOV file.', 'Rerun ts-quality check and confirm coverage evidence is present.'];
     return {
       id: 'create-coverage-evidence',
       kind: 'coverage',
-      title: 'Create LCOV coverage evidence for the changed scope.',
+      title,
       rationale: 'Coverage is missing, so changed-function pressure cannot be grounded in executed code.',
+      expectedConfidenceLift: expectedConfidenceLiftFor(run, 'coverage'),
       targetFiles: [],
-      commands: run.coverageGeneration?.command && run.coverageGeneration.command.length > 0 ? [{ command: run.coverageGeneration.command, reason: 'Generate the configured LCOV artifact.' }] : [],
-      artifactPaths: { coverageGeneration: artifactPaths.coverageGeneration, run: artifactPaths.run },
-      completionCriteria: ['Create the configured LCOV file.', 'Rerun ts-quality check and confirm coverage evidence is present.'],
-      steps: []
+      suggestedEditFiles: [],
+      evidenceTargets: [],
+      commands,
+      artifactPaths: { prompt: artifactPaths.nextEvidenceActionPrompt, taskManifest: artifactPaths.nextEvidenceActionTask, coverageGeneration: artifactPaths.coverageGeneration, run: artifactPaths.run },
+      completionCriteria,
+      steps: [],
+      groups: [],
+      taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles: [], suggestedEditFiles: [], commands, completionCriteria })
     };
   }
 
   const missingWitnessClaim = run.behaviorClaims.find((claim) => (claim.evidenceSummary?.executionWitnessFiles ?? []).length === 0 && claim.status !== 'supported');
   if (missingWitnessClaim) {
+    const targetFiles = missingWitnessClaim.evidenceSummary?.impactedFiles ?? [];
+    const suggestedEditFiles = missingWitnessClaim.evidenceSummary?.focusedTests ?? [];
+    const title = `Add execution-backed witness evidence for ${missingWitnessClaim.invariantId}.`;
+    const completionCriteria = ['Run ts-quality witness test for the missing scenario.', 'Rerun ts-quality check and confirm the witness file is consumed.'];
     return {
       id: 'add-execution-witness',
       kind: 'witness',
-      title: `Add execution-backed witness evidence for ${missingWitnessClaim.invariantId}.`,
+      title,
       rationale: 'The invariant still depends on weaker support than an execution witness for its scenario scope.',
-      targetFiles: missingWitnessClaim.evidenceSummary?.impactedFiles ?? [],
+      expectedConfidenceLift: expectedConfidenceLiftFor(run, 'witness'),
+      targetFiles,
+      suggestedEditFiles,
+      evidenceTargets: targetFiles,
       commands: [],
-      artifactPaths: { run: artifactPaths.run, explain: artifactPaths.explain },
-      completionCriteria: ['Run ts-quality witness test for the missing scenario.', 'Rerun ts-quality check and confirm the witness file is consumed.'],
-      steps: []
+      artifactPaths: { prompt: artifactPaths.nextEvidenceActionPrompt, taskManifest: artifactPaths.nextEvidenceActionTask, run: artifactPaths.run, explain: artifactPaths.explain },
+      completionCriteria,
+      steps: [],
+      groups: [],
+      taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles, suggestedEditFiles, commands: [], completionCriteria })
     };
   }
 
+  const title = 'No blocking evidence action remains for this run.';
+  const completionCriteria = ['No required closure action remains.'];
   return {
     id: 'no-blocking-evidence-action',
     kind: 'none',
-    title: 'No blocking evidence action remains for this run.',
+    title,
     rationale: `The run outcome is ${run.verdict.outcome}; inspect artifacts for optional hardening only.`,
     targetFiles: [],
+    suggestedEditFiles: [],
+    evidenceTargets: [],
     commands: [],
-    artifactPaths: { run: artifactPaths.run, report: artifactPaths.report, explain: artifactPaths.explain },
-    completionCriteria: ['No required closure action remains.'],
-    steps: []
+    artifactPaths: { prompt: artifactPaths.nextEvidenceActionPrompt, taskManifest: artifactPaths.nextEvidenceActionTask, run: artifactPaths.run, report: artifactPaths.report, explain: artifactPaths.explain },
+    completionCriteria,
+    steps: [],
+    groups: [],
+    taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles: [], suggestedEditFiles: [], commands: [], completionCriteria })
   };
 }
 
@@ -1629,7 +1852,9 @@ function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | '
     govern: `.ts-quality/runs/${run.runId}/govern.txt`,
     checkSummary: `.ts-quality/runs/${run.runId}/check-summary.txt`,
     mutationRemediation: `.ts-quality/runs/${run.runId}/mutation-remediation.json`,
-    coverageGeneration: `.ts-quality/runs/${run.runId}/coverage-generation.json`
+    coverageGeneration: `.ts-quality/runs/${run.runId}/coverage-generation.json`,
+    nextEvidenceActionPrompt: `.ts-quality/runs/${run.runId}/next-evidence-action.prompt.md`,
+    nextEvidenceActionTask: `.ts-quality/runs/${run.runId}/next-evidence-action.ak-task.json`
   };
   return {
     primaryAction: buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths),
@@ -1830,6 +2055,8 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
   if (run.nextEvidenceAction) {
     writeJson(path.join(artifactDir, 'next-evidence-action.json'), run.nextEvidenceAction);
     fs.writeFileSync(path.join(artifactDir, 'next-evidence-action.txt'), renderNextEvidenceActionText(run.nextEvidenceAction), 'utf8');
+    fs.writeFileSync(path.join(artifactDir, 'next-evidence-action.prompt.md'), renderEvidenceClosurePromptMarkdown(run.nextEvidenceAction), 'utf8');
+    fs.writeFileSync(path.join(artifactDir, 'next-evidence-action.ak-task.json'), renderEvidenceClosureTaskManifest(run.nextEvidenceAction), 'utf8');
   }
   fs.writeFileSync(path.join(artifactDir, 'check-summary.txt'), renderCheckSummaryText(run), 'utf8');
   const plan = generateGovernancePlan(run, constitution, agents);

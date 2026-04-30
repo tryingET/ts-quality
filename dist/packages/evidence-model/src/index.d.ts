@@ -341,6 +341,7 @@ export interface AuthorizationEvidenceContext {
     mergeConfidence: number;
     bestNextAction?: string | undefined;
     artifactPaths: AuthorizationEvidenceArtifactPaths;
+    evidenceClosure?: AuthorizationEvidenceClosureSummary | undefined;
     governanceErrors: Array<Pick<GovernanceFinding, 'ruleId' | 'message' | 'evidence' | 'scope'>>;
     attestationVerification?: AuthorizationAttestationVerificationSummary | undefined;
     riskyInvariant?: AuthorizationRiskyInvariantSummary | undefined;
@@ -490,19 +491,42 @@ export interface EvidenceClosureStep {
     title: string;
     rationale: string;
     targetFiles: string[];
+    suggestedEditFiles: string[];
+    evidenceTargets: string[];
     commands: EvidenceClosureCommand[];
     artifactPaths: Record<string, string>;
+}
+export interface EvidenceClosureGroup {
+    id: string;
+    title: string;
+    survivorCount?: number | undefined;
+    targetFiles: string[];
+    suggestedEditFiles: string[];
+    evidenceTargets: string[];
+    stepIds: string[];
+}
+export interface EvidenceClosureTaskManifest {
+    title: string;
+    allowedPaths: string[];
+    requiredPaths: string[];
+    commands: EvidenceClosureCommand[];
+    completionCriteria: string[];
 }
 export interface EvidenceClosurePrimaryAction {
     id: string;
     kind: 'mutation-survivors' | 'mutation-baseline' | 'mutation-missing' | 'governance' | 'coverage' | 'witness' | 'analysis-warning' | 'none';
     title: string;
     rationale: string;
+    expectedConfidenceLift?: number | undefined;
     targetFiles: string[];
+    suggestedEditFiles: string[];
+    evidenceTargets: string[];
     commands: EvidenceClosureCommand[];
     artifactPaths: Record<string, string>;
     completionCriteria: string[];
     steps: EvidenceClosureStep[];
+    groups: EvidenceClosureGroup[];
+    taskManifest: EvidenceClosureTaskManifest;
 }
 export interface EvidenceBasisSummary {
     coverage: {
@@ -535,6 +559,13 @@ export interface EvidenceBasisSummary {
         credits: ConfidenceContribution[];
         final: number;
     };
+    nonBlockingSignals: string[];
+}
+export interface AuthorizationEvidenceClosureSummary {
+    kind: EvidenceClosurePrimaryAction['kind'];
+    title: string;
+    expectedConfidenceLift?: number | undefined;
+    artifactPaths: Record<string, string>;
 }
 export interface NextEvidenceAction {
     primaryAction: EvidenceClosurePrimaryAction;
