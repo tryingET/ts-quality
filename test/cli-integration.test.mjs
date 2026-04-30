@@ -301,6 +301,28 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
 });
 
 
+test('masked survivor fixture covers behavior-delta and masking guidance across mutation categories', () => {
+  const target = tempCopyOfFixture('masked-survivors');
+  const check = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'masked-survivors-run'], { encoding: 'utf8' });
+  assert.equal(check.status, 0, check.stderr);
+  const run = readRun(target);
+  const steps = run.nextEvidenceAction.primaryAction.steps;
+  const survivors = run.mutationRemediation.survivors;
+
+  assert.equal(run.nextEvidenceAction.primaryAction.kind, 'mutation-survivors');
+  assert.equal(run.nextEvidenceAction.primaryAction.sidecarSufficiency.level, 'actionable');
+  assert.equal(survivors.length >= 4, true);
+  assert.equal(survivors.every((item) => item.observableBehavior && item.assertionStrategy && item.maskingRisk), true);
+  assert.equal(steps.some((step) => step.observableBehavior.includes('Boundary behavior changed')), true);
+  assert.equal(steps.some((step) => step.observableBehavior.includes('Equality behavior changed')), true);
+  assert.equal(steps.some((step) => step.observableBehavior.includes('Combined-condition behavior changed')), true);
+  assert.equal(steps.some((step) => step.observableBehavior.includes('Boolean behavior changed')), true);
+  assert.equal(steps.every((step) => step.maskingRisk.includes('Prefer a call path where the mutated value changes')), true);
+  assert.equal(steps.some((step) => step.enclosingSymbol === 'function:asOptionalString'), true);
+  assert.equal(steps.some((step) => step.enclosingSymbol === 'function:stableFlag'), true);
+  assert.equal(run.nextEvidenceAction.primaryAction.suggestedEditFiles.includes('test/masked.test.js'), true);
+});
+
 test('report and explain project the current decision context for the selected run', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.writeFileSync(path.join(target, 'ts-quality.config.ts'), `export default {
