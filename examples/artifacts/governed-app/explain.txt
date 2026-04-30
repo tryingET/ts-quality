@@ -12,6 +12,9 @@ Confidence breakdown: base 100
 
 Next evidence action: Add or tighten an assertion covering src/auth/token.js around the surviving mutant.
 Remaining blocker: mutation-pressure
+Evidence closure: Tighten focused assertions for 3 surviving mutant(s).
+Coverage basis: 2 file(s), changed-function min 100%, changed functions under80 0
+Mutation basis: 1 killed / 4 site(s), 3 survived
 
 Actionable surviving mutants:
 - src/auth/token.js:2 >= -> >

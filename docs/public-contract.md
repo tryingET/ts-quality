@@ -89,6 +89,21 @@ A successful manual witness upgrade must surface as:
 - scenario `supportKind: "execution-witness"`
 - `nextEvidenceAction.witnessStatus: "execution-backed witness considered"`
 
+## Protected actionable evidence closure contract
+
+Every `check` run emits one canonical `nextEvidenceAction` packet in `run.json` and `.ts-quality/runs/<run-id>/next-evidence-action.{json,txt}`. This packet is the public next-step surface for humans and LLM agents; downstream operators should prefer it over scraping verdict prose.
+
+The packet is additive to older `0.2.0` run artifacts and contains:
+
+- `remainingBlocker` and `bestNextAction` for backward-compatible operator summaries
+- exactly one `primaryAction` with `id`, `kind`, `title`, `rationale`, `targetFiles`, `commands`, `artifactPaths`, `completionCriteria`, and ordered `steps`
+- `evidenceBasis` with compact coverage, mutation, witness, governance, and confidence facts
+- artifact links back to `run.json`, `report.md`, `explain.txt`, `govern.txt`, `check-summary.txt`, and optional remediation receipts
+
+For survivor-driven failures, `primaryAction.kind` is `mutation-survivors`, the action points to `mutation-remediation.json`, and each step includes the assertion hint plus focused test command when available.
+
+The compact `check` stdout and generated `check-summary.txt` must surface the same closure headline plus coverage and mutation basis, so a user can distinguish coverage percentage from merge confidence without opening `run.json` first.
+
 ## Minimum viable adoption story
 
 The protected minimum public adoption story is:

@@ -480,6 +480,62 @@ export interface ConfidenceBreakdown {
     credits: ConfidenceContribution[];
     final: number;
 }
+export interface EvidenceClosureCommand {
+    command: string[];
+    reason: string;
+    cwd?: string | undefined;
+}
+export interface EvidenceClosureStep {
+    id: string;
+    title: string;
+    rationale: string;
+    targetFiles: string[];
+    commands: EvidenceClosureCommand[];
+    artifactPaths: Record<string, string>;
+}
+export interface EvidenceClosurePrimaryAction {
+    id: string;
+    kind: 'mutation-survivors' | 'mutation-baseline' | 'mutation-missing' | 'governance' | 'coverage' | 'witness' | 'analysis-warning' | 'none';
+    title: string;
+    rationale: string;
+    targetFiles: string[];
+    commands: EvidenceClosureCommand[];
+    artifactPaths: Record<string, string>;
+    completionCriteria: string[];
+    steps: EvidenceClosureStep[];
+}
+export interface EvidenceBasisSummary {
+    coverage: {
+        status: string;
+        fileCount: number;
+        minPct?: number | undefined;
+        changedFunctionMinPct?: number | undefined;
+        changedFunctionsUnder80: number;
+        lcovPath?: string | undefined;
+    };
+    mutation: {
+        status: string;
+        sites: number;
+        killed: number;
+        survived: number;
+        errors: number;
+    };
+    witness: {
+        status: string;
+        executionWitnessFiles: string[];
+    };
+    governance: {
+        status: string;
+        errors: number;
+        warnings: number;
+    };
+    confidence: {
+        base?: number | undefined;
+        penalties: ConfidenceContribution[];
+        credits: ConfidenceContribution[];
+        final: number;
+    };
+}
 export interface NextEvidenceAction {
     remainingBlocker: string;
     bestNextAction: string;
@@ -487,6 +543,8 @@ export interface NextEvidenceAction {
     witnessStatus: string;
     mutationStatus: string;
     governanceStatus: string;
+    primaryAction: EvidenceClosurePrimaryAction;
+    evidenceBasis: EvidenceBasisSummary;
     artifactPaths: Record<string, string>;
 }
 export interface AnalysisContext {

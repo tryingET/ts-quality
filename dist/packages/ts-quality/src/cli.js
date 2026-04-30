@@ -433,7 +433,10 @@ function main() {
         const witnessSummary = result.run.executionWitnesses
             ? `Execution witnesses: auto-ran ${result.run.executionWitnesses.autoRan.length}, skipped ${result.run.executionWitnesses.skipped.length}\n`
             : '';
-        process.stdout.write(`Merge confidence: ${result.run.verdict.mergeConfidence}/100\nOutcome: ${result.run.verdict.outcome}\n${coverageSummary}${witnessSummary}Artifacts: ${result.artifactDir}\n`);
+        const closureSummary = result.run.nextEvidenceAction
+            ? `Evidence closure: ${result.run.nextEvidenceAction.primaryAction.title}\nCoverage basis: ${result.run.nextEvidenceAction.evidenceBasis.coverage.fileCount} file(s)${typeof result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? `, changed-function min ${result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct}%` : typeof result.run.nextEvidenceAction.evidenceBasis.coverage.minPct === 'number' ? `, min ${result.run.nextEvidenceAction.evidenceBasis.coverage.minPct}%` : ''}, changed functions under80 ${result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionsUnder80}\nMutation basis: ${result.run.nextEvidenceAction.evidenceBasis.mutation.killed} killed / ${result.run.nextEvidenceAction.evidenceBasis.mutation.sites} site(s), ${result.run.nextEvidenceAction.evidenceBasis.mutation.survived} survived, ${result.run.nextEvidenceAction.evidenceBasis.mutation.errors} error(s)\n`
+            : '';
+        process.stdout.write(`Merge confidence: ${result.run.verdict.mergeConfidence}/100\nOutcome: ${result.run.verdict.outcome}\n${coverageSummary}${witnessSummary}${closureSummary}Artifacts: ${result.artifactDir}\n`);
         return;
     }
     if (command === 'explain') {

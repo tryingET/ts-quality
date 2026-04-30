@@ -205,6 +205,10 @@ function renderCheckSummaryText(run: Pick<RunArtifact, 'behaviorClaims' | 'verdi
   ];
   if (run.nextEvidenceAction) {
     lines.push(`Remaining blocker: ${run.nextEvidenceAction.remainingBlocker}`);
+    lines.push(`Evidence closure: ${run.nextEvidenceAction.primaryAction.title}`);
+    const basis = run.nextEvidenceAction.evidenceBasis;
+    lines.push(`Coverage basis: ${basis.coverage.fileCount} file(s)${typeof basis.coverage.changedFunctionMinPct === 'number' ? `, changed-function min ${basis.coverage.changedFunctionMinPct}%` : typeof basis.coverage.minPct === 'number' ? `, min ${basis.coverage.minPct}%` : ''}, changed functions under80 ${basis.coverage.changedFunctionsUnder80}`);
+    lines.push(`Mutation basis: ${basis.mutation.killed} killed / ${basis.mutation.sites} site(s), ${basis.mutation.survived} survived, ${basis.mutation.errors} error(s)`);
   }
   if (run.verdict.confidenceBreakdown) {
     lines.push('', `Confidence breakdown: base ${run.verdict.confidenceBreakdown.base}`);
@@ -241,16 +245,41 @@ function renderCoverageGenerationText(record: CoverageGenerationRecord): string 
 }
 
 function renderNextEvidenceActionText(action: NextEvidenceAction): string {
-  return [
+  const lines = [
     `remainingBlocker: ${action.remainingBlocker}`,
     `bestNextAction: ${action.bestNextAction}`,
+    `primaryAction: ${action.primaryAction.id}`,
+    `primaryActionKind: ${action.primaryAction.kind}`,
+    `primaryActionTitle: ${action.primaryAction.title}`,
+    `primaryActionRationale: ${action.primaryAction.rationale}`,
     `coverage: ${action.coverageStatus}`,
+    `coverageBasis: files=${action.evidenceBasis.coverage.fileCount}${typeof action.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? ` changedFunctionMinPct=${action.evidenceBasis.coverage.changedFunctionMinPct}` : typeof action.evidenceBasis.coverage.minPct === 'number' ? ` minPct=${action.evidenceBasis.coverage.minPct}` : ''} changedFunctionsUnder80=${action.evidenceBasis.coverage.changedFunctionsUnder80}`,
     `witness: ${action.witnessStatus}`,
+    `witnessBasis: files=${action.evidenceBasis.witness.executionWitnessFiles.length}`,
     `mutation: ${action.mutationStatus}`,
+    `mutationBasis: killed=${action.evidenceBasis.mutation.killed} sites=${action.evidenceBasis.mutation.sites} survived=${action.evidenceBasis.mutation.survived} errors=${action.evidenceBasis.mutation.errors}`,
     `governance: ${action.governanceStatus}`,
-    'artifacts:',
-    ...Object.entries(action.artifactPaths).map(([key, value]) => `- ${key}: ${value}`)
-  ].join('\n') + '\n';
+    `confidenceBasis: final=${action.evidenceBasis.confidence.final} penalties=${action.evidenceBasis.confidence.penalties.length} credits=${action.evidenceBasis.confidence.credits.length}`
+  ];
+  if (action.primaryAction.targetFiles.length > 0) {
+    lines.push('targetFiles:', ...action.primaryAction.targetFiles.map((filePath) => `- ${filePath}`));
+  }
+  if (action.primaryAction.commands.length > 0) {
+    lines.push('commands:', ...action.primaryAction.commands.map((item) => `- ${item.command.join(' ')} # ${item.reason}`));
+  }
+  if (action.primaryAction.steps.length > 0) {
+    lines.push('steps:');
+    for (const step of action.primaryAction.steps) {
+      lines.push(`- ${step.id}: ${step.title}`);
+      lines.push(`  rationale: ${step.rationale}`);
+      if (step.commands.length > 0) {
+        lines.push(...step.commands.map((item) => `  command: ${item.command.join(' ')} # ${item.reason}`));
+      }
+    }
+  }
+  lines.push('completionCriteria:', ...action.primaryAction.completionCriteria.map((item) => `- ${item}`));
+  lines.push('artifacts:', ...Object.entries(action.artifactPaths).map(([key, value]) => `- ${key}: ${value}`));
+  return `${lines.join('\n')}\n`;
 }
 
 function renderPlanText(run: RunArtifact, plan: ReturnType<typeof generateGovernancePlan>): string {
@@ -1397,6 +1426,201 @@ function statusFromCount(clear: boolean, clearText: string, missingText: string)
   return clear ? clearText : missingText;
 }
 
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.filter((value) => value.length > 0))];
+}
+
+function mutationCommandFor(survivor: RunArtifact['mutations'][number]): string[] {
+  return survivor.testCommand && survivor.testCommand.length > 0 ? survivor.testCommand : [];
+}
+
+function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGeneration' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction['evidenceBasis'] {
+  const coveragePct = run.coverage.map((item) => item.pct).filter((value) => Number.isFinite(value));
+  const changedFunctionCoveragePct = run.behaviorClaims.flatMap((claim) => claim.evidenceSummary?.changedFunctions ?? []).map((item) => item.coveragePct).filter((value) => Number.isFinite(value));
+  const changedFunctionsUnder80 = run.behaviorClaims.reduce((total, claim) => total + (claim.evidenceSummary?.changedFunctionsUnder80Coverage ?? 0), 0);
+  const survived = run.mutations.filter((item) => item.status === 'survived').length;
+  const killed = run.mutations.filter((item) => item.status === 'killed').length;
+  const errors = run.mutations.filter((item) => item.status === 'error' || item.status === 'invalid').length;
+  const executionWitnessFiles = uniqueStrings(run.behaviorClaims.flatMap((claim) => claim.evidenceSummary?.executionWitnessFiles ?? []));
+  const governanceErrors = run.governance.filter((item) => item.level === 'error').length;
+  const governanceWarnings = run.governance.filter((item) => item.level === 'warn').length;
+  return {
+    coverage: {
+      status: run.coverage.length > 0 ? 'present' : (run.coverageGeneration ? `generation-${run.coverageGeneration.receipt.status}` : 'missing'),
+      fileCount: run.coverage.length,
+      ...(coveragePct.length > 0 ? { minPct: Math.min(...coveragePct) } : {}),
+      ...(changedFunctionCoveragePct.length > 0 ? { changedFunctionMinPct: Math.min(...changedFunctionCoveragePct) } : {}),
+      changedFunctionsUnder80,
+      ...(run.coverageGeneration ? { lcovPath: run.coverageGeneration.lcovPath } : {})
+    },
+    mutation: {
+      status: survived > 0 ? 'survivors' : errors > 0 ? 'errors' : run.mutations.length > 0 ? 'clear' : 'missing',
+      sites: run.mutations.length,
+      killed,
+      survived,
+      errors
+    },
+    witness: {
+      status: executionWitnessFiles.length > 0 ? 'execution-backed' : 'missing-or-not-required',
+      executionWitnessFiles
+    },
+    governance: {
+      status: governanceErrors > 0 ? 'errors' : governanceWarnings > 0 ? 'warnings' : 'clear',
+      errors: governanceErrors,
+      warnings: governanceWarnings
+    },
+    confidence: {
+      base: run.verdict.confidenceBreakdown?.base,
+      penalties: run.verdict.confidenceBreakdown?.penalties ?? [],
+      credits: run.verdict.confidenceBreakdown?.credits ?? [],
+      final: run.verdict.mergeConfidence
+    }
+  };
+}
+
+interface RunArtifactPaths {
+  run: string;
+  report: string;
+  explain: string;
+  govern: string;
+  checkSummary: string;
+  mutationRemediation: string;
+  coverageGeneration: string;
+}
+
+function buildPrimaryEvidenceClosureAction(
+  run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>,
+  remainingBlocker: string,
+  artifactPaths: RunArtifactPaths
+): NextEvidenceAction['primaryAction'] {
+  const surviving = run.mutations.filter((item) => item.status === 'survived');
+  if (surviving.length > 0) {
+    const targetFiles = uniqueStrings(surviving.map((item) => item.filePath));
+    const commands = uniqueStrings(surviving.map((item) => JSON.stringify(mutationCommandFor(item))).filter((item) => item !== '[]'))
+      .map((item) => JSON.parse(item) as string[])
+      .map((command) => ({ command, reason: 'Rerun the focused test command after adding the missing assertion.' }));
+    return {
+      id: 'close-mutation-survivors',
+      kind: 'mutation-survivors',
+      title: `Tighten focused assertions for ${surviving.length} surviving mutant(s).`,
+      rationale: 'Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.',
+      targetFiles,
+      commands,
+      artifactPaths: {
+        mutationRemediation: artifactPaths.mutationRemediation,
+        report: artifactPaths.report,
+        explain: artifactPaths.explain
+      },
+      completionCriteria: [
+        'Add assertions that fail for each listed surviving mutation.',
+        'Rerun the focused test command and then ts-quality check for the same changed scope.',
+        'The next run reports zero surviving mutants for this scope.'
+      ],
+      steps: surviving.slice(0, 8).map((survivor, index) => ({
+        id: `survivor-${index + 1}`,
+        title: survivor.assertionHint ?? `Add an assertion around ${survivor.filePath}:${survivor.span?.startLine ?? 'unknown'}.`,
+        rationale: survivor.original && survivor.replacement
+          ? `This mutant changed ${survivor.original} to ${survivor.replacement}; the focused test command still passed.`
+          : 'The focused test command still passed after this mutation.',
+        targetFiles: [survivor.filePath],
+        commands: mutationCommandFor(survivor).length > 0 ? [{ command: mutationCommandFor(survivor), reason: 'Verify the added assertion kills this survivor.' }] : [],
+        artifactPaths: { mutationRemediation: artifactPaths.mutationRemediation }
+      }))
+    };
+  }
+
+  if (remainingBlocker === 'mutation-baseline') {
+    return {
+      id: 'fix-mutation-baseline',
+      kind: 'mutation-baseline',
+      title: 'Fix the baseline test command before trusting mutation evidence.',
+      rationale: 'The configured test command did not pass before mutation execution, so mutation results are not trustworthy.',
+      targetFiles: [],
+      commands: [],
+      artifactPaths: { run: artifactPaths.run, explain: artifactPaths.explain },
+      completionCriteria: ['Make the configured mutation test command pass without mutations.', 'Rerun ts-quality check.'],
+      steps: []
+    };
+  }
+
+  if (remainingBlocker === 'mutation-evidence-missing') {
+    return {
+      id: 'add-mutation-evidence',
+      kind: 'mutation-missing',
+      title: 'Add executable tests or broaden measurable mutation scope.',
+      rationale: 'No killed or surviving mutants were measured, so the changed code lacks explicit mutation pressure.',
+      targetFiles: [],
+      commands: [],
+      artifactPaths: { run: artifactPaths.run, explain: artifactPaths.explain },
+      completionCriteria: ['Configure a focused test command that exercises changed code.', 'Rerun ts-quality check until killed or surviving mutants are measured.'],
+      steps: []
+    };
+  }
+
+  if (remainingBlocker === 'governance') {
+    const governanceErrors = run.governance.filter((item) => item.level === 'error');
+    return {
+      id: 'resolve-governance-errors',
+      kind: 'governance',
+      title: `Resolve ${governanceErrors.length} governance error(s).`,
+      rationale: 'Governance controls blocked the run even if code evidence may be otherwise available.',
+      targetFiles: uniqueStrings(governanceErrors.flatMap((item) => item.scope)),
+      commands: [],
+      artifactPaths: { govern: artifactPaths.govern, run: artifactPaths.run },
+      completionCriteria: ['Satisfy or explicitly waive the blocking governance finding.', 'Rerun ts-quality check and govern for the same run scope.'],
+      steps: governanceErrors.slice(0, 8).map((finding, index) => ({
+        id: `governance-${index + 1}`,
+        title: finding.message,
+        rationale: finding.evidence.join('; ') || 'Governance rule emitted an error.',
+        targetFiles: finding.scope,
+        commands: [],
+        artifactPaths: { govern: artifactPaths.govern }
+      }))
+    };
+  }
+
+  if (run.coverage.length === 0 && (!run.coverageGeneration || run.coverageGeneration.receipt.status !== 'pass')) {
+    return {
+      id: 'create-coverage-evidence',
+      kind: 'coverage',
+      title: 'Create LCOV coverage evidence for the changed scope.',
+      rationale: 'Coverage is missing, so changed-function pressure cannot be grounded in executed code.',
+      targetFiles: [],
+      commands: run.coverageGeneration?.command && run.coverageGeneration.command.length > 0 ? [{ command: run.coverageGeneration.command, reason: 'Generate the configured LCOV artifact.' }] : [],
+      artifactPaths: { coverageGeneration: artifactPaths.coverageGeneration, run: artifactPaths.run },
+      completionCriteria: ['Create the configured LCOV file.', 'Rerun ts-quality check and confirm coverage evidence is present.'],
+      steps: []
+    };
+  }
+
+  const missingWitnessClaim = run.behaviorClaims.find((claim) => (claim.evidenceSummary?.executionWitnessFiles ?? []).length === 0 && claim.status !== 'supported');
+  if (missingWitnessClaim) {
+    return {
+      id: 'add-execution-witness',
+      kind: 'witness',
+      title: `Add execution-backed witness evidence for ${missingWitnessClaim.invariantId}.`,
+      rationale: 'The invariant still depends on weaker support than an execution witness for its scenario scope.',
+      targetFiles: missingWitnessClaim.evidenceSummary?.impactedFiles ?? [],
+      commands: [],
+      artifactPaths: { run: artifactPaths.run, explain: artifactPaths.explain },
+      completionCriteria: ['Run ts-quality witness test for the missing scenario.', 'Rerun ts-quality check and confirm the witness file is consumed.'],
+      steps: []
+    };
+  }
+
+  return {
+    id: 'no-blocking-evidence-action',
+    kind: 'none',
+    title: 'No blocking evidence action remains for this run.',
+    rationale: `The run outcome is ${run.verdict.outcome}; inspect artifacts for optional hardening only.`,
+    targetFiles: [],
+    commands: [],
+    artifactPaths: { run: artifactPaths.run, report: artifactPaths.report, explain: artifactPaths.explain },
+    completionCriteria: ['No required closure action remains.'],
+    steps: []
+  };
+}
+
 function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'executionWitnesses' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction {
   const surviving = run.mutations.filter((item) => item.status === 'survived');
   const mutationErrors = run.mutations.filter((item) => item.status === 'error' || item.status === 'invalid');
@@ -1409,6 +1633,15 @@ function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | '
         : run.governance.some((item) => item.level === 'error')
           ? 'governance'
           : run.verdict.outcome;
+  const artifactPaths: RunArtifactPaths = {
+    run: `.ts-quality/runs/${run.runId}/run.json`,
+    report: `.ts-quality/runs/${run.runId}/report.md`,
+    explain: `.ts-quality/runs/${run.runId}/explain.txt`,
+    govern: `.ts-quality/runs/${run.runId}/govern.txt`,
+    checkSummary: `.ts-quality/runs/${run.runId}/check-summary.txt`,
+    mutationRemediation: `.ts-quality/runs/${run.runId}/mutation-remediation.json`,
+    coverageGeneration: `.ts-quality/runs/${run.runId}/coverage-generation.json`
+  };
   return {
     remainingBlocker,
     bestNextAction: run.verdict.bestNextAction ?? 'No next evidence action is currently required.',
@@ -1420,13 +1653,9 @@ function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | '
         ? `${mutationErrors.length} mutation execution error(s)`
         : 'mutation pressure clear or not blocking',
     governanceStatus: run.governance.some((item) => item.level === 'error') ? `blocked by ${run.governance.filter((item) => item.level === 'error').length} governance error(s)` : 'no governance errors',
-    artifactPaths: {
-      run: `.ts-quality/runs/${run.runId}/run.json`,
-      explain: `.ts-quality/runs/${run.runId}/explain.txt`,
-      checkSummary: `.ts-quality/runs/${run.runId}/check-summary.txt`,
-      mutationRemediation: `.ts-quality/runs/${run.runId}/mutation-remediation.json`,
-      coverageGeneration: `.ts-quality/runs/${run.runId}/coverage-generation.json`
-    }
+    primaryAction: buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths),
+    evidenceBasis: buildEvidenceBasis(run),
+    artifactPaths: { ...artifactPaths }
   };
 }
 

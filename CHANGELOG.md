@@ -10,6 +10,10 @@ type: "reference"
 
 ## [Unreleased]
 
+### Added
+
+- Added a canonical actionable evidence-closure contract to `nextEvidenceAction`, including one prioritized `primaryAction`, compact evidence-basis facts, completion criteria, focused commands when available, and richer `check`/report/explain projections for LLM and operator follow-up.
+
 ## [0.3.1] - 2026-04-29
 
 ### Fixed

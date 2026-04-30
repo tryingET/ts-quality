@@ -277,7 +277,7 @@ A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<ru
 - optional `execution-witnesses.json` / `execution-witnesses.txt` — additive per-run summary of configured execution witness commands that auto-ran and those skipped by scope
 - optional `coverage-generation.json` / `coverage-generation.txt` — sidecar receipt when configured LCOV generation was attempted
 - optional `mutation-remediation.json` — actionable surviving-mutant payload with file, site id, span, original/replacement snippets, command, and assertion hint when available
-- `next-evidence-action.json` / `next-evidence-action.txt` — focused next-step summary with remaining blocker, coverage/witness/mutation/governance status, and artifact paths to inspect
+- `next-evidence-action.json` / `next-evidence-action.txt` — canonical actionable evidence-closure packet with one prioritized `primaryAction`, compact coverage/mutation/witness/governance/confidence basis, completion criteria, focused commands when known, and artifact paths to inspect
 
 `run.json` also carries additive execution receipts that make the run boundary explicit instead of implicit:
 
@@ -287,6 +287,7 @@ A successful `check` writes a stable evidence bundle under `.ts-quality/runs/<ru
 - `coverageGeneration` records configured LCOV generation attempts, and `analysisWarnings` can flag adoption risks such as LCOV that covers `dist/**`/`lib/**`/`build/**` while changed `src/**/*.ts` files have no source-mapped coverage entry
 - `mutationRemediation.survivors[]` makes surviving mutants actionable with exact site metadata and a concise next assertion hint
 - `verdict.confidenceBreakdown` shows base confidence, deterministic penalties/credits, and final confidence so a low merge-confidence number has an auditable arithmetic trail
+- `nextEvidenceAction.evidenceBasis` and `nextEvidenceAction.primaryAction` turn the same facts into the next executable closure step; for example, high LCOV with surviving mutants becomes a mutation-survivor action rather than a vague low-score warning
 
 Each impacted invariant also carries a structured `behaviorClaims[].evidenceSummary` in `run.json`, exposing the invariant-scoped evidence basis directly: `evidenceSemantics` / `evidenceSemanticsSummary`, impacted files, focused tests, optional `executionWitnessFiles`, changed functions, coverage pressure, mutation counts, per-scenario support, and named deterministic sub-signals such as `focused-test-alignment`, `execution-witness`, `scenario-support`, `coverage-pressure`, `mutation-pressure`, and `changed-function-pressure`. Every sub-signal is also labeled as `explicit`, `inferred`, or `missing` so reviewers can tell whether support came from direct configured/artifact evidence or deterministic alignment heuristics.
 

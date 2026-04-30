@@ -223,6 +223,15 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.equal(typeof run.verdict.confidenceBreakdown.final, 'number');
   assert.equal(run.nextEvidenceAction.artifactPaths.run, `.ts-quality/runs/${runId}/run.json`);
   assert.equal(fs.existsSync(path.join(runDir, 'next-evidence-action.txt')), true);
+  assert.equal(typeof run.nextEvidenceAction.primaryAction.title, 'string');
+  assert.equal(run.nextEvidenceAction.primaryAction.completionCriteria.length > 0, true);
+  assert.equal(typeof run.nextEvidenceAction.evidenceBasis.confidence.final, 'number');
+  assert.equal(typeof run.nextEvidenceAction.evidenceBasis.mutation.survived, 'number');
+  assert.match(fs.readFileSync(path.join(runDir, 'next-evidence-action.txt'), 'utf8'), /primaryActionTitle:/);
+  assert.match(fs.readFileSync(path.join(runDir, 'next-evidence-action.txt'), 'utf8'), /mutationBasis: killed=[0-9]+ sites=[0-9]+ survived=[0-9]+ errors=[0-9]+/);
+  assert.match(check.stdout, /Evidence closure:/);
+  assert.match(check.stdout, /Coverage basis:/);
+  assert.match(check.stdout, /Mutation basis:/);
   if (run.mutationRemediation) {
     assert.equal(fs.existsSync(path.join(runDir, 'mutation-remediation.json')), true);
     assert.equal(run.mutationRemediation.survivors.every((item) => item.filePath && item.siteId && item.assertionHint), true);
