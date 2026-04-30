@@ -228,6 +228,8 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.equal(run.nextEvidenceAction.primaryAction.completionCriteria.length > 0, true);
   assert.equal(run.nextEvidenceAction.primaryAction.suggestedEditFiles.includes('test/token.test.js'), true);
   assert.equal(run.nextEvidenceAction.primaryAction.groups.length > 0, true);
+  assert.equal(run.nextEvidenceAction.primaryAction.steps.some((step) => step.observableBehavior && step.assertionStrategy && step.maskingRisk), true);
+  assert.equal(run.nextEvidenceAction.primaryAction.taskManifest.guidance.some((item) => item.includes('observable')), true);
   assert.equal(typeof run.nextEvidenceAction.primaryAction.expectedConfidenceLift, 'number');
   assert.equal(run.nextEvidenceAction.primaryAction.taskManifest.requiredPaths.includes('test/token.test.js'), true);
   assert.equal(typeof run.nextEvidenceAction.evidenceBasis.confidence.final, 'number');
@@ -237,13 +239,17 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.match(nextEvidenceText, /primaryActionTitle:/);
   assert.match(nextEvidenceText, /suggestedEditFiles:/);
   assert.match(nextEvidenceText, /mutationBasis: status=\S+ killed=[0-9]+ sites=[0-9]+ survived=[0-9]+ errors=[0-9]+/);
-  assert.match(fs.readFileSync(path.join(runDir, 'next-evidence-action.prompt.md'), 'utf8'), /# Next Evidence Closure/);
+  const nextEvidencePrompt = fs.readFileSync(path.join(runDir, 'next-evidence-action.prompt.md'), 'utf8');
+  assert.match(nextEvidencePrompt, /# Next Evidence Closure/);
+  assert.match(nextEvidencePrompt, /observable behavior delta:/);
+  assert.match(nextEvidencePrompt, /masking \/ observability note:/);
   assert.match(check.stdout, /Evidence closure:/);
   assert.match(check.stdout, /Coverage basis:/);
   assert.match(check.stdout, /Mutation basis:/);
   if (run.mutationRemediation) {
     assert.equal(fs.existsSync(path.join(runDir, 'mutation-remediation.json')), true);
     assert.equal(run.mutationRemediation.survivors.every((item) => item.filePath && item.siteId && item.assertionHint), true);
+    assert.equal(run.mutationRemediation.survivors.every((item) => item.observableBehavior && item.assertionStrategy && item.maskingRisk), true);
   }
   const report = spawnSync('node', [cli, 'report', '--root', target], { encoding: 'utf8' });
   const explain = spawnSync('node', [cli, 'explain', '--root', target], { encoding: 'utf8' });

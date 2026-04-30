@@ -166,6 +166,7 @@
         "artifactPaths": {
           "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json"
         },
+        "assertionStrategy": "Assert the exact changed boundary through a public or exported behavior, then check the returned value, thrown error, side effect, or serialized artifact.",
         "commands": [
           {
             "command": [
@@ -175,10 +176,13 @@
             "reason": "Verify the added assertion kills this survivor group."
           }
         ],
+        "enclosingSymbol": "function:isRefreshExpired",
         "evidenceTargets": [
           "src/auth/token.js"
         ],
         "id": "survivor-group-1",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "observableBehavior": "Boundary behavior changed (>= -> >); the exact boundary value may now be accepted, rejected, included, or omitted differently.",
         "rationale": "This mutation group changed >= to >; the focused test command still passed.",
         "suggestedEditFiles": [
           "test/token.test.js"
@@ -192,6 +196,7 @@
         "artifactPaths": {
           "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json"
         },
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
         "commands": [
           {
             "command": [
@@ -201,10 +206,13 @@
             "reason": "Verify the added assertion kills this survivor group."
           }
         ],
+        "enclosingSymbol": "function:canUseRefreshToken",
         "evidenceTargets": [
           "src/auth/token.js"
         ],
         "id": "survivor-group-2",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
         "rationale": "This mutation group changed && to ||; the focused test command still passed.",
         "suggestedEditFiles": [
           "test/token.test.js"
@@ -218,6 +226,7 @@
         "artifactPaths": {
           "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json"
         },
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
         "commands": [
           {
             "command": [
@@ -227,10 +236,13 @@
             "reason": "Verify the added assertion kills this survivor group."
           }
         ],
+        "enclosingSymbol": "function:canUseRefreshToken",
         "evidenceTargets": [
           "src/auth/token.js"
         ],
         "id": "survivor-group-3",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
         "rationale": "This mutation group changed && to ||; the focused test command still passed.",
         "suggestedEditFiles": [
           "test/token.test.js"
@@ -265,6 +277,15 @@
         "Add assertions that fail for each listed surviving mutation group.",
         "Rerun the focused test command and then ts-quality check for the same changed scope.",
         "The next run reports zero surviving mutants for this scope."
+      ],
+      "guidance": [
+        "Affected symbol: function:isRefreshExpired",
+        "Boundary behavior changed (>= -> >); the exact boundary value may now be accepted, rejected, included, or omitted differently.",
+        "Assert the exact changed boundary through a public or exported behavior, then check the returned value, thrown error, side effect, or serialized artifact.",
+        "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "Affected symbol: function:canUseRefreshToken",
+        "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+        "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone."
       ],
       "requiredPaths": [
         "test/token.test.js"

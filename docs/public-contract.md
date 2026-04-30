@@ -121,7 +121,7 @@ Protected `primaryAction.kind` values:
 - `analysis-warning` — reserved for future source/dist or analysis-risk closure actions
 - `none` — no blocking evidence action remains
 
-For survivor-driven failures, `primaryAction.kind` is `mutation-survivors`, the action points to `mutation-remediation.json`, groups equivalent survivors, includes likely `suggestedEditFiles`, includes a focused rerun command when available, and publishes the same plan through the prompt and AK-task sidecar artifacts.
+For survivor-driven failures, `primaryAction.kind` is `mutation-survivors`, the action points to `mutation-remediation.json`, groups equivalent survivors, includes likely `suggestedEditFiles`, includes a focused rerun command when available, and publishes the same plan through the prompt and AK-task sidecar artifacts. Survivor steps also carry generalized assertion guidance: the affected symbol when known, the observable behavior delta, an assertion strategy, and a masking/observability note warning that obvious call paths may still pass when downstream guards, fallbacks, normalization, or serialization collapse original and mutated behavior.
 
 The compact `check` stdout and generated `check-summary.txt` must surface the same closure headline plus coverage and mutation basis, so a user can distinguish coverage percentage from merge confidence without opening `run.json` first.
 

@@ -177,6 +177,18 @@ function renderNextEvidenceActionText(action) {
         for (const step of action.primaryAction.steps) {
             lines.push(`- ${step.id}: ${step.title}`);
             lines.push(`  rationale: ${step.rationale}`);
+            if (step.enclosingSymbol) {
+                lines.push(`  enclosingSymbol: ${step.enclosingSymbol}`);
+            }
+            if (step.observableBehavior) {
+                lines.push(`  observableBehavior: ${step.observableBehavior}`);
+            }
+            if (step.assertionStrategy) {
+                lines.push(`  assertionStrategy: ${step.assertionStrategy}`);
+            }
+            if (step.maskingRisk) {
+                lines.push(`  maskingRisk: ${step.maskingRisk}`);
+            }
             if (step.suggestedEditFiles.length > 0) {
                 lines.push(`  suggestedEditFiles: ${step.suggestedEditFiles.join(', ')}`);
             }
@@ -227,6 +239,10 @@ function renderEvidenceClosurePromptMarkdown(action) {
             ? action.primaryAction.steps.flatMap((step, index) => [
                 `${index + 1}. ${step.title}`,
                 `   - rationale: ${step.rationale}`,
+                ...(step.enclosingSymbol ? [`   - affected symbol: ${step.enclosingSymbol}`] : []),
+                ...(step.observableBehavior ? [`   - observable behavior delta: ${step.observableBehavior}`] : []),
+                ...(step.assertionStrategy ? [`   - assertion strategy: ${step.assertionStrategy}`] : []),
+                ...(step.maskingRisk ? [`   - masking / observability note: ${step.maskingRisk}`] : []),
                 ...(step.suggestedEditFiles.length > 0 ? [`   - edit: ${step.suggestedEditFiles.join(', ')}`] : []),
                 ...(step.commands.length > 0 ? step.commands.map((item) => `   - run: ${item.command.join(' ')}`) : [])
             ])
@@ -1253,7 +1269,10 @@ function buildMutationRemediation(mutations) {
         ...(item.mutated ? { mutated: item.mutated } : {}),
         ...(item.replacement ? { replacement: item.replacement } : {}),
         ...(item.testCommand ? { testCommand: item.testCommand } : {}),
-        ...(item.assertionHint ? { assertionHint: item.assertionHint } : {})
+        ...(item.assertionHint ? { assertionHint: item.assertionHint } : {}),
+        observableBehavior: observableBehaviorForMutation(item),
+        assertionStrategy: assertionStrategyForMutation(item),
+        maskingRisk: maskingRiskForMutation(item)
     }));
     return survivors.length > 0 ? { survivors } : undefined;
 }
@@ -1262,6 +1281,68 @@ function uniqueStrings(values) {
 }
 function mutationCommandFor(survivor) {
     return survivor.testCommand && survivor.testCommand.length > 0 ? survivor.testCommand : [];
+}
+function mutationChangeText(survivor) {
+    const before = survivor.original ?? 'original behavior';
+    const after = survivor.replacement ?? survivor.mutated ?? 'mutated behavior';
+    return `${before} -> ${after}`;
+}
+function isBoundaryMutation(survivor) {
+    return Boolean(survivor.operator?.includes('greater-than') || survivor.operator?.includes('less-than') || ['>', '>=', '<', '<='].includes(survivor.original ?? '') || ['>', '>=', '<', '<='].includes(survivor.replacement ?? ''));
+}
+function isCombinedConditionMutation(survivor) {
+    return Boolean(survivor.operator?.includes('and to or') || survivor.operator?.includes('or to and') || ['&&', '||'].includes(survivor.original ?? '') || ['&&', '||'].includes(survivor.replacement ?? ''));
+}
+function isEqualityMutation(survivor) {
+    return Boolean(survivor.operator?.includes('equality') || ['===', '!==', '==', '!='].includes(survivor.original ?? '') || ['===', '!==', '==', '!='].includes(survivor.replacement ?? ''));
+}
+function observableBehaviorForMutation(survivor) {
+    const change = mutationChangeText(survivor);
+    if (isBoundaryMutation(survivor)) {
+        return `Boundary behavior changed (${change}); the exact boundary value may now be accepted, rejected, included, or omitted differently.`;
+    }
+    if (isCombinedConditionMutation(survivor)) {
+        return `Combined-condition behavior changed (${change}); an input satisfying only one side of the condition may now take the opposite branch.`;
+    }
+    if (isEqualityMutation(survivor)) {
+        return `Equality behavior changed (${change}); matching and non-matching values may now take opposite branches.`;
+    }
+    if (survivor.operator?.includes('boolean') || survivor.original === 'true' || survivor.original === 'false') {
+        return `Boolean behavior changed (${change}); the opposite branch may now be externally visible.`;
+    }
+    return `Mutated behavior changed (${change}); choose an input where the changed value reaches an externally visible result.`;
+}
+function assertionStrategyForMutation(survivor) {
+    if (isBoundaryMutation(survivor)) {
+        return 'Assert the exact changed boundary through a public or exported behavior, then check the returned value, thrown error, side effect, or serialized artifact.';
+    }
+    if (isCombinedConditionMutation(survivor)) {
+        return 'Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.';
+    }
+    if (isEqualityMutation(survivor)) {
+        return 'Assert both the equality case and a nearby inequality case through the externally observable API behavior.';
+    }
+    if (survivor.operator?.includes('boolean') || survivor.original === 'true' || survivor.original === 'false') {
+        return 'Assert both boolean branches through the externally observable API behavior.';
+    }
+    return 'Create a focused input that distinguishes original and mutated behavior at the nearest externally observable boundary.';
+}
+function maskingRiskForMutation(survivor) {
+    const prefix = isBoundaryMutation(survivor) || isCombinedConditionMutation(survivor) || isEqualityMutation(survivor)
+        ? 'The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values.'
+        : 'A survivor can remain if the tested call path masks the changed value before it reaches an assertion.';
+    return `${prefix} Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.`;
+}
+function enclosingSymbolForMutation(symbols, survivor) {
+    if (!survivor.span) {
+        return undefined;
+    }
+    const filePath = (0, index_1.normalizePath)(survivor.filePath);
+    const line = survivor.span.startLine;
+    const candidates = symbols
+        .filter((symbol) => (0, index_1.normalizePath)(symbol.filePath) === filePath && symbol.span.startLine <= line && symbol.span.endLine >= line)
+        .sort((left, right) => (left.span.endLine - left.span.startLine) - (right.span.endLine - right.span.startLine));
+    return candidates[0]?.symbol;
 }
 function focusedTestsForFile(run, filePath) {
     const normalized = (0, index_1.normalizePath)(filePath);
@@ -1302,7 +1383,8 @@ function buildEvidenceClosureTaskManifest(input) {
         allowedPaths: uniqueStrings([...input.targetFiles, ...input.suggestedEditFiles]),
         requiredPaths,
         commands: input.commands,
-        completionCriteria: input.completionCriteria
+        completionCriteria: input.completionCriteria,
+        ...(input.guidance && input.guidance.length > 0 ? { guidance: uniqueStrings(input.guidance) } : {})
     };
 }
 function buildEvidenceBasis(run) {
@@ -1379,6 +1461,10 @@ function buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths)
             const survivorTargetFiles = uniqueStrings(group.map((item) => (0, index_1.normalizePath)(item.filePath)));
             const survivorEditFiles = uniqueStrings(survivorTargetFiles.flatMap((filePath) => focusedTestsForFile(run, filePath)));
             const title = `${survivor?.assertionHint ?? `Add an assertion around ${survivor?.filePath ?? 'unknown'}:${survivor?.span?.startLine ?? 'unknown'}.`}${group.length > 1 ? ` (covers ${group.length} equivalent survivors)` : ''}`;
+            const enclosingSymbol = survivor ? enclosingSymbolForMutation(run.symbols, survivor) : undefined;
+            const observableBehavior = survivor ? observableBehaviorForMutation(survivor) : undefined;
+            const assertionStrategy = survivor ? assertionStrategyForMutation(survivor) : undefined;
+            const maskingRisk = survivor ? maskingRiskForMutation(survivor) : undefined;
             return {
                 id: `survivor-group-${index + 1}`,
                 title,
@@ -1389,7 +1475,11 @@ function buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths)
                 suggestedEditFiles: survivorEditFiles,
                 evidenceTargets: survivorTargetFiles,
                 commands: survivor && mutationCommandFor(survivor).length > 0 ? [{ command: mutationCommandFor(survivor), reason: 'Verify the added assertion kills this survivor group.' }] : [],
-                artifactPaths: { mutationRemediation: artifactPaths.mutationRemediation }
+                artifactPaths: { mutationRemediation: artifactPaths.mutationRemediation },
+                ...(enclosingSymbol ? { enclosingSymbol } : {}),
+                ...(observableBehavior ? { observableBehavior } : {}),
+                ...(assertionStrategy ? { assertionStrategy } : {}),
+                ...(maskingRisk ? { maskingRisk } : {})
             };
         });
         const groups = steps.map((step, index) => ({
@@ -1402,6 +1492,12 @@ function buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths)
             stepIds: [step.id]
         }));
         const title = `Tighten focused assertions for ${surviving.length} surviving mutant(s) across ${groupEntries.length} mutation group(s).`;
+        const taskGuidance = uniqueStrings(steps.flatMap((step) => [
+            ...(step.enclosingSymbol ? [`Affected symbol: ${step.enclosingSymbol}`] : []),
+            ...(step.observableBehavior ? [step.observableBehavior] : []),
+            ...(step.assertionStrategy ? [step.assertionStrategy] : []),
+            ...(step.maskingRisk ? [step.maskingRisk] : [])
+        ]));
         return {
             id: 'close-mutation-survivors',
             kind: 'mutation-survivors',
@@ -1422,7 +1518,7 @@ function buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths)
             completionCriteria,
             steps,
             groups,
-            taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles, suggestedEditFiles, commands, completionCriteria })
+            taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles, suggestedEditFiles, commands, completionCriteria, guidance: taskGuidance })
         };
     }
     if (remainingBlocker === 'mutation-baseline') {

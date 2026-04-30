@@ -539,6 +539,9 @@ export interface MutationRemediationSurvivor {
   replacement?: string | undefined;
   testCommand?: string[] | undefined;
   assertionHint?: string | undefined;
+  observableBehavior?: string | undefined;
+  assertionStrategy?: string | undefined;
+  maskingRisk?: string | undefined;
 }
 
 export interface MutationRemediation {
@@ -574,6 +577,10 @@ export interface EvidenceClosureStep {
   evidenceTargets: string[];
   commands: EvidenceClosureCommand[];
   artifactPaths: Record<string, string>;
+  enclosingSymbol?: string | undefined;
+  observableBehavior?: string | undefined;
+  assertionStrategy?: string | undefined;
+  maskingRisk?: string | undefined;
 }
 
 export interface EvidenceClosureGroup {
@@ -592,6 +599,7 @@ export interface EvidenceClosureTaskManifest {
   requiredPaths: string[];
   commands: EvidenceClosureCommand[];
   completionCriteria: string[];
+  guidance?: string[] | undefined;
 }
 
 export interface EvidenceClosurePrimaryAction {

@@ -29,14 +29,26 @@ Expected confidence lift if closed: +54
 ## Steps
 1. Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >.
    - rationale: This mutation group changed >= to >; the focused test command still passed.
+   - affected symbol: function:isRefreshExpired
+   - observable behavior delta: Boundary behavior changed (>= -> >); the exact boundary value may now be accepted, rejected, included, or omitted differently.
+   - assertion strategy: Assert the exact changed boundary through a public or exported behavior, then check the returned value, thrown error, side effect, or serialized artifact.
+   - masking / observability note: The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.
    - edit: test/token.test.js
    - run: node --test
 2. Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.
    - rationale: This mutation group changed && to ||; the focused test command still passed.
+   - affected symbol: function:canUseRefreshToken
+   - observable behavior delta: Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.
+   - assertion strategy: Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.
+   - masking / observability note: The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.
    - edit: test/token.test.js
    - run: node --test
 3. Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.
    - rationale: This mutation group changed && to ||; the focused test command still passed.
+   - affected symbol: function:canUseRefreshToken
+   - observable behavior delta: Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.
+   - assertion strategy: Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.
+   - masking / observability note: The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.
    - edit: test/token.test.js
    - run: node --test
 
