@@ -106,7 +106,7 @@ Every `check` run emits one canonical `nextEvidenceAction` packet in `run.json` 
 
 The packet contains:
 
-- exactly one `primaryAction` with `id`, `kind`, `title`, `rationale`, optional `expectedConfidenceLift`, `targetFiles`, `suggestedEditFiles`, `evidenceTargets`, `commands`, `artifactPaths`, `completionCriteria`, grouped/ordered `steps`, `groups`, and a `taskManifest`
+- exactly one `primaryAction` with `id`, `kind`, `title`, `rationale`, optional `expectedConfidenceLift`, `targetFiles`, `suggestedEditFiles`, `evidenceTargets`, `commands`, `artifactPaths`, `completionCriteria`, grouped/ordered `steps`, `groups`, additive `sidecarSufficiency`, and a `taskManifest`
 - `evidenceBasis` with compact coverage, mutation, witness, governance, confidence, and `nonBlockingSignals` facts
 - artifact links back to `run.json`, `report.md`, `explain.txt`, `govern.txt`, `check-summary.txt`, and optional remediation receipts
 
@@ -122,6 +122,15 @@ Protected `primaryAction.kind` values:
 - `none` — no blocking evidence action remains
 
 For survivor-driven failures, `primaryAction.kind` is `mutation-survivors`, the action points to `mutation-remediation.json`, groups equivalent survivors, includes likely `suggestedEditFiles`, includes a focused rerun command when available, and publishes the same plan through the prompt and AK-task sidecar artifacts. Survivor steps also carry generalized assertion guidance: the affected symbol when known, the observable behavior delta, an assertion strategy, and a masking/observability note warning that obvious call paths may still pass when downstream guards, fallbacks, normalization, or serialization collapse original and mutated behavior.
+
+`sidecarSufficiency` is an additive actionability rubric for humans and agents:
+
+- `bounded` — the sidecar identifies the closure class and scope, but a maintainer or agent must still infer the repair path.
+- `actionable` — the sidecar identifies the edit target, verification command, completion criteria, and behavior/observability guidance needed to perform a focused repair.
+- `turnkey` — no blocking closure work remains, or the sidecar is complete enough to execute without interpretation.
+- `misleading` — the sidecar selected a blocking action but failed to identify enough scope or steps to be safe to follow.
+
+For mutation-survivor closure, `actionable` is the expected healthy state: concrete test code is still intentionally left to the repo operator or agent, but the sidecar must remove hidden source archaeology by naming the behavior delta and masking risk.
 
 The compact `check` stdout and generated `check-summary.txt` must surface the same closure headline plus coverage and mutation basis, so a user can distinguish coverage percentage from merge confidence without opening `run.json` first.
 

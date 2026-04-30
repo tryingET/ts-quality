@@ -230,6 +230,9 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.equal(run.nextEvidenceAction.primaryAction.completionCriteria.length > 0, true);
   assert.equal(run.nextEvidenceAction.primaryAction.suggestedEditFiles.includes('test/token.test.js'), true);
   assert.equal(run.nextEvidenceAction.primaryAction.groups.length > 0, true);
+  assert.equal(run.nextEvidenceAction.primaryAction.sidecarSufficiency.level, 'actionable');
+  assert.equal(run.nextEvidenceAction.primaryAction.sidecarSufficiency.reasons.some((item) => item.toLowerCase().includes('focused test edit files')), true);
+  assert.deepEqual(run.nextEvidenceAction.primaryAction.taskManifest.sidecarSufficiency, run.nextEvidenceAction.primaryAction.sidecarSufficiency);
   assert.equal(run.nextEvidenceAction.primaryAction.steps.some((step) => step.observableBehavior && step.assertionStrategy && step.maskingRisk), true);
   assert.equal(run.nextEvidenceAction.primaryAction.taskManifest.guidance.some((item) => item.includes('observable')), true);
   assert.equal(typeof run.nextEvidenceAction.primaryAction.expectedConfidenceLift, 'number');
@@ -239,10 +242,14 @@ test('check, report, explain, plan, and govern produce aligned artifacts', () =>
   assert.equal(run.nextEvidenceAction.evidenceBasis.nonBlockingSignals.some((item) => item.includes('coverage is present')), true);
   const nextEvidenceText = fs.readFileSync(path.join(runDir, 'next-evidence-action.txt'), 'utf8');
   assert.match(nextEvidenceText, /primaryActionTitle:/);
+  assert.match(nextEvidenceText, /sidecarSufficiency: actionable/);
+  assert.match(nextEvidenceText, /sidecarSufficiencyReason: Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance\./);
   assert.match(nextEvidenceText, /suggestedEditFiles:/);
   assert.match(nextEvidenceText, /mutationBasis: status=\S+ killed=[0-9]+ sites=[0-9]+ survived=[0-9]+ errors=[0-9]+/);
   const nextEvidencePrompt = fs.readFileSync(path.join(runDir, 'next-evidence-action.prompt.md'), 'utf8');
   assert.match(nextEvidencePrompt, /# Next Evidence Closure/);
+  assert.match(nextEvidencePrompt, /Sidecar sufficiency: actionable/);
+  assert.match(nextEvidencePrompt, /sufficiency reason: Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance\./);
   assert.match(nextEvidencePrompt, /observable behavior delta:/);
   assert.match(nextEvidencePrompt, /masking \/ observability note:/);
   assert.match(check.stdout, /Evidence closure:/);

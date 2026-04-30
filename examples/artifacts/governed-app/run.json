@@ -897,6 +897,14 @@
       "id": "close-mutation-survivors",
       "kind": "mutation-survivors",
       "rationale": "Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.",
+      "sidecarSufficiency": {
+        "level": "actionable",
+        "reasons": [
+          "Likely focused test edit files are identified.",
+          "A focused rerun command is present.",
+          "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+        ]
+      },
       "steps": [
         {
           "artifactPaths": {
@@ -1026,6 +1034,14 @@
         "requiredPaths": [
           "test/token.test.js"
         ],
+        "sidecarSufficiency": {
+          "level": "actionable",
+          "reasons": [
+            "Likely focused test edit files are identified.",
+            "A focused rerun command is present.",
+            "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+          ]
+        },
         "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
       },
       "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."

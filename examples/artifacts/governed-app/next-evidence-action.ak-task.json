@@ -29,5 +29,13 @@
   "requiredPaths": [
     "test/token.test.js"
   ],
+  "sidecarSufficiency": {
+    "level": "actionable",
+    "reasons": [
+      "Likely focused test edit files are identified.",
+      "A focused rerun command is present.",
+      "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+    ]
+  },
   "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
 }

@@ -512,6 +512,11 @@ export interface EvidenceClosureGroup {
     evidenceTargets: string[];
     stepIds: string[];
 }
+export type EvidenceClosureSufficiencyLevel = 'bounded' | 'actionable' | 'turnkey' | 'misleading';
+export interface EvidenceClosureSufficiency {
+    level: EvidenceClosureSufficiencyLevel;
+    reasons: string[];
+}
 export interface EvidenceClosureTaskManifest {
     title: string;
     allowedPaths: string[];
@@ -519,11 +524,13 @@ export interface EvidenceClosureTaskManifest {
     commands: EvidenceClosureCommand[];
     completionCriteria: string[];
     guidance?: string[] | undefined;
+    sidecarSufficiency?: EvidenceClosureSufficiency | undefined;
 }
 export interface EvidenceClosurePrimaryAction {
     id: string;
     kind: 'mutation-survivors' | 'mutation-baseline' | 'mutation-missing' | 'governance' | 'coverage' | 'witness' | 'analysis-warning' | 'none';
     title: string;
+    sidecarSufficiency?: EvidenceClosureSufficiency | undefined;
     rationale: string;
     expectedConfidenceLift?: number | undefined;
     targetFiles: string[];

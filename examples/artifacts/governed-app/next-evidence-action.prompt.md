@@ -10,6 +10,10 @@ type: "handoff"
 
 Primary action: Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s).
 Kind: mutation-survivors
+Sidecar sufficiency: actionable
+- sufficiency reason: Likely focused test edit files are identified.
+- sufficiency reason: A focused rerun command is present.
+- sufficiency reason: Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance.
 Why: Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.
 Expected confidence lift if closed: +54
 

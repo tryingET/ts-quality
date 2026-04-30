@@ -1,6 +1,10 @@
 primaryAction: close-mutation-survivors
 primaryActionKind: mutation-survivors
 primaryActionTitle: Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s).
+sidecarSufficiency: actionable
+sidecarSufficiencyReason: Likely focused test edit files are identified.
+sidecarSufficiencyReason: A focused rerun command is present.
+sidecarSufficiencyReason: Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance.
 primaryActionRationale: Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.
 expectedConfidenceLift: 54
 coverageBasis: status=present files=2 changedFunctionMinPct=100 changedFunctionsUnder80=0

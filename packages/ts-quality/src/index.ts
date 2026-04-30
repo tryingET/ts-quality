@@ -255,6 +255,7 @@ function renderNextEvidenceActionText(action: NextEvidenceAction): string {
     `primaryAction: ${action.primaryAction.id}`,
     `primaryActionKind: ${action.primaryAction.kind}`,
     `primaryActionTitle: ${action.primaryAction.title}`,
+    ...(action.primaryAction.sidecarSufficiency ? [`sidecarSufficiency: ${action.primaryAction.sidecarSufficiency.level}`, ...action.primaryAction.sidecarSufficiency.reasons.map((reason) => `sidecarSufficiencyReason: ${reason}`)] : []),
     `primaryActionRationale: ${action.primaryAction.rationale}`,
     ...(typeof action.primaryAction.expectedConfidenceLift === 'number' ? [`expectedConfidenceLift: ${action.primaryAction.expectedConfidenceLift}`] : []),
     `coverageBasis: status=${action.evidenceBasis.coverage.status} files=${action.evidenceBasis.coverage.fileCount}${typeof action.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? ` changedFunctionMinPct=${action.evidenceBasis.coverage.changedFunctionMinPct}` : typeof action.evidenceBasis.coverage.minPct === 'number' ? ` minPct=${action.evidenceBasis.coverage.minPct}` : ''} changedFunctionsUnder80=${action.evidenceBasis.coverage.changedFunctionsUnder80}`,
@@ -322,6 +323,10 @@ function renderEvidenceClosurePromptMarkdown(action: NextEvidenceAction): string
     '',
     `Primary action: ${action.primaryAction.title}`,
     `Kind: ${action.primaryAction.kind}`,
+    ...(action.primaryAction.sidecarSufficiency ? [
+      `Sidecar sufficiency: ${action.primaryAction.sidecarSufficiency.level}`,
+      ...action.primaryAction.sidecarSufficiency.reasons.map((reason) => `- sufficiency reason: ${reason}`)
+    ] : []),
     `Why: ${action.primaryAction.rationale}`,
     ...(typeof action.primaryAction.expectedConfidenceLift === 'number' ? [`Expected confidence lift if closed: +${action.primaryAction.expectedConfidenceLift}`] : []),
     '',
@@ -1648,6 +1653,42 @@ function buildEvidenceClosureTaskManifest(input: {
   };
 }
 
+function classifyEvidenceClosureSufficiency(action: NextEvidenceAction['primaryAction']): NonNullable<NextEvidenceAction['primaryAction']['sidecarSufficiency']> {
+  if (action.kind === 'none') {
+    return { level: 'turnkey', reasons: ['No blocking closure action remains.'] };
+  }
+  if (action.targetFiles.length === 0 && action.suggestedEditFiles.length === 0 && action.steps.length === 0 && action.kind !== 'mutation-baseline' && action.kind !== 'mutation-missing') {
+    return { level: 'misleading', reasons: ['The sidecar selected a blocking action but did not identify target files, edit files, or steps.'] };
+  }
+  if (action.kind === 'mutation-survivors') {
+    const hasFocusedEdit = action.suggestedEditFiles.length > 0;
+    const hasRerunCommand = action.commands.length > 0 || action.steps.some((step) => step.commands.length > 0);
+    const hasBehaviorGuidance = action.steps.length > 0 && action.steps.every((step) => Boolean(step.observableBehavior && step.assertionStrategy && step.maskingRisk));
+    const reasons = [
+      ...(hasFocusedEdit ? ['Likely focused test edit files are identified.'] : ['Focused test edit files are not inferred.']),
+      ...(hasRerunCommand ? ['A focused rerun command is present.'] : ['No focused rerun command is present.']),
+      ...(hasBehaviorGuidance ? ['Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance.'] : ['At least one survivor group lacks full observable-behavior guidance.'])
+    ];
+    return { level: hasFocusedEdit && hasRerunCommand && hasBehaviorGuidance ? 'actionable' : 'bounded', reasons };
+  }
+  if (action.commands.length > 0 && action.completionCriteria.length > 0) {
+    return { level: 'actionable', reasons: ['The sidecar includes a command and completion criteria for the selected closure action.'] };
+  }
+  return { level: 'bounded', reasons: ['The sidecar identifies the closure class and completion criteria, but still requires operator interpretation before execution.'] };
+}
+
+function attachEvidenceClosureSufficiency(action: NextEvidenceAction['primaryAction']): NextEvidenceAction['primaryAction'] {
+  const sidecarSufficiency = classifyEvidenceClosureSufficiency(action);
+  return {
+    ...action,
+    sidecarSufficiency,
+    taskManifest: {
+      ...action.taskManifest,
+      sidecarSufficiency
+    }
+  };
+}
+
 function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGeneration' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction['evidenceBasis'] {
   const coveragePct = run.coverage.map((item) => item.pct).filter((value) => Number.isFinite(value));
   const changedFunctionCoveragePct = run.behaviorClaims.flatMap((claim) => claim.evidenceSummary?.changedFunctions ?? []).map((item) => item.coveragePct).filter((value) => Number.isFinite(value));
@@ -1962,7 +2003,7 @@ function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | '
     nextEvidenceActionTask: `.ts-quality/runs/${run.runId}/next-evidence-action.ak-task.json`
   };
   return {
-    primaryAction: buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths),
+    primaryAction: attachEvidenceClosureSufficiency(buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths)),
     evidenceBasis: buildEvidenceBasis(run)
   };
 }
