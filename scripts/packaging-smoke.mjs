@@ -38,6 +38,7 @@ const reviewRunId = 'packaging-installed-review-run';
 const reviewTrendRunId = 'packaging-installed-review-trend-run';
 const reviewLegacyArtifactRunId = 'packaging-installed-legacy-artifact-run';
 const reviewAdditiveArtifactRunId = 'packaging-installed-additive-artifact-run';
+const reviewNextEvidenceArtifactRunId = 'packaging-installed-next-evidence-compat-run';
 const reviewUnsupportedSnapshotRunId = 'packaging-installed-unsupported-snapshot-run';
 const reviewMalformedSnapshotRunId = 'packaging-installed-malformed-snapshot-run';
 const reviewMaterializedSourceRunId = 'packaging-installed-materialized-source-run';
@@ -257,6 +258,16 @@ const legacyRemovedAdditiveFields = [
   'verdict.confidenceBreakdown'
 ];
 
+const nextEvidenceRemovedAdditiveFields = [
+  'nextEvidenceAction.primaryAction.sidecarSufficiency',
+  'nextEvidenceAction.primaryAction.taskManifest.sidecarSufficiency',
+  'nextEvidenceAction.primaryAction.taskManifest.guidance',
+  'nextEvidenceAction.primaryAction.steps[].enclosingSymbol',
+  'nextEvidenceAction.primaryAction.steps[].observableBehavior',
+  'nextEvidenceAction.primaryAction.steps[].assertionStrategy',
+  'nextEvidenceAction.primaryAction.steps[].maskingRisk'
+];
+
 /**
  * @param {string} projectRoot
  * @param {string} sourceRunId
@@ -317,6 +328,38 @@ function writeAdditiveCompatibilityRun(projectRoot, sourceRunId, targetRunId) {
       futureOptionalVerdictSignal: 'ignored-by-current-projections'
     }
   }));
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} sourceRunId
+ * @param {string} targetRunId
+ */
+function writeNextEvidenceCompatibilityRun(projectRoot, sourceRunId, targetRunId) {
+  writeCompatibilityRun(projectRoot, sourceRunId, targetRunId, (sourceRun) => {
+    const nextEvidenceAction = structuredClone(sourceRun.nextEvidenceAction);
+    if (nextEvidenceAction?.primaryAction) {
+      delete nextEvidenceAction.primaryAction.sidecarSufficiency;
+      delete nextEvidenceAction.primaryAction.taskManifest?.sidecarSufficiency;
+      delete nextEvidenceAction.primaryAction.taskManifest?.guidance;
+      for (const step of nextEvidenceAction.primaryAction.steps ?? []) {
+        delete step.enclosingSymbol;
+        delete step.observableBehavior;
+        delete step.assertionStrategy;
+        delete step.maskingRisk;
+      }
+    }
+    return {
+      ...sourceRun,
+      runId: targetRunId,
+      createdAt: '2026-01-01T00:21:30.000Z',
+      nextEvidenceAction,
+      futureOptionalNextEvidencePacket: {
+        schema: 'ts-quality.next-evidence-future-additive-smoke',
+        note: 'Downstream projections must tolerate missing and unknown next-evidence optional fields.'
+      }
+    };
+  });
 }
 
 /**
@@ -608,6 +651,12 @@ export function runPackagingSmoke() {
     const additiveCompatibility = verifyCompatibleRunArtifactProjection(installedCliBinPath, installRoot, reviewProjectRoot, reviewAdditiveArtifactRunId, '0.2.0', [
       'current packet with future optional additive fields',
       'repo projections ignore optional fields they do not understand'
+    ]);
+
+    writeNextEvidenceCompatibilityRun(reviewProjectRoot, reviewRunId, reviewNextEvidenceArtifactRunId);
+    const nextEvidenceCompatibility = verifyCompatibleRunArtifactProjection(installedCliBinPath, installRoot, reviewProjectRoot, reviewNextEvidenceArtifactRunId, '0.2.0', [
+      'nextEvidenceAction packet without recent optional sidecar guidance fields',
+      'repo projections tolerate missing and future optional next-evidence fields'
     ]);
 
     writeUnsupportedSnapshotCompatibilityRun(reviewProjectRoot, reviewRunId, reviewUnsupportedSnapshotRunId);
@@ -974,7 +1023,11 @@ export function runPackagingSmoke() {
               ...legacyCompatibility,
               removedAdditiveFields: [...legacyRemovedAdditiveFields]
             },
-            additive020: additiveCompatibility
+            additive020: additiveCompatibility,
+            nextEvidenceOptionalFields: {
+              ...nextEvidenceCompatibility,
+              removedAdditiveFields: [...nextEvidenceRemovedAdditiveFields]
+            }
           },
           rejected: {
             unsupportedControlPlaneSnapshot: unsupportedSnapshotCompatibility,

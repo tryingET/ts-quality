@@ -153,6 +153,7 @@ Installed-package smoke currently proves a run-artifact compatibility matrix:
 
 - a legacy `0.1.0`-style run packet without additive `0.2.x` fields still projects through `report --json`, `explain`, `plan`, `govern`, and `authorize`
 - a current `0.2.0` packet carrying unknown future optional fields still projects through those same surfaces without requiring downstream parsers or repo projections to understand the unknown fields
+- a current `0.2.0` packet whose `nextEvidenceAction` lacks recent optional sidecar fields such as `sidecarSufficiency`, `taskManifest.guidance`, and per-step behavior guidance still projects through those same surfaces
 - unsupported or malformed control-plane snapshots fail closed with a re-run instruction instead of being silently projected into authorization or governance decisions
 
 Protected compatibility principle:

@@ -312,6 +312,29 @@ const expectedInstalledReviewSurfaceProofs = {
         governIncludes: ['auth-risk-budget'],
         authorizeOutcome: 'deny',
         authorizeRunId: 'packaging-installed-additive-artifact-run'
+      },
+      nextEvidenceOptionalFields: {
+        runId: 'packaging-installed-next-evidence-compat-run',
+        version: '0.2.0',
+        expectation: [
+          'nextEvidenceAction packet without recent optional sidecar guidance fields',
+          'repo projections tolerate missing and future optional next-evidence fields'
+        ],
+        reportJsonRunId: 'packaging-installed-next-evidence-compat-run',
+        explainIncludes: ['Reasons:'],
+        planIncludes: ['Invariant evidence at risk: auth.refresh.validity'],
+        governIncludes: ['auth-risk-budget'],
+        authorizeOutcome: 'deny',
+        authorizeRunId: 'packaging-installed-next-evidence-compat-run',
+        removedAdditiveFields: [
+          'nextEvidenceAction.primaryAction.sidecarSufficiency',
+          'nextEvidenceAction.primaryAction.taskManifest.sidecarSufficiency',
+          'nextEvidenceAction.primaryAction.taskManifest.guidance',
+          'nextEvidenceAction.primaryAction.steps[].enclosingSymbol',
+          'nextEvidenceAction.primaryAction.steps[].observableBehavior',
+          'nextEvidenceAction.primaryAction.steps[].assertionStrategy',
+          'nextEvidenceAction.primaryAction.steps[].maskingRisk'
+        ]
       }
     },
     rejected: {
