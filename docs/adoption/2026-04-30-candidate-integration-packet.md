@@ -142,7 +142,90 @@ Review pass:
 - no conflict markers found in the three repos;
 - `git diff --check` passed in all three repos;
 - reviewer found no blocking issues in the integrated commits;
-- known remaining caveat: broad pre-existing dirty ROCS/ontology/tooling state remains outside this integration slice.
+- known remaining caveat at this point: broad pre-existing dirty ROCS/ontology/tooling state remained outside the first integration slice.
+
+## Stash reconciliation
+
+The preserved dirty state was then reconciled into normal local `main` commits and the temporary backup stashes were dropped after verification.
+
+### dep-diet
+
+- Commit: `b55d89a chore: reconcile rocs launcher and handoff projection`
+- Reconciled: workspace-core ROCS launcher path, GitLab ROCS validate include, AK work-item projection, runtime trace handoff plan, ontology manifest/dist refresh, and removal of repo-local vendored `tools/rocs-cli`.
+- Backup stash dropped: `pre-integration-preserve-dirty-state-dep-diet-20260430`
+
+Validation after commit:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-diet
+bash scripts/ci/full.sh
+npm test
+git diff --check
+git status --short --branch
+```
+
+Result:
+
+```text
+rocs validate: OK
+ci-targeted: ok (27 files)
+## main
+```
+
+### dep-viz
+
+- Commit: `bd48130 chore: reconcile rocs launcher and overlay projection`
+- Reconciled: workspace-core ROCS launcher path, GitLab ROCS validate include, AK work-item projection, runtime trace overlay plan, ontology manifest/dist refresh, removal of old `scripts/ak.sh`/`scripts/cargo-operator.sh`, and removal of repo-local vendored `tools/rocs-cli`.
+- Backup stash dropped: `pre-integration-preserve-dirty-state-dep-viz-20260430`
+
+Validation after commit:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-viz
+bash scripts/ci/full.sh
+npm test
+git diff --check
+git status --short --branch
+```
+
+Result:
+
+```text
+rocs validate: OK
+83 pass / 0 fail
+## main
+```
+
+### runtime-trace-insights
+
+- Commit: `2aac51a chore: reconcile rocs launcher and boundary projection`
+- Reconciled: workspace-core ROCS launcher path, GitLab ROCS validate include, AK work-item projection, runtime trace consumer boundary plan, ontology manifest/dist refresh, direction workflow guidance, `.gitignore`, and removal of repo-local vendored `tools/rocs-cli` plus stale `docs/dev/status.md`.
+- Backup stash dropped: `pre-integration-preserve-dirty-state-runtime-trace-insights-20260430`
+
+Validation after commit:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/runtime-trace-insights
+bash scripts/ci/full.sh
+npm test
+git diff --check
+git status --short --branch
+```
+
+Result:
+
+```text
+rocs validate: OK
+runtime-record-tests: ok (3 files)
+## main
+```
+
+Final reconciliation state:
+
+- all three target repos have clean `main` worktrees;
+- all three reconciliation backup stashes were dropped after their contents were committed;
+- ROCS local execution receipt files are ignored so validation does not leave noisy untracked receipt artifacts;
+- no push was performed.
 
 ## Candidate 1: dep-diet Gardener static-evidence adapter
 
