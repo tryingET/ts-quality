@@ -1,0 +1,20 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "9d8d840b1a06534030ef66c52e979612f8f1c971"
+created_at: "2026-05-03T18:54:34Z"
+intent: "Fix adoption note wording that violated the repo lint denylist"
+files:
+  - "docs/adoption/2026-05-03-open-pencil-dependency-intelligence-pilot.md"
+validation:
+  fast_gate:
+    command: "npm run lint --silent && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict && git diff --check"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 1
+  total: 1
+  rationale: "Corrective docs-only commit after full gate exposed a lint denylist match"
