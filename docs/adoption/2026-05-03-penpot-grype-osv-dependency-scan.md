@@ -49,38 +49,47 @@ The first run detected JavaScript/PNPM and Rust/Cargo modules only. That exposed
 7c4b1b5 feat: scan clojure deps manifests
 ```
 
-Dep-viz now adds Clojure `deps.edn` direct manifest-coordinate support:
+Dep-viz first added Clojure `deps.edn` direct manifest-coordinate support, then completed AK `2126`:
+
+```text
+3e88394 feat: resolve clojure classpaths
+```
+
+The Clojure path now:
 
 - detects `deps.edn` modules;
-- extracts `:mvn/version` coordinates;
-- emits generated CycloneDX SBOMs with Maven PURLs;
+- prefers tools.deps classpath resolution via `clojure -Spath`;
+- converts resolved Maven repository JARs into Maven PURLs;
+- falls back to direct `:mvn/version` manifest coordinates when the resolver is unavailable;
+- emits generated CycloneDX SBOMs;
 - runs Grype and optional OSV against those generated SBOMs;
-- records Clojure modules with `ecosystem: "clojure"` in depmodel.
+- records Clojure modules with `ecosystem: "clojure"` in depmodel;
+- records the mode in `provenance.tools["clojure-deps"]`.
 
-Boundary: this is direct manifest-coordinate evidence, including `:mvn/version` entries in aliases/extra-deps. It is **not** full tools.deps transitive classpath resolution.
+Boundary: this is resolver-backed default tools.deps classpath evidence for each `deps.edn` module. Alias selection remains a future UX/design slice.
 
 ## Command
 
 ```bash
 cd /home/tryinget/ai-society/softwareco/owned/dep-viz
-rm -rf /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure
+rm -rf /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-resolved
 mkdir -p /tmp/penpot-depintel-pilot
 go run ./cmd/depviz scan /home/tryinget/ai-society/softwareco/contrib/penpot \
-  --out /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure \
+  --out /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-resolved \
   --container \
   --vuln-providers grype,osv \
   --format json \
-  > /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-stdout.json \
-  2> /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-stderr.log
+  > /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-resolved-stdout.json \
+  2> /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-resolved-stderr.log
 ```
 
 Artifacts:
 
 ```text
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure/model/depmodel.v1.json
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure/report/index.html
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-stdout.json
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-stderr.log
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-resolved/model/depmodel.v1.json
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-resolved/report/index.html
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-resolved-stdout.json
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-resolved-stderr.log
 ```
 
 ## Scan result
@@ -89,10 +98,10 @@ The scan completed and published artifacts. The policy threshold was `high`, and
 
 ```json
 {
-  "sbomCount": 19,
-  "scanCount": 19,
-  "moduleCount": 19,
-  "vulnerabilityCount": 264,
+  "sbomCount": 20,
+  "scanCount": 20,
+  "moduleCount": 20,
+  "vulnerabilityCount": 325,
   "policy": {
     "effectiveThreshold": "high",
     "violation": true
@@ -106,13 +115,13 @@ The `go run` wrapper surfaced a non-zero command status because dep-viz returned
 
 ```json
 {
-  "modules": 19,
-  "packages": 6676,
-  "edges": 14870,
-  "introducerPaths": 6676,
+  "modules": 20,
+  "packages": 7226,
+  "edges": 15420,
+  "introducerPaths": 7226,
   "ecosystems": {
     "js": 12,
-    "clojure": 5,
+    "clojure": 6,
     "rust": 2
   }
 }
@@ -121,6 +130,7 @@ The `go run` wrapper surfaced a non-zero command status because dep-viz returned
 Detected modules:
 
 ```text
+clojure:.                                deps.edn
 clojure:backend                          backend/deps.edn
 clojure:common                           common/deps.edn
 clojure:exporter                         exporter/deps.edn
@@ -148,6 +158,7 @@ Tools recorded by the depmodel:
 
 ```json
 {
+  "clojure-deps": "tools-deps-classpath",
   "grype": "0.108.0",
   "osv-scanner": "ghcr.io/google/osv-scanner@sha256:385ff9dd9d50a573766fc226f24da1d61cd5843542ff7e04c563561bbd918e30"
 }
@@ -158,13 +169,13 @@ Provider breakdown:
 ```json
 {
   "sources": {
-    "multi-provider": 234,
-    "grype": 15,
+    "multi-provider": 293,
+    "grype": 17,
     "osv": 15
   },
   "providerCounts": {
-    "1": 30,
-    "2": 234
+    "1": 32,
+    "2": 293
   }
 }
 ```
@@ -174,9 +185,9 @@ Severity breakdown:
 ```json
 {
   "critical": 2,
-  "high": 153,
-  "medium": 102,
-  "low": 7
+  "high": 169,
+  "medium": 143,
+  "low": 11
 }
 ```
 
@@ -191,7 +202,7 @@ Findings by module, top counts:
 6   js:backend
 6   js:common
 6   js:library
-5   clojure modules combined
+66  clojure modules combined
 2   js:frontend/packages/draft-js
 2   js:render-wasm
 2   rust:render-wasm
@@ -221,15 +232,15 @@ These examples are evidence for vulnerability triage. They are not direct remedi
 
 This Penpot run proves that the current dep-viz corridor can run a real second vulnerability provider on a larger polyglot repo and materially populate provider-correlation metadata:
 
-- 264 primary findings across supported JS/Rust modules plus direct Clojure `deps.edn` manifest-coordinate modules.
-- 234 findings corroborated by both Grype and OSV.
-- 30 provider-singleton findings (`grype`-only or `osv`-only).
-- 5 Clojure direct-coordinate findings, all corroborated by both providers.
+- 325 primary findings across supported JS/Rust modules plus resolver-backed Clojure `deps.edn` modules.
+- 293 findings corroborated by both Grype and OSV.
+- 32 provider-singleton findings (`grype`-only or `osv`-only).
+- 66 Clojure classpath findings, 64 corroborated by both providers and 2 Grype-only.
 - Policy violation at the default/effective `high` threshold.
 
 The strong positive signal is that provider correlation is no longer just schema readiness; it is populated by a real second-provider run.
 
-The hard boundary is equally important: this is still not a complete Penpot ecosystem audit because the Clojure path does not yet resolve the full tools.deps transitive classpath. A future slice should add resolver-backed Clojure SBOM support before making whole-repo Clojure transitive dependency claims.
+The hard boundary is equally important: this is now resolver-backed default tools.deps classpath evidence, not all possible alias profiles. A future slice should add explicit alias/profile selection before making claims about every dev/test/build Clojure classpath.
 
 ## Cleanup
 
