@@ -400,7 +400,82 @@ The follow-up dep-viz slice completed AK `2092`:
 
 Dep-viz now has the depmodel/report semantics needed for multi-provider correlation: same-module/package/vulnerability findings from more than one provider merge into one primary vulnerability with `source: "multi-provider"`, highest normalized severity, combined traceability IDs, and `vulnerabilities[].correlation` metadata (`correlationKey`, `providerCount`, `providers`, `equivalentFindingIds`, and `providerFindings`). The report table surfaces provider counts.
 
-This is correlation readiness and contract support. It still does **not** mean the OpenPencil pilot has been checked by multiple providers; an actual OSV/npm-audit/GitHub Advisory/Snyk provider run would be separate evidence.
+This was initially correlation readiness and contract support only. The follow-up dep-viz slice completed AK `2114` and added the first actual second-provider scan path:
+
+```text
+b94a37e feat: add osv vulnerability provider
+```
+
+`depviz scan` now accepts:
+
+```bash
+--vuln-providers grype,osv
+```
+
+Semantics:
+
+- Grype remains the primary scan provider.
+- OSV-Scanner runs additively against the same per-module SBOMs.
+- OSV advisory groups are normalized to one provider finding per alias group.
+- GHSA/CVE/RUSTSEC identifiers are preferred in that order for cross-provider correlation.
+- Matching Grype + OSV findings merge into one primary vulnerability with `source: "multi-provider"` and provider traceability in `vulnerabilities[].correlation`.
+- OSV-only findings remain `source: "osv"` and are not falsely represented as corroborated by Grype.
+
+OpenPencil re-run with Grype + OSV:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-viz
+rm -rf /tmp/open-pencil-depintel-pilot/depviz-scan-grype-osv
+go run ./cmd/depviz scan /home/tryinget/ai-society/softwareco/contrib/open-pencil \
+  --out /tmp/open-pencil-depintel-pilot/depviz-scan-grype-osv \
+  --container \
+  --vuln-providers grype,osv \
+  --format json
+```
+
+Result:
+
+```json
+{
+  "sbomCount": 2,
+  "scanCount": 2,
+  "moduleCount": 2,
+  "vulnerabilityCount": 20,
+  "policy": {
+    "effectiveThreshold": "high",
+    "violation": false
+  }
+}
+```
+
+Provider breakdown in the generated depmodel:
+
+```json
+{
+  "sources": {
+    "multi-provider": 3,
+    "osv": 17
+  },
+  "providerCounts": {
+    "1": 17,
+    "2": 3
+  },
+  "tools": {
+    "grype": "0.108.0",
+    "osv-scanner": "ghcr.io/google/osv-scanner@sha256:385ff9dd9d50a573766fc226f24da1d61cd5843542ff7e04c563561bbd918e30"
+  }
+}
+```
+
+The three previously observed Grype findings are now corroborated by OSV and emitted as `source: "multi-provider"` under `rust:desktop`:
+
+```text
+GHSA-wrw7-89jp-8q8g  pkg:cargo/glib@0.18.5  medium  providers=grype,osv
+GHSA-cq8v-f236-94qc  pkg:cargo/rand@0.7.3   low     providers=grype,osv
+GHSA-cq8v-f236-94qc  pkg:cargo/rand@0.8.5   low     providers=grype,osv
+```
+
+The additional 17 OSV-only findings are RustSec/OSV advisory evidence, many with unknown normalized severity. They are real second-provider findings, but they are **not** Grype-corroborated. The high-threshold policy still did not violate.
 
 ## Verification
 
@@ -440,7 +515,7 @@ Result:
 ```text
 go targeted tests: pass
 go test ./...: pass
-npm test: 90 pass / 0 fail
+npm test: 91 pass / 0 fail
 rocs validate: OK
 docs strict: pass
 git diff --check: pass
@@ -461,4 +536,4 @@ This pilot proves the dependency-intelligence corridor can now walk OpenPencil's
 
 It does **not** prove runtime coverage because no OpenPencil command was executed with runtime package observations. The `declared-unobserved` count is therefore expected and means "not observed by this zero-observation runtime bundle," not "safe to remove."
 
-It also does **not** prove multi-provider vulnerability coverage. Current OpenPencil security evidence is Grype/container-backed. Dep-viz now supports multi-provider correlation semantics, but OSV/npm-audit/GitHub Advisory/Snyk-style provider execution would need its own run and evidence packet before any multi-provider coverage claim.
+It now proves one concrete multi-provider vulnerability path for OpenPencil: Grype plus OSV-Scanner, both container-backed, with three corroborated Grype+OSV findings and 17 OSV-only findings. It does **not** prove npm-audit/GitHub Advisory/Snyk coverage, and OSV-only findings should not be described as Grype-corroborated.
