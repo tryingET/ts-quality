@@ -325,7 +325,7 @@ depdiet analyze . \
   --out-depmodel depmodel.json
 
 # inspect one final human-facing output
-depviz report --model depmodel.json --out dependency-intelligence.html
+depviz report --model depmodel.json --out out/depviz/report --open
 ```
 
 And the resulting dep-viz report clearly shows:
@@ -345,4 +345,4 @@ This can be framed as:
 Dependency Intelligence Report
 ```
 
-with dep-viz as the report surface and dep-diet as the evidence-fusion producer.
+with dep-viz as the report surface and dep-diet as the evidence-fusion producer. The shipped CLI shape is a full report directory plus local serve path, not a one-file HTML output.
