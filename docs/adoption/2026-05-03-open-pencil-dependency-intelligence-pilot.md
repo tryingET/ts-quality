@@ -122,7 +122,7 @@ trystero
 
 ### Runtime bundle input
 
-No install/runtime command was run for this pilot. To avoid falsely claiming runtime package observations, the runtime bundle was a zero-observation placeholder with an explicit diagnostic:
+No install/runtime command was run for this pilot. To avoid falsely claiming runtime package observations, the runtime bundle was a zero-observation input with an explicit diagnostic:
 
 ```text
 OpenPencil pilot used static Gardener evidence plus bun.lock full-tree enrichment only; no runtime package observations were claimed.
