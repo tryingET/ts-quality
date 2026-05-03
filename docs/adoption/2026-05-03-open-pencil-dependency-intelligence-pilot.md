@@ -390,7 +390,17 @@ Result:
 
 Each primary finding is now attributed to `rust:desktop` and preserves a secondary parent attribution for `js:.` with parent finding/reference/provenance IDs. This is vulnerability-count hygiene and traceability preservation only; package nodes, dependency edges, and introducer paths remain uncollapsed.
 
-This scan used Grype's vulnerability database. It was not an independent multi-provider scan across OSV/npm-audit/GitHub Advisory/Snyk. Multi-provider vulnerability correlation remains bound into AK as task `2092` in `dep-viz`.
+This scan used Grype's vulnerability database. It was not an independent multi-provider scan across OSV/npm-audit/GitHub Advisory/Snyk.
+
+The follow-up dep-viz slice completed AK `2092`:
+
+```text
+87800d5 feat: correlate vulnerability providers
+```
+
+Dep-viz now has the depmodel/report semantics needed for multi-provider correlation: same-module/package/vulnerability findings from more than one provider merge into one primary vulnerability with `source: "multi-provider"`, highest normalized severity, combined traceability IDs, and `vulnerabilities[].correlation` metadata (`correlationKey`, `providerCount`, `providers`, `equivalentFindingIds`, and `providerFindings`). The report table surfaces provider counts.
+
+This is correlation readiness and contract support. It still does **not** mean the OpenPencil pilot has been checked by multiple providers; an actual OSV/npm-audit/GitHub Advisory/Snyk provider run would be separate evidence.
 
 ## Verification
 
@@ -415,6 +425,7 @@ git diff --check: pass
 ### dep-viz
 
 ```bash
+go test ./internal/adapters/grype ./internal/model ./internal/output
 go test ./cmd/depviz ./internal/model ./internal/output
 node --test tests/report-vulnerabilities.test.mjs tests/report-model-loader.test.mjs
 go test ./...
@@ -450,4 +461,4 @@ This pilot proves the dependency-intelligence corridor can now walk OpenPencil's
 
 It does **not** prove runtime coverage because no OpenPencil command was executed with runtime package observations. The `declared-unobserved` count is therefore expected and means "not observed by this zero-observation runtime bundle," not "safe to remove."
 
-It also does **not** prove multi-provider vulnerability coverage. Current security evidence is Grype/container-backed; OSV/npm-audit/GitHub Advisory/Snyk-style provider correlation is future work under AK `2092`.
+It also does **not** prove multi-provider vulnerability coverage. Current OpenPencil security evidence is Grype/container-backed. Dep-viz now supports multi-provider correlation semantics, but OSV/npm-audit/GitHub Advisory/Snyk-style provider execution would need its own run and evidence packet before any multi-provider coverage claim.
