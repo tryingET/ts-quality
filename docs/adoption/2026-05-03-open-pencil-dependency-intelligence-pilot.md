@@ -279,7 +279,25 @@ semver: 6.3.1, 7.7.4
 @vueuse/core: 12.8.2, 14.2.1
 ```
 
-This is evidence of duplicate-version pressure, not a safe-dedupe recommendation. A first-class product surface for duplicate-version evidence was bound into AK as task `2091` in `dep-diet`.
+This is evidence of version-divergence pressure, not a safe-dedupe recommendation. The follow-up `dep-diet` slice completed AK `2091` and made this first-class inventory evidence:
+
+```text
+6607567 feat: surface dependency version inventory
+```
+
+The generated depmodel now carries `metadata.evidenceCorridor.dependencyInventory` with same-name version groups, lockfile occurrence counts, incoming edge counts, and an explicit inventory-only authority note. Re-running the OpenPencil depmodel after that slice produced:
+
+```json
+{
+  "packageNameCount": 1208,
+  "packageVersionNodeCount": 1299,
+  "lockfileOccurrenceCount": 1402,
+  "versionDivergentPackageNameCount": 86,
+  "repeatedPackageVersionOccurrenceCount": 27
+}
+```
+
+This keeps package/version nodes and graph edges visible. It does not collapse packages, imply deduplication, or grant prune/removal authority.
 
 ### Vulnerability scan
 
@@ -333,9 +351,46 @@ GHSA-cq8v-f236-94qc  pkg:cargo/rand@0.7.3   low     fixed in 0.8.6
 GHSA-cq8v-f236-94qc  pkg:cargo/rand@0.8.5   low     fixed in 0.8.6
 ```
 
-The same Cargo findings appeared under both `js:.` and `rust:desktop` in the scan model because the root JS module SBOM is produced from the repository root and includes nested Rust desktop artifacts. This is a dep-viz scan attribution/deduplication concern, not six distinct vulnerable packages. The nested-module attribution cleanup was bound into AK as task `2093` in `dep-viz`.
+The same Cargo findings appeared under both `js:.` and `rust:desktop` in the scan model because the root JS module SBOM is produced from the repository root and includes nested Rust desktop artifacts. This was a dep-viz scan attribution concern, not six distinct vulnerable packages.
 
-This scan used Grype's vulnerability database. It was not an independent multi-provider scan across OSV/npm-audit/GitHub Advisory/Snyk. Multi-provider vulnerability correlation was bound into AK as task `2092` in `dep-viz`.
+The follow-up dep-viz slices completed AK `2093` and the final semantic-model task `2103`:
+
+```text
+608b71d fix: prefer nested vulnerability attribution
+e97b21a feat: preserve nested vulnerability attribution
+```
+
+After those slices, dep-viz keeps the primary vulnerability count on the narrowest nested module and preserves the broader parent observation in `vulnerabilities[].attribution.secondaryModuleAttributions`.
+
+Re-run command:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-viz
+go run ./cmd/depviz scan \
+  /home/tryinget/ai-society/softwareco/contrib/open-pencil \
+  --out /tmp/open-pencil-depintel-pilot/depviz-scan-semantic-attribution \
+  --container \
+  --format json
+```
+
+Result:
+
+```json
+{
+  "sbomCount": 2,
+  "scanCount": 2,
+  "moduleCount": 2,
+  "vulnerabilityCount": 3,
+  "policy": {
+    "effectiveThreshold": "high",
+    "violation": false
+  }
+}
+```
+
+Each primary finding is now attributed to `rust:desktop` and preserves a secondary parent attribution for `js:.` with parent finding/reference/provenance IDs. This is vulnerability-count hygiene and traceability preservation only; package nodes, dependency edges, and introducer paths remain uncollapsed.
+
+This scan used Grype's vulnerability database. It was not an independent multi-provider scan across OSV/npm-audit/GitHub Advisory/Snyk. Multi-provider vulnerability correlation remains bound into AK as task `2092` in `dep-viz`.
 
 ## Verification
 
@@ -360,9 +415,12 @@ git diff --check: pass
 ### dep-viz
 
 ```bash
-go test ./internal/detect ./internal/cli ./cmd/depviz
+go test ./cmd/depviz ./internal/model ./internal/output
+node --test tests/report-vulnerabilities.test.mjs tests/report-model-loader.test.mjs
+go test ./...
 npm test
 bash scripts/ci/full.sh
+node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict
 git diff --check
 ```
 
@@ -370,8 +428,10 @@ Result:
 
 ```text
 go targeted tests: pass
-npm test: 88 pass / 0 fail
+go test ./...: pass
+npm test: 90 pass / 0 fail
 rocs validate: OK
+docs strict: pass
 git diff --check: pass
 ```
 
@@ -386,6 +446,8 @@ Both files exist.
 
 ## Interpretation
 
-This pilot proves the dependency-intelligence corridor can now walk OpenPencil's `bun.lock` dependency tree to leaves and render it through dep-viz.
+This pilot proves the dependency-intelligence corridor can now walk OpenPencil's `bun.lock` dependency tree to leaves, render it through dep-viz, make same-name version divergence visible as inventory context, and avoid inflated nested-module vulnerability counts while preserving parent-scan attribution.
 
 It does **not** prove runtime coverage because no OpenPencil command was executed with runtime package observations. The `declared-unobserved` count is therefore expected and means "not observed by this zero-observation runtime bundle," not "safe to remove."
+
+It also does **not** prove multi-provider vulnerability coverage. Current security evidence is Grype/container-backed; OSV/npm-audit/GitHub Advisory/Snyk-style provider correlation is future work under AK `2092`.
