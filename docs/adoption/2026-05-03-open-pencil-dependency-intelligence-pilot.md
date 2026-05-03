@@ -250,6 +250,93 @@ Example deep transitive paths proving the tree is walked past direct dependencie
 ]
 ```
 
+## Follow-up duplicate and vulnerability checks
+
+After the initial inventory run, two follow-up checks were performed.
+
+### Duplicate / doublet audit
+
+A raw `bun.lock` audit grouped entries by actual package name and version. Result:
+
+```json
+{
+  "packageEntries": 1397,
+  "actualNames": 1202,
+  "multiVersionCount": 86,
+  "multiInstanceSameVersionCount": 6
+}
+```
+
+Top multi-version examples:
+
+```text
+commander: 2.20.3, 4.1.1, 5.1.0, 8.3.0
+@libp2p/interface: 2.10.4, 2.11.0, 3.1.0
+estree-walker: 1.0.1, 2.0.2, 3.0.3
+lru-cache: 5.1.1, 10.4.3, 11.2.7
+@babel/parser: 7.29.2, 8.0.0-rc.3
+semver: 6.3.1, 7.7.4
+@vueuse/core: 12.8.2, 14.2.1
+```
+
+This is evidence of duplicate-version pressure, not a safe-dedupe recommendation. A first-class product surface for duplicate-version evidence was bound into AK as task `2091` in `dep-diet`.
+
+### Vulnerability scan
+
+The first dep-viz scan only detected the Rust `desktop` module because dep-viz did not recognize `bun.lock` as a JS module. That bug was fixed in dep-viz:
+
+```text
+6a3617f fix: detect bun lockfiles as js modules
+```
+
+After that fix, the container-backed dep-viz scan ran:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-viz
+go run ./cmd/depviz scan \
+  /home/tryinget/ai-society/softwareco/contrib/open-pencil \
+  --container \
+  --format json \
+  --include-metadata \
+  --out /tmp/open-pencil-depintel-pilot/depviz-scan-with-bun
+```
+
+Result:
+
+```json
+{
+  "sbomCount": 2,
+  "scanCount": 2,
+  "moduleCount": 2,
+  "vulnerabilityCount": 6,
+  "policy": {
+    "effectiveThreshold": "high",
+    "violation": false
+  }
+}
+```
+
+Detected modules:
+
+```json
+[
+  { "moduleId": "js:.", "ecosystem": "js", "lockFiles": ["bun.lock"] },
+  { "moduleId": "rust:desktop", "ecosystem": "rust", "lockFiles": ["desktop/Cargo.lock"] }
+]
+```
+
+Observed Grype findings:
+
+```text
+GHSA-wrw7-89jp-8q8g  pkg:cargo/glib@0.18.5  medium  fixed in 0.20.0
+GHSA-cq8v-f236-94qc  pkg:cargo/rand@0.7.3   low     fixed in 0.8.6
+GHSA-cq8v-f236-94qc  pkg:cargo/rand@0.8.5   low     fixed in 0.8.6
+```
+
+The same Cargo findings appeared under both `js:.` and `rust:desktop` in the scan model because the root JS module SBOM is produced from the repository root and includes nested Rust desktop artifacts. This is a dep-viz scan attribution/deduplication concern, not six distinct vulnerable packages. The nested-module attribution cleanup was bound into AK as task `2093` in `dep-viz`.
+
+This scan used Grype's vulnerability database. It was not an independent multi-provider scan across OSV/npm-audit/GitHub Advisory/Snyk. Multi-provider vulnerability correlation was bound into AK as task `2092` in `dep-viz`.
+
 ## Verification
 
 ### dep-diet
@@ -266,6 +353,24 @@ Result:
 ```text
 13 pass / 0 fail
 ci-targeted: ok (29 files)
+rocs validate: OK
+git diff --check: pass
+```
+
+### dep-viz
+
+```bash
+go test ./internal/detect ./internal/cli ./cmd/depviz
+npm test
+bash scripts/ci/full.sh
+git diff --check
+```
+
+Result:
+
+```text
+go targeted tests: pass
+npm test: 88 pass / 0 fail
 rocs validate: OK
 git diff --check: pass
 ```
