@@ -170,6 +170,14 @@ Dep-redteam then enriched advisory intelligence from existing depmodel/provider 
 
 Passive/design packets now carry patched versions, CVE ids, CVSS scores/vectors, reference URLs, and explicit known unknowns when the current depmodel does not represent affected version ranges, CWE identifiers, or affected behavior/function details. No external advisory fetching was added; enrichment uses already captured depmodel evidence only.
 
+Dep-redteam then adopted compact real dep-viz corridor fixtures:
+
+```text
+1e437b0 test: adopt real depviz corridor fixtures
+```
+
+The new fixtures under `tests/fixtures/depviz_corridor/` are derived from the Penpot dep-viz Grype+OSV pilot. They pin one handoff, one passive advisory result with enriched intelligence, one local-lab plan/design path, and one blocked-case path where scanner evidence remains below design-ready validation. This makes future schema or validator drift visible without executing exploit code or sending a disclosure.
+
 ## Command
 
 ```bash
