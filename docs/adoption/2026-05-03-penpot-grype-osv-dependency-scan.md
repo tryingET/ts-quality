@@ -114,6 +114,14 @@ Dep-viz then completed the handoff generation slice:
 
 `depviz handoff exploitability` now generates local-only `depviz.exploitability-validation-handoff.v1` packets for downstream validation repos such as `dep-redteam`. The command reads an existing depmodel, summarizes the target `SECURITY.md`, preserves tool/provider/cluster evidence, requires an operator-confirmed authorization scope, and does not contact maintainers.
 
+Dep-redteam then completed the first validation-consumer slice:
+
+```text
+b51bcf6 feat: add passive validation contracts
+```
+
+`dep-redteam` now carries machine-readable JSON schema contracts for both the dep-viz handoff packet and the dep-redteam result packet, plus a passive validation command that can move results beyond `not_started` without claiming exploitability.
+
 ## Command
 
 ```bash
@@ -358,27 +366,40 @@ Handoff summary:
 }
 ```
 
-`dep-redteam` consumed the packet successfully:
+`dep-redteam` consumed the packet successfully and first produced the planned `not_started` result:
 
 ```bash
 cd /home/tryinget/ai-society/softwareco/owned/dep-redteam
 uv run dep-redteam validate-handoff /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json --json
 uv run dep-redteam plan /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json \
   --out /tmp/penpot-depintel-pilot/depviz-handoff-triage/validation-result.json
+```
+
+After the passive-validation slice, the same handoff was checked without executing target code:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-redteam
+uv run dep-redteam validate-passive /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json \
+  --target /home/tryinget/ai-society/softwareco/contrib/penpot \
+  --out /tmp/penpot-depintel-pilot/depviz-handoff-triage/validation-result.passive.json
+uv run dep-redteam validate-result /tmp/penpot-depintel-pilot/depviz-handoff-triage/validation-result.passive.json --json
 uv run dep-redteam draft /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json \
-  --result /tmp/penpot-depintel-pilot/depviz-handoff-triage/validation-result.json \
+  --result /tmp/penpot-depintel-pilot/depviz-handoff-triage/validation-result.passive.json \
   --out /tmp/penpot-depintel-pilot/depviz-handoff-triage/disclosure-draft.md
 ```
 
-Validation result boundary:
+Passive validation result boundary:
 
 ```text
-status: not_started
-confidence: unknown
+10 dependency_present_only
+0  reachable_unproven
+0  safe_reproducer_confirmed
 disclosure: local draft only, not sent automatically
 ```
 
-This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff and local disclosure draft. It still does not prove exploitability; reachability and safe reproducer validation remain future `dep-redteam` work.
+Interpretation: the top ten Penpot triage clusters were present in the depmodel, but passive source-reference inspection did not find code-reference evidence for those package names in the bounded local checkout scan. This is stronger than `not_started`, but still not exploitability proof and still not a disclosure recommendation.
+
+This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, and local disclosure draft. It still does not prove exploitability; safe reproducer validation remains future `dep-redteam` work.
 
 ## Cleanup
 
