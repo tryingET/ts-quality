@@ -122,6 +122,14 @@ b51bcf6 feat: add passive validation contracts
 
 `dep-redteam` now carries machine-readable JSON schema contracts for both the dep-viz handoff packet and the dep-redteam result packet, plus a passive validation command that can move results beyond `not_started` without claiming exploitability.
 
+Dep-redteam then enriched passive validation evidence:
+
+```text
+41e89a0 feat: enrich passive validation evidence
+```
+
+Passive result packets now include advisory evidence, affected-component package-name hints, dependency-role hints, introducer path samples, future safe-reproducer needs, and richer draft rendering. Dev/tooling role hints are seeded from `~/ai-society/core/tech-stack-core` lane quality/testing surfaces. The matching is token-aware so short tool names such as `ty` do not accidentally classify unrelated package names such as `netty` as dev tooling.
+
 ## Command
 
 ```bash
@@ -388,18 +396,24 @@ uv run dep-redteam draft /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploi
   --out /tmp/penpot-depintel-pilot/depviz-handoff-triage/disclosure-draft.md
 ```
 
-Passive validation result boundary:
+Passive validation result boundary after enrichment:
 
 ```text
 10 dependency_present_only
 0  reachable_unproven
 0  safe_reproducer_confirmed
+
+role hints:
+5 runtime_or_buildtime_unknown
+5 docs_test_likely
+0 dev_tooling_likely
+
 disclosure: local draft only, not sent automatically
 ```
 
-Interpretation: the top ten Penpot triage clusters were present in the depmodel, but passive source-reference inspection did not find code-reference evidence for those package names in the bounded local checkout scan. This is stronger than `not_started`, but still not exploitability proof and still not a disclosure recommendation.
+Interpretation: the top ten Penpot triage clusters were present in the depmodel, but passive source-reference inspection did not find code-reference evidence for those package names in the bounded local checkout scan. Five clusters were associated with docs/test-like evidence, while the Undertow/Netty/basic-ftp clusters remained runtime/buildtime unknown rather than falsely classified as dev tooling. This is stronger than `not_started`, but still not exploitability proof and still not a disclosure recommendation.
 
-This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, and local disclosure draft. It still does not prove exploitability; safe reproducer validation remains future `dep-redteam` work.
+This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, advisory/role enrichment, and local disclosure draft. It still does not prove exploitability; safe reproducer validation remains future `dep-redteam` work.
 
 ## Cleanup
 
