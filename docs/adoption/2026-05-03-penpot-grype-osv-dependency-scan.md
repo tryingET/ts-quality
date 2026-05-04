@@ -138,6 +138,14 @@ Dep-redteam then added a non-executing local-lab planning contract:
 
 `depredteam.local-lab-plan.v1` and the `dep-redteam plan-local-lab` CLI describe approval gates, blocked/readiness states, required preconditions, validation questions, and candidate evidence artifacts. The plan intentionally keeps `executionAllowed = false` and `approvalRequired = true` for every entry; it does not run payloads or authorize active validation.
 
+Dep-redteam then added manual local-lab evidence capture:
+
+```text
+51a4433 feat: capture local lab evidence
+```
+
+`depredteam.local-lab-evidence.v1` records manually supplied evidence from a separate approved local run. The CLI can validate evidence packets and apply them to result packets, but it records `executionBoundary.executedByDepRedteam = false`; dep-redteam still does not run validation payloads itself.
+
 ## Command
 
 ```bash
@@ -439,7 +447,13 @@ defaultExecutionAllowed: false
 10 blocked_pending_reachability_evidence
 ```
 
-This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, advisory/role enrichment, non-executing local-lab planning, and local disclosure draft. It still does not prove exploitability; safe reproducer execution remains future human-approved `dep-redteam` work.
+The Penpot local-lab plan stayed blocked, so no Penpot local-lab evidence packet was recorded:
+
+```text
+10 blocked_pending_reachability_evidence
+```
+
+This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, advisory/role enrichment, non-executing local-lab planning, manual evidence-capture contracts, and local disclosure draft. It still does not prove exploitability; safe reproducer execution remains future human-approved `dep-redteam` work.
 
 ## Cleanup
 
