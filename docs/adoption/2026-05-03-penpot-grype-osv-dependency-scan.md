@@ -110,25 +110,25 @@ The scan output now includes compact `triageClusters` grouped by `(packageId, vu
 
 ```bash
 cd /home/tryinget/ai-society/softwareco/owned/dep-viz
-rm -rf /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases
+rm -rf /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage
 mkdir -p /tmp/penpot-depintel-pilot
 go run ./cmd/depviz scan /home/tryinget/ai-society/softwareco/contrib/penpot \
-  --out /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases \
+  --out /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage \
   --container \
   --vuln-providers grype,osv \
   --clojure-alias-map 'backend=dev,test;common=dev,test,shadow-cljs;frontend=dev,shadow-cljs;exporter=dev,shadow-cljs;library=dev,shadow-cljs;.=' \
   --format json \
-  > /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-stdout.json \
-  2> /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-stderr.log
+  > /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage-stdout.json \
+  2> /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage-stderr.log
 ```
 
 Artifacts:
 
 ```text
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases/model/depmodel.v1.json
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases/report/index.html
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-stdout.json
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-stderr.log
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage/model/depmodel.v1.json
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage/report/index.html
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage-stdout.json
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage-stderr.log
 ```
 
 ## Scan result
@@ -148,7 +148,13 @@ The scan completed and published artifacts. The policy threshold was `high`, and
 }
 ```
 
-The `go run` wrapper surfaced a non-zero command status because dep-viz returned its policy-violation path. This is expected for a high-threshold policy violation and does not mean artifacts failed to publish.
+The `go run` wrapper surfaced a non-zero command status because dep-viz returned its policy-violation path. This is expected for a high-threshold policy violation and does not mean artifacts failed to publish. The run-summary telemetry also reported the final module count truthfully:
+
+```json
+"signals": {
+  "moduleCount": 21
+}
+```
 
 ## Module inventory
 
@@ -275,6 +281,25 @@ medium    clojure:common   pkg:maven/org.apache.logging.log4j/log4j-core@2.25.3 
 ```
 
 These examples are evidence for vulnerability triage. They are not direct remediation instructions by themselves; remediation still needs repo-owner review, version constraints, and compatibility testing.
+
+## Triage clusters
+
+The updated scan stdout includes compact `triageClusters`. Top clusters from this Penpot run:
+
+```text
+1. critical modules=4 findings=4 providers=grype,osv pkg:maven/io.undertow/undertow-core@2.3.10.Final GHSA-j382-5jj3-vw4j clojure:common, clojure:exporter, clojure:frontend, clojure:library
+2. critical modules=1 findings=1 providers=grype,osv pkg:npm/basic-ftp@5.1.0 GHSA-5rq4-664w-9x2c js:plugins
+3. critical modules=1 findings=1 providers=grype,osv pkg:npm/handlebars@4.7.8 GHSA-2w6w-674q-4c4q js:docs
+4. high modules=6 findings=6 providers=grype,osv pkg:npm/minimatch@3.1.2 GHSA-23c5-xmqv-rm74 js:backend, js:common, js:docs, js:frontend, js:library, js:plugins
+5. high modules=6 findings=6 providers=grype,osv pkg:npm/minimatch@3.1.2 GHSA-3ppc-4f35-3m26 js:backend, js:common, js:docs, js:frontend, js:library, js:plugins
+6. high modules=6 findings=6 providers=grype,osv pkg:npm/minimatch@3.1.2 GHSA-7r86-cg39-jmmj js:backend, js:common, js:docs, js:frontend, js:library, js:plugins
+7. high modules=6 findings=6 providers=grype,osv pkg:npm/picomatch@2.3.1 GHSA-c2c7-rcm5-vvqj js:backend, js:common, js:docs, js:frontend, js:library, js:plugins
+8. high modules=4 findings=4 providers=grype,osv pkg:maven/io.netty/netty-codec-http@4.1.117.Final GHSA-pwqr-wmgm-9rr8 clojure:common, clojure:exporter, clojure:frontend, clojure:library
+9. high modules=4 findings=4 providers=grype,osv pkg:maven/io.netty/netty-handler@4.1.117.Final GHSA-4g8c-wm8x-jfhw clojure:common, clojure:exporter, clojure:frontend, clojure:library
+10. high modules=4 findings=4 providers=grype,osv pkg:maven/io.undertow/undertow-core@2.3.10.Final GHSA-33hj-rcmx-86mv clojure:common, clojure:exporter, clojure:frontend, clojure:library
+```
+
+Interpretation boundary: clusters identify high-impact triage review targets by severity, affected-module count, provider corroboration, and finding count. They do not decide upgrades, removals, exploitability, or remediation order without Penpot owner review.
 
 ## Interpretation
 
