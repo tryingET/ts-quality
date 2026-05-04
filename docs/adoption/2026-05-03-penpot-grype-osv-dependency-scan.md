@@ -162,6 +162,14 @@ Dep-redteam then added advisory-specific local-lab design packets:
 
 `depredteam.local-lab-design.v1` and the `dep-redteam design-local-lab` CLI define affected behavior, advisory preconditions, local setup assumptions, synthetic input design, expected safe observations, stop conditions, and required evidence artifacts for one selected advisory. Design packets keep `executionAllowed = false`, require future approval before execution, and can only be created for entries already marked `ready_for_local_lab_design`.
 
+Dep-redteam then enriched advisory intelligence from existing depmodel/provider metadata:
+
+```text
+64a13f7 feat: enrich advisory intelligence
+```
+
+Passive/design packets now carry patched versions, CVE ids, CVSS scores/vectors, reference URLs, and explicit known unknowns when the current depmodel does not represent affected version ranges, CWE identifiers, or affected behavior/function details. No external advisory fetching was added; enrichment uses already captured depmodel evidence only.
+
 ## Command
 
 ```bash
@@ -467,6 +475,14 @@ The Penpot local-lab plan stayed blocked, so no Penpot local-lab evidence packet
 
 ```text
 10 blocked_pending_reachability_evidence
+```
+
+Advisory intelligence examples from the regenerated passive result:
+
+```text
+GHSA-j382-5jj3-vw4j  patched=2.3.21.Final  CVE-2025-12543  CVSS=9.6  refs=12  known_unknowns=3
+GHSA-5rq4-664w-9x2c  patched=5.2.0         CVE-2026-27699  CVSS=9.1  refs=5   known_unknowns=3
+GHSA-2w6w-674q-4c4q  patched=4.7.9         CVE-2026-33937  CVSS=9.8  refs=5   known_unknowns=3
 ```
 
 This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, advisory/role enrichment, non-executing local-lab planning, manual evidence-capture contracts, and local disclosure draft. It still does not prove exploitability; safe reproducer execution remains future human-approved `dep-redteam` work.
