@@ -94,6 +94,18 @@ Dep-viz then completed AK `2128`:
 
 Per-module entries are keyed by repo-relative `deps.edn` module path, override the global alias list, and can intentionally clear aliases for a module with an empty right-hand side.
 
+Dep-viz then completed the report/triage surfacing slice:
+
+```text
+2ebfa1d feat: surface vulnerability triage evidence
+```
+
+The scan output now includes compact `triageClusters` grouped by `(packageId, vulnerabilityId)` with severity, affected-module count, finding count, provider count, provider names, and modules. The report vulnerability view also surfaces:
+
+- provider names and provider counts per finding;
+- per-module Clojure alias mode from `provenance.tools["clojure-deps"]`;
+- highest-impact vulnerability clusters as triage evidence, not remediation authority.
+
 ## Command
 
 ```bash
