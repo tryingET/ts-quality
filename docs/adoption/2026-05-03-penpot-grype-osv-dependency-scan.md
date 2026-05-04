@@ -154,6 +154,14 @@ f7f76f8 test: harden local lab evidence transitions
 
 Fixture packets under `tests/fixtures/local_lab_evidence/` now pin valid `not_reproduced`, `reachable_not_exploited`, and `safe_reproducer_confirmed` shapes, plus an invalid recommendation case where disclosure is recommended without a safe reproducer. Regression tests prove blocked plan entries cannot accept manual evidence and that a safe-reproducer fixture is the only fixture class that can recommend human-reviewed disclosure.
 
+Dep-redteam then added advisory-specific local-lab design packets:
+
+```text
+9212d4d feat: design local lab validation
+```
+
+`depredteam.local-lab-design.v1` and the `dep-redteam design-local-lab` CLI define affected behavior, advisory preconditions, local setup assumptions, synthetic input design, expected safe observations, stop conditions, and required evidence artifacts for one selected advisory. Design packets keep `executionAllowed = false`, require future approval before execution, and can only be created for entries already marked `ready_for_local_lab_design`.
+
 ## Command
 
 ```bash
