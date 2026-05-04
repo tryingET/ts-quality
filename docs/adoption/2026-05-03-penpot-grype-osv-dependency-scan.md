@@ -130,6 +130,14 @@ Dep-redteam then enriched passive validation evidence:
 
 Passive result packets now include advisory evidence, affected-component package-name hints, dependency-role hints, introducer path samples, future safe-reproducer needs, and richer draft rendering. Dev/tooling role hints are seeded from `~/ai-society/core/tech-stack-core` lane quality/testing surfaces. The matching is token-aware so short tool names such as `ty` do not accidentally classify unrelated package names such as `netty` as dev tooling.
 
+Dep-redteam then added a non-executing local-lab planning contract:
+
+```text
+855d69a feat: plan local lab validation
+```
+
+`depredteam.local-lab-plan.v1` and the `dep-redteam plan-local-lab` CLI describe approval gates, blocked/readiness states, required preconditions, validation questions, and candidate evidence artifacts. The plan intentionally keeps `executionAllowed = false` and `approvalRequired = true` for every entry; it does not run payloads or authorize active validation.
+
 ## Command
 
 ```bash
@@ -413,7 +421,25 @@ disclosure: local draft only, not sent automatically
 
 Interpretation: the top ten Penpot triage clusters were present in the depmodel, but passive source-reference inspection did not find code-reference evidence for those package names in the bounded local checkout scan. Five clusters were associated with docs/test-like evidence, while the Undertow/Netty/basic-ftp clusters remained runtime/buildtime unknown rather than falsely classified as dev tooling. This is stronger than `not_started`, but still not exploitability proof and still not a disclosure recommendation.
 
-This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, advisory/role enrichment, and local disclosure draft. It still does not prove exploitability; safe reproducer validation remains future `dep-redteam` work.
+The local-lab planning packet was generated with:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-redteam
+uv run dep-redteam plan-local-lab /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json \
+  --result /tmp/penpot-depintel-pilot/depviz-handoff-triage/validation-result.passive.json \
+  --out /tmp/penpot-depintel-pilot/depviz-handoff-triage/local-lab-plan.json
+uv run dep-redteam validate-local-lab-plan /tmp/penpot-depintel-pilot/depviz-handoff-triage/local-lab-plan.json --json
+```
+
+Local-lab plan boundary:
+
+```text
+schema: depredteam.local-lab-plan.v1
+defaultExecutionAllowed: false
+10 blocked_pending_reachability_evidence
+```
+
+This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, advisory/role enrichment, non-executing local-lab planning, and local disclosure draft. It still does not prove exploitability; safe reproducer execution remains future human-approved `dep-redteam` work.
 
 ## Cleanup
 
