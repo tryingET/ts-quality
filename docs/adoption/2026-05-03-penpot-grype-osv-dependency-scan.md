@@ -146,6 +146,14 @@ Dep-redteam then added manual local-lab evidence capture:
 
 `depredteam.local-lab-evidence.v1` records manually supplied evidence from a separate approved local run. The CLI can validate evidence packets and apply them to result packets, but it records `executionBoundary.executedByDepRedteam = false`; dep-redteam still does not run validation payloads itself.
 
+Dep-redteam then hardened local-lab evidence transition fixtures:
+
+```text
+f7f76f8 test: harden local lab evidence transitions
+```
+
+Fixture packets under `tests/fixtures/local_lab_evidence/` now pin valid `not_reproduced`, `reachable_not_exploited`, and `safe_reproducer_confirmed` shapes, plus an invalid recommendation case where disclosure is recommended without a safe reproducer. Regression tests prove blocked plan entries cannot accept manual evidence and that a safe-reproducer fixture is the only fixture class that can recommend human-reviewed disclosure.
+
 ## Command
 
 ```bash
