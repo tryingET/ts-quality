@@ -72,7 +72,7 @@ Dep-viz then completed AK `2127`:
 25576a4 feat: select clojure scan aliases
 ```
 
-`depviz scan` now accepts global Clojure alias selection:
+`depviz scan` accepts global Clojure alias selection:
 
 ```bash
 --clojure-aliases dev,test
@@ -80,31 +80,43 @@ Dep-viz then completed AK `2127`:
 
 Aliases are passed to tools.deps as `-A:dev:test`, recorded in scan metadata, and reflected in `provenance.tools["clojure-deps"]`.
 
-Boundary: alias selection is currently global for all Clojure `deps.edn` modules in a scan. Per-module alias maps remain future UX work.
+Dep-viz then completed AK `2128`:
+
+```text
+1050c6a feat: map clojure aliases per module
+```
+
+`depviz scan` now accepts per-module Clojure alias overrides:
+
+```bash
+--clojure-alias-map 'backend=dev,test;frontend=dev,shadow-cljs;common='
+```
+
+Per-module entries are keyed by repo-relative `deps.edn` module path, override the global alias list, and can intentionally clear aliases for a module with an empty right-hand side.
 
 ## Command
 
 ```bash
 cd /home/tryinget/ai-society/softwareco/owned/dep-viz
-rm -rf /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-dev
+rm -rf /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases
 mkdir -p /tmp/penpot-depintel-pilot
 go run ./cmd/depviz scan /home/tryinget/ai-society/softwareco/contrib/penpot \
-  --out /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-dev \
+  --out /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases \
   --container \
   --vuln-providers grype,osv \
-  --clojure-aliases dev \
+  --clojure-alias-map 'backend=dev,test;common=dev,test,shadow-cljs;frontend=dev,shadow-cljs;exporter=dev,shadow-cljs;library=dev,shadow-cljs;.=' \
   --format json \
-  > /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-dev-stdout.json \
-  2> /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-dev-stderr.log
+  > /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-stdout.json \
+  2> /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-stderr.log
 ```
 
 Artifacts:
 
 ```text
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-dev/model/depmodel.v1.json
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-dev/report/index.html
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-dev-stdout.json
-/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-dev-stderr.log
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases/model/depmodel.v1.json
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases/report/index.html
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-stdout.json
+/tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-stderr.log
 ```
 
 ## Scan result
@@ -113,10 +125,10 @@ The scan completed and published artifacts. The policy threshold was `high`, and
 
 ```json
 {
-  "sbomCount": 20,
-  "scanCount": 20,
-  "moduleCount": 20,
-  "vulnerabilityCount": 385,
+  "sbomCount": 21,
+  "scanCount": 21,
+  "moduleCount": 21,
+  "vulnerabilityCount": 395,
   "policy": {
     "effectiveThreshold": "high",
     "violation": true
@@ -130,12 +142,12 @@ The `go run` wrapper surfaced a non-zero command status because dep-viz returned
 
 ```json
 {
-  "modules": 20,
-  "packages": 7413,
-  "edges": 15607,
-  "introducerPaths": 7413,
+  "modules": 21,
+  "packages": 7370,
+  "edges": 15125,
+  "introducerPaths": 7370,
   "ecosystems": {
-    "js": 12,
+    "js": 13,
     "clojure": 6,
     "rust": 2
   }
@@ -160,6 +172,7 @@ js:frontend                              frontend/pnpm-lock.yaml
 js:frontend/packages/draft-js            frontend/packages/draft-js/pnpm-lock.yaml
 js:library                               library/pnpm-lock.yaml
 js:mcp                                   mcp/pnpm-lock.yaml
+js:mcp/packages/server                   mcp/packages/server/pnpm-lock.yaml
 js:plugins                               plugins/pnpm-lock.yaml
 js:plugins/libs/plugins-runtime          plugins/libs/plugins-runtime/package-lock.json
 js:render-wasm                           render-wasm/pnpm-lock.yaml
@@ -173,7 +186,14 @@ Tools recorded by the depmodel:
 
 ```json
 {
-  "clojure-deps": "tools-deps-classpath aliases=dev",
+  "clojure-deps": {
+    "clojure:.": "tools-deps-classpath",
+    "clojure:backend": "tools-deps-classpath aliases=dev,test",
+    "clojure:common": "tools-deps-classpath aliases=dev,test,shadow-cljs",
+    "clojure:exporter": "tools-deps-classpath aliases=dev,shadow-cljs",
+    "clojure:frontend": "tools-deps-classpath aliases=dev,shadow-cljs",
+    "clojure:library": "tools-deps-classpath aliases=dev,shadow-cljs"
+  },
   "grype": "0.108.0",
   "osv-scanner": "ghcr.io/google/osv-scanner@sha256:385ff9dd9d50a573766fc226f24da1d61cd5843542ff7e04c563561bbd918e30"
 }
@@ -184,13 +204,13 @@ Provider breakdown:
 ```json
 {
   "sources": {
-    "multi-provider": 353,
+    "multi-provider": 363,
     "grype": 17,
     "osv": 15
   },
   "providerCounts": {
     "1": 32,
-    "2": 353
+    "2": 363
   }
 }
 ```
@@ -200,8 +220,8 @@ Severity breakdown:
 ```json
 {
   "critical": 6,
-  "high": 213,
-  "medium": 155,
+  "high": 221,
+  "medium": 157,
   "low": 11
 }
 ```
@@ -214,10 +234,11 @@ Findings by module, top counts:
 36  js:docs
 28  js:mcp
 16  js:exporter
+126 clojure findings combined
+8   js:mcp/packages/server
 6   js:backend
 6   js:common
 6   js:library
-126 clojure findings combined
 2   js:frontend/packages/draft-js
 2   js:render-wasm
 2   rust:render-wasm
@@ -247,15 +268,15 @@ These examples are evidence for vulnerability triage. They are not direct remedi
 
 This Penpot run proves that the current dep-viz corridor can run a real second vulnerability provider on a larger polyglot repo and materially populate provider-correlation metadata:
 
-- 385 primary findings across supported JS/Rust modules plus resolver-backed Clojure `deps.edn` modules with the global `dev` alias selected.
-- 353 findings corroborated by both Grype and OSV.
+- 395 primary findings across supported JS/Rust modules plus resolver-backed Clojure `deps.edn` modules with explicit per-module aliases selected.
+- 363 findings corroborated by both Grype and OSV.
 - 32 provider-singleton findings (`grype`-only or `osv`-only).
 - 126 Clojure classpath findings, 124 corroborated by both providers and 2 Grype-only.
 - Policy violation at the default/effective `high` threshold.
 
-The strong positive signal is that provider correlation is no longer just schema readiness; it is populated by a real second-provider run.
+The strong positive signal is that provider correlation is no longer just schema readiness; it is populated by a real second-provider run, and Clojure evidence can now record different resolver profiles per module.
 
-The hard boundary is equally important: this is resolver-backed tools.deps classpath evidence for the default classpath plus the global `dev` alias. It is not evidence for every possible per-module alias combination; per-module alias maps and a portfolio-style alias matrix remain future work.
+The hard boundary is equally important: this is resolver-backed tools.deps classpath evidence for the specific per-module alias map shown above. It is not evidence for every possible alias combination, and the scan result is still triage evidence rather than Penpot remediation authority.
 
 ## Cleanup
 
@@ -270,5 +291,5 @@ git status --short --branch
 Observed:
 
 ```text
-## develop...origin/develop
+## HEAD (no branch)
 ```
