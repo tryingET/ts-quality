@@ -106,6 +106,14 @@ The scan output now includes compact `triageClusters` grouped by `(packageId, vu
 - per-module Clojure alias mode from `provenance.tools["clojure-deps"]`;
 - highest-impact vulnerability clusters as triage evidence, not remediation authority.
 
+Dep-viz then completed the handoff generation slice:
+
+```text
+1fd703b feat: generate exploitability handoff packets
+```
+
+`depviz handoff exploitability` now generates local-only `depviz.exploitability-validation-handoff.v1` packets for downstream validation repos such as `dep-redteam`. The command reads an existing depmodel, summarizes the target `SECURITY.md`, preserves tool/provider/cluster evidence, requires an operator-confirmed authorization scope, and does not contact maintainers.
+
 ## Command
 
 ```bash
@@ -314,6 +322,63 @@ This Penpot run proves that the current dep-viz corridor can run a real second v
 The strong positive signal is that provider correlation is no longer just schema readiness; it is populated by a real second-provider run, and Clojure evidence can now record different resolver profiles per module.
 
 The hard boundary is equally important: this is resolver-backed tools.deps classpath evidence for the specific per-module alias map shown above. It is not evidence for every possible alias combination, and the scan result is still triage evidence rather than Penpot remediation authority.
+
+## Handoff and validation-plan proof
+
+Generated local-only handoff packet:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-viz
+go run ./cmd/depviz handoff exploitability \
+  --model /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage/model/depmodel.v1.json \
+  --target /home/tryinget/ai-society/softwareco/contrib/penpot \
+  --security-policy /home/tryinget/ai-society/softwareco/contrib/penpot/SECURITY.md \
+  --authorization-scope local_clone_only \
+  --report /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage/report/index.html \
+  --scan-output /tmp/penpot-depintel-pilot/depviz-scan-grype-osv-clojure-module-aliases-triage-stdout.json \
+  --repo-url https://github.com/penpot/penpot \
+  --out /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json
+```
+
+Handoff summary:
+
+```json
+{
+  "schemaVersion": "depviz.exploitability-validation-handoff.v1",
+  "securityPolicyMechanism": {
+    "kind": "email",
+    "address": "support@penpot.app",
+    "publicIssueAllowed": false
+  },
+  "authorization": {
+    "status": "operator_confirmed",
+    "scope": "local_clone_only"
+  },
+  "triageClusterCount": 10
+}
+```
+
+`dep-redteam` consumed the packet successfully:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-redteam
+uv run dep-redteam validate-handoff /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json --json
+uv run dep-redteam plan /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json \
+  --out /tmp/penpot-depintel-pilot/depviz-handoff-triage/validation-result.json
+uv run dep-redteam draft /tmp/penpot-depintel-pilot/depviz-handoff-triage/exploitability-validation.v1.json \
+  --result /tmp/penpot-depintel-pilot/depviz-handoff-triage/validation-result.json \
+  --out /tmp/penpot-depintel-pilot/depviz-handoff-triage/disclosure-draft.md
+```
+
+Validation result boundary:
+
+```text
+status: not_started
+confidence: unknown
+disclosure: local draft only, not sent automatically
+```
+
+This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff and local disclosure draft. It still does not prove exploitability; reachability and safe reproducer validation remain future `dep-redteam` work.
 
 ## Cleanup
 
