@@ -226,6 +226,14 @@ Dep-redteam then hardened dep-diet/runtime-trace importer behavior against real 
 
 Real-derived fixtures from `/tmp/designmd-depintel-pilot-rti-command/` now cover a dep-diet static/runtime depmodel row and a runtime-trace-insights bundle row for `npm:@typescript/native-preview@7.0.0-dev.20260421.2`. Importing those real artifacts produces validated `reachable_unproven` evidence while keeping `recommendDisclosure = false` and avoiding safe-reproducer claims.
 
+Dep-redteam then added an end-to-end reachability-to-plan command:
+
+```text
+d173ca0 feat: plan local lab from reachability import
+```
+
+`dep-redteam plan-reachability-local-lab` now composes adapter import, reachability evidence application, and non-executing local-lab plan generation. A real DesignMD runtime-trace source produced `reachable_unproven`, one `ready_for_local_lab_design` plan entry, and `executionAllowed = false`; it still did not execute validation or recommend disclosure.
+
 ## Command
 
 ```bash
