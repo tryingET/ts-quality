@@ -1463,6 +1463,19 @@
           ],
           "dod": "Task reaches done in society.db with evidence recorded.",
           "completed_at": "2026-05-05"
+        },
+        {
+          "id": "AK-TASK-2397",
+          "title": "Capture advisory usage atomic completion evidence",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Capture advisory usage atomic completion evidence (task #2397)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-05-05"
         }
       ]
     }

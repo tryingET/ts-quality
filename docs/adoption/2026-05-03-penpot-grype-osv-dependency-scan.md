@@ -538,7 +538,13 @@ A second Nexus pass then found remaining schema/runtime parity drift around sche
 c20b6fb fix: enforce advisory usage schema parity
 ```
 
-The hardening now rejects malformed generated packet shapes, requires artifact objects with `kind` and `path`, rejects missing schema-required advisory-usage fields, blocks advisory-usage evidence from overwriting terminal local-lab states, and allows `operatorException` only when both the current result and advisory-usage gate stay at `dependency_present_only` for bounded semantic investigation. Regression coverage increased to `47 passed`, and the full dep-redteam gate passed:
+An atomic-completion pass then closed the remaining validator drift for generated packets that are non-objects or contain schema-constrained optional fields with malformed types:
+
+```text
+6cce30f fix: close advisory usage validator drift
+```
+
+The hardening now rejects malformed generated packet shapes, requires artifact objects with `kind` and `path`, rejects missing schema-required advisory-usage fields, rejects malformed optional schema-constrained fields, blocks advisory-usage evidence from overwriting terminal local-lab states, and allows `operatorException` only when both the current result and advisory-usage gate stay at `dependency_present_only` for bounded semantic investigation. Regression coverage increased to `49 passed`, and the full dep-redteam gate passed:
 
 ```bash
 uv run ruff check .
