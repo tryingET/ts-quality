@@ -178,6 +178,14 @@ Dep-redteam then adopted compact real dep-viz corridor fixtures:
 
 The new fixtures under `tests/fixtures/depviz_corridor/` are derived from the Penpot dep-viz Grype+OSV pilot. They pin one handoff, one passive advisory result with enriched intelligence, one local-lab plan/design path, and one blocked-case path where scanner evidence remains below design-ready validation. This makes future schema or validator drift visible without executing exploit code or sending a disclosure.
 
+Dep-redteam then designed the reachability-evidence contract:
+
+```text
+90e5bae feat: design reachability evidence contract
+```
+
+`depredteam.reachability-evidence.v1` is a non-executing input packet for source references, operator call-path notes, runtime-trace summaries, dep-diet static/runtime packets, or fixtures. The new record/validate/apply CLI path can move a result to `reachable_unproven` and unlock local-lab design readiness, but it keeps `executedByDepRedteam = false`, `exploitAttempted = false`, `recommendDisclosure = false`, and does not confirm exploitability.
+
 ## Command
 
 ```bash
