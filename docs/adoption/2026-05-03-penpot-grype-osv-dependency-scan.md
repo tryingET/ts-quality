@@ -298,6 +298,56 @@ The work-item projection was synced after AK task `2296` completed:
 a5e6248 chore: sync design-bound packet work item
 ```
 
+The review-packet command was then run against the real-derived DesignMD runtime-trace packet artifacts:
+
+```bash
+cd /home/tryinget/ai-society/softwareco/owned/dep-redteam
+uv run dep-redteam packet-design-local-lab-evidence \
+  /tmp/designmd-depintel-pilot-rti-command/depredteam-e2e-plan/handoff.json \
+  --result /tmp/designmd-depintel-pilot-rti-command/depredteam-e2e-design/out/reachability.result.json \
+  --plan /tmp/designmd-depintel-pilot-rti-command/depredteam-e2e-design/out/reachability.local-lab-plan.json \
+  --design /tmp/designmd-depintel-pilot-rti-command/depredteam-e2e-design/out/reachability.local-lab-design.json \
+  --status reachable_not_exploited \
+  --confidence medium \
+  --summary "Runtime command observation reached npm:@typescript/native-preview, but no advisory-specific safe reproducer was attempted or confirmed." \
+  --synthetic-input "DesignMD typecheck command observation fixture; no live target and no exploit input." \
+  --observed-behavior "The dependency was observed during npm run typecheck; this is reachability evidence only." \
+  --comparison-notes "No patched comparison or advisory reproducer was run; disclosure remains unrecommended." \
+  --approved-by operator \
+  --artifact runtime-trace-bundle=/tmp/designmd-depintel-pilot-rti-command/runtime/designmd-foundry-runtime-bundle.json \
+  --out-dir /tmp/designmd-depintel-pilot-rti-command/depredteam-review-packet \
+  --json
+```
+
+Generated local-only artifacts, not committed:
+
+```text
+/tmp/designmd-depintel-pilot-rti-command/depredteam-review-packet/design-bound.local-lab-evidence.json
+/tmp/designmd-depintel-pilot-rti-command/depredteam-review-packet/design-bound.local-lab-result.json
+/tmp/designmd-depintel-pilot-rti-command/depredteam-review-packet/design-bound.disclosure-draft.md
+```
+
+Validation confirmed:
+
+```json
+{
+  "evidenceStatus": "reachable_not_exploited",
+  "recommendDisclosure": false,
+  "disclosureRecommended": false,
+  "designExecutionAllowed": false,
+  "designApprovalRequired": true,
+  "draftHasDesignGate": true,
+  "draftHasNoRecommendation": true
+}
+```
+
+Dep-redteam captured this run in product posture:
+
+```text
+22ff20b docs: capture real review packet run
+f32e89b chore: sync real review packet work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence.
 
 ## Command
