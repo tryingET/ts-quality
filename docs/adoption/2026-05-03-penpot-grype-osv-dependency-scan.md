@@ -348,6 +348,20 @@ Dep-redteam captured this run in product posture:
 f32e89b chore: sync real review packet work item
 ```
 
+Dep-redteam then hardened blocked-target refusal for the same review-packet command:
+
+```text
+c432903 feat: refuse blocked design-bound packets
+```
+
+The Penpot blocked-plan regression passes a dependency-present-only local-lab plan into `packet-design-local-lab-evidence` with a stale design candidate. The command refuses before creating the output directory and reports that `ready_for_local_lab_design` is required, the current status is `blocked_pending_reachability_evidence`, reachability evidence must be collected/applied first, and no evidence/result/draft was written.
+
+The work-item projection was synced after AK task `2299` completed:
+
+```text
+845d19d chore: sync blocked packet refusal work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence.
 
 ## Command
