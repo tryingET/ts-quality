@@ -218,6 +218,14 @@ f04e217 feat: emit source references in handoff
 
 `depviz handoff exploitability` now includes optional `sourceReferences[]` when bounded local source inspection finds package-name mentions for selected triage clusters. These references are reachability hints only: present references are not exploitability proof, and absent references are not proof of safety. Regenerating the Penpot handoff with this code produced a valid packet with `10` triage clusters and `0` source references, preserving the current blocked Penpot posture.
 
+Dep-redteam then hardened dep-diet/runtime-trace importer behavior against real DesignMD artifacts:
+
+```text
+44f1068 test: harden reachability import on real runtime artifacts
+```
+
+Real-derived fixtures from `/tmp/designmd-depintel-pilot-rti-command/` now cover a dep-diet static/runtime depmodel row and a runtime-trace-insights bundle row for `npm:@typescript/native-preview@7.0.0-dev.20260421.2`. Importing those real artifacts produces validated `reachable_unproven` evidence while keeping `recommendDisclosure = false` and avoiding safe-reproducer claims.
+
 ## Command
 
 ```bash
