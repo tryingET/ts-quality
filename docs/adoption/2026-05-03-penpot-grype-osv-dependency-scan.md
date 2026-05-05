@@ -242,6 +242,22 @@ fba882c feat: design local lab from reachability import
 
 `dep-redteam design-reachability-local-lab` now composes adapter import, evidence application, non-executing plan generation, and `depredteam.local-lab-design.v1` creation. A real DesignMD runtime-trace source produced a valid design with `sourcePlanStatus = ready_for_local_lab_design`, `executionAllowed = false`, and `approvalRequiredBeforeExecution = true`.
 
+Dep-redteam then added design-bound manual local-lab evidence capture:
+
+```text
+fa5c0b5 feat: record design-bound local lab evidence
+```
+
+`dep-redteam record-design-local-lab-evidence` validates an existing non-executing design, records separately approved manual evidence, and adds a `designBinding` to the `depredteam.local-lab-evidence.v1` packet. The design binding preserves `executionAllowed = false` and `approvalRequiredBeforeExecution = true`; it does not turn design readiness into execution proof. Regression coverage proves a design-bound `reachable_not_exploited` evidence packet still applies to the result with `disclosureDraft.recommended = false`.
+
+The work-item projection was synced after AK task `2284` completed:
+
+```text
+81e5ec9 chore: sync design-bound evidence work item
+```
+
+This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence.
+
 ## Command
 
 ```bash
@@ -557,7 +573,7 @@ GHSA-5rq4-664w-9x2c  patched=5.2.0         CVE-2026-27699  CVSS=9.1  refs=5   kn
 GHSA-2w6w-674q-4c4q  patched=4.7.9         CVE-2026-33937  CVSS=9.8  refs=5   known_unknowns=3
 ```
 
-This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, advisory/role enrichment, non-executing local-lab planning, manual evidence-capture contracts, and local disclosure draft. It still does not prove exploitability; safe reproducer execution remains future human-approved `dep-redteam` work.
+This proves the corridor now has a repeatable path from scan evidence to SECURITY.md-aware handoff, machine-readable result contracts, passive applicability validation, advisory/role enrichment, non-executing local-lab planning, non-executing design, design-bound manual evidence-capture contracts, and local disclosure draft. It still does not prove exploitability; safe reproducer execution remains future human-approved `dep-redteam` work.
 
 ## Cleanup
 
