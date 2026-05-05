@@ -448,6 +448,31 @@ The work-item projection was synced after AK task `2321` completed:
 
 Validation passed for dep-diet targeted tests, depmodel fixture validation, ROCS/full CI, and whitespace checks. Repo-wide docs strictness still has pre-existing missing-front-matter failures unrelated to this slice.
 
+Dep-redteam then clarified the evidence granularity that sits underneath `reachable_unproven`:
+
+```text
+e65a09a docs: clarify reachability evidence granularity
+```
+
+The vision, product posture, and MVP closeout now explicitly distinguish:
+
+```text
+vulnerable package version is present
+-> package is referenced, imported, or runtime-observed
+-> advisory-specific affected API/config/protocol is identified
+-> affected behavior is plausibly reachable with relevant input/control conditions
+-> safe local synthetic reproducer confirms affected behavior
+-> local human-reviewed disclosure evidence is sufficient
+```
+
+They also state that `reachable_unproven` can come from dep-viz source references, dep-viz runtime-backed references, dep-diet static/runtime evidence, runtime-trace-insights runtime trace summaries, or operator call-path notes, but it still does not prove advisory-specific affected API/config/protocol usage.
+
+The work-item projection was synced after AK task `2334` completed:
+
+```text
+a33c49d chore: sync reachability granularity work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It does improve future enriched handoffs for targets with runtime-observed package evidence.
 
 ## Command
