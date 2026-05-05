@@ -532,7 +532,13 @@ f82009b fix: harden advisory usage evidence gate
 5345a57 test: complete advisory usage hardening matrix
 ```
 
-The hardening now rejects malformed generated packet shapes, requires artifact objects with `kind` and `path`, blocks advisory-usage evidence from overwriting terminal local-lab states, and allows `operatorException` only for explicit `dependency_present_only` semantic investigation. Regression coverage increased to `45 passed`, and the full dep-redteam gate passed:
+A second Nexus pass then found remaining schema/runtime parity drift around schema-required `limitations`, schema-required `affectedUsage.affectedComponent`, and a gate/result status mismatch path for operator exceptions. Dep-redteam fixed those in:
+
+```text
+c20b6fb fix: enforce advisory usage schema parity
+```
+
+The hardening now rejects malformed generated packet shapes, requires artifact objects with `kind` and `path`, rejects missing schema-required advisory-usage fields, blocks advisory-usage evidence from overwriting terminal local-lab states, and allows `operatorException` only when both the current result and advisory-usage gate stay at `dependency_present_only` for bounded semantic investigation. Regression coverage increased to `47 passed`, and the full dep-redteam gate passed:
 
 ```bash
 uv run ruff check .
