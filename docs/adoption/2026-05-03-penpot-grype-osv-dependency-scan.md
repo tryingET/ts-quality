@@ -432,6 +432,22 @@ The work-item projection was synced after AK task `2319` completed:
 67b1f60 chore: sync enriched handoff run work item
 ```
 
+The next upstream producer slice moved to dep-diet. Static/runtime depmodel generation now accepts the input `--model` and preserves matching vulnerability rows plus baseline references in the enriched output:
+
+```text
+89d6b4f feat: preserve vulnerabilities in static runtime depmodels
+```
+
+This closes the producer gap exposed by the synthetic enriched handoff run: a future real enriched dep-diet depmodel can carry both vulnerability triage and runtime-backed package evidence, allowing dep-viz to produce a runtime-backed handoff without hand-authoring synthetic vulnerabilities. Static/runtime evidence remains review context only and does not grant removal, exploitability, or disclosure authority.
+
+The work-item projection was synced after AK task `2321` completed:
+
+```text
+51cbe75 chore: sync vulnerability preservation work item
+```
+
+Validation passed for dep-diet targeted tests, depmodel fixture validation, ROCS/full CI, and whitespace checks. Repo-wide docs strictness still has pre-existing missing-front-matter failures unrelated to this slice.
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It does improve future enriched handoffs for targets with runtime-observed package evidence.
 
 ## Command
