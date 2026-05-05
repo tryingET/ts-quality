@@ -473,6 +473,20 @@ The work-item projection was synced after AK task `2334` completed:
 a33c49d chore: sync reachability granularity work item
 ```
 
+After checking DSPx's actual docs, dep-redteam then framed the future advisory-specific usage automation path around DSPx program-gen and Oracle rather than treating `dspy-lm-auth` as governance:
+
+```text
+5919601 docs: frame DSPx advisory usage evidence path
+```
+
+The updated dep-redteam vision says advisory text, references, patches, depmodel/source/runtime evidence can feed DSPx `program-gen` candidate assemblies; generated programs may use configured LM providers such as `dspy-lm-auth` via a Pi/Codex-backed auth route; execution episodes produce behavior results, receipts, and Oracle-readable evidence; Oracle interprets observed behavior as patterns/frontiers, not authority; dep-redteam consumes only structured, validated advisory-usage evidence packets. `dspy-lm-auth` is documented as an LM access/auth route, not an authority surface.
+
+The work-item projection was synced after AK task `2342` completed:
+
+```text
+12f3c57 chore: sync DSPx advisory evidence work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It does improve future enriched handoffs for targets with runtime-observed package evidence.
 
 ## Command
