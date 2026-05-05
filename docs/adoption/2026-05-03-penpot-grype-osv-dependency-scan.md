@@ -186,6 +186,14 @@ Dep-redteam then designed the reachability-evidence contract:
 
 `depredteam.reachability-evidence.v1` is a non-executing input packet for source references, operator call-path notes, runtime-trace summaries, dep-diet static/runtime packets, or fixtures. The new record/validate/apply CLI path can move a result to `reachable_unproven` and unlock local-lab design readiness, but it keeps `executedByDepRedteam = false`, `exploitAttempted = false`, `recommendDisclosure = false`, and does not confirm exploitability.
 
+Dep-redteam then added reachability adapter fixtures:
+
+```text
+6b470eb test: add reachability adapter fixtures
+```
+
+The fixture set now includes dep-viz source-reference, dep-diet static/runtime, and runtime-trace-insights command-observation source shapes. Each fixture carries `sourceAdapter` metadata and proves adapter-derived reachability evidence can unlock design readiness while keeping execution and disclosure disallowed.
+
 ## Command
 
 ```bash
