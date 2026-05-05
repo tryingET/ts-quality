@@ -1,7 +1,7 @@
 ---
-summary: "Public contract baseline for ts-quality 0.3: stable operator paths, machine protocols, witness semantics, and artifact compatibility expectations."
+summary: "Current public contract for ts-quality alpha: stable operator paths, machine protocols, witness semantics, evidence-closure packets, and artifact compatibility expectations."
 read_when:
-  - "When preparing or reviewing a 0.3.x release"
+  - "When preparing or reviewing a public release"
   - "When deciding whether a CLI, artifact, or machine-output change is breaking"
   - "When writing or validating current public artifact consumers"
 type: "reference"
@@ -9,9 +9,11 @@ type: "reference"
 
 # Public Contract Baseline
 
-This document names the public surfaces that `ts-quality` treats as protected starting with the `0.3.x` line.
+This document names the public surfaces that `ts-quality` treats as protected in the current alpha line. It began as the `0.3.x` public contract baseline, and now also covers later protected additions such as the `0.4.x` evidence-closure packet and the `0.5.x` adoption-retention flow.
 
 `ts-quality` is still alpha software, so future releases may change behavior when that improves deterministic evidence, safety, or contract clarity. The rule is not "never change". The rule is: changes to these surfaces must be intentional, documented in release notes, covered by staged/public verification where practical, and explained for downstream agents or parsers.
+
+Package versions and artifact schema versions are related but independent. The npm package may be `0.5.x` while persisted run artifacts still declare an older run-artifact `version` such as `0.2.0` when the artifact schema has not changed. Consumers should branch on artifact fields/schema versions for machine parsing and use package release notes for migration context.
 
 ## Protected operator paths
 
@@ -60,7 +62,7 @@ AX means Agent Experience: the agent-facing experience across both structured ma
 
 Both modes should derive from the same durable artifact contract. The durable truth stays in run artifacts such as `run.json`; compact outputs are token-efficient projections, not separate authority. Existing command-specific compact protocols such as `doctor --machine` and `retention --machine` follow this compact AX principle even before every command exposes a `--compact` flag.
 
-Compact machine protocol v1 grammar:
+Compact doctor machine protocol v1 grammar:
 
 - the first line is exactly `TSQ_DOCTOR_MACHINE_V1`
 - records are LF-delimited; fields inside a record are TAB-delimited
@@ -69,6 +71,17 @@ Compact machine protocol v1 grammar:
 - v1 values are token-light safe text: producers replace TAB/CR/LF with spaces and trim
 - list-valued status fields may use comma-joined safe text when they are advisory
 - command recommendations use repeated `command_arg=<argv item>` fields in order instead of comma-joined command strings; harnessed agents must not split command recommendations on commas
+
+Compact retention machine protocol v1 grammar:
+
+- the first line is exactly `TSQ_RETENTION_PLAN_V1`
+- records are LF-delimited; fields inside a record are TAB-delimited
+- `root\t<absolute-root>` names the inspected repo root
+- `config\tok\tpath=<repo-relative-config>` means config loaded; `config\terror\tmessage=<safe text>` means config was absent or invalid
+- `keep\t<status>\t<path>\treason=<safe text>` names reusable files or patterns to commit/review, such as config/control-plane/witness records and trusted public keys
+- `ignore\t<status>\t<path>\treason=<safe text>` names generated, ephemeral, or sensitive files to keep out of commits unless deliberately snapshotting reviewed examples
+- `warning\t<safe text>` records advisory retention risks
+- values follow the same safe-text rule as doctor v1; status is usually `present`, `missing`, or `pattern`
 
 ## Protected manual witness contract
 
@@ -134,6 +147,46 @@ For mutation-survivor closure, `actionable` is the expected healthy state: concr
 
 The compact `check` stdout and generated `check-summary.txt` must surface the same closure headline plus coverage and mutation basis, so a user can distinguish coverage percentage from merge confidence without opening `run.json` first.
 
+## Artifact contract summary
+
+`run.json` is the immutable check-time audit packet. Other generated JSON/text surfaces are projections or decision records that point back to the selected run rather than replacing it.
+
+Consumer-safe parsing rules:
+
+- read `run.json` as the source of truth for changed scope, evidence, verdict, control-plane snapshot, and `nextEvidenceAction`
+- tolerate unknown optional fields unless release notes explicitly mark a breaking change
+- treat absent additive fields as unknown/not-provided, not as proof of success
+- fail closed on unsupported or malformed control-plane snapshots when making governance or authorization decisions
+- use `report --json` when a projected machine view is desired; it includes additive `decisionContext` metadata instead of pretending to be raw `run.json`
+- use authorization, bundle, amendment, witness receipt, and next-evidence-action sidecars as run-bound records/projections, not independent authority over the reviewed run
+
+Protected top-level artifact expectations:
+
+| Artifact | Authority role | Required consumer habit |
+|---|---|---|
+| `.ts-quality/runs/<run-id>/run.json` | immutable check-time evidence bundle | parse by artifact fields/version; tolerate additive fields |
+| `verdict.json` | verdict projection from the run | treat as derived from `run.json` |
+| `report.json` / `report --json` | machine report projection with `decisionContext` | distinguish persisted check-time report from later projected views |
+| `authorize.<agent>.<action>.json` | run-bound legitimacy decision | require `evidenceContext` / run id to match the reviewed run |
+| `bundle.<agent>.<action>.json` | proof-carrying change bundle | treat as paired with the authorization decision, not as broader approval |
+| `.ts-quality/amendments/*.result.json` | amendment evaluation result | treat proposal + constitution as authority; result is the evaluated decision record |
+| `.ts-quality/witnesses/*.receipt.json` | execution receipt for a witness record | do not consume receipts as scenario support witnesses |
+| `next-evidence-action.json` | canonical next evidence obligation | prefer over scraping verdict prose |
+
+## Negative-path contract
+
+A healthy public contract must explain blocks, not only green runs. Negative paths that downstream docs, fixtures, or release verification should continue to exercise include:
+
+- mutation survivors: `check` lowers confidence, emits `primaryAction.kind: "mutation-survivors"`, and names survivor remediation evidence
+- missing coverage: `check` fails or blocks with a coverage-oriented `nextEvidenceAction` unless configured generation succeeds
+- missing or stale witness: invariant support stays lexical/missing rather than execution-backed
+- governance boundary violation: `govern` and `authorize` surface blocking findings tied to the exact run
+- wrong-run approval/attestation: projected decision surfaces fail closed instead of trusting ambient files
+- insufficient agent grant or confidence floor: `authorize` returns a non-approval outcome such as human approval required
+- malformed or unsupported control-plane snapshot: governance/authorization projections instruct the operator to rerun rather than silently projecting stale authority
+
+Automation should prefer explicit non-zero command status plus the generated artifact fields over prose matching when asserting these paths.
+
 ## Minimum viable adoption story
 
 The protected minimum public adoption story is:
@@ -148,7 +201,7 @@ The shared public CLI contract fixture proves the core evidence sequence from an
 
 ## Protected run-artifact compatibility expectation
 
-Current run artifacts declare `version: "0.2.0"` because `0.2.0` introduced additive run fields. The `0.3.x` public contract does not require downstream parsers to understand every optional field, but it does require repo-owned projections to tolerate older run packets without newer additive fields.
+Current run artifacts declare `version: "0.2.0"` because `0.2.0` introduced additive run fields. The current public contract does not require downstream parsers to understand every optional field, but it does require repo-owned projections to tolerate older run packets without newer additive fields.
 
 Installed-package smoke currently proves a run-artifact compatibility matrix:
 

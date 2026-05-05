@@ -18,7 +18,7 @@ Canonical product semantics still live in:
 - `docs/config-reference.md`
 - `docs/ci-integration.md`
 
-For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide.
+For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide. For examples where `ts-quality` blocks truthfully instead of producing fake green output, use `docs/adoption/negative-path-examples.md`.
 
 This guide is about **greenfield setup choices**, not replacing those contracts.
 

@@ -15,7 +15,7 @@ Use this after reading:
 - `docs/adoption/agent-integration-how-to.md` for brownfield targets, or
 - `docs/adoption/greenfield-bootstrap-how-to.md` for new targets.
 
-Canonical product semantics still live in `README.md`, `docs/config-reference.md`, `docs/invariant-dsl.md`, and `docs/ci-integration.md`.
+Canonical product semantics still live in `README.md`, `docs/config-reference.md`, `docs/invariant-dsl.md`, and `docs/ci-integration.md`. For truthful failing examples, see `docs/adoption/negative-path-examples.md`.
 
 ## Starting point
 
@@ -160,7 +160,7 @@ npx ts-quality report --run-id auth-token-first-slice
 npx ts-quality explain --run-id auth-token-first-slice
 ```
 
-If the result fails on mutation pressure, coverage, invariant evidence, or governance, keep that truth. Fix the target repo evidence or route the debt before widening to another file.
+If the result fails on mutation pressure, coverage, invariant evidence, or governance, keep that truth. Fix the target repo evidence or route the debt before widening to another file. High coverage plus an execution witness can still fail when mutation pressure survives; see `docs/adoption/negative-path-examples.md`.
 
 ## 5) Record local rollout truth
 

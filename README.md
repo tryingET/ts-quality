@@ -144,7 +144,7 @@ npx ts-quality witness test \
 npx ts-quality check --changed src/auth/token.ts --run-id review-001
 ```
 
-Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example built around `doctor --machine`, one manual witness, one `check`, and run-bound `report`/`explain`; use `docs/adoption/agent-integration-how-to.md` for brownfield adoption, and `docs/public-contract.md` for the protected 0.3 public CLI/artifact/witness contract.
+Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example built around `doctor --machine`, one manual witness, one `check`, and run-bound `report`/`explain`; use `docs/adoption/agent-integration-how-to.md` for brownfield adoption, `docs/adoption/negative-path-examples.md` for truthful fail-closed examples, and `docs/public-contract.md` for the current protected public CLI/artifact/witness/evidence-closure contract.
 
 ### 2) Evaluate this repo from source
 
@@ -253,6 +253,7 @@ Agent-facing guides are split by job:
 - `docs/adoption/agent-integration-how-to.md` for AI agents integrating `ts-quality` into an existing target repo.
 - `docs/adoption/greenfield-bootstrap-how-to.md` for AI agents adding `ts-quality` to a new repo from the beginning.
 - `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice target-repo example.
+- `docs/adoption/negative-path-examples.md` for adoption cases where coverage, witnesses, governance, or legitimacy still block truthfully.
 - `docs/cli-command-manifest.json` for a machine-readable authored projection of CLI commands, options, reads, writes, and artifacts.
 
 For adoption work, use `docs/adoption/repo-screening-entry.template.json` plus `node scripts/register-screening-catalog.mjs --entry ...` after repo-local truth is stable to keep the central rollout catalog aligned.

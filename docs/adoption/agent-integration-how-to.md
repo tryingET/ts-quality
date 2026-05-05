@@ -24,7 +24,7 @@ Canonical product semantics still live in:
 - `docs/config-reference.md`
 - `docs/ci-integration.md`
 
-For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide.
+For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide. For truthful failing cases such as mutation survivors, boundary violations, or insufficient authorization, use `docs/adoption/negative-path-examples.md`.
 
 This guide is about **adoption and rollout**, not replacing those contracts.
 
@@ -44,7 +44,7 @@ For each slice:
    - stop with the next blocking debt named as the next slice ceiling.
 6. **Record** current-vs-target state in the target repo and update the central catalog only after repo-local truth is stable.
 
-Do not compensate for ambiguous aliases, missing focused tests, bad coverage remapping, or governance uncertainty by broadening changed scope or searching unrelated tests. Narrow the slice or fix the target repo evidence first.
+Do not compensate for ambiguous aliases, missing focused tests, bad coverage remapping, mutation survivors, or governance uncertainty by broadening changed scope or searching unrelated tests. Narrow the slice, fix the target repo evidence, or route the named blocker first.
 
 ## Authority model
 
