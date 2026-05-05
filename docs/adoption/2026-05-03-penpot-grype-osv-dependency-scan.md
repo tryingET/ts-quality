@@ -390,6 +390,20 @@ The work-item projection was synced after AK task `82` completed:
 b3cd6e7 chore: sync runtime handoff work item
 ```
 
+Dep-redteam then learned to consume those dep-viz runtime-backed handoff references distinctly:
+
+```text
+3ce0421 feat: consume depviz runtime references
+```
+
+A new dep-viz handoff fixture with `sourceReferences[].evidenceKind = runtime-command-observation` imports as `reachable_unproven` with `sourceKind = runtime_trace_summary` while preserving `sourceAdapter.producer = dep-viz`. The resulting plan becomes design-ready, but `recommendDisclosure` and `disclosureDraft.recommended` remain false.
+
+The work-item projection was synced after AK task `2316` completed:
+
+```text
+ff9d7d0 chore: sync depviz runtime reference work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It does improve future enriched handoffs for targets with runtime-observed package evidence.
 
 ## Command
