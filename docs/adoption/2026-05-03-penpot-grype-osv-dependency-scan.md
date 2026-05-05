@@ -270,6 +270,20 @@ The work-item projection was synced after AK task `2290` completed:
 50c4640 chore: sync design-bound guardrail work item
 ```
 
+Dep-redteam then pinned a real-derived DesignMD design-bound manual evidence fixture:
+
+```text
+4f8ca26 test: add real design-bound evidence fixture
+```
+
+The fixture records `npm:@typescript/native-preview@7.0.0-dev.20260421.2` / `DESIGNMD-RUNTIME-REVIEW` as `reachable_not_exploited` from the real-derived runtime-trace-insights command-observation source. Regression coverage imports the runtime trace source, applies reachability evidence, builds the non-executing plan/design, applies the design-bound manual evidence fixture, renders the local disclosure draft, and verifies `disclosureDraft.recommended = false`.
+
+The work-item projection was synced after AK task `2294` completed:
+
+```text
+faf749f chore: sync real design-bound fixture work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence.
 
 ## Command
