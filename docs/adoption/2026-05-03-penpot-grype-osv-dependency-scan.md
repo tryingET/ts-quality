@@ -284,6 +284,20 @@ The work-item projection was synced after AK task `2294` completed:
 faf749f chore: sync real design-bound fixture work item
 ```
 
+Dep-redteam then added an operator review-packet command for design-bound manual evidence:
+
+```text
+41942d5 feat: packet design-bound evidence artifacts
+```
+
+`dep-redteam packet-design-local-lab-evidence` composes design validation, manual local-lab evidence recording, result application, and local-only disclosure draft rendering. Regression coverage uses the real-derived DesignMD runtime-trace path and verifies the generated packet remains `reachable_not_exploited`, keeps `recommendDisclosure = false`, writes only local review artifacts, and surfaces the design's non-executing approval gate in the draft.
+
+The work-item projection was synced after AK task `2296` completed:
+
+```text
+a5e6248 chore: sync design-bound packet work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence.
 
 ## Command
