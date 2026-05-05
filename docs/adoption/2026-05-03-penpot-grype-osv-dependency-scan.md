@@ -404,6 +404,34 @@ The work-item projection was synced after AK task `2316` completed:
 ff9d7d0 chore: sync depviz runtime reference work item
 ```
 
+The enriched dep-viz runtime-backed handoff was then exercised end to end through dep-redteam using local `/tmp` artifacts:
+
+```text
+7518929 docs: capture enriched handoff corridor run
+```
+
+The run generated a synthetic enriched dep-viz handoff with one `runtime-command-observation` source reference, imported it as dep-redteam `runtime_trace_summary` reachability evidence, generated a non-executing local-lab design, and produced a design-bound `reachable_not_exploited` review packet. Validation confirmed:
+
+```json
+{
+  "handoffSourceReferences": 1,
+  "handoffEvidenceKind": "runtime-command-observation",
+  "reachabilityConclusion": "reachable_unproven",
+  "reachabilitySourceKind": "runtime_trace_summary",
+  "sourceAdapterProducer": "dep-viz",
+  "sourceAdapterEvidenceKind": "depviz-runtime-command-observation",
+  "reviewPacketStatus": "reachable_not_exploited",
+  "disclosureRecommended": false,
+  "draftHasNoRecommendation": true
+}
+```
+
+The work-item projection was synced after AK task `2319` completed:
+
+```text
+67b1f60 chore: sync enriched handoff run work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It does improve future enriched handoffs for targets with runtime-observed package evidence.
 
 ## Command
