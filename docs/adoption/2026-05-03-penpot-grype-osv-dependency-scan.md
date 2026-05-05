@@ -234,6 +234,14 @@ d173ca0 feat: plan local lab from reachability import
 
 `dep-redteam plan-reachability-local-lab` now composes adapter import, reachability evidence application, and non-executing local-lab plan generation. A real DesignMD runtime-trace source produced `reachable_unproven`, one `ready_for_local_lab_design` plan entry, and `executionAllowed = false`; it still did not execute validation or recommend disclosure.
 
+Dep-redteam then added advisory-specific design from imported reachability:
+
+```text
+fba882c feat: design local lab from reachability import
+```
+
+`dep-redteam design-reachability-local-lab` now composes adapter import, evidence application, non-executing plan generation, and `depredteam.local-lab-design.v1` creation. A real DesignMD runtime-trace source produced a valid design with `sourcePlanStatus = ready_for_local_lab_design`, `executionAllowed = false`, and `approvalRequiredBeforeExecution = true`.
+
 ## Command
 
 ```bash
