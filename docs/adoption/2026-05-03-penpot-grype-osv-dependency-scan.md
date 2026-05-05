@@ -376,7 +376,21 @@ The work-item projection was synced after AK task `2309` completed:
 53ddcad chore: sync MVP closeout work item
 ```
 
-This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence.
+Following the dep-redteam closeout recommendation, the next slice moved upstream to dep-viz producer evidence. Dep-viz now preserves package-level evidence when loading depmodels and emits runtime-backed `sourceReferences[]` in exploitability handoffs when enriched package evidence records `runtime.observed = true`:
+
+```text
+708e3d3 feat: include runtime evidence in handoffs
+```
+
+This gives downstream consumers a producer-side reachability hint from dep-diet/runtime-trace-enriched depmodels without treating it as exploitability proof or execution approval. The handoff contract and README now state that source references may come from local source mentions or runtime command observations, and both remain hints only.
+
+The work-item projection was synced after AK task `82` completed:
+
+```text
+b3cd6e7 chore: sync runtime handoff work item
+```
+
+This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It does improve future enriched handoffs for targets with runtime-observed package evidence.
 
 ## Command
 
