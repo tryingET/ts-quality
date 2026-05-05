@@ -362,6 +362,20 @@ The work-item projection was synced after AK task `2299` completed:
 845d19d chore: sync blocked packet refusal work item
 ```
 
+Dep-redteam then recorded MVP closeout for the non-executing validation-consumer corridor:
+
+```text
+728976b docs: close out dep-redteam MVP corridor
+```
+
+The closeout marks dep-redteam as adoption-ready for non-executing validation-consumer use, while explicitly not being an exploit runner, disclosure sender, or remediation authority. It summarizes the corridor, regression evidence, blocked Penpot posture, real-derived DesignMD posture, explicit non-goals, adoption readiness, and likely next owner repos. The next strategic work is now framed as upstream producer-evidence improvement in `dep-viz`, `dep-diet`, or `runtime-trace-insights`, rather than expanding dep-redteam into execution or disclosure automation.
+
+The work-item projection was synced after AK task `2309` completed:
+
+```text
+53ddcad chore: sync MVP closeout work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence.
 
 ## Command
