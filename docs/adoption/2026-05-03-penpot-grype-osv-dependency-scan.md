@@ -256,6 +256,20 @@ The work-item projection was synced after AK task `2284` completed:
 81e5ec9 chore: sync design-bound evidence work item
 ```
 
+Dep-redteam then hardened the design-bound disclosure guardrails:
+
+```text
+1c9e55b test: guard design-bound evidence disclosure
+```
+
+The status-matrix regression proves design-bound `reachable_not_exploited`, `not_reproduced`, and `out_of_scope` packets keep `disclosureDraft.recommended = false`; attempts to pass `--recommend-disclosure` for those statuses are rejected. A separate `safe_reproducer_confirmed` packet may recommend disclosure only when it carries separate manual evidence artifacts. Local disclosure drafts now surface the design binding so reviewers can see that the design itself remained non-executing and approval-gated.
+
+The work-item projection was synced after AK task `2290` completed:
+
+```text
+50c4640 chore: sync design-bound guardrail work item
+```
+
 This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence.
 
 ## Command
