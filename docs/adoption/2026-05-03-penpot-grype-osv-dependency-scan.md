@@ -194,6 +194,14 @@ Dep-redteam then added reachability adapter fixtures:
 
 The fixture set now includes dep-viz source-reference, dep-diet static/runtime, and runtime-trace-insights command-observation source shapes. Each fixture carries `sourceAdapter` metadata and proves adapter-derived reachability evidence can unlock design readiness while keeping execution and disclosure disallowed.
 
+Dep-redteam then added bounded reachability adapter importers:
+
+```text
+50f347f feat: import reachability adapter evidence
+```
+
+`dep-redteam import-reachability-evidence` now imports dep-viz source-reference handoff extensions, dep-diet static/runtime depmodel evidence, and runtime-trace-insights bundle summaries into normalized `depredteam.reachability-evidence.v1` packets. Importers emit `reachable_unproven` or `no_reachability_evidence` only; they do not execute code, emit `safe_reproducer_confirmed`, or recommend disclosure.
+
 ## Command
 
 ```bash
