@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-19",
+  "updated_at": "2026-05-05",
   "owner": "@tryinget",
   "project_name": "ts-quality",
   "milestones": [
@@ -622,38 +622,834 @@
         {
           "id": "AK-TASK-1791",
           "title": "ts-quality: align README and publish checklist with SG6 legitimacy outputs",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: align README and publish checklist with SG6 legitimacy outputs (task #1791)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
         },
         {
           "id": "AK-TASK-1792",
           "title": "ts-quality: align public release docs with SG6 legitimacy outputs",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: align public release docs with SG6 legitimacy outputs (task #1792)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
         },
         {
           "id": "AK-TASK-1793",
           "title": "ts-quality: add regression coverage for SG7 adoption-surface drift",
-          "state": "queued",
+          "state": "done",
           "tasks": [
             {
               "text": "ts-quality: add regression coverage for SG7 adoption-surface drift (task #1793)",
-              "done": false
+              "done": true
             }
           ],
-          "dod": "Task reaches done in society.db with evidence recorded."
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1795",
+          "title": "ts-quality: prove installed-package review and legitimacy flow in packaging smoke",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prove installed-package review and legitimacy flow in packaging smoke (task #1795)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-20"
+        },
+        {
+          "id": "AK-TASK-1796",
+          "title": "ts-quality: prove installed-package report, explain, and plan surfaces",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prove installed-package report, explain, and plan surfaces (task #1796)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1797",
+          "title": "ts-quality: prove installed-package trend surface across two runs",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prove installed-package trend surface across two runs (task #1797)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1798",
+          "title": "ts-quality: prove installed-package materialized-config check and govern flow",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prove installed-package materialized-config check and govern flow (task #1798)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1799",
+          "title": "ts-quality: prove installed-package release-bot authorization path",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prove installed-package release-bot authorization path (task #1799)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1800",
+          "title": "ts-quality: assert report --json parity with run.json",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: assert report --json parity with run.json (task #1800)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1801",
+          "title": "ts-quality: add coverage for attest keygen CLI and installed package path",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: add coverage for attest keygen CLI and installed package path (task #1801)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1802",
+          "title": "ts-quality: harden amend malformed proposal input errors",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: harden amend malformed proposal input errors (task #1802)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1803",
+          "title": "ts-quality: settle amend proposal path trust boundary",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: settle amend proposal path trust boundary (task #1803)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1804",
+          "title": "ts-quality: prove installed-package drift detection for plan, govern, and authorize",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prove installed-package drift detection for plan, govern, and authorize (task #1804)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1805",
+          "title": "ts-quality: prove materialized-config parity for authorize and amend",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prove materialized-config parity for authorize and amend (task #1805)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1898",
+          "title": "ts-quality: run first outside-repo bounded review and witness pilot",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: run first outside-repo bounded review and witness pilot (task #1898)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1899",
+          "title": "ts-quality: reduce first-pilot post-witness summary and witness ergonomics friction",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: reduce first-pilot post-witness summary and witness ergonomics friction (task #1899)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1900",
+          "title": "ts-quality: repeat outside-repo witness pilot in second TypeScript repo",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: repeat outside-repo witness pilot in second TypeScript repo (task #1900)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1905",
+          "title": "ts-quality: reduce target-repo proof-command selection friction",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: reduce target-repo proof-command selection friction (task #1905)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1906",
+          "title": "ts-quality: generate configured LCOV when missing",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: generate configured LCOV when missing (task #1906)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1907",
+          "title": "ts-quality: rerun pi-server pilot with configured LCOV generation",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: rerun pi-server pilot with configured LCOV generation (task #1907)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1908",
+          "title": "ts-quality: make verdict reasons residual-pressure-specific after execution-backed witness",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: make verdict reasons residual-pressure-specific after execution-backed witness (task #1908)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1914",
+          "title": "ts-quality: prepare 0.2.0 artifact schema and adoption diagnostics",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prepare 0.2.0 artifact schema and adoption diagnostics (task #1914)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1915",
+          "title": "ts-quality: make mutation survivors actionable and expose next evidence actions",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: make mutation survivors actionable and expose next evidence actions (task #1915)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1916",
+          "title": "ts-quality: enforce release-please-style release notes and agent breaking-change guidance",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: enforce release-please-style release notes and agent breaking-change guidance (task #1916)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1917",
+          "title": "ts-quality: add doctor --machine for harnessed LLM adoption diagnostics",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: add doctor --machine for harnessed LLM adoption diagnostics (task #1917)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1919",
+          "title": "ts-quality: rebaseline production-readiness posture after 0.2.0",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: rebaseline production-readiness posture after 0.2.0 (task #1919)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1921",
+          "title": "ts-quality: select public 0.2.0 outside-repo adoption pilot target",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: select public 0.2.0 outside-repo adoption pilot target (task #1921)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1922",
+          "title": "ts-quality: execute public 0.2.0 outside-repo adoption pilot",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: execute public 0.2.0 outside-repo adoption pilot (task #1922)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1923",
+          "title": "ts-quality: convert public 0.2.0 adoption pilot findings into next product slice",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: convert public 0.2.0 adoption pilot findings into next product slice (task #1923)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1924",
+          "title": "ts-quality: retire stale SG/TG/OP direction docs",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: retire stale SG/TG/OP direction docs (task #1924)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-28"
+        },
+        {
+          "id": "AK-TASK-1928",
+          "title": "ts-quality: centralize public CLI contract verification",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: centralize public CLI contract verification (task #1928)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1929",
+          "title": "ts-quality: tighten public CLI help contract for 0.2.1",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: tighten public CLI help contract for 0.2.1 (task #1929)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1934",
+          "title": "ts-quality: harden doctor machine command contract for 0.2.1",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: harden doctor machine command contract for 0.2.1 (task #1934)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1936",
+          "title": "ts-quality: execute public 0.2.1 outside-repo adoption pilot",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: execute public 0.2.1 outside-repo adoption pilot (task #1936)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1938",
+          "title": "ts-quality: make manual witness artifacts first-class check evidence",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: make manual witness artifacts first-class check evidence (task #1938)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1940",
+          "title": "ts-quality: release 0.2.2 manual witness consumption proof",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: release 0.2.2 manual witness consumption proof (task #1940)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1941",
+          "title": "ts-quality: update posture after public 0.2.2 manual witness proof",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: update posture after public 0.2.2 manual witness proof (task #1941)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1943",
+          "title": "ts-quality: harden package proof for manual witnesses and artifact compatibility",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: harden package proof for manual witnesses and artifact compatibility (task #1943)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1945",
+          "title": "ts-quality: release 0.2.3 witness and compatibility hardening",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: release 0.2.3 witness and compatibility hardening (task #1945)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1948",
+          "title": "ts-quality: prepare and release v0.3.0 public contract baseline",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prepare and release v0.3.0 public contract baseline (task #1948)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1950",
+          "title": "ts-quality: harden v0.3 run artifact compatibility fixture matrix",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: harden v0.3 run artifact compatibility fixture matrix (task #1950)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1951",
+          "title": "ts-quality: formalize compact doctor machine protocol v1 grammar",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: formalize compact doctor machine protocol v1 grammar (task #1951)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1952",
+          "title": "ts-quality: prove minimum viable public adoption story for v0.3",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prove minimum viable public adoption story for v0.3 (task #1952)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1954",
+          "title": "ts-quality: release v0.3.1 public verifier parser fix",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: release v0.3.1 public verifier parser fix (task #1954)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1955",
+          "title": "ts-quality: update product posture after v0.3.1 public verifier release",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: update product posture after v0.3.1 public verifier release (task #1955)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1956",
+          "title": "ts-quality: run public v0.3.1 minimum-adoption pilot in external temp repo",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: run public v0.3.1 minimum-adoption pilot in external temp repo (task #1956)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1959",
+          "title": "ts-quality: remove adoption pilot friction for coverage directory and fresh npm use",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: remove adoption pilot friction for coverage directory and fresh npm use (task #1959)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1960",
+          "title": "ts-quality: run public v0.3.1 TypeScript dist-backed adoption pilot",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: run public v0.3.1 TypeScript dist-backed adoption pilot (task #1960)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1963",
+          "title": "ts-quality: run public v0.3.1 monorepo package-boundary adoption pilot",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: run public v0.3.1 monorepo package-boundary adoption pilot (task #1963)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1965",
+          "title": "ts-quality: run public v0.3.1 real pi-extensions monorepo adoption pilot",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: run public v0.3.1 real pi-extensions monorepo adoption pilot (task #1965)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-29"
+        },
+        {
+          "id": "AK-TASK-1968",
+          "title": "ts-quality: implement actionable evidence closure contract",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: implement actionable evidence closure contract (task #1968)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1972",
+          "title": "ts-quality: make evidence closure contract breaking alpha cleanup",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: make evidence closure contract breaking alpha cleanup (task #1972)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1975",
+          "title": "ts-quality: deepen evidence closure UX and then harden public contract",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: deepen evidence closure UX and then harden public contract (task #1975)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1977",
+          "title": "ts-quality: document AX terminology for json and compact projections",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: document AX terminology for json and compact projections (task #1977)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1988",
+          "title": "Generalize mutation survivor sidecars for observable masked-boundary guidance",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Generalize mutation survivor sidecars for observable masked-boundary guidance (task #1988)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1991",
+          "title": "Add generalized ts-quality artifact retention guidance",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Add generalized ts-quality artifact retention guidance (task #1991)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1994",
+          "title": "ts-quality: add sidecar sufficiency rubric and regression checks",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: add sidecar sufficiency rubric and regression checks (task #1994)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1995",
+          "title": "ts-quality: add masked mutation survivor fixture corpus",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: add masked mutation survivor fixture corpus (task #1995)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1996",
+          "title": "ts-quality: harden next-evidence artifact compatibility fixtures",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: harden next-evidence artifact compatibility fixtures (task #1996)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1997",
+          "title": "ts-quality: prototype pilot-run adoption materializer",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: prototype pilot-run adoption materializer (task #1997)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1998",
+          "title": "ts-quality: add artifact retention plan projection",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: add artifact retention plan projection (task #1998)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-1999",
+          "title": "ts-quality: run another external repo evidence-closure dogfood",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: run another external repo evidence-closure dogfood (task #1999)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-2007",
+          "title": "ts-quality: harden mutation fingerprinting for symlinked excluded dirs",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "ts-quality: harden mutation fingerprinting for symlinked excluded dirs (task #2007)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-30"
+        },
+        {
+          "id": "AK-TASK-2388",
+          "title": "Capture dep-redteam advisory usage hardening evidence",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Capture dep-redteam advisory usage hardening evidence (task #2388)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-05-05"
         }
       ]
     }

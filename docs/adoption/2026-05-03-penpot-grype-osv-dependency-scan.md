@@ -487,7 +487,62 @@ The work-item projection was synced after AK task `2342` completed:
 12f3c57 chore: sync DSPx advisory evidence work item
 ```
 
-This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It does improve future enriched handoffs for targets with runtime-observed package evidence.
+Dep-redteam then clarified the state/escalation model for when DSPy programs come into play:
+
+```text
+a60fff3 docs: clarify dep-redteam state escalation model
+```
+
+The documented corridor is now producer-first: dep-viz, dep-diet, runtime-trace-insights, and operator call-path notes establish the first local connection; only then does an optional per-advisory DSPy investigation narrow the affected API/config/protocol question. The default rule is explicit:
+
+```text
+No local connection -> no DSPy advisory case.
+Local connection exists and the question is advisory-specific -> optional DSPy case.
+DSPy output -> validated packet or no state transition.
+```
+
+Dep-redteam then added the first advisory-usage evidence membrane:
+
+```text
+22d6eae feat: add advisory usage evidence contract
+```
+
+`depredteam.advisory-usage-evidence.v1` captures DSPx/DSPy candidate affected surfaces, local paths, call paths, input-control conditions, missing evidence questions, DSPx behavior result paths, Oracle-readable evidence paths, and optional `dspy-lm-auth` LM access metadata. The contract keeps `recommendDisclosure = false`, `executionBoundary.exploitAttempted = false`, and `lmAccess.authority = lm_access_only`; it cannot advance a finding to `safe_reproducer_confirmed` by itself.
+
+Dep-redteam then corrected and hardened the packet-vs-product authority boundary:
+
+```text
+c2728dc fix: clarify advisory usage evidence boundary
+```
+
+The product may later advance to `safe_reproducer_confirmed` or recommend a local human-reviewed disclosure draft from stronger local-lab evidence. The advisory-usage packet cannot do either by itself because it only narrows the advisory-specific question.
+
+Dep-redteam then exercised that membrane in a composed local-lab planning corridor:
+
+```text
+5ab7e4d feat: compose advisory usage planning
+```
+
+`dep-redteam plan-advisory-usage-local-lab` now applies validated advisory-usage evidence and writes a non-executing local-lab plan carrying candidate affected usage, missing evidence questions, and DSPx/Oracle receipt expectations forward. The command still keeps execution disallowed and disclosure unrecommended.
+
+A deep adversarial review then found three same-day hardening gaps in the new advisory-usage path: malformed generated nested fields could pass validation then crash planning, `operatorException` was too broad for terminal states, and runtime validation accepted malformed artifact items that the JSON schema rejected. Dep-redteam fixed those in two follow-up commits:
+
+```text
+f82009b fix: harden advisory usage evidence gate
+5345a57 test: complete advisory usage hardening matrix
+```
+
+The hardening now rejects malformed generated packet shapes, requires artifact objects with `kind` and `path`, blocks advisory-usage evidence from overwriting terminal local-lab states, and allows `operatorException` only for explicit `dependency_present_only` semantic investigation. Regression coverage increased to `45 passed`, and the full dep-redteam gate passed:
+
+```bash
+uv run ruff check .
+uv run pytest -q
+node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict
+git diff --check
+ROCS_WORKSPACE_ROOT=/home/tryinget/ai-society ./scripts/ci/full.sh
+```
+
+This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It improves the future path for targets where producer evidence has already moved a cluster beyond raw dependency presence and an operator wants a bounded advisory-specific DSPy investigation.
 
 ## Command
 
