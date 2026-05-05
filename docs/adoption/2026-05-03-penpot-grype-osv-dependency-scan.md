@@ -202,6 +202,14 @@ Dep-redteam then added bounded reachability adapter importers:
 
 `dep-redteam import-reachability-evidence` now imports dep-viz source-reference handoff extensions, dep-diet static/runtime depmodel evidence, and runtime-trace-insights bundle summaries into normalized `depredteam.reachability-evidence.v1` packets. Importers emit `reachable_unproven` or `no_reachability_evidence` only; they do not execute code, emit `safe_reproducer_confirmed`, or recommend disclosure.
 
+Dep-redteam then hardened the importer against the real Penpot dep-viz handoff shape:
+
+```text
+390add8 test: harden reachability import on real depviz handoff
+```
+
+The real handoff carries triage clusters but no source-reference extension. Importing it now produces `no_reachability_evidence` rather than failing as unsupported or accidentally unlocking design readiness. A `/tmp/penpot-depintel-pilot/...` importer run confirmed the generated reachability packet validates and keeps disclosure unrecommended.
+
 ## Command
 
 ```bash
