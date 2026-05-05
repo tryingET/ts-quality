@@ -210,6 +210,14 @@ Dep-redteam then hardened the importer against the real Penpot dep-viz handoff s
 
 The real handoff carries triage clusters but no source-reference extension. Importing it now produces `no_reachability_evidence` rather than failing as unsupported or accidentally unlocking design readiness. A `/tmp/penpot-depintel-pilot/...` importer run confirmed the generated reachability packet validates and keeps disclosure unrecommended.
 
+Dep-viz then added producer-side source-reference emission for handoffs:
+
+```text
+f04e217 feat: emit source references in handoff
+```
+
+`depviz handoff exploitability` now includes optional `sourceReferences[]` when bounded local source inspection finds package-name mentions for selected triage clusters. These references are reachability hints only: present references are not exploitability proof, and absent references are not proof of safety. Regenerating the Penpot handoff with this code produced a valid packet with `10` triage clusters and `0` source references, preserving the current blocked Penpot posture.
+
 ## Command
 
 ```bash
