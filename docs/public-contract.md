@@ -151,6 +151,8 @@ The compact `check` stdout and generated `check-summary.txt` must surface the sa
 
 `run.json` is the immutable check-time audit packet. Other generated JSON/text surfaces are projections or decision records that point back to the selected run rather than replacing it.
 
+For adoption-facing parser habits across legacy packets, additive fields, authorization records, and next-evidence sidecars, see `docs/adoption/artifact-consumer-compatibility-guide.md`.
+
 Consumer-safe parsing rules:
 
 - read `run.json` as the source of truth for changed scope, evidence, verdict, control-plane snapshot, and `nextEvidenceAction`
@@ -201,7 +203,7 @@ The shared public CLI contract fixture proves the core evidence sequence from an
 
 ## Protected run-artifact compatibility expectation
 
-Current run artifacts declare `version: "0.2.0"` because `0.2.0` introduced additive run fields. The current public contract does not require downstream parsers to understand every optional field, but it does require repo-owned projections to tolerate older run packets without newer additive fields.
+Current run artifacts declare `version: "0.2.0"` because `0.2.0` introduced additive run fields. The current public contract does not require downstream parsers to understand every optional field, but it does require repo-owned projections to tolerate older run packets without newer additive fields. Adoption consumers should follow `docs/adoption/artifact-consumer-compatibility-guide.md` when deciding which missing, malformed, legacy, or future fields are display-only versus fail-closed decision inputs.
 
 Installed-package smoke currently proves a run-artifact compatibility matrix:
 
