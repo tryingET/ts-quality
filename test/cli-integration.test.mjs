@@ -1233,6 +1233,20 @@ test('check rejects duplicate value options instead of silently taking the last 
   assert.match(result.stderr, /^--root may only be specified once\n$/);
 });
 
+test('check rejects repeated --changed instead of treating it as a multi-file list', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const result = spawnSync('node', [cli, 'check', '--root', target, '--changed', 'src/auth/token.js', '--changed', 'src/auth/other.js'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^--changed may only be specified once\n$/);
+});
+
+test('retention rejects --json because machine-readable modes are command-specific', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const result = spawnSync('node', [cli, 'retention', '--root', target, '--json'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^unexpected option --json for retention\n$/);
+});
+
 test('authorize rejects duplicate agent options instead of silently taking the last value', () => {
   const target = tempCopyOfFixture('governed-app');
   const result = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'release-bot', '--agent', 'maintainer'], { encoding: 'utf8' });
