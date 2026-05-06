@@ -55,6 +55,58 @@ test('authorize projects run-bound governance and invariant evidence into the de
   assert.equal(approved.evidenceContext.riskyInvariant.invariantId, 'auth.refresh.validity');
 });
 
+test('mini-monorepo negative pilot keeps boundary violations and wrong-run authorization run-bound', () => {
+  const target = tempCopyOfFixture('mini-monorepo');
+
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--changed', 'packages/identity/src/store.js', '--run-id', 'authorization-other-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'maintainer', '--run-id', 'authorization-other-run'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const otherDecision = JSON.parse(result.stdout);
+  assert.equal(otherDecision.outcome, 'approve');
+  assert.equal(otherDecision.evidenceContext.runId, 'authorization-other-run');
+  assert.deepEqual(otherDecision.evidenceContext.governanceErrors, []);
+
+  result = spawnSync('node', [cli, 'check', '--root', target, '--changed', 'packages/api/src/consumer.js', '--run-id', 'negative-governance-boundary'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'maintainer', '--run-id', 'negative-governance-boundary'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const boundaryDecision = JSON.parse(result.stdout);
+  assert.equal(boundaryDecision.outcome, 'deny');
+  assert.equal(boundaryDecision.evidenceContext.runId, 'negative-governance-boundary');
+  assert.equal(boundaryDecision.evidenceContext.artifactPaths.bundle, '.ts-quality/runs/negative-governance-boundary/bundle.maintainer.merge.json');
+  assert.equal(boundaryDecision.evidenceContext.governanceErrors.some((item) => item.ruleId === 'api-cannot-import-identity'), true);
+  assert.match(boundaryDecision.reasons.join('\n'), /Governance violations block authorization/);
+
+  const governText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'negative-governance-boundary', 'govern.txt'), 'utf8');
+  assert.match(governText, /api-cannot-import-identity/);
+  assert.match(governText, /packages\/api\/src\/consumer\.js/);
+  const staleDecision = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'authorization-other-run', 'authorize.maintainer.merge.json'), 'utf8'));
+  assert.equal(staleDecision.outcome, 'approve');
+  assert.equal(staleDecision.evidenceContext.runId, 'authorization-other-run');
+  assert.equal(boundaryDecision.outcome, 'deny');
+});
+
+test('mini-monorepo negative pilot refuses insufficient authorization grants', () => {
+  const target = tempCopyOfFixture('mini-monorepo');
+  fs.writeFileSync(path.join(target, '.ts-quality', 'agents.ts'), `export default [{
+  id: 'release-bot',
+  kind: 'automation',
+  roles: ['ci'],
+  grants: [{ id: 'identity-only', actions: ['merge'], paths: ['packages/identity/**'], minMergeConfidence: 0 }]
+}];\n`, 'utf8');
+
+  let result = spawnSync('node', [cli, 'check', '--root', target, '--changed', 'packages/api/src/consumer.js', '--run-id', 'negative-insufficient-grant'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  result = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'release-bot', '--run-id', 'negative-insufficient-grant'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const decision = JSON.parse(result.stdout);
+  assert.equal(decision.outcome, 'deny');
+  assert.equal(decision.evidenceContext.runId, 'negative-insufficient-grant');
+  assert.equal(decision.scope.includes('packages/api/src/consumer.js'), true);
+  assert.match(decision.reasons.join('\n'), /No authority grant covers the requested action and scope/);
+});
+
 test('authorize writes bundle digests that match the run artifact file digests', () => {
   const target = tempCopyOfFixture('governed-app');
   let result = spawnSync('node', [cli, 'check', '--root', target], { encoding: 'utf8' });

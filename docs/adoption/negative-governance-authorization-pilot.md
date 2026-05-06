@@ -1,5 +1,5 @@
 ---
-summary: "Docs-only pilot plan for proving governance boundary violations and run-bound authorization fail-closed behavior."
+summary: "Pilot plan and regression proof for governance boundary violations and run-bound authorization fail-closed behavior."
 read_when:
   - "When planning the negative-path governance and authorization adoption proof"
   - "When reviewing run-bound authorization, wrong-run approvals, or insufficient grant outcomes"
@@ -9,16 +9,39 @@ type: "plan"
 
 # Negative governance and authorization pilot
 
-This is a docs-only pilot plan. It does not claim the proof has already been run. The goal is to make the remaining negative-path adoption proof concrete enough that a future operator can execute it in a disposable target repo and compare the resulting artifacts without inventing semantics during the run.
+This document is both a reusable pilot plan and a regression-proof index.
 
-The pilot proves two fail-closed behaviors:
+The focused regression subset is implemented in `test/authorization-integration.test.mjs` using the existing `fixtures/mini-monorepo` fixture. It proves:
 
-1. a governance boundary violation blocks run-bound authorization, and
-2. wrong-run or insufficient-grant authorization artifacts do not become ambient approval.
+1. a governance boundary violation blocks run-bound authorization,
+2. an approval-like authorization artifact from another run remains bound to that other run and does not approve the violating run, and
+3. an insufficient grant fails closed with a non-approval reason.
 
-Use a disposable temp repo or temp copy. Do not run this in a production checkout unless the target owner explicitly wants to preserve the failing fixture.
+The broader pilot plan below remains useful when running the same negative-path story in a disposable external target repo. Do not run the pilot in a production checkout unless the target owner explicitly wants to preserve the failing fixture.
 
-## Fixture shape
+## Implemented regression subset
+
+Current executable proof:
+
+```bash
+node --test test/authorization-integration.test.mjs
+```
+
+Regression cases:
+
+- `mini-monorepo negative pilot keeps boundary violations and wrong-run authorization run-bound`
+- `mini-monorepo negative pilot refuses insufficient authorization grants`
+
+Fixture and artifacts exercised:
+
+- `fixtures/mini-monorepo` intentionally violates the `api-cannot-import-identity` boundary when `packages/api/src/consumer.js` imports `packages/identity/src/store.js`.
+- `negative-governance-boundary` run id verifies `authorize.maintainer.merge.json` denies automation despite another run having an approval-like decision artifact.
+- `authorization-other-run` verifies a clean package-local run can approve while staying bound to its own run id.
+- `negative-insufficient-grant` verifies `release-bot` cannot authorize `packages/api/src/consumer.js` with a grant scoped only to `packages/identity/**`.
+
+The test asserts run ids, governance error rule ids, `govern.txt` content, bundle artifact paths, denial outcomes, and non-approval reasons. This is not a public outside-repo adoption proof; it is the repo-local executable regression that protects the negative-path contract.
+
+## External pilot fixture shape
 
 Start from the monorepo package-boundary shape used by `docs/adoption/seventh-public-0.3.1-monorepo-package-boundary-pilot.md`, but make the boundary violation intentional.
 
