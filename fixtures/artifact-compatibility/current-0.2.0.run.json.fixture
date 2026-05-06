@@ -1,0 +1,1298 @@
+{
+  "analysis": {
+    "changedFiles": [
+      "src/auth/token.js"
+    ],
+    "changedRegions": [],
+    "configPath": "ts-quality.config.ts",
+    "coverageLcovPath": "coverage/lcov.info",
+    "createdAt": "2026-01-01T00:30:00.000Z",
+    "executionFingerprint": "sha256:sample-governed-app",
+    "runId": "fixture-current-0.2.0",
+    "runtimeMirrorRoots": [
+      "dist"
+    ],
+    "sourceFiles": [
+      "src/auth/token.js",
+      "src/identity/store.js",
+      "src/payments/ledger.js",
+      "src/shared/audit.js"
+    ]
+  },
+  "approvals": [],
+  "attestations": [],
+  "behaviorClaims": [
+    {
+      "description": "Refresh token validity applies to src/auth/token.js",
+      "evidence": [
+        "3 surviving mutants in impacted invariant scope",
+        "Missing deterministic lexical test evidence for scenario 'exact expiry boundary denies access'"
+      ],
+      "evidenceSummary": {
+        "changedFunctions": [
+          {
+            "coveragePct": 100,
+            "crap": 3,
+            "filePath": "src/auth/token.js",
+            "symbol": "function:canUseRefreshToken"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "src/auth/token.js",
+            "symbol": "function:isRefreshExpired"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 3,
+            "filePath": "src/auth/token.js",
+            "symbol": "function:issueAccessDecision"
+          }
+        ],
+        "changedFunctionsUnder80Coverage": 0,
+        "evidenceSemantics": "deterministic-lexical",
+        "evidenceSemanticsSummary": "deterministic lexical alignment over focused tests; not execution-backed behavioral proof",
+        "focusedTests": [
+          "test/token.test.js"
+        ],
+        "impactedFiles": [
+          "src/auth/token.js"
+        ],
+        "invariantId": "auth.refresh.validity",
+        "killedMutantsInScope": 1,
+        "maxChangedCrap": 3,
+        "mutationSitesInScope": 4,
+        "scenarioResults": [
+          {
+            "assertionMatched": true,
+            "description": "exact expiry boundary denies access",
+            "expected": "deny",
+            "failurePathKeywordsMatched": false,
+            "keywordsMatched": true,
+            "scenarioId": "expired-boundary",
+            "supported": false,
+            "supportKind": "missing"
+          }
+        ],
+        "subSignals": [
+          {
+            "facts": [
+              "mode reason: matched focused tests via deterministic path/import/selector hints",
+              "impacted files: src/auth/token.js",
+              "focused tests: test/token.test.js"
+            ],
+            "label": "Focused test alignment",
+            "level": "clear",
+            "mode": "inferred",
+            "modeReason": "matched focused tests via deterministic path/import/selector hints",
+            "signalId": "focused-test-alignment",
+            "summary": "1 focused test file aligned to invariant scope"
+          },
+          {
+            "facts": [
+              "mode reason: heuristically aligned focused tests were evaluated, but no scenario has full deterministic lexical support",
+              "expired-boundary: missing failure-path evidence"
+            ],
+            "label": "Scenario support",
+            "level": "missing",
+            "mode": "missing",
+            "modeReason": "heuristically aligned focused tests were evaluated, but no scenario has full deterministic lexical support",
+            "signalId": "scenario-support",
+            "summary": "0/1 scenario(s) have deterministic lexical support"
+          },
+          {
+            "facts": [
+              "mode reason: coverage evidence came from LCOV for changed functions in invariant scope",
+              "changed functions under 80% coverage: 0"
+            ],
+            "label": "Coverage pressure",
+            "level": "clear",
+            "mode": "explicit",
+            "modeReason": "coverage evidence came from LCOV for changed functions in invariant scope",
+            "signalId": "coverage-pressure",
+            "summary": "All changed functions in invariant scope are at or above 80% coverage"
+          },
+          {
+            "facts": [
+              "mode reason: mutation evidence came from selected mutation sites in invariant scope",
+              "mutation sites in scope: 4",
+              "killed mutants in scope: 1",
+              "surviving mutants in scope: 3"
+            ],
+            "label": "Mutation pressure",
+            "level": "warning",
+            "mode": "explicit",
+            "modeReason": "mutation evidence came from selected mutation sites in invariant scope",
+            "signalId": "mutation-pressure",
+            "summary": "3 surviving mutants across 4 mutation sites"
+          },
+          {
+            "facts": [
+              "mode reason: changed-function evidence came from CRAP/changed-function mapping in invariant scope",
+              "function:canUseRefreshToken (src/auth/token.js, coverage 100%, CRAP 3)",
+              "function:isRefreshExpired (src/auth/token.js, coverage 100%, CRAP 1)",
+              "function:issueAccessDecision (src/auth/token.js, coverage 100%, CRAP 3)"
+            ],
+            "label": "Changed function pressure",
+            "level": "info",
+            "mode": "explicit",
+            "modeReason": "changed-function evidence came from CRAP/changed-function mapping in invariant scope",
+            "signalId": "changed-function-pressure",
+            "summary": "3 changed functions in invariant scope; max changed CRAP 3"
+          }
+        ],
+        "survivingMutantsInScope": 3
+      },
+      "id": "auth.refresh.validity:claim",
+      "invariantId": "auth.refresh.validity",
+      "obligations": [
+        {
+          "description": "Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.",
+          "fileHints": [
+            "src/auth/token.js"
+          ],
+          "id": "auth.refresh.validity:expired-boundary",
+          "invariantId": "auth.refresh.validity",
+          "priority": "high",
+          "scenarioId": "expired-boundary"
+        }
+      ],
+      "status": "at-risk"
+    }
+  ],
+  "changedFiles": [
+    "src/auth/token.js"
+  ],
+  "changedRegions": [],
+  "complexity": [
+    {
+      "changed": false,
+      "complexity": 2,
+      "coveragePct": 0,
+      "crap": 6,
+      "filePath": "src/payments/ledger.js",
+      "kind": "complexity",
+      "span": {
+        "endLine": 12,
+        "startLine": 5
+      },
+      "symbol": "function:recordPayment"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 100,
+      "crap": 3,
+      "filePath": "src/auth/token.js",
+      "kind": "complexity",
+      "span": {
+        "endLine": 11,
+        "startLine": 5
+      },
+      "symbol": "function:canUseRefreshToken"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 100,
+      "crap": 3,
+      "filePath": "src/auth/token.js",
+      "kind": "complexity",
+      "span": {
+        "endLine": 18,
+        "startLine": 13
+      },
+      "symbol": "function:issueAccessDecision"
+    },
+    {
+      "changed": false,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "src/identity/store.js",
+      "kind": "complexity",
+      "span": {
+        "endLine": 6,
+        "startLine": 1
+      },
+      "symbol": "function:customerIdentity"
+    },
+    {
+      "changed": false,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "src/payments/ledger.js",
+      "kind": "complexity",
+      "span": {
+        "endLine": 3,
+        "startLine": 1
+      },
+      "symbol": "function:reservePaymentId"
+    },
+    {
+      "changed": false,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "src/shared/audit.js",
+      "kind": "complexity",
+      "span": {
+        "endLine": 3,
+        "startLine": 1
+      },
+      "symbol": "function:audit"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "src/auth/token.js",
+      "kind": "complexity",
+      "span": {
+        "endLine": 3,
+        "startLine": 1
+      },
+      "symbol": "function:isRefreshExpired"
+    }
+  ],
+  "controlPlane": {
+    "agents": [
+      {
+        "grants": [
+          {
+            "actions": [
+              "merge"
+            ],
+            "id": "release-bot-merge",
+            "minMergeConfidence": 80,
+            "paths": [
+              "src/**"
+            ],
+            "requireAttestations": [
+              "ci.tests.passed"
+            ],
+            "requireHumanReview": true
+          }
+        ],
+        "id": "release-bot",
+        "kind": "automation",
+        "roles": [
+          "ci"
+        ]
+      },
+      {
+        "grants": [
+          {
+            "actions": [
+              "merge",
+              "override",
+              "amend"
+            ],
+            "id": "maintainer-merge",
+            "minMergeConfidence": 60,
+            "paths": [
+              "src/**"
+            ]
+          }
+        ],
+        "id": "maintainer",
+        "kind": "human",
+        "roles": [
+          "maintainer"
+        ]
+      },
+      {
+        "grants": [
+          {
+            "actions": [
+              "override"
+            ],
+            "id": "security-override",
+            "minMergeConfidence": 0,
+            "paths": [
+              "src/auth/**"
+            ]
+          }
+        ],
+        "id": "security-lead",
+        "kind": "human",
+        "roles": [
+          "security"
+        ]
+      }
+    ],
+    "agentsDigest": "sha256:783bbb133a2a7ae7d6d9a29eabec93bb98c157776357962ad8d175bd4bedcbf4",
+    "agentsPath": ".ts-quality/agents.ts",
+    "approvalsPath": ".ts-quality/approvals.json",
+    "attestationsDir": ".ts-quality/attestations",
+    "configDigest": "sha256:6401cc3091cc3728442181ede42dbb084d08ec787fb0ea758588a65a078253e4",
+    "configPath": "ts-quality.config.ts",
+    "constitution": [
+      {
+        "id": "auth-risk-budget",
+        "kind": "risk",
+        "maxCrap": 15,
+        "message": "Auth code requires stronger evidence because it decides authorization.",
+        "minMergeConfidence": 65,
+        "minMutationScore": 0.75,
+        "paths": [
+          "src/auth/**"
+        ]
+      },
+      {
+        "id": "payments-maintainer-approval",
+        "kind": "approval",
+        "message": "Payment domain changes require a maintainer approval.",
+        "minApprovals": 1,
+        "paths": [
+          "src/payments/**"
+        ],
+        "roles": [
+          "maintainer"
+        ]
+      },
+      {
+        "from": [
+          "src/shared/**"
+        ],
+        "id": "pii-boundary",
+        "kind": "boundary",
+        "message": "Shared utility code may not depend directly on identity state.",
+        "mode": "forbid",
+        "to": [
+          "src/identity/**"
+        ]
+      }
+    ],
+    "constitutionDigest": "sha256:13d5733e75df7fb1309dcc51c07b9c84baf82f623893ddd2594e02286bc03287",
+    "constitutionPath": ".ts-quality/constitution.ts",
+    "overridesPath": ".ts-quality/overrides.json",
+    "policy": {
+      "maxChangedCrap": 15,
+      "minMergeConfidence": 65,
+      "minMutationScore": 0.75
+    },
+    "schemaVersion": 1,
+    "trustedKeysDir": ".ts-quality/keys",
+    "waiversPath": ".ts-quality/waivers.json"
+  },
+  "coverage": [
+    {
+      "coveredLines": 11,
+      "filePath": "src/auth/token.js",
+      "kind": "coverage",
+      "lines": {
+        "1": 1,
+        "2": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1,
+        "13": 1,
+        "14": 1,
+        "15": 1,
+        "17": 1
+      },
+      "pct": 100,
+      "source": "governed-app",
+      "totalLines": 11
+    },
+    {
+      "coveredLines": 0,
+      "filePath": "src/payments/ledger.js",
+      "kind": "coverage",
+      "lines": {
+        "1": 0,
+        "2": 0,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0,
+        "9": 0,
+        "10": 0
+      },
+      "pct": 0,
+      "source": "governed-app",
+      "totalLines": 8
+    }
+  ],
+  "createdAt": "2026-01-01T00:30:00.000Z",
+  "files": [
+    {
+      "digest": "sha256:426470c01cf4f5dc02bacfc1eccf57ec0a2be3c6cf2c7a998017c8c67f801206",
+      "filePath": "src/auth/token.js",
+      "packageName": "governed-app"
+    },
+    {
+      "digest": "sha256:a72636f05abff922f2c94ffe15e08fefe9d5bdda2e7a654a58130f746e4a5665",
+      "filePath": "src/identity/store.js",
+      "packageName": "governed-app"
+    },
+    {
+      "digest": "sha256:110f727794a2b364ffa90739f6e6c056b0aa49ca099fcc85457f9b6b05698e4e",
+      "filePath": "src/payments/ledger.js",
+      "packageName": "governed-app"
+    },
+    {
+      "digest": "sha256:444174059e1626ee6a52cdbe20b49fd36920fafe4716b6652d792a594bd3f10f",
+      "filePath": "src/shared/audit.js",
+      "packageName": "governed-app"
+    }
+  ],
+  "governance": [
+    {
+      "evidence": [
+        "Mutation score 0.25 below budget 0.75"
+      ],
+      "id": "auth-risk-budget:mutation",
+      "level": "error",
+      "message": "Auth code requires stronger evidence because it decides authorization.",
+      "ruleId": "auth-risk-budget",
+      "scope": [
+        "src/auth/token.js"
+      ]
+    },
+    {
+      "evidence": [
+        "Merge confidence 46 below minimum 65"
+      ],
+      "id": "auth-risk-budget:confidence",
+      "level": "error",
+      "message": "Auth code requires stronger evidence because it decides authorization.",
+      "ruleId": "auth-risk-budget",
+      "scope": [
+        "src/auth/token.js"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "description": "Expired refresh tokens must never authorize access.",
+      "id": "auth.refresh.validity",
+      "scenarios": [
+        {
+          "description": "exact expiry boundary denies access",
+          "expected": "deny",
+          "failurePathKeywords": [
+            "exact expiry boundary denies access"
+          ],
+          "id": "expired-boundary",
+          "keywords": [
+            "active token before expiry allows access"
+          ]
+        }
+      ],
+      "selectors": [
+        "path:src/auth/**",
+        "symbol:isRefreshExpired"
+      ],
+      "severity": "high",
+      "title": "Refresh token validity"
+    },
+    {
+      "description": "Duplicate payment ids must not be recorded twice.",
+      "id": "payments.exactly-once",
+      "scenarios": [
+        {
+          "description": "duplicate payment id returns duplicate",
+          "expected": "duplicate",
+          "id": "duplicate-payment",
+          "keywords": [
+            "duplicate payment id returns duplicate"
+          ]
+        }
+      ],
+      "selectors": [
+        "path:src/payments/**"
+      ],
+      "severity": "critical",
+      "title": "Payment recording is effectively exactly once"
+    }
+  ],
+  "mutationBaseline": {
+    "details": "Baseline test command passed.",
+    "durationMs": 0,
+    "exitCode": 0,
+    "status": "pass"
+  },
+  "mutationRemediation": {
+    "survivors": [
+      {
+        "assertionHint": "Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >.",
+        "assertionStrategy": "Assert the exact changed boundary through a public or exported behavior, then check the returned value, thrown error, side effect, or serialized artifact.",
+        "filePath": "src/auth/token.js",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": ">",
+        "observableBehavior": "Boundary behavior changed (>= -> >); the exact boundary value may now be accepted, rejected, included, or omitted differently.",
+        "operator": ">=",
+        "original": ">=",
+        "replacement": ">",
+        "siteId": "sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15",
+        "span": {
+          "endLine": 2,
+          "startLine": 2
+        },
+        "testCommand": [
+          "node",
+          "--test"
+        ]
+      },
+      {
+        "assertionHint": "Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.",
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+        "filePath": "src/auth/token.js",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "||",
+        "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+        "operator": "&&",
+        "original": "&&",
+        "replacement": "||",
+        "siteId": "sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20",
+        "span": {
+          "endLine": 8,
+          "startLine": 8
+        },
+        "testCommand": [
+          "node",
+          "--test"
+        ]
+      },
+      {
+        "assertionHint": "Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.",
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+        "filePath": "src/auth/token.js",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "||",
+        "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+        "operator": "&&",
+        "original": "&&",
+        "replacement": "||",
+        "siteId": "sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8",
+        "span": {
+          "endLine": 7,
+          "startLine": 7
+        },
+        "testCommand": [
+          "node",
+          "--test"
+        ]
+      }
+    ]
+  },
+  "mutations": [
+    {
+      "assertionHint": "Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >.",
+      "details": "Mutation survived for src/auth/token.js (sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15).",
+      "durationMs": 0,
+      "endOffset": 78,
+      "filePath": "src/auth/token.js",
+      "kind": "mutation-result",
+      "mutated": ">",
+      "operator": ">=",
+      "original": ">=",
+      "replacement": ">",
+      "siteId": "sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15",
+      "span": {
+        "endLine": 2,
+        "startLine": 2
+      },
+      "startOffset": 76,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        "--test"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.",
+      "details": "Mutation survived for src/auth/token.js (sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20).",
+      "durationMs": 0,
+      "endOffset": 215,
+      "filePath": "src/auth/token.js",
+      "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "siteId": "sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20",
+      "span": {
+        "endLine": 8,
+        "startLine": 8
+      },
+      "startOffset": 213,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        "--test"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.",
+      "details": "Mutation survived for src/auth/token.js (sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8).",
+      "durationMs": 0,
+      "endOffset": 182,
+      "filePath": "src/auth/token.js",
+      "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "siteId": "sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8",
+      "span": {
+        "endLine": 7,
+        "startLine": 7
+      },
+      "startOffset": 180,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        "--test"
+      ]
+    },
+    {
+      "assertionHint": "Assert both equality and inequality behavior around src/auth/token.js:8; this mutant changed === to !==.",
+      "details": "Mutation killed for src/auth/token.js (sha256:487f38e332d7dba3ce182d5e19378721fe317f956ba1da67310040b207e1fd5d).",
+      "durationMs": 0,
+      "endOffset": 203,
+      "filePath": "src/auth/token.js",
+      "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "siteId": "sha256:487f38e332d7dba3ce182d5e19378721fe317f956ba1da67310040b207e1fd5d",
+      "span": {
+        "endLine": 8,
+        "startLine": 8
+      },
+      "startOffset": 200,
+      "status": "killed",
+      "testCommand": [
+        "node",
+        "--test"
+      ]
+    }
+  ],
+  "mutationSites": [
+    {
+      "description": "greater-than tightening",
+      "endOffset": 78,
+      "filePath": "src/auth/token.js",
+      "id": "sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15",
+      "operator": ">=",
+      "original": ">=",
+      "replacement": ">",
+      "span": {
+        "endLine": 2,
+        "startLine": 2
+      },
+      "startOffset": 76
+    },
+    {
+      "description": "and to or",
+      "endOffset": 215,
+      "filePath": "src/auth/token.js",
+      "id": "sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "span": {
+        "endLine": 8,
+        "startLine": 8
+      },
+      "startOffset": 213
+    },
+    {
+      "description": "and to or",
+      "endOffset": 182,
+      "filePath": "src/auth/token.js",
+      "id": "sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "span": {
+        "endLine": 7,
+        "startLine": 7
+      },
+      "startOffset": 180
+    },
+    {
+      "description": "strict equality inversion",
+      "endOffset": 203,
+      "filePath": "src/auth/token.js",
+      "id": "sha256:487f38e332d7dba3ce182d5e19378721fe317f956ba1da67310040b207e1fd5d",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "span": {
+        "endLine": 8,
+        "startLine": 8
+      },
+      "startOffset": 200
+    }
+  ],
+  "nextEvidenceAction": {
+    "evidenceBasis": {
+      "confidence": {
+        "base": 100,
+        "credits": [],
+        "final": 6,
+        "penalties": [
+          {
+            "amount": 20,
+            "details": [
+              "score=0.25",
+              "budget=0.75",
+              "killed=1",
+              "survived=3"
+            ],
+            "id": "mutation-score",
+            "label": "Mutation score penalty"
+          },
+          {
+            "amount": 24,
+            "details": [
+              "src/auth/token.js:2 >=",
+              "src/auth/token.js:8 &&",
+              "src/auth/token.js:7 &&"
+            ],
+            "id": "surviving-mutants",
+            "label": "Surviving mutants penalty"
+          },
+          {
+            "amount": 10,
+            "details": [
+              "auth.refresh.validity:at-risk"
+            ],
+            "id": "risky-invariants",
+            "label": "Risky invariant/residual pressure penalty"
+          },
+          {
+            "amount": 20,
+            "details": [
+              "Auth code requires stronger evidence because it decides authorization."
+            ],
+            "id": "governance",
+            "label": "Governance penalty"
+          },
+          {
+            "amount": 20,
+            "details": [
+              "Auth code requires stronger evidence because it decides authorization."
+            ],
+            "id": "governance",
+            "label": "Governance penalty"
+          }
+        ]
+      },
+      "coverage": {
+        "changedFunctionMinPct": 100,
+        "changedFunctionsUnder80": 0,
+        "fileCount": 2,
+        "minPct": 0,
+        "status": "present"
+      },
+      "governance": {
+        "errors": 2,
+        "status": "errors",
+        "warnings": 0
+      },
+      "mutation": {
+        "errors": 0,
+        "killed": 1,
+        "sites": 4,
+        "status": "survivors",
+        "survived": 3
+      },
+      "nonBlockingSignals": [
+        "coverage is present; changed functions under 80% coverage: 0"
+      ],
+      "witness": {
+        "executionWitnessFiles": [],
+        "status": "missing-or-not-required"
+      }
+    },
+    "primaryAction": {
+      "artifactPaths": {
+        "explain": ".ts-quality/runs/sample-governed-app-run/explain.txt",
+        "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json",
+        "prompt": ".ts-quality/runs/sample-governed-app-run/next-evidence-action.prompt.md",
+        "report": ".ts-quality/runs/sample-governed-app-run/report.md",
+        "taskManifest": ".ts-quality/runs/sample-governed-app-run/next-evidence-action.ak-task.json"
+      },
+      "commands": [
+        {
+          "command": [
+            "node",
+            "--test"
+          ],
+          "reason": "Rerun the focused test command after adding the missing assertion."
+        }
+      ],
+      "completionCriteria": [
+        "Add assertions that fail for each listed surviving mutation group.",
+        "Rerun the focused test command and then ts-quality check for the same changed scope.",
+        "The next run reports zero surviving mutants for this scope."
+      ],
+      "evidenceTargets": [
+        "src/auth/token.js"
+      ],
+      "expectedConfidenceLift": 54,
+      "groups": [
+        {
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "mutation-group-1",
+          "stepIds": [
+            "survivor-group-1"
+          ],
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >."
+        },
+        {
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "mutation-group-2",
+          "stepIds": [
+            "survivor-group-2"
+          ],
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||."
+        },
+        {
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "mutation-group-3",
+          "stepIds": [
+            "survivor-group-3"
+          ],
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||."
+        }
+      ],
+      "id": "close-mutation-survivors",
+      "kind": "mutation-survivors",
+      "rationale": "Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.",
+      "sidecarSufficiency": {
+        "level": "actionable",
+        "reasons": [
+          "Likely focused test edit files are identified.",
+          "A focused rerun command is present.",
+          "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+        ]
+      },
+      "steps": [
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert the exact changed boundary through a public or exported behavior, then check the returned value, thrown error, side effect, or serialized artifact.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                "--test"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:isRefreshExpired",
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "survivor-group-1",
+          "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Boundary behavior changed (>= -> >); the exact boundary value may now be accepted, rejected, included, or omitted differently.",
+          "rationale": "This mutation group changed >= to >; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                "--test"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:canUseRefreshToken",
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "survivor-group-2",
+          "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+          "rationale": "This mutation group changed && to ||; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/sample-governed-app-run/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                "--test"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:canUseRefreshToken",
+          "evidenceTargets": [
+            "src/auth/token.js"
+          ],
+          "id": "survivor-group-3",
+          "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+          "rationale": "This mutation group changed && to ||; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "test/token.test.js"
+          ],
+          "targetFiles": [
+            "src/auth/token.js"
+          ],
+          "title": "Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||."
+        }
+      ],
+      "suggestedEditFiles": [
+        "test/token.test.js"
+      ],
+      "targetFiles": [
+        "src/auth/token.js"
+      ],
+      "taskManifest": {
+        "allowedPaths": [
+          "src/auth/token.js",
+          "test/token.test.js"
+        ],
+        "commands": [
+          {
+            "command": [
+              "node",
+              "--test"
+            ],
+            "reason": "Rerun the focused test command after adding the missing assertion."
+          }
+        ],
+        "completionCriteria": [
+          "Add assertions that fail for each listed surviving mutation group.",
+          "Rerun the focused test command and then ts-quality check for the same changed scope.",
+          "The next run reports zero surviving mutants for this scope."
+        ],
+        "guidance": [
+          "Affected symbol: function:isRefreshExpired",
+          "Boundary behavior changed (>= -> >); the exact boundary value may now be accepted, rejected, included, or omitted differently.",
+          "Assert the exact changed boundary through a public or exported behavior, then check the returned value, thrown error, side effect, or serialized artifact.",
+          "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "Affected symbol: function:canUseRefreshToken",
+          "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+          "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone."
+        ],
+        "requiredPaths": [
+          "test/token.test.js"
+        ],
+        "sidecarSufficiency": {
+          "level": "actionable",
+          "reasons": [
+            "Likely focused test edit files are identified.",
+            "A focused rerun command is present.",
+            "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+          ]
+        },
+        "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
+      },
+      "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
+    }
+  },
+  "overrides": [],
+  "repo": {
+    "digest": "sha256:b591e261c25f12d08c4ab7d681a674d069dcd0fba2f6e02d1c0684357e43696b",
+    "name": "governed-app",
+    "packages": [
+      {
+        "dir": "",
+        "name": "governed-app"
+      }
+    ],
+    "rootDir": "tmp/tsq-samples-governed-app"
+  },
+  "runId": "fixture-current-0.2.0",
+  "symbols": [
+    {
+      "filePath": "src/payments/ledger.js",
+      "kind": "function",
+      "span": {
+        "endLine": 12,
+        "startLine": 5
+      },
+      "symbol": "function:recordPayment"
+    },
+    {
+      "filePath": "src/auth/token.js",
+      "kind": "function",
+      "span": {
+        "endLine": 11,
+        "startLine": 5
+      },
+      "symbol": "function:canUseRefreshToken"
+    },
+    {
+      "filePath": "src/auth/token.js",
+      "kind": "function",
+      "span": {
+        "endLine": 18,
+        "startLine": 13
+      },
+      "symbol": "function:issueAccessDecision"
+    },
+    {
+      "filePath": "src/identity/store.js",
+      "kind": "function",
+      "span": {
+        "endLine": 6,
+        "startLine": 1
+      },
+      "symbol": "function:customerIdentity"
+    },
+    {
+      "filePath": "src/payments/ledger.js",
+      "kind": "function",
+      "span": {
+        "endLine": 3,
+        "startLine": 1
+      },
+      "symbol": "function:reservePaymentId"
+    },
+    {
+      "filePath": "src/shared/audit.js",
+      "kind": "function",
+      "span": {
+        "endLine": 3,
+        "startLine": 1
+      },
+      "symbol": "function:audit"
+    },
+    {
+      "filePath": "src/auth/token.js",
+      "kind": "function",
+      "span": {
+        "endLine": 3,
+        "startLine": 1
+      },
+      "symbol": "function:isRefreshExpired"
+    }
+  ],
+  "verdict": {
+    "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
+    "blockedBy": [
+      "Merge confidence 6 below minimum 65",
+      "Mutation score 0.25 is below budget 0.75",
+      "Surviving mutant in src/auth/token.js",
+      "Surviving mutant in src/auth/token.js",
+      "Surviving mutant in src/auth/token.js",
+      "Invariant auth.refresh.validity is at-risk",
+      "Auth code requires stronger evidence because it decides authorization.",
+      "Auth code requires stronger evidence because it decides authorization."
+    ],
+    "confidenceBreakdown": {
+      "base": 100,
+      "credits": [],
+      "final": 6,
+      "penalties": [
+        {
+          "amount": 20,
+          "details": [
+            "score=0.25",
+            "budget=0.75",
+            "killed=1",
+            "survived=3"
+          ],
+          "id": "mutation-score",
+          "label": "Mutation score penalty"
+        },
+        {
+          "amount": 24,
+          "details": [
+            "src/auth/token.js:2 >=",
+            "src/auth/token.js:8 &&",
+            "src/auth/token.js:7 &&"
+          ],
+          "id": "surviving-mutants",
+          "label": "Surviving mutants penalty"
+        },
+        {
+          "amount": 10,
+          "details": [
+            "auth.refresh.validity:at-risk"
+          ],
+          "id": "risky-invariants",
+          "label": "Risky invariant/residual pressure penalty"
+        },
+        {
+          "amount": 20,
+          "details": [
+            "Auth code requires stronger evidence because it decides authorization."
+          ],
+          "id": "governance",
+          "label": "Governance penalty"
+        },
+        {
+          "amount": 20,
+          "details": [
+            "Auth code requires stronger evidence because it decides authorization."
+          ],
+          "id": "governance",
+          "label": "Governance penalty"
+        }
+      ]
+    },
+    "findings": [
+      {
+        "code": "mutation-score-budget",
+        "evidence": [
+          "Killed 1, survived 3"
+        ],
+        "id": "policy:mutation-score",
+        "level": "error",
+        "message": "Mutation score 0.25 is below budget 0.75",
+        "scope": [
+          "src/auth/token.js",
+          "src/auth/token.js",
+          "src/auth/token.js",
+          "src/auth/token.js"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "✔ active token before expiry allows access (0ms)\n✔ missing token denies access (0ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 0"
+        ],
+        "id": "policy:surviving:sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15",
+        "level": "error",
+        "message": "Surviving mutant in src/auth/token.js",
+        "scope": [
+          "src/auth/token.js"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "✔ active token before expiry allows access (0ms)\n✔ missing token denies access (0ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 0"
+        ],
+        "id": "policy:surviving:sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20",
+        "level": "error",
+        "message": "Surviving mutant in src/auth/token.js",
+        "scope": [
+          "src/auth/token.js"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "✔ active token before expiry allows access (0ms)\n✔ missing token denies access (0ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 0"
+        ],
+        "id": "policy:surviving:sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8",
+        "level": "error",
+        "message": "Surviving mutant in src/auth/token.js",
+        "scope": [
+          "src/auth/token.js"
+        ]
+      },
+      {
+        "code": "invariant-risk",
+        "evidence": [
+          "3 surviving mutants in impacted invariant scope",
+          "Missing deterministic lexical test evidence for scenario 'exact expiry boundary denies access'",
+          "Invariant evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof; Invariant evidence modes: focused-test-alignment=inferred; scenario-support=missing; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit",
+          "Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'."
+        ],
+        "id": "policy:invariant:auth.refresh.validity",
+        "level": "error",
+        "message": "Invariant auth.refresh.validity is at-risk",
+        "scope": [
+          "auth.refresh.validity"
+        ]
+      },
+      {
+        "code": "governance",
+        "evidence": [
+          "Mutation score 0.25 below budget 0.75"
+        ],
+        "id": "policy:governance:auth-risk-budget:mutation",
+        "level": "error",
+        "message": "Auth code requires stronger evidence because it decides authorization.",
+        "ruleId": "auth-risk-budget",
+        "scope": [
+          "src/auth/token.js"
+        ]
+      },
+      {
+        "code": "governance",
+        "evidence": [
+          "Merge confidence 46 below minimum 65"
+        ],
+        "id": "policy:governance:auth-risk-budget:confidence",
+        "level": "error",
+        "message": "Auth code requires stronger evidence because it decides authorization.",
+        "ruleId": "auth-risk-budget",
+        "scope": [
+          "src/auth/token.js"
+        ]
+      }
+    ],
+    "mergeConfidence": 6,
+    "outcome": "fail",
+    "reasons": [
+      "Mutation score is 25/100 with 3 surviving mutants.",
+      "3 surviving mutant(s) remain in changed or covered logic.",
+      "1 invariant(s) need stronger test evidence or failure-path coverage.",
+      "Auth code requires stronger evidence because it decides authorization.",
+      "Auth code requires stronger evidence because it decides authorization."
+    ],
+    "warnings": []
+  },
+  "version": "0.2.0"
+}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "source": "examples/artifacts/governed-app/run.json",
+  "sourceRunId": "sample-governed-app-run",
+  "fixtureRoot": "fixtures/artifact-compatibility",
+  "expectedOptionalRunFields": [
+    "controlPlane",
+    "coverageGeneration",
+    "analysisWarnings",
+    "mutationRemediation",
+    "nextEvidenceAction",
+    "executionWitnesses",
+    "verdict.confidenceBreakdown"
+  ],
+  "expectedOptionalNextEvidenceFields": [
+    "nextEvidenceAction.primaryAction.sidecarSufficiency",
+    "nextEvidenceAction.primaryAction.taskManifest.sidecarSufficiency",
+    "nextEvidenceAction.primaryAction.taskManifest.guidance",
+    "nextEvidenceAction.primaryAction.steps[].enclosingSymbol",
+    "nextEvidenceAction.primaryAction.steps[].observableBehavior",
+    "nextEvidenceAction.primaryAction.steps[].assertionStrategy",
+    "nextEvidenceAction.primaryAction.steps[].maskingRisk"
+  ],
+  "fixtures": [
+    {
+      "id": "current020",
+      "file": "current-0.2.0.run.json.fixture",
+      "runId": "fixture-current-0.2.0",
+      "version": "0.2.0",
+      "decisionPolicy": "usable",
+      "expectation": "current packet includes protected additive run and next-evidence fields"
+    },
+    {
+      "id": "legacy010",
+      "file": "legacy-0.1.0-no-additive.run.json.fixture",
+      "runId": "fixture-legacy-0.1.0-no-additive",
+      "version": "0.1.0",
+      "decisionPolicy": "display-only-with-missing-additive-fields",
+      "removedAdditiveFields": [
+        "controlPlane",
+        "coverageGeneration",
+        "analysisWarnings",
+        "mutationRemediation",
+        "nextEvidenceAction",
+        "executionWitnesses",
+        "verdict.confidenceBreakdown"
+      ],
+      "expectation": "legacy packet remains parseable, but missing optional additive fields are unknown/not-provided rather than passing proof"
+    },
+    {
+      "id": "futureAdditive020",
+      "file": "future-additive-0.2.0.run.json.fixture",
+      "runId": "fixture-future-additive-0.2.0",
+      "version": "0.2.0",
+      "decisionPolicy": "usable-ignore-unknown-optional-fields",
+      "expectation": "unknown optional run/verdict fields do not break known-field parsing"
+    },
+    {
+      "id": "nextEvidenceMinimal020",
+      "file": "next-evidence-minimal-0.2.0.run.json.fixture",
+      "runId": "fixture-next-evidence-minimal-0.2.0",
+      "version": "0.2.0",
+      "decisionPolicy": "usable-with-next-evidence-unknowns",
+      "removedAdditiveFields": [
+        "nextEvidenceAction.primaryAction.sidecarSufficiency",
+        "nextEvidenceAction.primaryAction.taskManifest.sidecarSufficiency",
+        "nextEvidenceAction.primaryAction.taskManifest.guidance",
+        "nextEvidenceAction.primaryAction.steps[].enclosingSymbol",
+        "nextEvidenceAction.primaryAction.steps[].observableBehavior",
+        "nextEvidenceAction.primaryAction.steps[].assertionStrategy",
+        "nextEvidenceAction.primaryAction.steps[].maskingRisk"
+      ],
+      "expectation": "primary next-evidence action remains parseable when newer actionability guidance fields are absent"
+    },
+    {
+      "id": "unsupportedControlPlane",
+      "file": "unsupported-control-plane.run.json.fixture",
+      "runId": "fixture-unsupported-control-plane",
+      "version": "0.2.0",
+      "decisionPolicy": "fail-closed",
+      "expectation": "decision projections must reject unsupported control-plane snapshots and ask for a rerun"
+    },
+    {
+      "id": "malformedControlPlane",
+      "file": "malformed-control-plane.run.json.fixture",
+      "runId": "fixture-malformed-control-plane",
+      "version": "0.2.0",
+      "decisionPolicy": "fail-closed",
+      "expectation": "decision projections must reject malformed control-plane snapshots and ask for a rerun"
+    }
+  ]
+}

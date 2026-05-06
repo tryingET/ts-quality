@@ -130,6 +130,12 @@ Use this policy in CI/agent harnesses:
 | Unsupported/malformed control-plane snapshot | Show rerun instruction. | Fail closed and rerun `check` before projecting decisions. |
 | Wrong run id or ambient latest pointer ambiguity | Show selected-vs-found mismatch. | Fail closed; rerun with explicit `--run-id`. |
 
+## Repo-owned compatibility fixtures
+
+This repo now keeps parser fixtures under `fixtures/artifact-compatibility/` for the compatibility cases in this guide. The fixture matrix starts from a deterministic governed-app run artifact and covers current `0.2.0`, legacy `0.1.0` without additive fields, future optional fields, minimal next-evidence actionability fields, unsupported control-plane snapshots, and malformed control-plane snapshots.
+
+Use `test/artifact-compatibility-fixtures.test.mjs` as the executable reference for the expected parser posture: compatible packets project through report/explain/plan/govern surfaces, missing optional fields become unknown/not-provided, unknown future fields are ignored by current consumers, and malformed or unsupported control-plane snapshots fail closed.
+
 ## Minimal parser checklist
 
 For every artifact consumer:
