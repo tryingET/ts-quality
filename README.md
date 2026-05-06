@@ -144,7 +144,7 @@ npx ts-quality witness test \
 npx ts-quality check --changed src/auth/token.ts --run-id review-001
 ```
 
-Use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example built around `doctor --machine`, one manual witness, one `check`, and run-bound `report`/`explain`; use `docs/adoption/agent-integration-how-to.md` for brownfield adoption, `docs/adoption/negative-path-examples.md` for truthful fail-closed examples, `docs/adoption/artifact-consumer-compatibility-guide.md` for parser compatibility habits, and `docs/public-contract.md` for the current protected public CLI/artifact/witness/evidence-closure contract.
+Use `docs/adoption/first-invariant-witness-authoring.md` when writing the first useful invariant and choosing a focused witness without repo-global proof theater; use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example built around `doctor --machine`, one manual witness, one `check`, and run-bound `report`/`explain`; use `docs/adoption/agent-integration-how-to.md` for brownfield adoption, `docs/adoption/negative-path-examples.md` for truthful fail-closed examples, `docs/adoption/artifact-consumer-compatibility-guide.md` for parser compatibility habits, and `docs/public-contract.md` for the current protected public CLI/artifact/witness/evidence-closure contract.
 
 ### 2) Evaluate this repo from source
 

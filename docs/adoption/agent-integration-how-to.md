@@ -24,7 +24,7 @@ Canonical product semantics still live in:
 - `docs/config-reference.md`
 - `docs/ci-integration.md`
 
-For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide. For truthful failing cases such as mutation survivors, boundary violations, or insufficient authorization, use `docs/adoption/negative-path-examples.md`.
+For first-invariant authoring and focused witness selection, use `docs/adoption/first-invariant-witness-authoring.md`. For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide. For truthful failing cases such as mutation survivors, boundary violations, or insufficient authorization, use `docs/adoption/negative-path-examples.md`.
 
 This guide is about **adoption and rollout**, not replacing those contracts.
 
@@ -169,6 +169,7 @@ For each slice:
 
 Do not make the witness command broad just because the repo has many tests.
 Broad test corpora can still be used as the runtime test baseline, but the witness should stay focused.
+Use `docs/adoption/first-invariant-witness-authoring.md` for good/bad invariant examples and the `unsupported` / `lexically-supported` / `execution-backed` interpretation table.
 
 ### 8) Keep runtime artifacts out of git
 

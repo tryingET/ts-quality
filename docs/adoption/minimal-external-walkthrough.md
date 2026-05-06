@@ -15,7 +15,7 @@ Use this after reading:
 - `docs/adoption/agent-integration-how-to.md` for brownfield targets, or
 - `docs/adoption/greenfield-bootstrap-how-to.md` for new targets.
 
-Canonical product semantics still live in `README.md`, `docs/config-reference.md`, `docs/invariant-dsl.md`, and `docs/ci-integration.md`. For truthful failing examples, see `docs/adoption/negative-path-examples.md`.
+Canonical product semantics still live in `README.md`, `docs/config-reference.md`, `docs/invariant-dsl.md`, and `docs/ci-integration.md`. If you are still deciding what the first invariant should say or which command is focused enough to become a witness, read `docs/adoption/first-invariant-witness-authoring.md` before copying this walkthrough. For truthful failing examples, see `docs/adoption/negative-path-examples.md`.
 
 ## Starting point
 

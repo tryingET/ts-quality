@@ -9,6 +9,7 @@ type: "reference"
 # Invariant DSL
 
 Invariants are executable intent. They are written as TypeScript or JavaScript arrays.
+If you are authoring a target repo's first invariant, start with `docs/adoption/first-invariant-witness-authoring.md` for the narrow first-slice workflow, good/bad examples, and lexical-vs-execution-backed support interpretation before using this reference.
 
 ```ts
 export default [
@@ -90,7 +91,7 @@ npx ts-quality witness test \
   -- node --test test/token.test.js
 ```
 
-Choose the proof command before writing the witness artifact. Start from the changed source file and the focused test file you would cite in review; prefer a module-level command that proves that behavior over a repo-global `npm test` when the global command cannot focus the slice or leaves long-lived handles. If the proof requires TypeScript source-mode loaders, environment flags, or a long inline assertion, put the exact command in a repo-local npm script and invoke that script after `--`. If the witness imports built output, run the target repo build first so the receipt records a command against current dist bytes.
+Choose the proof command before writing the witness artifact. Start from the changed source file and the focused test file you would cite in review; prefer a module-level command that proves that behavior over a repo-global `npm test` when the global command cannot focus the slice or leaves long-lived handles. Use repo-global `npm test` only as baseline evidence when no focused command exists yet, and record that limitation instead of presenting it as invariant proof. If the proof requires TypeScript source-mode loaders, environment flags, or a long inline assertion, put the exact command in a repo-local npm script and invoke that script after `--`. If the witness imports built output, run the target repo build first so the receipt records a command against current dist bytes.
 
 When evidence is weak, it emits concrete `TestObligation` records.
 
