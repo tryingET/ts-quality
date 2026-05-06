@@ -2,7 +2,7 @@
   "repoId": "softwareco/owned/test-capabilities",
   "repoPath": "/home/tryinget/ai-society/softwareco/owned/test-capabilities",
   "sourceOfTruth": "docs/dev/ts-quality-current-vs-target.md",
-  "adoptionStage": "five-live-slices",
+  "adoptionStage": "accepted-repo-local-five-live-slices",
   "currentSlices": [
     {
       "id": "healing.collect-files.boundary",
