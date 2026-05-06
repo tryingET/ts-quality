@@ -132,9 +132,9 @@ Use this policy in CI/agent harnesses:
 
 ## Repo-owned compatibility fixtures
 
-This repo now keeps parser fixtures under `fixtures/artifact-compatibility/` for the compatibility cases in this guide. The fixture matrix starts from a deterministic governed-app run artifact and covers current `0.2.0`, legacy `0.1.0` without additive fields, future optional fields, minimal next-evidence actionability fields, unsupported control-plane snapshots, and malformed control-plane snapshots.
+This repo now keeps parser fixtures under `fixtures/artifact-compatibility/` for the compatibility cases in this guide. The fixture matrix starts from a deterministic governed-app run artifact and covers current `0.2.0`, legacy `0.1.0` without additive fields, future optional fields, minimal next-evidence actionability fields, unsupported control-plane snapshots, and malformed control-plane snapshots. It also keeps older real governed-app run captures under `fixtures/governed-app/.ts-quality/runs/` so compatibility proof is not limited to synthesized fixture variants.
 
-Use `test/artifact-compatibility-fixtures.test.mjs` as the executable reference for the expected parser posture: compatible packets project through report/explain/plan/govern surfaces, missing optional fields become unknown/not-provided, unknown future fields are ignored by current consumers, and malformed or unsupported control-plane snapshots fail closed.
+Use `test/artifact-compatibility-fixtures.test.mjs` as the executable reference for the expected parser posture: compatible packets project through report/explain/plan/govern/authorize surfaces, missing optional fields become unknown/not-provided, unknown future fields are ignored by current consumers, historical captured runs remain readable, and malformed or unsupported control-plane snapshots fail closed.
 
 ## Minimal parser checklist
 

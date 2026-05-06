@@ -6,6 +6,8 @@ import { spawnSync } from 'child_process';
 import { distModule, repoRoot, tempCopyOfFixture } from './helpers.mjs';
 
 const fixtureRoot = path.join(repoRoot, 'fixtures', 'artifact-compatibility');
+const historicalGovernedAppRunId = '2026-03-17T12-36-47-952Z';
+const historicalGovernedAppRunPath = path.join(repoRoot, 'fixtures', 'governed-app', '.ts-quality', 'runs', historicalGovernedAppRunId, 'run.json');
 const manifest = readFixtureJson('manifest.json');
 const cli = distModule('packages', 'ts-quality', 'src', 'cli.js');
 
@@ -143,6 +145,35 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
   assert.match(profiles.unsupportedControlPlane.failClosedReason, /unsupported control-plane snapshot schema 999/);
   assert.equal(profiles.malformedControlPlane.decisionStatus, 'fail-closed');
   assert.match(profiles.malformedControlPlane.failClosedReason, /field configPath must be a non-empty string/);
+});
+
+test('checked-in historical governed-app run capture remains projectable through compatibility surfaces', () => {
+  const target = tempCopyOfFixture('governed-app');
+  const historicalRun = JSON.parse(fs.readFileSync(historicalGovernedAppRunPath, 'utf8'));
+  assert.equal(historicalRun.runId, historicalGovernedAppRunId);
+  assert.equal(historicalRun.version, '5.0.0');
+  assert.equal(historicalRun.controlPlane, undefined);
+  assert.equal(historicalRun.nextEvidenceAction, undefined);
+
+  const report = runCli(['report', '--root', target, '--json', '--run-id', historicalGovernedAppRunId]);
+  assert.equal(report.status, 0, report.stderr);
+  assert.equal(JSON.parse(report.stdout).runId, historicalGovernedAppRunId);
+
+  const explain = runCli(['explain', '--root', target, '--run-id', historicalGovernedAppRunId]);
+  assert.equal(explain.status, 0, explain.stderr);
+  assert.match(explain.stdout, /Reasons:/);
+
+  const plan = runCli(['plan', '--root', target, '--run-id', historicalGovernedAppRunId]);
+  assert.equal(plan.status, 0, plan.stderr);
+  assert.match(plan.stdout, /Invariant evidence at risk: auth\.refresh\.validity/);
+
+  const govern = runCli(['govern', '--root', target, '--run-id', historicalGovernedAppRunId]);
+  assert.equal(govern.status, 0, govern.stderr);
+  assert.match(govern.stdout, /auth-risk-budget/);
+
+  const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', historicalGovernedAppRunId]);
+  assert.equal(authorize.status, 0, authorize.stderr);
+  assert.equal(JSON.parse(authorize.stdout).evidenceContext?.runId, historicalGovernedAppRunId);
 });
 
 test('CLI projections consume compatible run-artifact fixtures and reject malformed decision snapshots', () => {

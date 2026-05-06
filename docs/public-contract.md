@@ -205,12 +205,13 @@ The shared public CLI contract fixture proves the core evidence sequence from an
 
 Current run artifacts declare `version: "0.2.0"` because `0.2.0` introduced additive run fields. The current public contract does not require downstream parsers to understand every optional field, but it does require repo-owned projections to tolerate older run packets without newer additive fields. Adoption consumers should follow `docs/adoption/artifact-consumer-compatibility-guide.md` when deciding which missing, malformed, legacy, or future fields are display-only versus fail-closed decision inputs.
 
-Installed-package smoke and the checked-in parser fixtures under `fixtures/artifact-compatibility/` currently prove a run-artifact compatibility matrix:
+Installed-package smoke, checked-in parser fixtures under `fixtures/artifact-compatibility/`, and historical governed-app run captures under `fixtures/governed-app/.ts-quality/runs/` currently prove a run-artifact compatibility matrix:
 
 - a legacy `0.1.0`-style run packet without additive `0.2.x` fields still projects through `report --json`, `explain`, `plan`, `govern`, and `authorize`
 - a current `0.2.0` packet carrying unknown future optional fields still projects through those same surfaces without requiring downstream parsers or repo projections to understand the unknown fields
 - a current `0.2.0` packet whose `nextEvidenceAction` lacks recent optional sidecar fields such as `sidecarSufficiency`, `taskManifest.guidance`, and per-step behavior guidance still projects through those same surfaces
 - unsupported or malformed control-plane snapshots fail closed with a re-run instruction instead of being silently projected into authorization or governance decisions
+- older checked-in governed-app run captures that predate current additive fields remain readable through selected-run report, explain, plan, govern, and authorize projections
 
 Protected compatibility principle:
 
