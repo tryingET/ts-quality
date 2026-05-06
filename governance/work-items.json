@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-05",
+  "updated_at": "2026-05-06",
   "owner": "@tryinget",
   "project_name": "ts-quality",
   "milestones": [
@@ -1476,6 +1476,19 @@
           ],
           "dod": "Task reaches done in society.db with evidence recorded.",
           "completed_at": "2026-05-05"
+        },
+        {
+          "id": "AK-TASK-2407",
+          "title": "Capture dep-redteam advisory ingress dogfood evidence",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Capture dep-redteam advisory ingress dogfood evidence (task #2407)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-05-06"
         }
       ]
     }

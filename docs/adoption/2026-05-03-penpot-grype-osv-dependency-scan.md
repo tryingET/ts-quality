@@ -554,7 +554,24 @@ git diff --check
 ROCS_WORKSPACE_ROOT=/home/tryinget/ai-society ./scripts/ci/full.sh
 ```
 
-This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It improves the future path for targets where producer evidence has already moved a cluster beyond raw dependency presence and an operator wants a bounded advisory-specific DSPy investigation.
+A big-picture product-posture pass then identified the missing dep-redteam-side ingress for operator/DSPx/DSPy producer output: the schema and apply/plan path existed, but producers still needed a canonical way to record a validated advisory-usage packet instead of hand-authoring JSON or passing raw model assertions. Dep-redteam added and dogfooded that ingress:
+
+```text
+bd6042b feat: record advisory usage evidence
+```
+
+The dogfood corridor ran local `/tmp` artifacts only:
+
+```text
+record-reachability-evidence
+-> apply-reachability-evidence
+-> record-advisory-usage-evidence
+-> plan-advisory-usage-local-lab
+```
+
+It produced a `depredteam.advisory-usage-evidence.v1` packet with `producerSourceKind = dspx_dspy_program`, kept `executedByDepRedteam = false`, kept `exploitAttempted = false`, kept `disclosureRecommended = false`, and generated a non-executing plan with `readyForDesignCount = 1`. Regression coverage increased to `51 passed`, and the full dep-redteam gate passed again.
+
+This does not change the Penpot posture: Penpot still has no source-reference reachability evidence and no manually supplied safe reproducer evidence. It improves the future path for targets where producer evidence has already moved a cluster beyond raw dependency presence and an operator wants a bounded advisory-specific DSPy investigation. The remaining producer-side work belongs at the DSPx/program-gen boundary: emit or adapt into the validated dep-redteam packet shape rather than making dep-redteam consume raw model output.
 
 ## Command
 
