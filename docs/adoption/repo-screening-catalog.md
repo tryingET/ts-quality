@@ -26,7 +26,7 @@ node scripts/register-screening-catalog.mjs --entry docs/adoption/entries/<repo>
 
 - repo path: `/home/tryinget/ai-society/softwareco/owned/test-capabilities`
 - source of truth: `docs/dev/ts-quality-current-vs-target.md`
-- adoption stage: `accepted-repo-local-five-live-slices`
+- adoption stage: `repo-local-live-five-slices-accepted-fields-pending`
 - live slices: 5
 - ready-next slices: 0
 

@@ -1365,7 +1365,7 @@ function buildAnalysisContext(input) {
     };
 }
 function isSourceTsFile(filePath) {
-    return /^src\/.*\.tsx?$/.test((0, index_1.normalizePath)(filePath));
+    return /(?:^|\/)src\/.*\.tsx?$/.test((0, index_1.normalizePath)(filePath));
 }
 function builtOutputRoots(runtimeMirrorRoots) {
     return uniquePaths(['dist', 'lib', 'build', ...runtimeMirrorRoots]);
@@ -1377,16 +1377,13 @@ function coverageHasFile(coverage, filePath) {
 function detectBuiltOutputCoverageWarnings(input) {
     const roots = builtOutputRoots(input.runtimeMirrorRoots);
     const warnings = [];
-    const coveredBuiltFiles = input.coverage.map((item) => (0, index_1.normalizePath)(item.filePath)).filter((filePath) => roots.some((root) => filePath === root || filePath.startsWith(`${root}/`)));
-    if (coveredBuiltFiles.length === 0) {
-        return warnings;
-    }
+    const coveredFiles = input.coverage.map((item) => (0, index_1.normalizePath)(item.filePath));
     for (const changedFile of input.changedFiles.map((item) => (0, index_1.normalizePath)(item)).filter(isSourceTsFile)) {
         if (coverageHasFile(input.coverage, changedFile)) {
             continue;
         }
-        const stem = changedFile.replace(/^src\//, '').replace(/\.tsx?$/, '');
-        const matchingBuilt = coveredBuiltFiles.filter((filePath) => filePath.replace(/^(dist|lib|build)\//, '').replace(/\.jsx?$/, '') === stem || filePath.endsWith(`/${path_1.default.basename(stem)}.js`));
+        const mirrorCandidates = (0, index_1.runtimeMirrorCandidates)(changedFile, roots);
+        const matchingBuilt = coveredFiles.filter((filePath) => mirrorCandidates.includes(filePath));
         if (matchingBuilt.length === 0) {
             continue;
         }

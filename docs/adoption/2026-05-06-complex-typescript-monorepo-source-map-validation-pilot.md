@@ -102,7 +102,7 @@ Tune paths to the selected package. The important part is that source patterns s
     "coveredOnly": true,
     "timeoutMs": 30000,
     "maxSites": 12,
-    "runtimeMirrorRoots": ["packages/api/dist", "packages/api/lib"]
+    "runtimeMirrorRoots": ["dist", "lib"]
   },
   "policy": {
     "maxChangedCrap": 40,

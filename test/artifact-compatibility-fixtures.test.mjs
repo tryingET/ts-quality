@@ -13,16 +13,29 @@ function readFixtureJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(fixtureRoot, relativePath), 'utf8'));
 }
 
-function hasPath(value, dottedPath) {
-  const segments = dottedPath.replaceAll('[]', '').split('.');
-  let current = value;
-  for (const segment of segments) {
-    if (current == null || typeof current !== 'object' || !Object.prototype.hasOwnProperty.call(current, segment)) {
+function hasPathSegments(value, segments) {
+  if (segments.length === 0) {
+    return true;
+  }
+  const [segment, ...remaining] = segments;
+  if (!segment) {
+    return false;
+  }
+  if (segment.endsWith('[]')) {
+    const key = segment.slice(0, -2);
+    if (value == null || typeof value !== 'object' || !Object.prototype.hasOwnProperty.call(value, key) || !Array.isArray(value[key])) {
       return false;
     }
-    current = current[segment];
+    return value[key].some((item) => hasPathSegments(item, remaining));
   }
-  return true;
+  if (value == null || typeof value !== 'object' || !Object.prototype.hasOwnProperty.call(value, segment)) {
+    return false;
+  }
+  return hasPathSegments(value[segment], remaining);
+}
+
+function hasPath(value, dottedPath) {
+  return hasPathSegments(value, dottedPath.split('.'));
 }
 
 function missingFields(value, fields) {
@@ -118,6 +131,7 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
   ]);
   assert.equal(profiles.current020.decisionStatus, 'usable');
   assert.equal(profiles.current020.nextEvidence.kind, 'mutation-survivors');
+  assert.deepEqual(profiles.current020.nextEvidence.missingOptionalFields, []);
   assert.deepEqual(profiles.legacy010.missingOptionalRunFields, manifest.expectedOptionalRunFields);
   assert.equal(profiles.legacy010.decisionStatus, 'display-only');
   assert.match(profiles.legacy010.failClosedReason, /control-plane snapshot not provided/);
@@ -154,6 +168,10 @@ test('CLI projections consume compatible run-artifact fixtures and reject malfor
     const govern = runCli(['govern', '--root', target, '--run-id', fixture.runId]);
     assert.equal(govern.status, 0, govern.stderr);
     assert.match(govern.stdout, /auth-risk-budget/);
+
+    const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', fixture.runId]);
+    assert.equal(authorize.status, 0, authorize.stderr);
+    assert.equal(JSON.parse(authorize.stdout).evidenceContext?.runId, fixture.runId);
   }
 
   installRunFixture(target, fixturesById.unsupportedControlPlane);

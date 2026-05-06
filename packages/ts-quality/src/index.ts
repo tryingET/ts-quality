@@ -48,7 +48,8 @@ import {
   resolveRepoLocalPath,
   stableStringify,
   writeJson,
-  writeRunArtifact
+  writeRunArtifact,
+  runtimeMirrorCandidates
 } from '../../evidence-model/src/index';
 import { analyzeCrap, parseLcov } from '../../crap4ts/src/index';
 import { runMutations } from '../../ts-mutate/src/index';
@@ -1610,7 +1611,7 @@ function buildAnalysisContext(input: {
 }
 
 function isSourceTsFile(filePath: string): boolean {
-  return /^src\/.*\.tsx?$/.test(normalizePath(filePath));
+  return /(?:^|\/)src\/.*\.tsx?$/.test(normalizePath(filePath));
 }
 
 function builtOutputRoots(runtimeMirrorRoots: string[]): string[] {
@@ -1625,16 +1626,13 @@ function coverageHasFile(coverage: RunArtifact['coverage'], filePath: string): b
 function detectBuiltOutputCoverageWarnings(input: { changedFiles: string[]; coverage: RunArtifact['coverage']; runtimeMirrorRoots: string[] }): AnalysisWarning[] {
   const roots = builtOutputRoots(input.runtimeMirrorRoots);
   const warnings: AnalysisWarning[] = [];
-  const coveredBuiltFiles = input.coverage.map((item) => normalizePath(item.filePath)).filter((filePath) => roots.some((root) => filePath === root || filePath.startsWith(`${root}/`)));
-  if (coveredBuiltFiles.length === 0) {
-    return warnings;
-  }
+  const coveredFiles = input.coverage.map((item) => normalizePath(item.filePath));
   for (const changedFile of input.changedFiles.map((item) => normalizePath(item)).filter(isSourceTsFile)) {
     if (coverageHasFile(input.coverage, changedFile)) {
       continue;
     }
-    const stem = changedFile.replace(/^src\//, '').replace(/\.tsx?$/, '');
-    const matchingBuilt = coveredBuiltFiles.filter((filePath) => filePath.replace(/^(dist|lib|build)\//, '').replace(/\.jsx?$/, '') === stem || filePath.endsWith(`/${path.basename(stem)}.js`));
+    const mirrorCandidates = runtimeMirrorCandidates(changedFile, roots);
+    const matchingBuilt = coveredFiles.filter((filePath) => mirrorCandidates.includes(filePath));
     if (matchingBuilt.length === 0) {
       continue;
     }

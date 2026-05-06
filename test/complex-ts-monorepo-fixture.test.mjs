@@ -16,6 +16,10 @@ function readRun(rootDir) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, '.ts-quality', 'runs', runId, 'run.json'), 'utf8'));
 }
 
+function replaceFileText(filePath, oldText, newText) {
+  fs.writeFileSync(filePath, fs.readFileSync(filePath, 'utf8').replace(oldText, newText), 'utf8');
+}
+
 test('complex TypeScript monorepo fixture proves source-map LCOV, hunk scope, package attribution, runtime mirrors, and witness refresh', () => {
   const target = tempCopyOfFixture('complex-ts-monorepo');
   const check = runCli(['check', '--root', target, '--run-id', runId]);
@@ -73,4 +77,24 @@ test('complex TypeScript monorepo fixture proves source-map LCOV, hunk scope, pa
   const govern = runCli(['govern', '--root', target, '--run-id', runId]);
   assert.equal(govern.status, 0, govern.stderr);
   assert.match(govern.stdout, /Generated 1 governance step\(s\) from 0 finding\(s\)/);
+});
+
+test('complex TypeScript monorepo fixture warns when nested LCOV covers built output instead of authored source', () => {
+  const target = tempCopyOfFixture('complex-ts-monorepo');
+  replaceFileText(
+    path.join(target, 'coverage', 'api-token.lcov.info'),
+    'SF:packages/api/src/token.ts',
+    'SF:packages/api/dist/token.js'
+  );
+
+  const check = runCli(['check', '--root', target, '--run-id', 'complex-ts-monorepo-built-only-lcov']);
+  assert.equal(check.status, 0, check.stderr);
+
+  const run = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'complex-ts-monorepo-built-only-lcov', 'run.json'), 'utf8'));
+  assert.deepEqual(run.coverage.map((entry) => entry.filePath), ['packages/api/dist/token.js']);
+  assert.equal(run.analysisWarnings?.[0]?.code, 'coverage-built-output-without-source-map');
+  assert.deepEqual(run.analysisWarnings?.[0]?.evidence, [
+    'changed source packages/api/src/token.ts has no LCOV entry',
+    'built LCOV entries: packages/api/dist/token.js'
+  ]);
 });

@@ -1,24 +1,24 @@
 ---
-summary: "Accepted repo-local ts-quality adoption proof for softwareco/owned/test-capabilities."
+summary: "Repo-local live ts-quality adoption evidence for softwareco/owned/test-capabilities."
 read_when:
   - "You need the evidence behind the test-capabilities entry in the ts-quality repo screening catalog."
   - "You are deciding whether a target repo proof is accepted repo-local adoption or only temp-copy/candidate evidence."
 type: "evidence"
 ---
 
-# test-capabilities accepted repo-local adoption proof
+# test-capabilities repo-local live adoption evidence
 
 ## Status
 
 - targetRepo: `softwareco/owned/test-capabilities`
 - targetPath: `/home/tryinget/ai-society/softwareco/owned/test-capabilities`
-- adoptionStatus: `accepted-repo-local`
-- acceptedAt: recorded in repo-local live rollout state as of 2026-05-06
+- adoptionStatus: `repo-local-live` (`accepted-repo-local` fields pending in target source-of-truth)
+- acceptedAt: not asserted by this central proof
 - sourceOfTruth: `/home/tryinget/ai-society/softwareco/owned/test-capabilities/docs/dev/ts-quality-current-vs-target.md`
 - centralCatalogEntry: `docs/adoption/entries/test-capabilities.json`
 - centralCatalogStatus: registered and regenerated into `docs/adoption/repo-screening-catalog.json` / `.md`
 
-This proof records existing accepted repo-local state. It is not a temp-copy pilot and not a candidate worktree claim: the target repo already contains repo-local `ts-quality` setup and a current-vs-target rollout note.
+This proof records existing repo-local live screening state. It is not a temp-copy pilot and not a candidate worktree claim: the target repo already contains repo-local `ts-quality` setup and a current-vs-target rollout note. It does not by itself assert full `accepted-repo-local` status because the target source-of-truth does not yet normalize every accepted-adoption field from `docs/adoption/accepted-repo-local-adoption.md`.
 
 ## Evidence inspected
 
@@ -50,7 +50,7 @@ Existing target run artifacts were also present under `.ts-quality/runs/` for re
 
 ## Boundary note
 
-The target repo worktree had unrelated dirty changes when this central catalog proof was recorded. Therefore this task did not mutate or rerun the target repo. The accepted-adoption claim rests on the target repo's existing live rollout source-of-truth plus central catalog synchronization, not on a fresh temp-copy proof.
+The target repo worktree had unrelated dirty changes when this central catalog proof was recorded. Therefore this task did not mutate or rerun the target repo. The repo-local-live claim rests on the target repo's existing live rollout source-of-truth plus central catalog synchronization, not on a fresh temp-copy proof.
 
 ## Central catalog validation
 
