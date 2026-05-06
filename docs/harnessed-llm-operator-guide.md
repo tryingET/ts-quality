@@ -371,8 +371,8 @@ These are review findings, not a mandate to do them all at once.
 1. **Generate or lint the command manifest from CLI contracts.**  
    `docs/cli-command-manifest.json` now gives harnesses a machine-readable command surface, but it is still an authored projection. A future improvement could generate or lint it directly from `packages/ts-quality/src/cli.ts`.
 
-2. **Promote the minimal external walkthrough into an executable fixture if adoption demand grows.**  
-   `docs/adoption/minimal-external-walkthrough.md` now shows one changed file, one invariant, one witness, and one report path. It remains documentation-only so it does not add fixture maintenance until needed.
+2. **Keep the minimal external walkthrough fixture synchronized with the docs.**  
+   `docs/adoption/minimal-external-walkthrough.md` now has an executable counterpart in `fixtures/minimal-external-adoption/` and `test/minimal-external-adoption-fixture.test.mjs`, covering doctor -> witness -> check -> report/explain -> retention.
 
 3. **Surface changed-scope mistakes earlier in docs and help.**  
    The fail-closed changed-scope contract is central. Repeat it in CLI help and adoption checklists so agents do not assume whole-repo fallback.

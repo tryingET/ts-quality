@@ -1,0 +1,11 @@
+{
+  "name": "minimal-external-adoption-fixture",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "quality": "mkdir -p coverage && node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info test/token.test.js",
+    "screening:doctor": "ts-quality doctor --config ts-quality.config.json --machine",
+    "screening:witness": "ts-quality witness test --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.js --test-files test/token.test.js --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- node --test test/token.test.js",
+    "screening:check": "ts-quality check --config ts-quality.config.json"
+  }
+}

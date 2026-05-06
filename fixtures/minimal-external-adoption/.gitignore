@@ -1,0 +1,10 @@
+coverage/
+.ts-quality/runs/
+.ts-quality/materialized/
+.ts-quality/attestations/
+.ts-quality/keys/
+.ts-quality/latest.json
+.ts-quality/mutation-manifest.json
+.ts-quality/tmp-mutants/
+.ts-quality/witnesses/*.json
+.ts-quality/witnesses/*.receipt.json

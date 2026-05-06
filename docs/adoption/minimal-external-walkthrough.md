@@ -8,7 +8,7 @@ type: "tutorial"
 
 # Minimal external adoption walkthrough
 
-This walkthrough shows the smallest useful shape for adopting `ts-quality` in a target repository. It is intentionally one-slice: one implementation file, one invariant, one focused witness command, and one run id.
+This walkthrough shows the smallest useful shape for adopting `ts-quality` in a target repository. It is intentionally one-slice: one implementation file, one invariant, one focused witness command, and one run id. The same loop is now executable as `fixtures/minimal-external-adoption/` and protected by `test/minimal-external-adoption-fixture.test.mjs`.
 
 Use this after reading:
 
@@ -194,6 +194,12 @@ Create `docs/dev/ts-quality-current-vs-target.md` in the target repo:
 Only after this repo-local truth is stable should you update the central catalog with `docs/adoption/repo-screening-entry.template.json` and `node scripts/register-screening-catalog.mjs --entry ...` from this repo.
 
 ## Closure check
+
+Executable fixture validation:
+
+```bash
+node --test test/minimal-external-adoption-fixture.test.mjs
+```
 
 A minimal adoption slice is done when:
 
