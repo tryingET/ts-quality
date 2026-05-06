@@ -24,7 +24,7 @@ Canonical product semantics still live in:
 - `docs/config-reference.md`
 - `docs/ci-integration.md`
 
-For first-invariant authoring and focused witness selection, use `docs/adoption/first-invariant-witness-authoring.md`. For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide. For truthful failing cases such as mutation survivors, boundary violations, or insufficient authorization, use `docs/adoption/negative-path-examples.md`.
+For first-invariant authoring and focused witness selection, use `docs/adoption/first-invariant-witness-authoring.md`. For a concrete one-slice target-repo example, use `docs/adoption/minimal-external-walkthrough.md` after this guide. For truthful failing cases such as mutation survivors, boundary violations, or insufficient authorization, use `docs/adoption/negative-path-examples.md`. For the boundary between accepted repo-local/live adoption, temp-copy proofs, and candidate dogfood runs, use `docs/adoption/accepted-repo-local-adoption.md`.
 
 This guide is about **adoption and rollout**, not replacing those contracts.
 
@@ -65,6 +65,7 @@ Keep the layers separate:
 
 - **repo-local truth** lives in the integrated repo
   - recommended file: `docs/dev/ts-quality-current-vs-target.md`
+  - use `docs/adoption/accepted-repo-local-adoption.md` for the adoption-status checklist and target-repo evidence fields
 - **repo-local control plane** lives with that repo
   - for example: `ts-quality.config.json`, `.ts-quality/**`, `scripts/screening/**`
 - **central overview** lives here in `ts-quality`
@@ -252,6 +253,7 @@ A new repo integration is in good shape when:
 - screening check works from the natural repo-facing changed paths
 - runtime artifacts are ignored correctly
 - the repo has a current-vs-target overview
+- accepted repo-local/live adoption is recorded only after target-repo owner/process acceptance; temp-copy and candidate dogfood evidence remain labeled as such
 - the repo is registered in the central catalog after repo-local truth is stable
 
 At that point, widen the net one reviewable slice at a time.
