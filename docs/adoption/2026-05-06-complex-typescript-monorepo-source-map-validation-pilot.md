@@ -10,7 +10,9 @@ type: "how-to"
 
 ## Status
 
-This is a **docs-only candidate runbook**. It does not claim that the pilot has been executed. Use it to run the next adoption validation in a real complex TypeScript monorepo after selecting a target repo and a bounded changed slice.
+This runbook now has a repo-local executable fixture proof in `fixtures/complex-ts-monorepo/` and `test/complex-ts-monorepo-fixture.test.mjs`. The fixture proves the core product mechanics for a nested TypeScript workspace package: authored-source LCOV, diff-hunk scope, package attribution, built-runtime mutation execution through a runtime mirror, execution-backed witness refresh, and selected-run report/explain/govern projections.
+
+It is still not a substitute for an accepted adoption in an external production repo. Use it as the regression floor before running the same shape in a real complex TypeScript monorepo.
 
 The runbook combines the proven pieces from the earlier TypeScript dist, synthetic monorepo, and real monorepo pilots, then adds the remaining high-friction shape:
 
@@ -123,7 +125,7 @@ Tune paths to the selected package. The important part is that source patterns s
 Notes:
 
 - Keep `sourcePatterns` on authored `src/**`. Do not screen `dist/**` as the source of truth just because tests import it.
-- Include every built runtime root that the focused tests can import in `mutations.runtimeMirrorRoots`; common values are package-local `packages/<name>/dist`, `packages/<name>/lib`, `packages/<name>/build`, and sometimes root-level `dist` for bundled packages.
+- Include every built runtime root that the focused tests can import in `mutations.runtimeMirrorRoots`. Current mirror resolution replaces the `src` path segment with each configured mirror segment, so a package-local `packages/api/src/token.ts` source maps to `packages/api/dist/token.js` when the configured mirror root is `dist`. Use values such as `dist`, `lib`, or `build` for conventional package-local `src -> dist/lib/build` layouts; use a more specific root only after verifying the candidate mirror path in a fixture or target run.
 - Keep `changeSet.diffFile` repo-local. Materialized configs copy diff inputs into a reserved materialized inputs subtree, but the pilot config should still name an explicit source diff path.
 - Set `coveredOnly: true` only when LCOV reliably maps back to authored source lines. If source-map remapping is not working yet, leave the failed warning as evidence rather than widening source patterns to built files.
 
@@ -251,7 +253,7 @@ Record the actual pilot results in a follow-up evidence entry. Do not fill these
   "diffHunkScoped": "<true|false|not-inspected>",
   "coverageFiles": ["<SF entries that map to authored source>"],
   "builtCoverageOnlyWarning": "<present|absent>",
-  "runtimeMirrorRoots": ["packages/api/dist"],
+  "runtimeMirrorRoots": ["dist"],
   "customRunnerOrLoader": "<command summary>",
   "baselineMutationCommandPassed": "<true|false>",
   "mutationSitesInScope": "<number>",
@@ -264,6 +266,35 @@ Record the actual pilot results in a follow-up evidence entry. Do not fill these
   "outcome": "<pass|fail>",
   "mergeConfidence": "<number>",
   "nextEvidenceAction": "<summary>"
+}
+```
+
+## Repo-local fixture proof
+
+Current executable evidence:
+
+```json
+{
+  "fixture": "fixtures/complex-ts-monorepo",
+  "test": "node --test test/complex-ts-monorepo-fixture.test.mjs",
+  "runId": "complex-ts-monorepo-fixture",
+  "changedFiles": ["packages/api/src/token.ts"],
+  "diffHunkScoped": true,
+  "coverageFiles": ["packages/api/src/token.ts"],
+  "builtCoverageOnlyWarning": "absent",
+  "runtimeMirrorRoots": ["dist"],
+  "customRunnerOrLoader": "node packages/api/test/token.test.js importing packages/api/dist/token.js",
+  "baselineMutationCommandPassed": true,
+  "mutationSitesInScope": 1,
+  "killedMutantsInScope": 1,
+  "survivingMutantsInScope": 0,
+  "packageAttribution": {
+    "filePath": "packages/api/src/token.ts",
+    "packageName": "@fixture/api"
+  },
+  "outcome": "pass",
+  "mergeConfidence": 100,
+  "nextEvidenceAction": "none"
 }
 ```
 

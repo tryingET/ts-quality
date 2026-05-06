@@ -1,0 +1,8 @@
+{
+  "name": "complex-ts-monorepo-fixture",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test:api:slice": "node packages/api/test/token.test.js"
+  }
+}

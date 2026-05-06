@@ -1,0 +1,6 @@
+{
+  "name": "@fixture/api",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/token.js"
+}

@@ -92,7 +92,7 @@ For TypeScript projects that execute built output, make source-map coverage expl
 NODE_OPTIONS=--enable-source-maps node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info
 ```
 
-Keep screening on authored `src/**`, configure `mutations.runtimeMirrorRoots` for built runtime roots such as `dist`, and make the mutation test command build before testing when needed.
+Keep screening on authored `src/**`, configure `mutations.runtimeMirrorRoots` for built runtime roots such as `dist` (for example, `packages/api/src/token.ts` mirrors to `packages/api/dist/token.js` when the mirror root is `dist`), and make the mutation test command build before testing when needed.
 
 For complex workspaces, hide package-manager filters and custom loader details in repo-local scripts before invoking `ts-quality`. The CI contract should still pass one explicit changed scope or configured diff file, one stable run id, source-map LCOV that names authored package source, and package-focused build/test commands. A practical validation checklist lives in `docs/adoption/2026-05-06-complex-typescript-monorepo-source-map-validation-pilot.md`.
 

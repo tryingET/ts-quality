@@ -1,0 +1,6 @@
+diff --git a/packages/api/src/token.ts b/packages/api/src/token.ts
+--- a/packages/api/src/token.ts
++++ b/packages/api/src/token.ts
+@@ -6,2 +6,2 @@ export function isRefreshExpired(token: RefreshToken, nowMs: number): boolean {
+ export function isRefreshExpired(token: RefreshToken, nowMs: number): boolean {
+   return nowMs >= token.expiresAtMs;
