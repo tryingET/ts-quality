@@ -77,7 +77,7 @@ A package-boundary or architectural-rule violation is not merely advisory when i
 - `authorize --agent <agent> --run-id <id>` refuses approval unless a valid run-bound approval/waiver/override with standing exists,
 - drift in the constitution, agents, approvals, waivers, overrides, or changed files fails closed instead of trusting ambient edits.
 
-The current public monorepo package-boundary pilot proves healthy package attribution and approval, but it did not intentionally violate the boundary. A dedicated negative-path pilot is still needed.
+The current public monorepo package-boundary pilot proves healthy package attribution and approval, but it did not intentionally violate the boundary. The concrete follow-up plan is `docs/adoption/negative-governance-authorization-pilot.md`, which specifies the violating fixture shape, commands, expected artifacts, non-approval outcomes, and validation checklist.
 
 Source evidence: `docs/adoption/seventh-public-0.3.1-monorepo-package-boundary-pilot.md`.
 
@@ -92,7 +92,7 @@ Expected negative outcomes:
 - an override grant that does not match the exact changed scope is not a blanket bypass,
 - unsupported or malformed control-plane snapshots instruct the operator to rerun rather than projecting stale authority.
 
-Use explicit `--run-id` in CI and agent workflows so these failures are visible and reproducible.
+Use explicit `--run-id` in CI and agent workflows so these failures are visible and reproducible. The planned wrong-run and insufficient-grant checks in `docs/adoption/negative-governance-authorization-pilot.md` should fail if approval can leak from a different run id, unmatched grant, or stale sidecar.
 
 ## Adoption habit
 

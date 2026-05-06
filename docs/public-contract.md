@@ -185,7 +185,7 @@ A healthy public contract must explain blocks, not only green runs. Negative pat
 - insufficient agent grant or confidence floor: `authorize` returns a non-approval outcome such as human approval required
 - malformed or unsupported control-plane snapshot: governance/authorization projections instruct the operator to rerun rather than silently projecting stale authority
 
-Automation should prefer explicit non-zero command status plus the generated artifact fields over prose matching when asserting these paths.
+Automation should prefer explicit non-zero command status plus the generated artifact fields over prose matching when asserting these paths. The concrete docs-only pilot plan for the governance boundary, wrong-run authorization, and insufficient-grant cases is `docs/adoption/negative-governance-authorization-pilot.md`.
 
 ## Minimum viable adoption story
 
