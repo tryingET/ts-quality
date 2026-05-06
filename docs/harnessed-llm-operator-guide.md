@@ -119,6 +119,24 @@ Do not use this document as the adoption recipe. If the work is to install or ro
 
 Harnesses that need command metadata without scraping help text can read `docs/cli-command-manifest.json`. It is an authored projection of `packages/ts-quality/src/cli.ts`; keep it aligned with CLI option contracts and dispatch behavior when commands change.
 
+### Target-repo CLI / AX matrix
+
+Use this matrix when an agent is consuming the published CLI in another repo:
+
+| Agent need | Command | Projection shape | Binding rule |
+|---|---|---|---|
+| Setup diagnostics | `doctor --machine --changed "a,b"` | compact AX line protocol | one comma-separated `--changed` value; do not repeat `--changed` |
+| Retention planning | `retention --machine` | compact AX line protocol | read-only; no run id |
+| Evidence run | `check --changed "a,b" --run-id <id>` | durable run bundle | explicit changed scope plus explicit run id |
+| Structured report | `report --run-id <id> --json` | structured AX JSON | same reviewed run id |
+| Human projections | `explain`, `plan`, `govern` | stdout text | same reviewed run id |
+| Authorization | `authorize --agent <agent> --run-id <id>` | run-bound decision/bundle files | same reviewed run id |
+| Attestation verification | `attest verify ... --json` | structured JSON verification record | attestation subject must bind the reviewed artifact |
+
+`--json` and `--machine` are command-specific, not global. Strict CLI validation rejects unsupported flags and duplicate value options, so agents should prefer the manifest over guessing from neighboring commands.
+
+### Repo-maintenance command matrix
+
 | Task | Start with | Escalate to |
 |---|---|---|
 | Validate TypeScript compile behavior | `npm run build` | `npm run typecheck` |
@@ -178,6 +196,13 @@ When a run fails, start with the canonical closure artifacts instead of scraping
 - evidence basis: `run.nextEvidenceAction.evidenceBasis`
 - LLM handoff: `.ts-quality/runs/<run-id>/next-evidence-action.prompt.md`
 - AK-ready task projection: `.ts-quality/runs/<run-id>/next-evidence-action.ak-task.json`
+
+Turn that packet into bounded evidence work:
+
+1. open a follow-up slice whose allowed paths come from `primaryAction.suggestedEditFiles`, named witness files, governance files, or coverage setup paths;
+2. carry over the original changed scope unless the action explicitly names a narrower or corrected scope;
+3. run only the focused target-repo proof command(s) named by the packet before rerunning `check` with an explicit `--run-id`;
+4. treat `evidenceBasis.nonBlockingSignals` as out-of-scope unless the follow-up action says otherwise.
 
 For survivor failures, prefer `primaryAction.suggestedEditFiles` over guessing whether to edit tests or source. Use `primaryAction.groups` to avoid duplicating equivalent survivor fixes, `primaryAction.expectedConfidenceLift` to understand why this is the highest-leverage action, and `evidenceBasis.nonBlockingSignals` to avoid wasting time on evidence layers that are already clear.
 

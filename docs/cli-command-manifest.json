@@ -10,7 +10,33 @@
     "duplicateValueOptionsRejected": true,
     "unknownOptionsRejected": true,
     "explicitRunIdRecommendedForAutomation": true,
-    "latestPointerFallback": ".ts-quality/latest.json is used only by selected read/projection commands when --run-id is omitted"
+    "latestPointerFallback": ".ts-quality/latest.json is used only by selected read/projection commands when --run-id is omitted",
+    "changedScopeCommaList": "--changed is a single value option whose value may be comma-separated; repeated --changed options are rejected as duplicate value options",
+    "unsupportedMachineReadableFlagsRejected": true
+  },
+  "agentConsumption": {
+    "runSelection": {
+      "writer": "check --run-id <id> creates the reviewed run bundle and updates .ts-quality/latest.json",
+      "readers": ["explain --run-id <id>", "report --run-id <id>", "plan --run-id <id>", "govern --run-id <id>", "authorize --run-id <id>"],
+      "automationRule": "Agents and CI should pass the same explicit --run-id through every downstream projection or decision command; latest-pointer fallback is for human convenience only."
+    },
+    "changedScope": {
+      "acceptedCliShape": "--changed \"src/a.ts,src/b.ts\"",
+      "duplicateCliShapeRejected": "--changed src/a.ts --changed src/b.ts",
+      "alternatives": ["config changeSet.files", "config changeSet.diffFile"],
+      "automationRule": "Use one comma-separated --changed value for CLI automation, or move exact hunk-level scope into config."
+    },
+    "machineReadableOutput": [
+      { "command": "doctor", "mode": "--machine", "kind": "compact AX line protocol", "stablePrefix": "TSQ_DOCTOR_MACHINE_V1" },
+      { "command": "retention", "mode": "--machine", "kind": "compact AX line protocol", "stablePrefix": "TSQ_RETENTION_PLAN_V1" },
+      { "command": "report", "mode": "--json", "kind": "structured AX JSON projection" },
+      { "command": "attest verify", "mode": "--json", "kind": "structured AX JSON verification record" }
+    ],
+    "evidenceClosure": {
+      "sourceField": "run.nextEvidenceAction",
+      "artifacts": [".ts-quality/runs/<run-id>/next-evidence-action.json", ".ts-quality/runs/<run-id>/next-evidence-action.txt", ".ts-quality/runs/<run-id>/next-evidence-action.prompt.md", ".ts-quality/runs/<run-id>/next-evidence-action.ak-task.json"],
+      "automationRule": "Treat nextEvidenceAction as a bounded follow-up packet: keep suggested paths and rerun commands scoped, do not widen changed scope just to satisfy a score."
+    }
   },
   "commands": [
     {
@@ -33,7 +59,7 @@
       "reads": ["package.json", "ts-quality.config.* when present", "source/test file tree", "coverage/lcov.info when present"],
       "writes": [],
       "artifacts": ["human-readable adoption diagnostic text on stdout", "compact harnessed-LLM diagnostic line protocol on stdout when --machine is passed"],
-      "automationNotes": ["Use before check to discover missing changed scope, missing LCOV/generateCommand, and TypeScript dist source-map coverage risk.", "Use --machine for agents and harnessed LLMs because it avoids heavy JSON token overhead; keep --json for generic CI/report projections on commands that already expose it."]
+      "automationNotes": ["Use before check to discover missing changed scope, missing LCOV/generateCommand, and TypeScript dist source-map coverage risk.", "Use --machine for agents and harnessed LLMs because it avoids heavy JSON token overhead; keep --json for generic CI/report projections on commands that already expose it.", "Accepts one --changed value; comma-separate multiple files instead of repeating --changed."]
     },
     {
       "name": "materialize",
@@ -66,7 +92,7 @@
       "reads": ["ts-quality.config.* when present", ".ts-quality/witnesses/**/*.json", "configured trusted public/private key directory", "configured coverage path"],
       "writes": [],
       "artifacts": ["human-readable retention plan on stdout", "compact TSQ_RETENTION_PLAN_V1 line protocol on stdout when --machine is passed"],
-      "automationNotes": ["Use after adoption or pilot runs to distinguish reusable config/control-plane/witness/public-key files from generated run artifacts, latest pointers, mutation scratch files, coverage output, receipt sidecars, and private keys.", "The projection is advisory and read-only; repository policy and run artifacts remain authoritative."]
+      "automationNotes": ["Use after adoption or pilot runs to distinguish reusable config/control-plane/witness/public-key files from generated run artifacts, latest pointers, mutation scratch files, coverage output, receipt sidecars, and private keys.", "The projection is advisory and read-only; repository policy and run artifacts remain authoritative.", "Use --machine for compact artifact-retention planning; --json is not a supported flag for this command."]
     },
     {
       "name": "check",
@@ -77,7 +103,7 @@
       "reads": ["ts-quality.config.*", "coverage/lcov.info or configured coverage", "changed source files", "configured support files", "configured attestations/keys when present"],
       "writes": [".ts-quality/runs/<run-id>/run.json", ".ts-quality/runs/<run-id>/verdict.json", ".ts-quality/runs/<run-id>/report.json", ".ts-quality/runs/<run-id>/report.md", ".ts-quality/runs/<run-id>/pr-summary.md", ".ts-quality/runs/<run-id>/check-summary.txt", ".ts-quality/runs/<run-id>/explain.txt", ".ts-quality/runs/<run-id>/plan.txt", ".ts-quality/runs/<run-id>/govern.txt", ".ts-quality/runs/<run-id>/next-evidence-action.json", ".ts-quality/runs/<run-id>/next-evidence-action.txt", ".ts-quality/runs/<run-id>/next-evidence-action.prompt.md", ".ts-quality/runs/<run-id>/next-evidence-action.ak-task.json", ".ts-quality/latest.json", "optional coverage-generation sidecars", "optional mutation-remediation payload", "optional execution witness artifacts/receipts"],
       "artifacts": ["immutable run bundle", "verdict", "report views", "operator text summaries", "next evidence action", "optional coverage generation sidecars", "optional mutation remediation", "optional execution witness summary"],
-      "automationNotes": ["Provide --changed, config changeSet.files, or config changeSet.diffFile; check fails closed without changed scope.", "Prefer --run-id in harnessed automation.", "Run coverage and the target repo's normal quality gate before check when meaningful evidence is required."]
+      "automationNotes": ["Provide --changed, config changeSet.files, or config changeSet.diffFile; check fails closed without changed scope.", "Prefer --run-id in harnessed automation.", "Run coverage and the target repo's normal quality gate before check when meaningful evidence is required.", "Accepts one --changed value; comma-separate multiple files instead of repeating --changed.", "Use next-evidence-action.* outputs to open bounded evidence work when verdicts fail or warn."]
     },
     {
       "name": "explain",
@@ -101,7 +127,7 @@
       "writes": [],
       "artifacts": ["markdown report on stdout", "JSON report projection on stdout when --json is passed"],
       "latestPointerFallback": true,
-      "automationNotes": ["Prefer --run-id; report --json includes additive decisionContext metadata."]
+      "automationNotes": ["Prefer --run-id; report --json includes additive decisionContext metadata.", "Use --json only on report when structured report projection is needed; explain/plan/govern are human-readable projections."]
     },
     {
       "name": "trend",
@@ -149,7 +175,7 @@
       "writes": [".ts-quality/runs/<run-id>/authorize.<agent>.<action>.json", ".ts-quality/runs/<run-id>/bundle.<agent>.<action>.json"],
       "artifacts": ["authorization decision", "proof-carrying change bundle"],
       "latestPointerFallback": true,
-      "automationNotes": ["Prefer --run-id; default action is merge when --action is omitted."]
+      "automationNotes": ["Prefer --run-id; default action is merge when --action is omitted.", "Bind authorization to the same explicit --run-id used by check and review projections."]
     },
     {
       "name": "witness test",
@@ -173,7 +199,7 @@
       "reads": ["ts-quality.config.*", "configured invariants", "changed scope"],
       "writes": ["configured witness output JSON files", "configured witness receipt sidecars"],
       "artifacts": ["execution witnesses", "execution receipts", "stdout summary"],
-      "automationNotes": ["Pass --changed in harnessed automation unless changeSet.files or changeSet.diffFile supplies scope."]
+      "automationNotes": ["Pass --changed in harnessed automation unless changeSet.files or changeSet.diffFile supplies scope.", "Accepts one --changed value; comma-separate multiple files instead of repeating --changed."]
     },
     {
       "name": "attest keygen",
@@ -208,7 +234,7 @@
       "reads": ["attestation JSON", "trusted public keys directory"],
       "writes": [],
       "artifacts": ["human-readable verification text", "JSON verification record when --json is passed"],
-      "automationNotes": ["Use --json for machine consumers."]
+      "automationNotes": ["Use --json for machine consumers.", "Use --json for structured attestation verification; this does not imply a global --json flag on other commands."]
     },
     {
       "name": "amend",

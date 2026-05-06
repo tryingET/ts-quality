@@ -12,9 +12,23 @@ This guide is for **target repositories** using the published `ts-quality` packa
 
 CI should keep three habits explicit:
 
-1. changed scope is supplied by `--changed <a,b,c>` or a configured diff file,
+1. changed scope is supplied by one `--changed <a,b,c>` value or a configured diff file,
 2. every reviewed run has a stable `--run-id`, and
 3. downstream projections read that same run id instead of ambient `.ts-quality/latest.json`.
+
+## Agent/CI command consumption matrix
+
+| Need | Command shape | Machine-readable surface | Scope/run binding |
+|---|---|---|---|
+| First-contact setup diagnostics | `ts-quality doctor --machine --changed "$CHANGED_SCOPE"` | compact AX line protocol (`TSQ_DOCTOR_MACHINE_V1`) | changed scope is one comma-separated value |
+| Artifact retention planning | `ts-quality retention --machine` | compact AX line protocol (`TSQ_RETENTION_PLAN_V1`) | read-only projection; no run id |
+| Evidence-producing review run | `ts-quality check --changed "$CHANGED_SCOPE" --run-id "$RUN_ID"` | durable run artifacts under `.ts-quality/runs/<run-id>/` | one changed-scope value plus explicit run id |
+| Structured report projection | `ts-quality report --run-id "$RUN_ID" --json` | structured AX JSON projection | same reviewed run id |
+| Human-readable review projections | `explain`, `plan`, `govern` with `--run-id "$RUN_ID"` | stdout text | same reviewed run id |
+| Legitimacy decision | `authorize --agent <agent> --run-id "$RUN_ID"` | run-bound decision/bundle artifacts | same reviewed run id |
+| Attestation verification | `attest verify ... --json` | structured JSON verification record | subject/attestation paths bind the reviewed artifact |
+
+There is no global `--json` or `--machine` flag. Strict option validation rejects unsupported flags and duplicate value options, so agents should consult `docs/cli-command-manifest.json` before synthesizing command lines.
 
 ## Target-repo CI recipe
 
@@ -58,7 +72,7 @@ Use a comma-separated changed scope for multiple files:
 npx ts-quality check --changed "src/a.ts,src/b.ts" --run-id "$RUN_ID"
 ```
 
-Do not pass repeated `--changed` options; strict CLI validation rejects duplicate value options. Prefer a repo-generated diff file in `ts-quality.config.json` when CI needs exact hunk-level scope.
+Do not pass repeated `--changed` options such as `--changed src/a.ts --changed src/b.ts`; strict CLI validation rejects duplicate value options. Prefer a repo-generated diff file in `ts-quality.config.json` when CI needs exact hunk-level scope.
 
 Upload the run directory as the CI artifact:
 
@@ -108,7 +122,14 @@ A failed run is still useful evidence. Do not widen changed scope or lower polic
 - `coverage-generation.txt` when coverage generation failed,
 - `govern.txt` and `authorize.*.json` when governance or legitimacy blocks.
 
-For examples where high coverage still fails because mutation pressure is weak, see `docs/adoption/negative-path-examples.md`.
+Turn `nextEvidenceAction` into bounded work rather than broad cleanup:
+
+1. read `.ts-quality/runs/$RUN_ID/next-evidence-action.json`,
+2. keep the follow-up inside `primaryAction.suggestedEditFiles` and any named witness/governance/coverage targets,
+3. use `next-evidence-action.prompt.md` for LLM handoff or `next-evidence-action.ak-task.json` when the target repo uses task tooling,
+4. rerun the target repo quality command plus the same `check --changed "$CHANGED_SCOPE" --run-id "$RUN_ID"` shape or a new explicit run id for the follow-up review.
+
+Do not widen changed scope, lower thresholds, or switch to ambient latest-pointer projections to make a failed run green. For examples where high coverage still fails because mutation pressure is weak, see `docs/adoption/negative-path-examples.md`.
 
 ## Attestation and authorization
 

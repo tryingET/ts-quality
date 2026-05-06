@@ -46,6 +46,19 @@ For each slice:
 
 Do not compensate for ambiguous aliases, missing focused tests, bad coverage remapping, mutation survivors, or governance uncertainty by broadening changed scope or searching unrelated tests. Narrow the slice, fix the target repo evidence, or route the named blocker first.
 
+## Agent/CI hardening checklist
+
+For harnessed agents and CI bots, make the command contract boring and explicit:
+
+- use one comma-separated changed-scope value: `--changed "src/a.ts,src/b.ts"`;
+- do not repeat `--changed`; duplicate value options fail closed;
+- mint one stable `--run-id` for the reviewed slice and pass it to every downstream `report`, `explain`, `plan`, `govern`, and `authorize` call;
+- use `doctor --machine` and `retention --machine` for compact setup/retention packets, and `report --json` or `attest verify --json` for structured JSON projections;
+- do not assume `--json` or `--machine` is global; check `docs/cli-command-manifest.json` when generating commands;
+- when a run blocks, convert `.ts-quality/runs/<run-id>/next-evidence-action.*` into one bounded follow-up slice instead of broad cleanup.
+
+A good follow-up slice takes allowed paths from `primaryAction.suggestedEditFiles`, named witness artifacts, governance inputs, or coverage setup targets; carries forward the explicit changed scope unless the packet corrects it; and reruns the focused proof command plus `check` with an explicit run id.
+
 ## Authority model
 
 Keep the layers separate:
