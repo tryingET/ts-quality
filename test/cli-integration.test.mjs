@@ -21,6 +21,14 @@ test('init creates starter files in an empty repo', () => {
   assert.equal(result.status, 0);
   assert.equal(fs.existsSync(path.join(target, 'ts-quality.config.ts')), true);
   assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'invariants.ts')), true);
+  assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'witnesses', 'README.md')), true);
+  const invariantsText = fs.readFileSync(path.join(target, '.ts-quality', 'invariants.ts'), 'utf8');
+  assert.match(invariantsText, /First-invariant habit/);
+  assert.match(invariantsText, /requiredTestPatterns: \['test\/auth\/token\.test\.ts'\]/);
+  assert.match(invariantsText, /executionWitnessOutput: '\.ts-quality\/witnesses\/auth-refresh-expired-boundary\.json'/);
+  const witnessReadme = fs.readFileSync(path.join(target, '.ts-quality', 'witnesses', 'README.md'), 'utf8');
+  assert.match(witnessReadme, /one invariant, one scenario/);
+  assert.match(witnessReadme, /Do not use repo-global tests as focused witness proof/);
 });
 
 test('init presets and doctor expose adoption diagnostics without running tests', () => {

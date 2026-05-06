@@ -2075,7 +2075,61 @@ function initProject(rootDir, options) {
     }
     const invariantsPath = path_1.default.join(rootDir, '.ts-quality', 'invariants.ts');
     if (!fs_1.default.existsSync(invariantsPath)) {
-        fs_1.default.writeFileSync(invariantsPath, `export default [\n  {\n    id: 'auth.refresh.validity',\n    title: 'Refresh token validity',\n    description: 'Expired refresh tokens must never authorize access.',\n    severity: 'high',\n    selectors: ['path:src/auth/**', 'symbol:isRefreshExpired'],\n    scenarios: [\n      {\n        id: 'expired',\n        description: 'expired token is denied',\n        keywords: ['expired', 'deny'],\n        failurePathKeywords: ['boundary', 'expiry'],\n        // Optional execution-backed witness generation during \`ts-quality check\`:\n        // executionWitnessCommand: ['node', '--test', 'test/token.test.js'],\n        // executionWitnessOutput: '.ts-quality/witnesses/auth-refresh-expired.json',\n        // executionWitnessTestFiles: ['test/token.test.js'],\n        // executionWitnessTimeoutMs: 5000,\n        expected: 'deny'\n      }\n    ]\n  }\n];\n`, 'utf8');
+        fs_1.default.writeFileSync(invariantsPath, `// First-invariant habit: replace this sample with one behavior-bearing source path,
+// one assertion-bearing focused test file, and one scenario you would cite in review.
+// See docs/adoption/first-invariant-witness-authoring.md in the ts-quality package.
+export default [
+  {
+    id: 'auth.refresh.validity',
+    title: 'Refresh token validity',
+    description: 'Expired refresh tokens must never authorize access.',
+    severity: 'high',
+    selectors: ['path:src/auth/token.ts', 'symbol:isRefreshExpired'],
+    requiredTestPatterns: ['test/auth/token.test.ts'],
+    scenarios: [
+      {
+        id: 'expired-boundary',
+        description: 'exact expiry boundary denies access',
+        keywords: ['active token before expiry allows access'],
+        failurePathKeywords: ['exact expiry boundary denies access'],
+        // Optional execution-backed witness generation during \`ts-quality check\`:
+        // executionWitnessCommand: ['npm', 'run', 'test:auth-token', '--silent'],
+        // executionWitnessOutput: '.ts-quality/witnesses/auth-refresh-expired-boundary.json',
+        // executionWitnessTestFiles: ['test/auth/token.test.ts'],
+        // executionWitnessTimeoutMs: 5000,
+        expected: 'deny'
+      }
+    ]
+  }
+];
+`, 'utf8');
+    }
+    const witnessReadmePath = path_1.default.join(rootDir, '.ts-quality', 'witnesses', 'README.md');
+    if (!fs_1.default.existsSync(witnessReadmePath)) {
+        fs_1.default.writeFileSync(witnessReadmePath, `# ts-quality witnesses
+
+Write the first execution witness only after choosing one invariant, one scenario,
+one behavior-bearing source path, and one focused test command.
+
+Recommended shape:
+
+\`\`\`bash
+npx ts-quality witness test \\
+  --invariant auth.refresh.validity \\
+  --scenario expired-boundary \\
+  --source-files src/auth/token.ts \\
+  --test-files test/auth/token.test.ts \\
+  --out .ts-quality/witnesses/auth-refresh-expired-boundary.json \\
+  -- npm run test:auth-token --silent
+\`\`\`
+
+Commit reusable witness JSON only when the target repo deliberately treats it as
+review evidence. Keep generated \`*.receipt.json\` sidecars and run artifacts
+out of commits unless the repo intentionally snapshots reviewed examples.
+
+Do not use repo-global tests as focused witness proof when a module-level or
+contract-level command exists.
+`, 'utf8');
     }
     const constitutionPath = path_1.default.join(rootDir, '.ts-quality', 'constitution.ts');
     if (!fs_1.default.existsSync(constitutionPath)) {
