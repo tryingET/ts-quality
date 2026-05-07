@@ -31,6 +31,28 @@ test('register-screening-catalog requires accepted evidence before accepted repo
 
   const { normalizeRepoEntry, renderCatalogMarkdown } = await import(`file://${scriptPath}`);
   assert.throws(() => normalizeRepoEntry(baseEntry), /acceptedEvidence is required/);
+  assert.throws(() => normalizeRepoEntry({
+    ...baseEntry,
+    acceptedEvidence: {
+      acceptedBy: 'repo maintainer review',
+      acceptedAt: '2026-05-07',
+      artifactRetentionPolicy: 'Commit config/control-plane/witness records; ignore generated runs and private keys.',
+      latestEvidence: 'not-an-array',
+      commands: ['npm run screening:check -- --changed src/fixture/core.ts --run-id fixture-run'],
+      rollback: 'Remove wrapper scripts/config and preserve rollout note.'
+    }
+  }), /acceptedEvidence\.latestEvidence must be a non-empty string array/);
+  assert.throws(() => normalizeRepoEntry({
+    ...baseEntry,
+    acceptedEvidence: {
+      acceptedBy: 'repo maintainer review',
+      acceptedAt: '2026-05-07',
+      artifactRetentionPolicy: 'Commit config/control-plane/witness records; ignore generated runs and private keys.',
+      latestEvidence: ['.ts-quality/runs/fixture-run/report.md'],
+      commands: [''],
+      rollback: 'Remove wrapper scripts/config and preserve rollout note.'
+    }
+  }), /acceptedEvidence\.commands must be a non-empty string array/);
   const accepted = normalizeRepoEntry({
     ...baseEntry,
     acceptedEvidence: {
