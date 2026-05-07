@@ -51,7 +51,7 @@ This file should be **exceptionally useful**: concise, grounded in shipped truth
 - The runtime is consistently fail-closed around missing scope, invalid mutation baselines, control-plane drift, path escapes, and unsupported snapshot schemas.
 - Invariant evidence has a meaningful provenance model: explicit, inferred, and missing support are not silently mixed.
 - Legitimacy is unusually concrete for an alpha tool: grants, attestations, overrides, amendments, and authorization decisions are tied to exact runs.
-- The package path is no longer just conceptual; staged packaging, public npm publication through `0.5.0`, Trusted Publishing provenance, production-clean npm README presentation, first-user CLI help including the first focused witness path, configured LCOV generation, compact public `doctor --machine` diagnostics, compact `retention --machine`, representative installed-package review/governance/legitimacy smoke proof, public release verification for manual witness evidence, the 0.3 contract baseline, the 0.4 evidence-closure contract, and multiple outside-repo adoption/dogfood pilots now including an ESM TypeScript/Vitest target-shape artifact capture exist.
+- The package path is no longer just conceptual; staged packaging, public npm publication through `0.5.0`, Trusted Publishing provenance, production-clean npm README presentation, first-user CLI help including the first focused witness path, configured LCOV generation, compact public `doctor --machine` diagnostics, compact `retention --machine`, representative installed-package review/governance/legitimacy smoke proof, public release verification for manual witness evidence, the 0.3 contract baseline, the 0.4 evidence-closure contract, executable negative governance/authorization proof, and multiple outside-repo adoption/dogfood pilots now including an ESM TypeScript/Vitest target-shape artifact capture exist.
 
 ## Current gaps
 
@@ -77,7 +77,7 @@ A release operator can now repeat representative review/governance/legitimacy fl
 
 1. Expand schema-version compatibility fixtures beyond the current fixture matrix into more real historical/current artifact captures from target repos.
 2. Continue outside-repo pilots across additional target shapes, now focusing on whether the public `doctor --machine` -> manual `witness test` -> `check` -> `report`/`explain` -> `retention` story remains understandable without maintainer narration.
-3. Add negative-path public examples for mutation survivors, governance boundary violations, wrong-run attestations/approvals, and insufficient authorization grants.
+3. Continue expanding negative-path public examples beyond the now-executable mutation-survivor and governance/authorization proofs, especially more real target-shape governance violations and wrong-run evidence captures.
 4. Keep witness discovery narrow: invariant id, scenario id, pass status, and impacted source scope must all match before manual artifacts count as execution-backed support.
 5. Continue making concise summaries downstream of `run.json`, not competing authorities.
 6. Preserve artifact compatibility and exact-run binding as the trust surface grows.

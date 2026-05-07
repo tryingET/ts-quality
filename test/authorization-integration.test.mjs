@@ -81,6 +81,15 @@ test('mini-monorepo negative pilot keeps boundary violations and wrong-run autho
   const governText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'negative-governance-boundary', 'govern.txt'), 'utf8');
   assert.match(governText, /api-cannot-import-identity/);
   assert.match(governText, /packages\/api\/src\/consumer\.js/);
+
+  result = spawnSync('node', [cli, 'report', '--root', target, '--json', '--run-id', 'negative-governance-boundary'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const selectedReport = JSON.parse(result.stdout);
+  assert.equal(selectedReport.runId, 'negative-governance-boundary');
+  assert.equal(selectedReport.verdict.outcome, 'fail');
+  assert.equal(selectedReport.verdict.findings.some((item) => item.ruleId === 'api-cannot-import-identity' || item.id === 'governance:api-cannot-import-identity'), true);
+  assert.equal(result.stdout.includes('authorization-other-run'), false);
+
   const staleDecision = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'authorization-other-run', 'authorize.maintainer.merge.json'), 'utf8'));
   assert.equal(staleDecision.outcome, 'approve');
   assert.equal(staleDecision.evidenceContext.runId, 'authorization-other-run');

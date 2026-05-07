@@ -79,9 +79,9 @@ A package-boundary or architectural-rule violation is not merely advisory when i
 - `authorize --agent <agent> --run-id <id>` refuses approval unless a valid run-bound approval/waiver/override with standing exists,
 - drift in the constitution, agents, approvals, waivers, overrides, or changed files fails closed instead of trusting ambient edits.
 
-The current public monorepo package-boundary pilot proves healthy package attribution and approval, but it did not intentionally violate the boundary. The concrete follow-up plan and repo-local regression proof are in `docs/adoption/negative-governance-authorization-pilot.md`, which specifies the violating fixture shape, commands, expected artifacts, non-approval outcomes, validation checklist, and current `test/authorization-integration.test.mjs` coverage.
+The current public monorepo package-boundary pilot proves healthy package attribution and approval, but it did not intentionally violate the boundary. The executable negative-path proof is now recorded in `docs/adoption/2026-05-07-negative-governance-authorization-proof.md` and protected by `test/authorization-integration.test.mjs`. The older planning/checklist detail remains in `docs/adoption/negative-governance-authorization-pilot.md` for future disposable external-target pilots.
 
-Source evidence: `docs/adoption/seventh-public-0.3.1-monorepo-package-boundary-pilot.md`.
+Source evidence: `docs/adoption/seventh-public-0.3.1-monorepo-package-boundary-pilot.md`, `docs/adoption/2026-05-07-negative-governance-authorization-proof.md`, and `test/authorization-integration.test.mjs`.
 
 ## Wrong-run or stale legitimacy artifacts must not become ambient trust
 
@@ -94,7 +94,7 @@ Expected negative outcomes:
 - an override grant that does not match the exact changed scope is not a blanket bypass,
 - unsupported or malformed control-plane snapshots instruct the operator to rerun rather than projecting stale authority.
 
-Use explicit `--run-id` in CI and agent workflows so these failures are visible and reproducible. The wrong-run and insufficient-grant checks in `docs/adoption/negative-governance-authorization-pilot.md` fail if approval can leak from a different run id, unmatched grant, or stale sidecar.
+Use explicit `--run-id` in CI and agent workflows so these failures are visible and reproducible. The wrong-run, older-run attestation, and insufficient-grant checks in `test/authorization-integration.test.mjs` fail if approval can leak from a different run id, unmatched grant, or stale sidecar; see `docs/adoption/2026-05-07-negative-governance-authorization-proof.md` for the executable evidence summary.
 
 ## Adoption habit
 

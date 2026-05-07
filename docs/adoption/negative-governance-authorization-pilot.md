@@ -9,7 +9,7 @@ type: "plan"
 
 # Negative governance and authorization pilot
 
-This document is both a reusable pilot plan and a regression-proof index.
+This document is both a reusable pilot plan and a regression-proof index. The current executable proof summary is recorded in `docs/adoption/2026-05-07-negative-governance-authorization-proof.md`.
 
 The focused regression subset is implemented in `test/authorization-integration.test.mjs` using the existing `fixtures/mini-monorepo` fixture. It proves:
 
@@ -31,6 +31,7 @@ Regression cases:
 
 - `mini-monorepo negative pilot keeps boundary violations and wrong-run authorization run-bound`
 - `mini-monorepo negative pilot refuses insufficient authorization grants`
+- `authorize ignores attestations that target an older run`
 
 Fixture and artifacts exercised:
 
@@ -39,7 +40,7 @@ Fixture and artifacts exercised:
 - `authorization-other-run` verifies a clean package-local run can approve while staying bound to its own run id.
 - `negative-insufficient-grant` verifies `release-bot` cannot authorize `packages/api/src/consumer.js` with a grant scoped only to `packages/identity/**`.
 
-The test asserts run ids, governance error rule ids, `govern.txt` content, bundle artifact paths, denial outcomes, and non-approval reasons. This is not a public outside-repo adoption proof; it is the repo-local executable regression that protects the negative-path contract.
+The test asserts run ids, governance error rule ids, `govern.txt` content, selected-run report projection, stale sidecar inertness, bundle artifact paths, denial outcomes, older-run attestation rejection, and non-approval reasons. This is not a public outside-repo adoption proof; it is the repo-local executable regression that protects the negative-path contract.
 
 ## External pilot fixture shape
 
