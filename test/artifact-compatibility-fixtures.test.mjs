@@ -222,6 +222,8 @@ test('real target-shape adoption capture remains projectable through compatibili
   const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', fixture.runId]);
   assert.equal(authorize.status, 0, authorize.stderr);
   const authorization = JSON.parse(authorize.stdout);
+  assert.equal(authorization.outcome, fixture.authorizationOutcome);
+  assert.match(authorization.reasons.join('\n'), new RegExp(fixture.authorizationReason));
   assert.equal(authorization.evidenceContext?.runId, fixture.runId);
   assert.equal(authorization.evidenceContext?.runOutcome, 'pass');
 });

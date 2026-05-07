@@ -74,4 +74,6 @@ The real target-shape run packet and the minimal support files needed to project
 - `govern`
 - `authorize`
 
+The authorization projection is intentionally checked as a run-bound denial (`Unknown agent release-bot`) because the captured control-plane snapshot has no `release-bot` grant. This proves selected-run authorization projection compatibility, not accepted automation approval.
+
 This converts one more real adoption run into executable compatibility coverage instead of leaving it as prose-only evidence.

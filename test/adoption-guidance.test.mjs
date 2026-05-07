@@ -188,7 +188,14 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
 });
 
 
-test('shared public CLI contract rejects noisy help and doctor-machine preambles', () => {
+test('shared public CLI contract rejects noisy version/help and doctor-machine preambles', () => {
+  assert.throws(() => verifyPublicCliContract((contractCase) => {
+    if (contractCase.id === 'version') {
+      return '0.5.0';
+    }
+    return 'ts-quality commands:\n';
+  }), /--version did not emit a bare semver line/);
+
   assert.throws(() => verifyPublicCliContract((contractCase) => {
     if (contractCase.id === 'version') {
       return '0.5.0\n';

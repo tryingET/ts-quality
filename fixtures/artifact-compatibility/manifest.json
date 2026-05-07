@@ -94,8 +94,10 @@
       "runId": "kinetic-vitest-esm-adoption",
       "version": "0.2.0",
       "decisionPolicy": "usable-real-target-shape-capture",
+      "authorizationOutcome": "deny",
+      "authorizationReason": "Unknown agent release-bot",
       "targetShape": "clean ESM TypeScript package using Vitest plus a focused node --import tsx witness/coverage proof",
-      "expectation": "real target-shape packet remains parseable and projectable through report, explain, plan, govern, and authorize surfaces while preserving execution-backed witness, coverage generation, mutation pressure, and next-evidence-action fields"
+      "expectation": "real target-shape packet remains parseable and projectable through report, explain, plan, govern, and authorize surfaces while preserving execution-backed witness, coverage generation, mutation pressure, and next-evidence-action fields; authorization is expected to deny because the captured control-plane snapshot has no release-bot grant"
     }
   ]
 }

@@ -90,7 +90,7 @@ export const publicCliContractCases = [
     args: ['--version'],
     summary: 'top-level version prints a bare semver line',
     validate(stdout) {
-      if (!/^\d+\.\d+\.\d+\n?$/u.test(stdout)) {
+      if (!/^\d+\.\d+\.\d+\n$/u.test(stdout)) {
         throw new Error('ts-quality --version did not emit a bare semver line.');
       }
       return { version: stdout.trim() };

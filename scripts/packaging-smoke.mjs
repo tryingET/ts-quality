@@ -167,11 +167,21 @@ function writeInstalledReviewProposal(rootDir) {
  * @returns {string}
  */
 function run(command, args, cwd) {
+  return runRaw(command, args, cwd).trim();
+}
+
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @param {string} cwd
+ * @returns {string}
+ */
+function runRaw(command, args, cwd) {
   const result = spawnSync(command, args, { cwd, encoding: 'utf8' });
   if (result.status !== 0) {
     throw new Error(`Command failed: ${command} ${args.join(' ')}\n${result.stdout}\n${result.stderr}`);
   }
-  return result.stdout.trim();
+  return result.stdout;
 }
 
 /**
@@ -523,7 +533,7 @@ export function runPackagingSmoke() {
       ensureFile(path.join(installedPackageDir, normalizePackageRelative(relativePath)), `Installed ${label} entrypoint`);
     }
 
-    const installedCliContract = verifyPublicCliContract((contractCase) => run(installedCliBinPath, contractCase.args, installRoot));
+    const installedCliContract = verifyPublicCliContract((contractCase) => runRaw(installedCliBinPath, contractCase.args, installRoot));
     const installedCliContractSummary = summarizePublicCliContract(installedCliContract);
 
     const cliProjectRoot = path.join(installRoot, 'cli-project');
