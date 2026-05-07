@@ -190,6 +190,9 @@ test('local release orchestration scripts expose plan/prepare/github/verify surf
 
 test('shared public CLI contract rejects noisy help and doctor-machine preambles', () => {
   assert.throws(() => verifyPublicCliContract((contractCase) => {
+    if (contractCase.id === 'version') {
+      return '0.5.0\n';
+    }
     if (contractCase.id === 'help') {
       return 'warning before help\nts-quality commands:\n';
     }
@@ -197,6 +200,9 @@ test('shared public CLI contract rejects noisy help and doctor-machine preambles
   }), /help did not start with "ts-quality commands:"/);
 
   assert.throws(() => verifyPublicCliContract((contractCase) => {
+    if (contractCase.id === 'version') {
+      return '0.5.0\n';
+    }
     if (contractCase.id === 'help') {
       return 'ts-quality commands:\n';
     }
@@ -207,6 +213,9 @@ test('shared public CLI contract rejects noisy help and doctor-machine preambles
   }), /did not start with TSQ_DOCTOR_MACHINE_V1/);
 
   assert.throws(() => verifyPublicCliContract((contractCase) => {
+    if (contractCase.id === 'version') {
+      return '0.5.0\n';
+    }
     if (contractCase.id === 'help') {
       return 'ts-quality commands:\n';
     }
@@ -226,6 +235,13 @@ test('shared public CLI contract rejects noisy help and doctor-machine preambles
       ''
     ].join('\n');
   }), /did not emit any exact command_arg fields/);
+
+  assert.throws(() => verifyPublicCliContract((contractCase) => {
+    if (contractCase.id === 'version') {
+      return 'ts-quality 0.5.0\n';
+    }
+    return 'ts-quality commands:\n';
+  }), /--version did not emit a bare semver line/);
 });
 
 test('v0.2.0 release notes use categorized breaking-change and agent migration sections', () => {

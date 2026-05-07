@@ -13,6 +13,52 @@ function stripDecisionContext(reportJson) {
   return runJsonFields;
 }
 
+test('top-level version flag prints the public package version only', () => {
+  const publicPackage = JSON.parse(fs.readFileSync(path.join(repoRoot, 'packages', 'ts-quality', 'package.json'), 'utf8'));
+  const result = spawnSync('node', [cli, '--version'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, `${publicPackage.version}\n`);
+  assert.equal(result.stderr, '');
+
+  const misplaced = spawnSync('node', [cli, 'check', '--version'], { encoding: 'utf8' });
+  assert.equal(misplaced.status, 1);
+  assert.match(misplaced.stderr, /--version is a top-level flag/);
+
+  const combined = spawnSync('node', [cli, '--version', '--root', repoRoot], { encoding: 'utf8' });
+  assert.equal(combined.status, 1);
+  assert.match(combined.stderr, /run exactly ts-quality --version/);
+});
+
+test('command help surfaces render without executing workflows', () => {
+  const cases = [
+    { args: ['init', '--help'], expected: 'Usage: ts-quality init ' },
+    { args: ['doctor', '--help'], expected: 'Usage: ts-quality doctor ' },
+    { args: ['materialize', '--help'], expected: 'Usage: ts-quality materialize ' },
+    { args: ['adopt', '--help'], expected: 'Usage: ts-quality adopt ' },
+    { args: ['retention', '--help'], expected: 'Usage: ts-quality retention ' },
+    { args: ['check', '--help'], expected: 'Usage: ts-quality check ' },
+    { args: ['explain', '--help'], expected: 'Usage: ts-quality explain ' },
+    { args: ['report', '--help'], expected: 'Usage: ts-quality report ' },
+    { args: ['trend', '--help'], expected: 'Usage: ts-quality trend ' },
+    { args: ['plan', '--help'], expected: 'Usage: ts-quality plan ' },
+    { args: ['govern', '--help'], expected: 'Usage: ts-quality govern ' },
+    { args: ['authorize', '--help'], expected: 'Usage: ts-quality authorize ' },
+    { args: ['attest', 'sign', '--help'], expected: 'Usage: ts-quality attest sign ' },
+    { args: ['attest', 'verify', '--help'], expected: 'Usage: ts-quality attest verify ' },
+    { args: ['attest', 'keygen', '--help'], expected: 'Usage: ts-quality attest keygen ' },
+    { args: ['witness', 'test', '--help'], expected: 'Usage: ts-quality witness test ' },
+    { args: ['witness', 'refresh', '--help'], expected: 'Usage: ts-quality witness refresh ' },
+    { args: ['amend', '--help'], expected: 'Usage: ts-quality amend ' }
+  ];
+
+  for (const helpCase of cases) {
+    const result = spawnSync('node', [cli, ...helpCase.args], { encoding: 'utf8' });
+    assert.equal(result.status, 0, `${helpCase.args.join(' ')}\n${result.stderr}`);
+    assert.equal(result.stderr, '');
+    assert.equal(result.stdout.startsWith(helpCase.expected), true, helpCase.args.join(' '));
+  }
+});
+
 test('init creates starter files in an empty repo', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.rmSync(path.join(target, 'ts-quality.config.ts'), { force: true });

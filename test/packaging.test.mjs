@@ -476,7 +476,8 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.directories, expectedStageDirectories);
   assert.deepEqual(summary.stagedFiles, expectedStageFiles);
   assert.deepEqual(summary.tarballFiles, expectedTarballFiles);
-  assert.deepEqual(summary.cli.publicContract.checks.map((check) => check.id), ['help', 'doctor-help', 'doctor-machine']);
+  assert.deepEqual(summary.cli.publicContract.checks.map((check) => check.id), ['version', 'help', 'doctor-help', 'doctor-machine']);
+  assert.equal(summary.cli.publicContract.checks.find((check) => check.id === 'version')?.details.version, manifestContract.version);
   assert.equal(summary.cli.publicContract.checks.find((check) => check.id === 'help')?.details.header, 'ts-quality commands:');
   assert.equal(summary.cli.publicContract.checks.find((check) => check.id === 'doctor-help')?.details.flag, '--machine');
   assert.equal(summary.cli.publicContract.checks.find((check) => check.id === 'doctor-machine')?.details.header, 'TSQ_DOCTOR_MACHINE_V1');

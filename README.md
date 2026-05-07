@@ -116,6 +116,7 @@ Start with the published package when you are evaluating a target repo. Use the 
 
 ```bash
 npm install --save-dev ts-quality
+npx ts-quality --version
 npx ts-quality init
 npx ts-quality materialize
 ```

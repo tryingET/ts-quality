@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from 'fs';
 import path from 'path';
 import { renderSafeText } from '../../evidence-model/src/index';
 import {
@@ -25,7 +26,24 @@ import {
 } from './index';
 
 function args(): string[] {
-  return process.argv.slice(2);
+  const argv = process.argv.slice(2);
+  if (handleTopLevelVersionRequest(argv)) {
+    process.exit(0);
+  }
+  return argv;
+}
+
+function handleTopLevelVersionRequest(argv: string[]): boolean {
+  const optionBoundary = argv.indexOf('--');
+  const optionArgs = optionBoundary >= 0 ? argv.slice(0, optionBoundary) : argv;
+  if (!optionArgs.includes('--version')) {
+    return false;
+  }
+  if (argv.length !== 1) {
+    throw new Error('--version is a top-level flag; run exactly ts-quality --version');
+  }
+  process.stdout.write(`${cliVersion()}\n`);
+  return true;
 }
 
 type OptionKind = 'value' | 'flag';
@@ -71,7 +89,8 @@ const OPTION_KINDS = new Map<string, OptionKind>([
   ['--json', 'flag'],
   ['--machine', 'flag'],
   ['--help', 'flag'],
-  ['--apply', 'flag']
+  ['--apply', 'flag'],
+  ['--version', 'flag']
 ]);
 
 const COMMAND_CONTRACTS = new Map<string, CommandContract>([
@@ -252,6 +271,25 @@ function csvValues(parsed: ParsedArgs, name: string): string[] | undefined {
   return value ? value.split(',').filter(Boolean) : undefined;
 }
 
+interface PackageManifest {
+  version?: unknown;
+}
+
+function readPackageVersion(packageJsonPath: string): string | undefined {
+  try {
+    const manifest = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as PackageManifest;
+    return typeof manifest.version === 'string' ? manifest.version : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function cliVersion(): string {
+  return readPackageVersion(path.resolve(__dirname, '../../../../packages/ts-quality/package.json'))
+    ?? readPackageVersion(path.resolve(__dirname, '../../../../package.json'))
+    ?? '0.0.0';
+}
+
 function usage(command?: string, subcommand?: string): string {
   if (!command) {
     return `ts-quality commands:
@@ -270,6 +308,7 @@ First focused witness:
   ts-quality check --changed src/auth/token.ts --run-id review-001
 
 Core commands:
+- --version                                print the packaged CLI version
 - init [--preset <name>]                   create starter control-plane files
 - doctor [--machine]                       inspect adoption readiness without running tests
 - materialize [--out-dir <dir>]            write boring runtime JSON from config/support files

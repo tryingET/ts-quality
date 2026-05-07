@@ -86,6 +86,17 @@ export function parseDoctorMachineProtocol(stdout) {
 /** @type {PublicCliContractCase[]} */
 export const publicCliContractCases = [
   {
+    id: 'version',
+    args: ['--version'],
+    summary: 'top-level version prints a bare semver line',
+    validate(stdout) {
+      if (!/^\d+\.\d+\.\d+\n?$/u.test(stdout)) {
+        throw new Error('ts-quality --version did not emit a bare semver line.');
+      }
+      return { version: stdout.trim() };
+    }
+  },
+  {
     id: 'help',
     args: ['--help'],
     summary: 'top-level help exposes command list',

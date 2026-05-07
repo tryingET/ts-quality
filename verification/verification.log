@@ -232,6 +232,16 @@ $ npm run smoke:packaging --silent
       "schemaVersion": 1,
       "checks": [
         {
+          "id": "version",
+          "args": [
+            "--version"
+          ],
+          "summary": "top-level version prints a bare semver line",
+          "details": {
+            "version": "0.5.0"
+          }
+        },
+        {
           "id": "help",
           "args": [
             "--help"

@@ -4,11 +4,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const index_1 = require("../../evidence-model/src/index");
 const index_2 = require("./index");
 function args() {
-    return process.argv.slice(2);
+    const argv = process.argv.slice(2);
+    if (handleTopLevelVersionRequest(argv)) {
+        process.exit(0);
+    }
+    return argv;
+}
+function handleTopLevelVersionRequest(argv) {
+    const optionBoundary = argv.indexOf('--');
+    const optionArgs = optionBoundary >= 0 ? argv.slice(0, optionBoundary) : argv;
+    if (!optionArgs.includes('--version')) {
+        return false;
+    }
+    if (argv.length !== 1) {
+        throw new Error('--version is a top-level flag; run exactly ts-quality --version');
+    }
+    process.stdout.write(`${cliVersion()}\n`);
+    return true;
 }
 const OPTION_KINDS = new Map([
     ['--root', 'value'],
@@ -38,7 +55,8 @@ const OPTION_KINDS = new Map([
     ['--json', 'flag'],
     ['--machine', 'flag'],
     ['--help', 'flag'],
-    ['--apply', 'flag']
+    ['--apply', 'flag'],
+    ['--version', 'flag']
 ]);
 const COMMAND_CONTRACTS = new Map([
     ['init', { allowedValues: ['--root', '--preset'], allowedFlags: [], maxPositionals: 1 }],
@@ -202,6 +220,20 @@ function csvValues(parsed, name) {
     const value = takeOption(parsed, name);
     return value ? value.split(',').filter(Boolean) : undefined;
 }
+function readPackageVersion(packageJsonPath) {
+    try {
+        const manifest = JSON.parse(fs_1.default.readFileSync(packageJsonPath, 'utf8'));
+        return typeof manifest.version === 'string' ? manifest.version : undefined;
+    }
+    catch {
+        return undefined;
+    }
+}
+function cliVersion() {
+    return readPackageVersion(path_1.default.resolve(__dirname, '../../../../packages/ts-quality/package.json'))
+        ?? readPackageVersion(path_1.default.resolve(__dirname, '../../../../package.json'))
+        ?? '0.0.0';
+}
 function usage(command, subcommand) {
     if (!command) {
         return `ts-quality commands:
@@ -220,6 +252,7 @@ First focused witness:
   ts-quality check --changed src/auth/token.ts --run-id review-001
 
 Core commands:
+- --version                                print the packaged CLI version
 - init [--preset <name>]                   create starter control-plane files
 - doctor [--machine]                       inspect adoption readiness without running tests
 - materialize [--out-dir <dir>]            write boring runtime JSON from config/support files

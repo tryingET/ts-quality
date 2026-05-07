@@ -32,10 +32,13 @@ Do not publish with local `npm publish`.
 Public release verification protects these first-contact commands:
 
 ```bash
+ts-quality --version
 ts-quality --help
 ts-quality doctor --help
 ts-quality doctor --machine --changed src/index.ts
 ```
+
+`--version` must emit a bare semver line with no preamble.
 
 The top-level help must begin with:
 
