@@ -87,6 +87,15 @@
       "version": "0.2.0",
       "decisionPolicy": "fail-closed",
       "expectation": "decision projections must reject malformed control-plane snapshots and ask for a rerun"
+    },
+    {
+      "id": "realKineticVitestEsm020",
+      "file": "real-kinetic-vitest-esm/run.json.fixture",
+      "runId": "kinetic-vitest-esm-adoption",
+      "version": "0.2.0",
+      "decisionPolicy": "usable-real-target-shape-capture",
+      "targetShape": "clean ESM TypeScript package using Vitest plus a focused node --import tsx witness/coverage proof",
+      "expectation": "real target-shape packet remains parseable and projectable through report, explain, plan, govern, and authorize surfaces while preserving execution-backed witness, coverage generation, mutation pressure, and next-evidence-action fields"
     }
   ]
 }

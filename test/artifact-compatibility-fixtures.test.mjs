@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import test from 'node:test';
 import assert from 'assert/strict';
@@ -103,6 +104,13 @@ function installRunFixture(targetRoot, fixture) {
   return run;
 }
 
+function tempCopyOfArtifactCompatibilityFixture(relativePath) {
+  const source = path.join(fixtureRoot, relativePath);
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-artifact-compat-'));
+  fs.cpSync(source, target, { recursive: true });
+  return target;
+}
+
 function runCli(args, cwd = repoRoot) {
   return spawnSync('node', [cli, ...args], { cwd, encoding: 'utf8' });
 }
@@ -116,7 +124,8 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
     'futureAdditive020',
     'nextEvidenceMinimal020',
     'unsupportedControlPlane',
-    'malformedControlPlane'
+    'malformedControlPlane',
+    'realKineticVitestEsm020'
   ]);
 
   const profiles = Object.fromEntries(manifest.fixtures.map((fixture) => {
@@ -145,6 +154,13 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
   assert.match(profiles.unsupportedControlPlane.failClosedReason, /unsupported control-plane snapshot schema 999/);
   assert.equal(profiles.malformedControlPlane.decisionStatus, 'fail-closed');
   assert.match(profiles.malformedControlPlane.failClosedReason, /field configPath must be a non-empty string/);
+  assert.equal(profiles.realKineticVitestEsm020.decisionStatus, 'usable');
+  assert.equal(profiles.realKineticVitestEsm020.nextEvidence.kind, 'none');
+  assert.deepEqual(profiles.realKineticVitestEsm020.missingOptionalRunFields, [
+    'analysisWarnings',
+    'mutationRemediation',
+    'executionWitnesses'
+  ]);
 });
 
 test('checked-in historical governed-app run capture remains projectable through compatibility surfaces', () => {
@@ -174,6 +190,40 @@ test('checked-in historical governed-app run capture remains projectable through
   const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', historicalGovernedAppRunId]);
   assert.equal(authorize.status, 0, authorize.stderr);
   assert.equal(JSON.parse(authorize.stdout).evidenceContext?.runId, historicalGovernedAppRunId);
+});
+
+test('real target-shape adoption capture remains projectable through compatibility surfaces', () => {
+  const fixturesById = Object.fromEntries(manifest.fixtures.map((fixture) => [fixture.id, fixture]));
+  const fixture = fixturesById.realKineticVitestEsm020;
+  const target = tempCopyOfArtifactCompatibilityFixture('real-kinetic-vitest-esm');
+  installRunFixture(target, fixture);
+
+  const report = runCli(['report', '--root', target, '--json', '--run-id', fixture.runId]);
+  assert.equal(report.status, 0, report.stderr);
+  const reportJson = JSON.parse(report.stdout);
+  assert.equal(reportJson.runId, fixture.runId);
+  assert.equal(reportJson.verdict.outcome, 'pass');
+  assert.equal(reportJson.verdict.mergeConfidence, 90);
+
+  const explain = runCli(['explain', '--root', target, '--run-id', fixture.runId]);
+  assert.equal(explain.status, 0, explain.stderr);
+  assert.match(explain.stdout, /segmentation\.readable-bursts/);
+  assert.match(explain.stdout, /execution-backed witness matched/);
+
+  const plan = runCli(['plan', '--root', target, '--run-id', fixture.runId]);
+  assert.equal(plan.status, 0, plan.stderr);
+  assert.match(plan.stdout, /Generated 0 governance step\(s\)/);
+  assert.match(plan.stdout, /Invariant evidence at risk: segmentation\.readable-bursts/);
+
+  const govern = runCli(['govern', '--root', target, '--run-id', fixture.runId]);
+  assert.equal(govern.status, 0, govern.stderr);
+  assert.match(govern.stdout, /Evidence provenance: explicit 5, inferred 1, missing 0/);
+
+  const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', fixture.runId]);
+  assert.equal(authorize.status, 0, authorize.stderr);
+  const authorization = JSON.parse(authorize.stdout);
+  assert.equal(authorization.evidenceContext?.runId, fixture.runId);
+  assert.equal(authorization.evidenceContext?.runOutcome, 'pass');
 });
 
 test('CLI projections consume compatible run-artifact fixtures and reject malformed decision snapshots', () => {
