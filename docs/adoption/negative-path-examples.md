@@ -15,7 +15,9 @@ Use this page to explain common negative paths without weakening the core contra
 
 ## High coverage plus a witness can still fail
 
-The public `0.3.1` real monorepo pilot against a temp copy of `pi-extensions` is the clearest example. The run screened:
+The minimal executable fixture now protects this behavior locally: `test/minimal-external-adoption-fixture.test.mjs` rewrites the tiny target test so coverage and a manual witness still exist, but the boundary mutant survives and `nextEvidenceAction.primaryAction.kind` stays `mutation-survivors`.
+
+The public `0.3.1` real monorepo pilot against a temp copy of `pi-extensions` remains the clearest external example. The run screened:
 
 ```text
 packages/pi-provenance/src/provenance-core.js
@@ -53,7 +55,7 @@ Interpretation:
 
 This is the intended product behavior. Merge confidence is not coverage percentage.
 
-Source evidence: `docs/adoption/eighth-public-0.3.1-real-monorepo-pi-extensions-pilot.md`.
+Source evidence: `test/minimal-external-adoption-fixture.test.mjs` and `docs/adoption/eighth-public-0.3.1-real-monorepo-pi-extensions-pilot.md`.
 
 ## Mutation survivors should produce an evidence obligation
 
