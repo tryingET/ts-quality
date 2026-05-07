@@ -345,3 +345,19 @@ test('first-release decision keeps SG6 adoption surfaces explicit without changi
     '`run.json`, the authorization decision + bundle artifacts, and amendment JSON remain authoritative'
   ], 'docs/releases/2026-04-19-first-release-decision.md');
 });
+
+test('software trust remediation corridor proof binds the raw contract hardening slice to executable evidence', () => {
+  const proof = readRepoFile('docs/adoption/software-trust-remediation-corridor-proof.md');
+  expectContainsAll(proof, [
+    'AK task: `#2604 Harden raw public contract and authorization fixture outcome proof`',
+    'Commit: `7884459 fix: harden raw contract validation`',
+    'scripts/public-cli-contract.mjs',
+    'scripts/packaging-smoke.mjs',
+    'test/adoption-guidance.test.mjs',
+    'test/artifact-compatibility-fixtures.test.mjs',
+    'run id: dogfood-raw-contract-outcome',
+    'mutation: 6 killed / 6 site(s), 0 survived',
+    'npm run verify:ci',
+    'selected-run authorization projection compatibility, not accepted automation approval'
+  ], 'docs/adoption/software-trust-remediation-corridor-proof.md');
+});
