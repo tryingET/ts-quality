@@ -111,3 +111,5 @@ After accepted repo-local truth is stable, project the target repo into `docs/ad
 - `targetState[]`
 
 Use `docs/adoption/repo-screening-entry.template.json` and `node scripts/register-screening-catalog.mjs --entry ...` for registration. Do not add temp-copy proofs or unmerged candidate dogfood runs to `currentSlices` unless the target repo has accepted them as repo-local/live state.
+
+Catalog guardrail: if `adoptionStage` claims `accepted-repo-local`, the registration script requires an `acceptedEvidence` object with `acceptedBy`, `acceptedAt`, `artifactRetentionPolicy`, `latestEvidence`, `commands`, and `rollback`. If those fields are not yet present in the target repo source-of-truth, use a stage such as `repo-local-live-...-accepted-fields-pending` instead of overclaiming accepted adoption.

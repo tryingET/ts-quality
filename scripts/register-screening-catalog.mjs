@@ -7,7 +7,8 @@ import { fileURLToPath } from 'url'
 /** @typedef {{ id: string, screenedPaths: string[], witnessTests: string[], status: string, facadeAliases?: string[], notes?: string }} RepoScreeningCurrentSlice */
 /** @typedef {{ id: string, candidatePaths: string[], witnessTests: string[], why: string }} RepoScreeningReadyNextSlice */
 /** @typedef {{ area: string, candidatePaths: string[], witnessTests: string[], whyLater: string }} RepoScreeningLaterSlice */
-/** @typedef {{ repoId: string, repoPath: string, sourceOfTruth: string, adoptionStage: string, currentSlices: RepoScreeningCurrentSlice[], readyNextSlices: RepoScreeningReadyNextSlice[], candidateLaterSlices: RepoScreeningLaterSlice[], targetState: string[] }} RepoScreeningEntry */
+/** @typedef {{ acceptedBy: string, acceptedAt: string, artifactRetentionPolicy: string, latestEvidence: string[], commands: string[], rollback: string }} AcceptedAdoptionEvidence */
+/** @typedef {{ repoId: string, repoPath: string, sourceOfTruth: string, adoptionStage: string, currentSlices: RepoScreeningCurrentSlice[], readyNextSlices: RepoScreeningReadyNextSlice[], candidateLaterSlices: RepoScreeningLaterSlice[], targetState: string[], acceptedEvidence?: AcceptedAdoptionEvidence }} RepoScreeningEntry */
 /** @typedef {{ version: 1, repos: RepoScreeningEntry[] }} RepoScreeningCatalog */
 /** @typedef {{ catalogPath: string, markdownPath: string, entryPath?: string, templatePath?: string, check?: boolean, help?: boolean }} ScriptArgs */
 
@@ -198,6 +199,41 @@ function normalizeReadyNextSlice(slice, index) {
 }
 
 /**
+ * @param {any} value
+ * @param {string} label
+ * @returns {string}
+ */
+function nonEmptyStringField(value, label) {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`${label} must be a non-empty string`)
+  }
+  return value
+}
+
+/** @param {string} adoptionStage */
+function acceptedEvidenceRequired(adoptionStage) {
+  return adoptionStage.includes('accepted-repo-local')
+}
+
+/**
+ * @param {any} value
+ * @returns {AcceptedAdoptionEvidence}
+ */
+function normalizeAcceptedEvidence(value) {
+  if (!value || typeof value !== 'object') {
+    throw new Error('acceptedEvidence is required when adoptionStage claims accepted repo-local adoption')
+  }
+  return {
+    acceptedBy: nonEmptyStringField(value.acceptedBy, 'acceptedEvidence.acceptedBy'),
+    acceptedAt: nonEmptyStringField(value.acceptedAt, 'acceptedEvidence.acceptedAt'),
+    artifactRetentionPolicy: nonEmptyStringField(value.artifactRetentionPolicy, 'acceptedEvidence.artifactRetentionPolicy'),
+    latestEvidence: normalizeStringArray(value.latestEvidence, 'acceptedEvidence.latestEvidence'),
+    commands: normalizeStringArray(value.commands, 'acceptedEvidence.commands'),
+    rollback: nonEmptyStringField(value.rollback, 'acceptedEvidence.rollback')
+  }
+}
+
+/**
  * @param {any} slice
  * @param {number} index
  * @returns {RepoScreeningLaterSlice}
@@ -261,6 +297,9 @@ export function normalizeRepoEntry(entry) {
     }
   }
   const targetState = Array.isArray(entry.targetState) ? normalizeStringArray(entry.targetState, 'targetState') : []
+  const acceptedEvidence = acceptedEvidenceRequired(entry.adoptionStage)
+    ? normalizeAcceptedEvidence(entry.acceptedEvidence)
+    : undefined
 
   return {
     repoId: entry.repoId,
@@ -270,7 +309,8 @@ export function normalizeRepoEntry(entry) {
     currentSlices: currentSlices.sort((left, right) => left.id.localeCompare(right.id)),
     readyNextSlices: readyNextSlices.sort((left, right) => left.id.localeCompare(right.id)),
     candidateLaterSlices: candidateLaterSlices.sort((left, right) => left.area.localeCompare(right.area)),
-    targetState
+    targetState,
+    ...(acceptedEvidence ? { acceptedEvidence } : {})
   }
 }
 
@@ -355,6 +395,12 @@ export function renderCatalogMarkdown(catalog) {
     lines.push(`- repo path: \`${repo.repoPath}\``)
     lines.push(`- source of truth: \`${repo.sourceOfTruth}\``)
     lines.push(`- adoption stage: \`${repo.adoptionStage}\``)
+    if (repo.acceptedEvidence) {
+      lines.push(`- accepted by: ${repo.acceptedEvidence.acceptedBy}`)
+      lines.push(`- accepted at: ${repo.acceptedEvidence.acceptedAt}`)
+      lines.push(`- latest evidence: ${markdownList(repo.acceptedEvidence.latestEvidence)}`)
+      lines.push(`- rollback: ${repo.acceptedEvidence.rollback}`)
+    }
     lines.push(`- live slices: ${repo.currentSlices.length}`)
     lines.push(`- ready-next slices: ${repo.readyNextSlices.length}`)
     lines.push('')

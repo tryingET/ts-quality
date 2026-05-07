@@ -12,6 +12,42 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'))
 }
 
+test('register-screening-catalog requires accepted evidence before accepted repo-local catalog claims', async () => {
+  const baseEntry = {
+    repoId: 'softwareco/owned/accepted-fixture',
+    repoPath: '/tmp/accepted-fixture',
+    sourceOfTruth: 'docs/dev/ts-quality-current-vs-target.md',
+    adoptionStage: 'accepted-repo-local-first-slice',
+    currentSlices: [{
+      id: 'fixture.boundary.contract',
+      screenedPaths: ['src/fixture/core.ts'],
+      witnessTests: ['tests/fixture_contract.test.mjs'],
+      status: 'supported'
+    }],
+    readyNextSlices: [],
+    candidateLaterSlices: [],
+    targetState: ['Cover the accepted fixture boundary.']
+  };
+
+  const { normalizeRepoEntry, renderCatalogMarkdown } = await import(`file://${scriptPath}`);
+  assert.throws(() => normalizeRepoEntry(baseEntry), /acceptedEvidence is required/);
+  const accepted = normalizeRepoEntry({
+    ...baseEntry,
+    acceptedEvidence: {
+      acceptedBy: 'repo maintainer review',
+      acceptedAt: '2026-05-07',
+      artifactRetentionPolicy: 'Commit config/control-plane/witness records; ignore generated runs and private keys.',
+      latestEvidence: ['.ts-quality/runs/fixture-run/report.md'],
+      commands: ['npm run screening:check -- --changed src/fixture/core.ts --run-id fixture-run'],
+      rollback: 'Remove wrapper scripts/config and preserve rollout note.'
+    }
+  });
+  assert.equal(accepted.acceptedEvidence.acceptedBy, 'repo maintainer review');
+  const markdown = renderCatalogMarkdown({ version: 1, repos: [accepted] });
+  assert.match(markdown, /accepted by: repo maintainer review/);
+  assert.match(markdown, /latest evidence: `\.ts-quality\/runs\/fixture-run\/report\.md`/);
+});
+
 test('register-screening-catalog writes a template, upserts one repo entry, and keeps markdown in sync', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-screening-catalog-'))
   const catalogPath = path.join(tempDir, 'repo-screening-catalog.json')
