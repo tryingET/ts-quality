@@ -10,6 +10,33 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-08
+
+### Breaking Changes
+
+- None.
+
+### Added
+
+- Added `ts-quality --version` as a protected first-contact CLI surface and included it in public CLI contract, packaging smoke, README, and public-contract verification.
+- Added a real ESM TypeScript/Vitest target-shape adoption capture from `kinetic-caption-studio`, with run-artifact compatibility coverage for `report`, `explain`, `plan`, `govern`, and run-bound `authorize` projections.
+- Added executable negative-path governance and authorization proof for boundary violations, wrong-run authorization artifacts, insufficient grants, and older-run attestations.
+- Added a Software Trust Remediation Corridor proof tying an adversarial finding through AK task, remediation, dogfood, verification, and committed evidence.
+
+### Changed
+
+- Hardened public CLI contract verification so byte-level public contract checks consume raw stdout instead of globally trimmed command output.
+- Clarified real target-shape authorization evidence so projection compatibility is not mistaken for automation approval when the captured control plane has no matching grant.
+
+### Fixed
+
+- Fixed public `--version` contract validation to require an exact bare semver line with a trailing newline, matching the documented public contract.
+- Fixed the real target-shape compatibility test so `authorize` assertions include the expected denial outcome and reason rather than only checking run-bound evidence context.
+
+### Agent migration notes
+
+- No breaking migration is required. Agents and release verifiers should treat `ts-quality --version` as part of the public discovery contract, preserve raw stdout for byte-level public CLI checks, and continue distinguishing run-bound authorization projection from automation approval.
+
 ## [0.5.0] - 2026-04-30
 
 ### Added
