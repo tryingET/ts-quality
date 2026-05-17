@@ -1,0 +1,23 @@
+{
+  "engineering_core": {
+    "tool": "engineering-core",
+    "repository": "https://github.com/lightningralf/engineering-core",
+    "ref": "workspace-local-unpinned",
+    "catalog_command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core catalog --pretty",
+    "list_disciplines_command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-disciplines",
+    "list_templates_command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-templates",
+    "disciplines": [
+      "validation",
+      "testing",
+      "security-privacy",
+      "documentation",
+      "dependency-governance",
+      "local-first-data",
+      "observability",
+      "specification-and-dsls",
+      "engineering-reasoning"
+    ],
+    "lane": "ts",
+    "command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core show ts"
+  }
+}
