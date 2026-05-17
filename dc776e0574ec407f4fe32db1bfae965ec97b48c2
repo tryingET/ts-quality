@@ -1,0 +1,22 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "dc776e0574ec407f4fe32db1bfae965ec97b48c2"
+created_at: "2026-05-17T04:24:21Z"
+intent: "Adopt the MIT-with-OpenAI/Anthropic/xAI/PRC-frontier-labs rider license pattern for ts-quality"
+files:
+  - "LICENSE"
+  - "package.json"
+  - "package-lock.json"
+validation:
+  fast_gate:
+    command: "npm run verify"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pass"
+group:
+  index: 1
+  total: 1
+  rationale: "License text and package metadata must stay aligned"
