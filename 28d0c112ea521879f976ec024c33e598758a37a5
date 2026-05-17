@@ -1,0 +1,14 @@
+kind: ai-society/commit-provenance/v1
+tool: /commit
+intent: "ts-quality engineering-core adoption: replace legacy tech-stack with engineering-lane.json"
+created_at: "2026-05-17T15:57:12Z"
+validation:
+  fast_gate:
+    command: "python -m json.tool policy/engineering-lane.json && node docs-list.mjs --docs . --strict"
+    status: pass
+  full_gate:
+    command: "node docs-list.mjs --docs . --strict"
+    status: pass
+group:
+  index: 1
+  total: 1
