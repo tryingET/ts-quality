@@ -3,7 +3,7 @@
   "version": "0.5.1",
   "private": true,
   "description": "ts-quality alpha - evidence, judgment, understanding, governance, legitimacy for TypeScript changes",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "node": ">=20"
   },
