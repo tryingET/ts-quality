@@ -129,8 +129,9 @@ Good integration surfaces include:
 - signed attestation verification,
 - amendment and override workflows,
 - trend and regression inspection.
+- durable cross-repo adoption and quality-proof records for source-owner review packets.
 
-The boundary is important: `ts-quality` should not become a task tracker, organization control plane, or natural-language proof system. It should provide the evidence and decision substrate those systems can consume.
+The boundary is important: `ts-quality` should not become a task tracker, organization control plane, dependency-intelligence owner, remediation engine, runtime-trace owner, visualization owner, exploitability validator, or natural-language proof system. It should provide deterministic change-review evidence and, when appropriate, durable adoption/quality-proof records that cite source-owner evidence without absorbing source-owner authority.
 
 ## What the app can become
 
@@ -161,3 +162,6 @@ This vision is not:
 - a release system by itself.
 
 `ts-quality` should improve its native evidence, invariant, governance, legitimacy, artifact, and operator semantics. It should stay strongest where deterministic evidence can make review more truthful.
+
+
+For cross-repo review programs such as dependency-intelligence, `ts-quality` may preserve durable adoption and quality-proof records that summarize owner evidence, artifact digests, validation commands, and trust-boundary interpretation. Those records are quality signals and adoption proof; they are not runtime observation truth, static dependency truth, depmodel truth, visualization truth, exploitability truth, or dependency-change authority.

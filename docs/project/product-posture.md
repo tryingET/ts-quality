@@ -45,6 +45,12 @@ This file should be **exceptionally useful**: concise, grounded in shipped truth
 | CLI first-user guidance | Top-level and command-specific help now teach the first bounded review contract, explicit changed-scope preconditions, `--run-id` habits, run artifact authority, the first focused witness path, `doctor`, init presets, and compact `doctor --machine` diagnostics for harnessed LLMs. | Operators and agents can discover the trust contract, setup risks, and first witness upgrade from the CLI before reading deeper docs. | The CLI now names the habit; the next maturity gap is validating that first-time outside users and harnessed LLMs can execute it correctly in real target repos. | A fresh operator or harnessed LLM can move from `doctor --machine` / `--help` to `check --changed ... --run-id ...` to one focused `witness test`/`witness refresh` proof without hidden repo memory. |
 | Adoption / rollout guidance | Greenfield and brownfield adoption guides exist with first-slice/witness/control-plane advice. | Adoption guidance helps repos introduce truthful evidence gradually without fake-green rollout. | Guidance must stay aligned with shipped CLI behavior and sample artifacts. | A new repo can land one narrow, behavior-bearing slice with explicit current vs target rollout truth. |
 
+## Cross-repo adoption / quality proof posture
+
+Recent dependency-intelligence proof docs show the intended cross-repo pattern: `ts-quality` records durable adoption/quality proof, source-owner refs, artifact digests, validation commands, and boundary interpretation without claiming dependency-intelligence ownership. `ts-quality check` is only appropriate when a concrete TS/JS source, test, config, or dependency-declaration change is under review.
+
+Hard rule: say “durable adoption/quality proof for dependency-intelligence evidence” rather than “`ts-quality` owns dependency intelligence.”
+
 ## Current strengths
 
 - The architecture already separates evidence, judgment, invariant understanding, governance, and legitimacy.
