@@ -62,6 +62,19 @@ uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-t
 - Sample artifacts: `npm run sample-artifacts`
 - Docs strictness when docs/handoff change: `node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict`
 
+## Repo loop validation
+
+ts-quality adopts `repo-loop-validation-v1` for deterministic TypeScript quality, artifact, and report loop work. The machine-readable declaration lives in `policy/engineering-lane.json`.
+
+- `loop-doctor`: `npm run loop-doctor` (non-failing git/Node/npm diagnostics)
+- `loop-verify-fast`: `npm run loop-verify-fast` (maps to `npm test`)
+- `loop-impact-plan`: `npm run loop-impact-plan` (changed-file listing plus run/wide recommendation)
+- `loop-impact-run`: `npm run loop-impact-run` (maps to typecheck, lint, and tests)
+- `loop-impact-wide`: `npm run loop-impact-wide` (maps to the root `npm run verify` gate)
+- `loop-landing-check`: `npm run loop-landing-check` (maps to the repo-declared root `npm run verify` gate)
+
+These commands produce repo-local evidence for loop orchestration. They do not replace AK task/evidence/decision authority, release approval, package publication authority, merge approval, or downstream production activation authority.
+
 ## Validation evidence expectations
 
 For engineering-core adoption metadata changes:

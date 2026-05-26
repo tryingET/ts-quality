@@ -32,7 +32,13 @@
     "release:github": "node scripts/release-orchestrator.mjs github",
     "release:verify-public": "node scripts/release-orchestrator.mjs verify-public",
     "release:intent:check": "node scripts/validate-release-intent.mjs",
-    "pack:ts-quality": "node scripts/pack-ts-quality.mjs"
+    "pack:ts-quality": "node scripts/pack-ts-quality.mjs",
+    "loop-doctor": "bash -lc 'echo \"loop-doctor: ts-quality diagnostics\"; node --version || true; npm --version || true; git status --short -- . || true; exit 0'",
+    "loop-verify-fast": "npm test",
+    "loop-impact-plan": "bash -lc 'changed=$( { git diff --name-only -- .; git ls-files --others --exclude-standard .; } | grep -v \"^$\" | sort -u ); echo \"loop-impact-plan: changed files\"; if [ -n \"$changed\" ]; then printf \"%s\\n\" \"$changed\"; else echo \"(none)\"; fi; if printf \"%s\\n\" \"$changed\" | grep -Eq \"^(package(-lock)?\\.json$|tsconfig|scripts/|packages/|test/|fixtures/|examples/artifacts/)\"; then echo \"impact=wide\"; echo \"next=npm run loop-impact-wide\"; echo \"reason=tooling/runtime/test/fixture/artifact surface changed; use the root verify gate\"; else echo \"impact=normal\"; echo \"next=npm run loop-impact-run\"; echo \"reason=docs/policy or localized non-runtime surface; use the normal validation gate\"; fi'",
+    "loop-impact-run": "npm run typecheck && npm run lint && npm test",
+    "loop-impact-wide": "bash -lc 'echo \"loop-impact-wide: explicit wide validation accepted; reason=${LOOP_WIDE_REASON:-not-provided}\"; npm run verify'",
+    "loop-landing-check": "npm run verify"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
