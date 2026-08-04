@@ -119,16 +119,16 @@ Do not use this document as the adoption recipe. If the work is to install or ro
 
 Harnesses that need command metadata without scraping help text can read `docs/cli-command-manifest.json`. It is an authored projection of `packages/ts-quality/src/cli.ts`; keep it aligned with CLI option contracts and dispatch behavior when commands change.
 
-### Target-repo CLI / AX matrix
+### Target-repo CLI projection matrix
 
 Use this matrix when an agent is consuming the published CLI in another repo:
 
 | Agent need | Command | Projection shape | Binding rule |
 |---|---|---|---|
-| Setup diagnostics | `doctor --machine --changed "a,b"` | compact AX line protocol | one comma-separated `--changed` value; do not repeat `--changed` |
-| Retention planning | `retention --machine` | compact AX line protocol | read-only; no run id |
+| Setup diagnostics | `doctor --machine --changed "a,b"` | compact line protocol | one comma-separated `--changed` value; do not repeat `--changed` |
+| Retention planning | `retention --machine` | compact line protocol | read-only; no run id |
 | Evidence run | `check --changed "a,b" --run-id <id>` | durable run bundle | explicit changed scope plus explicit run id |
-| Structured report | `report --run-id <id> --json` | structured AX JSON | same reviewed run id |
+| Structured report | `report --run-id <id> --json` | structured JSON | same reviewed run id |
 | Human projections | `explain`, `plan`, `govern` | stdout text | same reviewed run id |
 | Authorization | `authorize --agent <agent> --run-id <id>` | run-bound decision/bundle files | same reviewed run id |
 | Attestation verification | `attest verify ... --json` | structured JSON verification record | attestation subject must bind the reviewed artifact |
@@ -184,9 +184,9 @@ Always bind downstream review to the exact `--run-id` when automation may see mo
 
 For first-contact target-repo adoption, prefer `ts-quality doctor --machine` before inventing setup steps when the installed version supports it (`ts-quality doctor --help` lists `--machine`). It emits compact line protocol v1 (`TSQ_DOCTOR_MACHINE_V1`) for harnessed LLMs and agents, intentionally not JSON, so the agent can inspect changed-scope, LCOV, source-map, script, and witness-command recommendations without spending tokens on a heavy object tree. Parse it as LF-delimited records with TAB-delimited fields: the first field is the record kind, key/value fields use `key=value`, and command recommendations use repeated `command_arg=<argv item>` fields in order. Do not comma-split recommended commands. Use existing `--json` surfaces such as `report --json` or `attest verify --json` when CI or downstream tooling needs full JSON projections.
 
-### AX projection terminology
+### Agent-facing projection terminology
 
-Use the canonical AX terminology from [Public Contract Baseline](public-contract.md#agent-experience-ax-terminology): `--json` is structured AX, `--compact` is compact AX, and neither projection replaces durable run-artifact authority. Existing compact protocols such as `doctor --machine` follow the same compact AX principle even where the command name predates a general `--compact` flag.
+Use the explicit projection terminology from [Public Contract Baseline](public-contract.md#agent-facing-projection-terminology): supported command-specific `--json` modes are structured JSON, while supported command-specific `--machine` modes are versioned compact machine surfaces. There is no current general `--compact` flag. None replaces durable run-artifact authority or claims an accepted shared Agent Experience/`AX` concept.
 
 ### Evidence closure for agents
 

@@ -20,10 +20,10 @@ CI should keep three habits explicit:
 
 | Need | Command shape | Machine-readable surface | Scope/run binding |
 |---|---|---|---|
-| First-contact setup diagnostics | `ts-quality doctor --machine --changed "$CHANGED_SCOPE"` | compact AX line protocol (`TSQ_DOCTOR_MACHINE_V1`) | changed scope is one comma-separated value |
-| Artifact retention planning | `ts-quality retention --machine` | compact AX line protocol (`TSQ_RETENTION_PLAN_V1`) | read-only projection; no run id |
+| First-contact setup diagnostics | `ts-quality doctor --machine --changed "$CHANGED_SCOPE"` | compact line protocol (`TSQ_DOCTOR_MACHINE_V1`) | changed scope is one comma-separated value |
+| Artifact retention planning | `ts-quality retention --machine` | compact line protocol (`TSQ_RETENTION_PLAN_V1`) | read-only projection; no run id |
 | Evidence-producing review run | `ts-quality check --changed "$CHANGED_SCOPE" --run-id "$RUN_ID"` | durable run artifacts under `.ts-quality/runs/<run-id>/` | one changed-scope value plus explicit run id |
-| Structured report projection | `ts-quality report --run-id "$RUN_ID" --json` | structured AX JSON projection | same reviewed run id |
+| Structured report projection | `ts-quality report --run-id "$RUN_ID" --json` | structured JSON projection | same reviewed run id |
 | Human-readable review projections | `explain`, `plan`, `govern` with `--run-id "$RUN_ID"` | stdout text | same reviewed run id |
 | Legitimacy decision | `authorize --agent <agent> --run-id "$RUN_ID"` | run-bound decision/bundle artifacts | same reviewed run id |
 | Attestation verification | `attest verify ... --json` | structured JSON verification record | subject/attestation paths bind the reviewed artifact |

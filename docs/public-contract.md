@@ -54,16 +54,18 @@ ts-quality commands:
 TSQ_DOCTOR_MACHINE_V1
 ```
 
-## Agent Experience (AX) terminology
+## Agent-facing projection terminology
 
-AX means Agent Experience: the agent-facing experience across both structured machine consumers and token-sensitive harnessed LLMs. This repo uses the core ontology concept `core.AgentExperience` for the shared term.
+This repo uses explicit projection names rather than claiming an accepted shared `Agent Experience` or bare `AX` concept. No `core.AgentExperience` concept is admitted in the core ontology. Machine readability alone also does not make a passive parser, dashboard, or CI consumer agent-facing.
 
-`ts-quality` treats these as AX projection modes:
+Current projection modes are described only by their concrete command contracts:
 
-- `--json` — structured AX for deterministic parsers, CI systems, dashboards, and programmatic agents
-- `--compact` — compact AX for harnessed LLMs and agent workbenches where token budget and next-action clarity matter
+- supported command-specific `--json` modes provide structured JSON for deterministic parsers, CI systems, dashboards, and programmatic consumers;
+- supported command-specific `--machine` modes provide versioned compact machine surfaces such as `doctor --machine` and `retention --machine`.
 
-Both modes should derive from the same durable artifact contract. The durable truth stays in run artifacts such as `run.json`; compact outputs are token-efficient projections, not separate authority. Existing command-specific compact protocols such as `doctor --machine` and `retention --machine` follow this compact AX principle even before every command exposes a `--compact` flag.
+There is no current general `--compact` flag. Strict option validation rejects it unless a future command explicitly adopts it.
+
+These are product-local interface descriptions, not ontology membership or a shared compatibility layer. Projections should derive from the same durable artifact contract. Durable truth stays in run artifacts such as `run.json`; compact outputs are token-efficient projections, not separate authority.
 
 Compact doctor machine protocol v1 grammar:
 

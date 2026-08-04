@@ -27,10 +27,10 @@
       "automationRule": "Use one comma-separated --changed value for CLI automation, or move exact hunk-level scope into config."
     },
     "machineReadableOutput": [
-      { "command": "doctor", "mode": "--machine", "kind": "compact AX line protocol", "stablePrefix": "TSQ_DOCTOR_MACHINE_V1" },
-      { "command": "retention", "mode": "--machine", "kind": "compact AX line protocol", "stablePrefix": "TSQ_RETENTION_PLAN_V1" },
-      { "command": "report", "mode": "--json", "kind": "structured AX JSON projection" },
-      { "command": "attest verify", "mode": "--json", "kind": "structured AX JSON verification record" }
+      { "command": "doctor", "mode": "--machine", "kind": "compact line protocol", "stablePrefix": "TSQ_DOCTOR_MACHINE_V1" },
+      { "command": "retention", "mode": "--machine", "kind": "compact line protocol", "stablePrefix": "TSQ_RETENTION_PLAN_V1" },
+      { "command": "report", "mode": "--json", "kind": "structured JSON projection" },
+      { "command": "attest verify", "mode": "--json", "kind": "structured JSON verification record" }
     ],
     "evidenceClosure": {
       "sourceField": "run.nextEvidenceAction",
