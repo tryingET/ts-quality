@@ -1,5 +1,5 @@
 ---
-summary: "Read-only dogfood of structured and compact retention projections derived from one ts-quality owner plan."
+summary: "Read-only dogfood of owner-authorized, redacted structured and compact retention projections derived from one ts-quality owner plan."
 read_when:
   - "When evaluating the experimental agent-interaction projection pattern"
   - "When checking why ts-quality retired core.AgentExperience and bare AX terminology"
@@ -8,56 +8,69 @@ type: "dogfood"
 
 # Agent-interaction retention projection pilot
 
-- AK task: `4655`
+- AK tasks: `4655` (initial pilot), `4664` (G3 evidence and policy hardening)
 - Surface: `scripts/pilots/retention-projection-pilot.mjs`
-- Fixture: `fixtures/minimal-external-adoption`
+- Production fixture coordinate: `fixtures/minimal-external-adoption`
 - Status: experimental, read-only, no compatibility promise
 
-## Purpose
+## Purpose and authority
 
-This pilot tests one narrow architecture claim without adding a public CLI mode: one owner-produced `ArtifactRetentionPlan` can feed both a structured projection and the existing compact retention protocol while preserving owner truth, explicit omissions, and an expansion path.
+This sidecar tests one narrow architecture claim without adding a public CLI mode: one owner-produced `ArtifactRetentionPlan` can feed an owner-authorized structured expansion and the existing compact retention protocol while preserving owner truth, recoverable omissions, monotonic redaction, and an authorized-view plan-generation coordinate.
 
-It does not test or accept an Agent Experience ontology concept. Active product guidance now uses explicit terms—structured JSON, compact output, and command-specific machine protocols—and no longer claims `core.AgentExperience` authority or bare `AX` terminology.
+The ts-quality plan, repository policy, and run artifacts retain their existing authority. The sidecar does not change owner runtime, rendering, retention semantics, or public `ts-quality` CLI behavior. Active product terms remain structured JSON, compact output, and command-specific machine protocols; this pilot does not accept an Agent Experience ontology concept.
 
-## Command
+## Immutable production policy
+
+The embedded owner policy is `ts-quality.agent-interaction.retention-projection-canary` version `1`, SHA-256 `d7ec868f732e0e361c2c1b6290ec4f9e4d3b505050dc36c51cb40d8e2ef41e00`. Startup recomputes the policy digest and fails closed on drift.
+
+It binds:
+
+- owner surface `ts-quality.artifact-retention` and schema version `1`;
+- declared policy target `pi-agent-interaction-canary`;
+- exact source pointers `/surface`, `/schemaVersion`, `/rootDir`, `/config`, `/keep`, `/ignore`, and `/warnings`;
+- compact omissions `/schemaVersion` and `/surface`;
+- control-character, authorized-root-path, and secret-token-pattern redactions;
+- config `ts-quality.config.json` and the exact canonical owner fixture coordinate `fixtures/minimal-external-adoption`.
+
+`--policy-target` is a declaration selecting the policy target. It is **not caller authentication**. Authentication is explicitly deferred to the enclosing registered Pi tool receipt. The production command rejects arbitrary roots, alternate configs, legacy `--identity`, and caller-selected grants/redactions. Focused tests use only the exported internal injected test-policy function for temporary/adversarial fixture copies; that injection is unavailable through the production CLI.
+
+## Production command
 
 ```bash
 npm run build
 node scripts/pilots/retention-projection-pilot.mjs \
   --root fixtures/minimal-external-adoption \
-  --config ts-quality.config.json \
-  > "$TMPDIR/tsq-agent-interaction-retention-pilot-4655.json"
+  --policy-target pi-agent-interaction-canary \
+  > "$TMPDIR/tsq-agent-interaction-retention-pilot-4664-v4.json"
 ```
 
-The sidecar builds exactly one in-process `ArtifactRetentionPlan`. It emits that plan as `structured_owner_plan`, renders the compact `TSQ_RETENTION_PLAN_V1` view from the same object, independently parses the compact records back into a claim model, compares that model with source values, derives exhaustive leaf-field omissions and fallback derivations, and checks that the experimental renderer still matches the existing owner renderer while the fixture remains stable.
+The root argument may be omitted because the production policy defaults to that exact canonical fixture. A different path is rejected even when it contains an identical copy.
 
-## Observed result
+## Evidence and checks
 
-- source plan SHA-256: `40ad922baa4bf9376face56fefa85fa1529d4c5f7563b162a6abe38b0617e223`;
-- fixture tree digest before and after: `b338b43c0a571f0ce27c7abbc6789b2c7b0a6f39cb7a25e62446fdd5a4e271a8`;
-- structured bytes: `1894`;
-- compact bytes: `1492`;
-- reduction: `402` bytes (`compact_to_structured_ratio=0.7878`);
-- plan entries: 9 keep, 6 ignore;
-- explicit compact omissions: `/schemaVersion`, `/surface`;
-- explicit fallback derivations: none for this fixture;
-- expansion path: `/structured_owner_plan`;
-- same-generation, parsed-subset, omission, derivation, expansion, owner-renderer-match, and read-only checks: passed.
+- **No pre-redaction digest side channel:** the raw owner plan remains internal. No digest derived from its pre-redaction values is emitted. `generation.plan_generation_digest_sha256` and the compact generation coordinate both equal SHA-256 of the authorized structured view after redaction. A focused test independently computes the raw-plan digest and proves it does not occur in serialized output.
+- **Authorized expansion:** `structured_owner_plan` includes authorized `surface` and `schemaVersion`. Every compact omission is enumerated and recovered through its exact `/structured_owner_plan/...` pointer.
+- **Owner redaction:** an internal adversarial fixture includes `sk_live_DO_NOT_DISCLOSE`, an absolute temporary root, and an embedded newline. Both views contain only policy-redacted values.
+- **Read effects:** observation wraps initial owner-plan production and the owner machine renderer. Technically observable outside-root reads fail closed, including exposed `realpathSync` results. Stable config reads and witness enumeration each occur twice.
+- **Determinism and rollback:** unchanged authorized view and policy produce byte-identical receipts; an authorized-view change changes the visible generation coordinate. Before/after fixture tree digests prove no pilot mutation.
 
-The local receipt was written to `$TMPDIR/tsq-agent-interaction-retention-pilot-4655.json` with SHA-256 `f2b58a9594035c02606de67bdaa557f706ebf6e75ecb40bb0ea394f81070bc51`. The path is local execution evidence, not a durable repo artifact.
+## Observed production result
 
-## Wrong-answer and rollback assessment
+- owner policy SHA-256: `d7ec868f732e0e361c2c1b6290ec4f9e4d3b505050dc36c51cb40d8e2ef41e00`;
+- authorized-view plan-generation SHA-256: `b90fcf4f79bb0b3d9992ab5daa0033e9da5cb108c976e6f784f1d56840550495`;
+- compact projection SHA-256: `a9d5354650f265140d92f5997568792050180c85ec4b9912c93ef81f389b2295`;
+- structured bytes: `1823`; compact bytes: `1421`; reduction: `402` (`compact_to_structured_ratio=0.7795`);
+- observed reads: `43` aggregated records across `344` calls, all within the fixture boundary;
+- compact omissions `/schemaVersion` and `/surface`: both recoverable from the authorized view.
 
-The compact view did not contradict the owner plan in this fixture. Its two omitted metadata fields were explicit and expandable. A consumer must still treat the retention plan as advisory: repository policy and run artifacts remain authoritative.
+The local receipt `$TMPDIR/tsq-agent-interaction-retention-pilot-4664-v4.json` had SHA-256 `aa895b4161777740f94694000922bbc41458fa14c15cae87efc642df40728d47`. It is local execution evidence, not a durable repository artifact.
 
-Rollback is removal of the sidecar, test, and this dogfood note. Existing `retention --machine` behavior and all public CLI contracts remain unchanged.
+## G3 classification and evidence ceiling
 
-## Nonclaims
+**Classification: `G3-read-effect-observed`.** Owner-plan production and parity rendering empirically read policy-bound fixture state.
 
-This pilot does not:
+Observation covers listed in-process synchronous `node:fs` methods during those calls. It is not OS syscall tracing, excludes module-loading reads before the boundary, and catches outside-root access only when a wrapped method exposes a path argument or `realpathSync` result. `writes_requested_by_pilot=false` is not syscall-level proof; independent tree digests provide mutation evidence. No caller authentication, write authorization, cross-owner conformance, package release, or compatibility promise follows from this pilot receipt.
 
-- accept a shared interaction schema or Agent Experience vocabulary;
-- make passive CI/dashboard consumption agent-facing by definition;
-- prove cross-owner conformance;
-- authorize write/mutation pilots;
-- publish a new package version or compatibility promise.
+## Rollback
+
+Delete only the pilot sidecar, focused test, and this note. No owner runtime or public CLI source changed, so no owner-source restoration or data migration is required.
