@@ -12,8 +12,8 @@ validation:
     command: "npm run -s typecheck:scripts && npm run -s lint && npm run -s sample-artifacts && git diff --exit-code -- examples/artifacts"
     status: "pass"
   full_gate:
-    command: "npm run verify"
-    status: "pending"
+    command: "npm run verify (Node 26) + npm run verify:ci x2 on Node 22.23.3 with the change committed"
+    status: "pass"
 group:
   index: 1
   total: 1
