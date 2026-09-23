@@ -1,0 +1,22 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "69a0f38e0d3488500dc1b59b88a565890ff85b91"
+created_at: "2026-09-23T20:30:51Z"
+intent: "Pin the node:test reporter to spec in sample generation so Node 22 TAP output no longer makes samples nondeterministic (red verify (22) CI job)"
+files:
+  - "scripts/generate-samples.mjs"
+validation:
+  fast_gate:
+    command: "npm run -s typecheck:scripts && npm run -s lint && npm run -s sample-artifacts && git diff --exit-code -- examples/artifacts"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 1
+  total: 1
+links:
+  task_ids:
+    - 5910
