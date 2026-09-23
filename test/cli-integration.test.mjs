@@ -134,6 +134,25 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /\nwarning\tprivate key material should not be committed: \.ts-quality\/keys\/sample\.pem/);
 });
 
+test('doctor gives pnpm workspaces safe coverage, package-manager, and source-pattern guidance', () => {
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-pnpm-'));
+  fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({
+    packageManager: 'pnpm@10.30.3',
+    scripts: { clean: 'rimraf coverage .turbo packages/*/dist', test: 'vitest --config vitest.config.ts run' }
+  }, null, 2), 'utf8');
+  fs.mkdirSync(path.join(target, 'packages', 'react', 'src'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'packages', 'react', 'src', 'index.tsx'), 'export const View = () => <div />;\n', 'utf8');
+  let result = spawnSync('node', [cli, 'init', '--root', target, '--preset', 'vitest'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'packages/react/src/index.tsx', '--machine'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\nscripts\tnames=clean,test\tcoverage=\ttests=test\n/);
+  assert.doesNotMatch(result.stdout, /command_arg=clean/);
+  assert.match(result.stdout, /\nrisk\twarn\tchanged-outside-source-patterns\tChanged files are outside sourcePatterns: packages\/react\/src\/index\.tsx\.\thint=.*packages\/\*\/src/);
+  assert.match(result.stdout, /\nrecommend\tfocused-test\tfocused-test-command\tCandidate focused test command: pnpm run test \(adjust to the smallest trustworthy slice\)\.\tcommand_arg=pnpm\tcommand_arg=run\tcommand_arg=test/);
+});
+
 test('check fails closed when init-generated config has no changed scope', () => {
   const target = tempCopyOfFixture('governed-app');
   fs.rmSync(path.join(target, 'ts-quality.config.ts'), { force: true });

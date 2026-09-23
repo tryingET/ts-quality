@@ -2632,6 +2632,55 @@ function readPackageScripts(rootDir: string): Record<string, string> {
   }
 }
 
+type PackageManagerName = 'npm' | 'pnpm' | 'yarn' | 'bun';
+
+function readPackageManager(rootDir: string): PackageManagerName {
+  const packagePath = path.join(rootDir, 'package.json');
+  if (fs.existsSync(packagePath)) {
+    try {
+      const declared = (JSON.parse(fs.readFileSync(packagePath, 'utf8')) as { packageManager?: unknown }).packageManager;
+      const name = typeof declared === 'string' ? declared.split('@')[0] : undefined;
+      if (name === 'npm' || name === 'pnpm' || name === 'yarn' || name === 'bun') {
+        return name;
+      }
+    } catch {
+      // Fall through to lockfile detection.
+    }
+  }
+  if (fs.existsSync(path.join(rootDir, 'pnpm-lock.yaml')) || fs.existsSync(path.join(rootDir, 'pnpm-workspace.yaml'))) {
+    return 'pnpm';
+  }
+  if (fs.existsSync(path.join(rootDir, 'yarn.lock'))) {
+    return 'yarn';
+  }
+  if (fs.existsSync(path.join(rootDir, 'bun.lockb')) || fs.existsSync(path.join(rootDir, 'bun.lock'))) {
+    return 'bun';
+  }
+  return 'npm';
+}
+
+const DESTRUCTIVE_SCRIPT_PATTERN = /\b(?:rimraf|del-cli|trash)\b|\brm\s+-[a-z]*r/u;
+const COVERAGE_PRODUCING_COMMAND_PATTERN = /--coverage\b|--experimental-test-coverage\b|\bc8\b|\bnyc\b|\blcov\b|--test-reporter=lcov\b/u;
+
+/** Scripts that plausibly produce coverage: named for coverage/LCOV or running a coverage tool, and never destructive cleanup. */
+function coverageScriptNames(scripts: Record<string, string>): string[] {
+  return Object.keys(scripts)
+    .map((name) => {
+      const command = scripts[name] ?? '';
+      if (DESTRUCTIVE_SCRIPT_PATTERN.test(command) || /(?:^|:)clean(?:$|:)/u.test(name)) {
+        return null;
+      }
+      const nameMatches = /coverage|lcov/u.test(name);
+      if (!nameMatches && !COVERAGE_PRODUCING_COMMAND_PATTERN.test(command)) {
+        return null;
+      }
+      return { name, rank: nameMatches ? 0 : 1 };
+    })
+    .filter((item): item is { name: string; rank: number } => item !== null)
+    .sort((left, right) => left.rank - right.rank || left.name.localeCompare(right.name))
+    .map((item) => item.name);
+}
+
 function likelyScriptNames(scripts: Record<string, string>, tokens: string[]): string[] {
   return Object.keys(scripts)
     .map((name) => {
@@ -2648,17 +2697,19 @@ function likelyScriptNames(scripts: Record<string, string>, tokens: string[]): s
     .map((item) => item.name);
 }
 
-function focusedTestRecommendation(scriptName: string, scriptCommand: string | undefined): { summary: string; command: string[] } {
+function focusedTestRecommendation(scriptName: string, scriptCommand: string | undefined, packageManager: PackageManagerName = 'npm'): { summary: string; command: string[] } {
   const command = scriptCommand ?? '';
   if (/\bjest\b/u.test(command)) {
+    // npm needs `--` to forward flags to the script; pnpm, yarn, and bun forward trailing flags directly.
+    const forwarded = packageManager === 'npm' ? ['--', '--runInBand'] : ['--runInBand'];
     return {
-      summary: `Candidate focused test command: npm run ${scriptName} -- --runInBand (adjust to the smallest trustworthy slice).`,
-      command: ['npm', 'run', scriptName, '--', '--runInBand']
+      summary: `Candidate focused test command: ${[packageManager, 'run', scriptName, ...forwarded].join(' ')} (adjust to the smallest trustworthy slice).`,
+      command: [packageManager, 'run', scriptName, ...forwarded]
     };
   }
   return {
-    summary: `Candidate focused test command: npm run ${scriptName} (adjust to the smallest trustworthy slice).`,
-    command: ['npm', 'run', scriptName]
+    summary: `Candidate focused test command: ${packageManager} run ${scriptName} (adjust to the smallest trustworthy slice).`,
+    command: [packageManager, 'run', scriptName]
   };
 }
 
@@ -2730,8 +2781,10 @@ function buildDoctorDiagnostic(rootDir: string, options?: { changedFiles?: strin
   const generateCommand = config?.coverage.generateCommand ?? [];
   const runtimeMirrorRoots = config?.mutations.runtimeMirrorRoots ?? ['dist'];
   const sourceDistRisk = changed.some(isSourceTsFile) && builtOutputRoots(runtimeMirrorRoots).some((root) => fs.existsSync(path.join(rootDir, root)));
-  const coverageScripts = likelyScriptNames(scripts, ['coverage', 'lcov']);
+  const packageManager = readPackageManager(rootDir);
+  const coverageScripts = coverageScriptNames(scripts);
   const testScripts = likelyScriptNames(scripts, ['test']);
+  const changedOutsideSources = changed.filter((filePath) => !sourcePatterns.some((pattern) => matchPattern(pattern, filePath)));
   const recommendations: DoctorDiagnostic['recommendations'] = [];
   const risks: DoctorDiagnostic['risks'] = [];
   if (changed.length === 0) {
@@ -2740,9 +2793,18 @@ function buildDoctorDiagnostic(rootDir: string, options?: { changedFiles?: strin
   }
   if (!lcovExists && generateCommand.length === 0) {
     recommendations.push(coverageScripts.length > 0
-      ? { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run an existing script such as npm run ${coverageScripts[0]}.`, command: ['npm', 'run', coverageScripts[0] ?? 'coverage'] }
+      ? { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run an existing script such as ${packageManager} run ${coverageScripts[0]}.`, command: [packageManager, 'run', coverageScripts[0] ?? 'coverage'] }
       : { id: 'coverage-generate-command', kind: 'coverage', summary: 'Configure coverage.generateCommand to create coverage/lcov.info.', command: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'] });
     risks.push({ code: 'coverage-missing-without-generator', level: 'warn', message: 'LCOV is missing and coverage.generateCommand is not configured.', hint: 'Configure a deterministic coverage command or create the LCOV before check.', evidence: [`lcovPath=${lcovPath}`] });
+  }
+  if (changedOutsideSources.length > 0) {
+    risks.push({
+      code: 'changed-outside-source-patterns',
+      level: 'warn',
+      message: `Changed files are outside sourcePatterns: ${changedOutsideSources.join(', ')}.`,
+      hint: 'check cannot attribute coverage, complexity, or mutation evidence to them; extend sourcePatterns (for workspaces, for example packages/*/src/**/*.ts) or point it at the changed files.',
+      evidence: changedOutsideSources.map((filePath) => `changed=${filePath}`)
+    });
   }
   if (sourceDistRisk) {
     recommendations.push({ id: 'source-map-coverage', kind: 'source-map', summary: 'Enable source-map coverage mapping, for example NODE_OPTIONS=--enable-source-maps, or configure coverage to map back to src/**.' });
@@ -2750,7 +2812,7 @@ function buildDoctorDiagnostic(rootDir: string, options?: { changedFiles?: strin
   }
   if (testScripts.length > 0) {
     const scriptName = testScripts[0] ?? 'test';
-    recommendations.push({ id: 'focused-test-command', kind: 'focused-test', ...focusedTestRecommendation(scriptName, scripts[scriptName]) });
+    recommendations.push({ id: 'focused-test-command', kind: 'focused-test', ...focusedTestRecommendation(scriptName, scripts[scriptName], packageManager) });
   } else if (tests.length > 0) {
     recommendations.push({ id: 'focused-test-command', kind: 'focused-test', summary: `Candidate focused test command: node --test ${tests[0]}.`, command: ['node', '--test', tests[0] ?? 'test'] });
   }
