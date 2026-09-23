@@ -79,6 +79,7 @@ The `fail` is truthful product behavior: one focused test file exercises part of
 | D2 | `doctor` reported `config ok` and `changed ok` while the changed file matched no `sourcePatterns` (the `vitest` preset defaults to `src/**`, the workspace uses `packages/*/src/**`), so `check` would have no coverage, complexity, or mutation evidence for it. | Fixed: new `changed-outside-source-patterns` warn risk names the files and the workspace pattern hint. |
 | D3 | `doctor` suggested `npm run ...` in a repo that declares `packageManager: pnpm`. | Fixed: commands use the declared package manager, falling back to lockfile detection, then npm. |
 | D4 | The coverage-generation failure message is escaped twice (`\u000a` and `\\u000a`) because the message is escaped when built and again by the CLI error renderer. | Not fixed here: the CLI escaping is a deliberate security boundary; recorded as a follow-up. |
+| D5 | Mutant workspaces linked only the root `node_modules`. This target was unaffected (dependencies hoisted to the root), but follow-up #5900 reproduced false kills on a real strict `pnpm install` workspace (`ms` only in `packages/fmt/node_modules`): the pre-fix package reported `Outcome: pass` with 3/3 mutants killed, all by `Cannot find module 'ms'`. | Fixed in #5900: mutant workspaces link every workspace `node_modules`, and the mutation runtime version was bumped so cached results from the old workspace are not reused. The strict target now reports `Outcome: fail`, 1 killed / 2 survived; this pilot's result is unchanged (7 killed / 5 survived). |
 
 Committing the doctor fix also tripped the workspace pre-commit bug scanner on pre-existing lines in `packages/ts-quality/src/index.ts`. The attestation subject-digest check now uses `timingSafeEqual`, and two scanner false positives (a file-extension check and an amendment outcome check) carry `ubs:ignore` annotations with reasons.
 
@@ -87,7 +88,6 @@ After the fixes, the repacked CLI was reinstalled and the same flow was rerun on
 Observations that are not defects:
 
 - `check` exits `0` with outcome `fail`; the gate is `govern`/`authorize`, consistent with earlier pilots.
-- The mutant workspace excludes every nested `node_modules` and links only the root one. That did not break this target because its dependencies are hoisted to the root, but a strict pnpm workspace with package-only dependencies could fail to resolve modules inside mutants. The per-mutant inspection above is the check to repeat on such a target.
 - `repo.rootDir` in `run.json` stores an absolute root without its leading slash; committed samples show the same form.
 
 ## Compatibility capture

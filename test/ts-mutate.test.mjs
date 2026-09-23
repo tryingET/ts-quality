@@ -109,6 +109,38 @@ test('runMutations requires a passing baseline before trusting mutation results'
 });
 
 
+test('runMutations resolves workspace-package node_modules inside the mutant workspace', () => {
+  // pnpm-style workspace: the dependency lives only in the package's own node_modules, not the root one.
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-nested-modules-'));
+  const write = (relativePath, contents) => {
+    fs.mkdirSync(path.dirname(path.join(rootDir, relativePath)), { recursive: true });
+    fs.writeFileSync(path.join(rootDir, relativePath), contents, 'utf8');
+  };
+  write('package.json', JSON.stringify({ name: 'ws-root', private: true }));
+  write('packages/a/package.json', JSON.stringify({ name: '@ws/a', dependencies: { 'local-dep': '1.0.0' } }));
+  write('packages/a/node_modules/local-dep/package.json', JSON.stringify({ name: 'local-dep', main: 'index.js' }));
+  write('packages/a/node_modules/local-dep/index.js', "module.exports = { tag: 'ok' };\n");
+  write('packages/a/src/label.js', "const { tag } = require('local-dep');\nfunction label(count) { return count > 0 ? tag : 'none'; }\nfunction verbose() { return true; }\nmodule.exports = { label, verbose };\n");
+  write('check.js', "const assert = require('node:assert/strict');\nconst { label } = require('./packages/a/src/label.js');\nassert.equal(label(5), 'ok');\n");
+
+  const run = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['packages/a/src/label.js'],
+    changedFiles: ['packages/a/src/label.js'],
+    testCommand: ['node', 'check.js'],
+    coveredOnly: false,
+    maxSites: 10,
+    timeoutMs: 10_000
+  });
+
+  assert.equal(run.baseline.status, 'pass');
+  assert.equal(run.results.some((result) => /Cannot find module 'local-dep'/.test(result.details ?? '')), false, 'mutants must not die from module resolution');
+  const verboseFlip = run.results.find((result) => result.original === 'true');
+  assert.ok(verboseFlip);
+  assert.equal(verboseFlip.status, 'survived', 'an unasserted mutation must survive rather than be killed by a broken workspace');
+  assert.equal(fs.existsSync(path.join(rootDir, 'packages/a/node_modules/local-dep/index.js')), true, 'workspace disposal must not delete linked real node_modules');
+});
+
 test('runMutations invalidates manifest entries when the test corpus changes', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-manifest-'));
   const manifestPath = path.join(rootDir, '.ts-quality', 'mutation-manifest.json');

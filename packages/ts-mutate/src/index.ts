@@ -70,7 +70,8 @@ interface MutationSourceSpan {
   endOffset: number;
 }
 
-const MUTATION_RUNTIME_VERSION = '5';
+// Bumped when mutant-workspace semantics change so cached results from older workspaces are not reused.
+const MUTATION_RUNTIME_VERSION = '6';
 const SANITIZED_MUTATION_ENV_KEYS = ['NODE_TEST_CONTEXT'];
 const MUTATION_WORKSPACE_EXCLUDES = ['.git', 'node_modules', '.ts-quality'];
 const MUTATION_WORKSPACE_EXCLUDE_SET = new Set(MUTATION_WORKSPACE_EXCLUDES);
@@ -340,8 +341,35 @@ function linkSharedPath(sourcePath: string, destinationPath: string): void {
   fs.symlinkSync(sourcePath, destinationPath, type);
 }
 
+/** Repo-relative node_modules directories, including nested workspace-package ones, without descending into any node_modules. */
+function nodeModulesRoots(repoRoot: string, currentDir = repoRoot): string[] {
+  const roots: string[] = [];
+  for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const absolutePath = path.join(currentDir, entry.name);
+    if (entry.name === 'node_modules') {
+      roots.push(normalizePath(path.relative(repoRoot, absolutePath)));
+      continue;
+    }
+    if (MUTATION_WORKSPACE_EXCLUDE_SET.has(entry.name)) {
+      continue;
+    }
+    roots.push(...nodeModulesRoots(repoRoot, absolutePath));
+  }
+  return roots;
+}
+
+// Workspace managers such as pnpm keep package-only dependencies in each package's own node_modules,
+// so linking only the root one would make mutants fail on module resolution and count as killed.
 function hydrateTempRuntime(repoRoot: string, tempDir: string): void {
-  linkSharedPath(path.join(repoRoot, 'node_modules'), path.join(tempDir, 'node_modules'));
+  for (const relativePath of nodeModulesRoots(repoRoot)) {
+    const destinationPath = path.join(tempDir, relativePath);
+    if (fs.existsSync(path.dirname(destinationPath))) {
+      linkSharedPath(path.join(repoRoot, relativePath), destinationPath);
+    }
+  }
 }
 
 function clearExcludedWorkspaceEntries(rootDir: string, currentDir: string): void {
