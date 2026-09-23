@@ -1,0 +1,27 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "42711d46b612d7edb38a970f5c8292e229cce4d0"
+created_at: "2026-09-23T18:49:24Z"
+intent: "Force-add the real-tsx-pnpm-vitest fixture control-plane inputs that .ts-quality/ ignores, matching the kinetic fixture precedent, so clean checkouts can project the capture"
+files:
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/.ts-quality/agents.ts"
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/.ts-quality/approvals.json"
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/.ts-quality/constitution.ts"
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/.ts-quality/invariants.ts"
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/.ts-quality/overrides.json"
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/.ts-quality/waivers.json"
+validation:
+  fast_gate:
+    command: "npm run -s lint && node --test test/artifact-compatibility-fixtures.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 5
+  total: 5
+links:
+  task_ids:
+    - 5890
