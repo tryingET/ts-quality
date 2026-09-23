@@ -3,7 +3,7 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "826f7b338370779ea225430a59307bcc7317c807"
-created_at: "2026-09-23T20:17:56Z"
+created_at: "2026-09-23T20:17:57Z"
 intent: "Raise the Node.js floor to >=22 (Node 20 EOL), verify Node 22/24/26 in CI, and regenerate the tracked verification log"
 files:
   - "package.json"
@@ -17,8 +17,8 @@ validation:
     command: "python3 -m json.tool package.json >/dev/null && npm ci --ignore-scripts --no-audit --no-fund >/dev/null && npm run -s lint && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict >/dev/null"
     status: "pass"
   full_gate:
-    command: "npm run verify"
-    status: "pending"
+    command: "npm run verify (Node 26) + npm ci && npm run verify:ci on Node 22.23.3 and 24.21.0 with the change committed"
+    status: "pass"
 group:
   index: 1
   total: 1
