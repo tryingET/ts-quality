@@ -64,6 +64,9 @@ function sampleCommandEnv(baseEnv = process.env) {
     }
   }
   env['TZ'] = 'UTC';
+  // Pin the node:test reporter: Node 22 defaults to TAP for non-TTY output, whose variable-length duration
+  // lines shift detail truncation and made samples differ between passes and across Node versions.
+  env['NODE_OPTIONS'] = '--test-reporter=spec';
   return env;
 }
 
