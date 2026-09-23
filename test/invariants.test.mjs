@@ -159,6 +159,57 @@ test('evaluateInvariants accepts focused mjs tests aligned to the impacted file'
   assert.equal(scenarioSupport.mode, 'inferred');
 });
 
+test('evaluateInvariants aligns TSX tests that import the impacted file through its workspace package name', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-invariants-workspace-alias-'));
+  const write = (relativePath, contents) => {
+    fs.mkdirSync(path.dirname(path.join(rootDir, relativePath)), { recursive: true });
+    fs.writeFileSync(path.join(rootDir, relativePath), contents, 'utf8');
+  };
+  write('package.json', JSON.stringify({ name: 'acme-workspace', private: true }));
+  write('packages/react/package.json', JSON.stringify({ name: '@acme/react' }));
+  write('packages/react/src/index.tsx', 'export function MissingView() { return <div data-missing-view="x">Missing view export</div>; }\n');
+  write('packages/react-dom/package.json', JSON.stringify({ name: '@acme/react-dom' }));
+  write('tests/renderer.test.tsx', [
+    "import { MissingView } from '@acme/react';",
+    "test('renders missing view fallback', () => { expect(render(<MissingView />).text).toContain('Missing view export'); });",
+    ''
+  ].join('\n'));
+  write('tests/renderer-subpath.test.tsx', [
+    "import { MissingView } from '@acme/react/src/index';",
+    "test('subpath import', () => { expect(MissingView).toBeTruthy(); });",
+    ''
+  ].join('\n'));
+  write('tests/dom.test.tsx', "import { render } from '@acme/react-dom';\ntest('dom', () => { expect(render).toBeTruthy(); });\n");
+  write('tests/library.test.tsx', "import React from 'react';\ntest('library', () => { expect(React).toBeTruthy(); });\n");
+  write('tests/self.test.tsx', "import root from 'acme-workspace';\ntest('self', () => { expect(root).toBeTruthy(); });\n");
+
+  const claims = invariants.evaluateInvariants({
+    rootDir,
+    invariants: [{
+      id: 'react.missing-view-fallback',
+      title: 'Missing view fallback',
+      description: 'Missing view exports render a fallback.',
+      severity: 'high',
+      selectors: ['packages/react/src/index.tsx'],
+      scenarios: [{ id: 'missing-preview', description: 'fallback renders', keywords: ['Missing view export'], expected: 'fallback' }]
+    }],
+    changedFiles: ['packages/react/src/index.tsx'],
+    changedRegions: [],
+    complexity: [{ kind: 'complexity', filePath: 'packages/react/src/index.tsx', symbol: 'function:MissingView', span: { startLine: 1, endLine: 1 }, complexity: 1, coveragePct: 100, crap: 1, changed: true }],
+    mutationSites: [],
+    mutations: [],
+    testPatterns: ['tests/**/*.tsx']
+  });
+
+  assert.deepEqual(claims[0].evidenceSummary.focusedTests, ['tests/renderer-subpath.test.tsx', 'tests/renderer.test.tsx']);
+  const focusedAlignment = claims[0].evidenceSummary.subSignals.find((item) => item.signalId === 'focused-test-alignment');
+  assert.ok(focusedAlignment);
+  assert.equal(focusedAlignment.level, 'clear');
+  assert.equal(focusedAlignment.mode, 'inferred');
+  assert.match(focusedAlignment.modeReason, /workspace package imports \(@acme\/react\)/);
+  assert.equal(claims[0].evidenceSummary.scenarioResults[0].supported, true);
+});
+
 test('evaluateInvariants requires assertion-bearing focused tests for lexical support', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-invariants-assertion-aware-'));
   fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });

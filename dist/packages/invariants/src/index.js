@@ -392,7 +392,31 @@ function selectorHints(invariant) {
     }
     return unique(hints);
 }
-function focusedTestDocuments(testDocuments, invariant, files) {
+/**
+ * Resolves the npm name of the nearest workspace package that contains a repo-relative source file.
+ * The repo-root package is deliberately excluded: a self-import of the root package does not identify one source file.
+ */
+function workspacePackageName(rootDir, filePath) {
+    let directory = path_1.default.posix.dirname((0, index_1.normalizePath)(filePath));
+    while (directory !== '.' && directory !== '/' && directory !== '' && !directory.startsWith('..')) {
+        const manifestPath = path_1.default.join(rootDir, directory, 'package.json');
+        if (fs_1.default.existsSync(manifestPath)) {
+            try {
+                const name = (0, index_1.readJson)(manifestPath)['name'];
+                return typeof name === 'string' && name.length > 0 ? name.toLowerCase() : undefined;
+            }
+            catch {
+                return undefined;
+            }
+        }
+        directory = path_1.default.posix.dirname(directory);
+    }
+    return undefined;
+}
+function importsWorkspacePackage(document, packageNames) {
+    return packageNames.some((name) => document.importHints.some((hint) => hint === name || hint.startsWith(`${name}/`)));
+}
+function focusedTestDocuments(rootDir, testDocuments, invariant, files) {
     if (invariant.requiredTestPatterns && invariant.requiredTestPatterns.length > 0) {
         const documents = testDocuments.filter((document) => invariant.requiredTestPatterns?.some((pattern) => (0, index_1.matchPattern)(pattern, document.filePath)));
         return {
@@ -407,15 +431,20 @@ function focusedTestDocuments(testDocuments, invariant, files) {
         ...files.flatMap((filePath) => lexicalVariants(filePath)),
         ...selectorHints(invariant)
     ]).filter((hint) => hint.length >= 3);
-    const documents = testDocuments.filter((document) => {
+    const packageNames = unique(files.map((filePath) => workspacePackageName(rootDir, filePath) ?? ''));
+    const matchesLexically = (document) => {
         const loweredPath = document.filePath.toLowerCase();
         return hints.some((hint) => loweredPath.includes(hint) || document.importHints.some((importHint) => importHint.includes(hint)));
-    });
+    };
+    const documents = testDocuments.filter((document) => matchesLexically(document) || importsWorkspacePackage(document, packageNames));
+    const packageOnlyMatch = documents.some((document) => !matchesLexically(document));
     return {
         documents,
         mode: documents.length > 0 ? 'inferred' : 'missing',
         modeReason: documents.length > 0
-            ? 'matched focused tests via deterministic path/import/selector hints'
+            ? packageOnlyMatch
+                ? `matched focused tests via deterministic path/import/selector hints and workspace package imports (${packageNames.join(', ')})`
+                : 'matched focused tests via deterministic path/import/selector hints'
             : 'no focused tests matched deterministic path/import/selector hints'
     };
 }
@@ -717,7 +746,7 @@ function evaluateInvariants(options) {
             .sort((left, right) => left.filePath.localeCompare(right.filePath) || left.symbol.localeCompare(right.symbol));
         const lowCoverageChanged = changedFunctions.filter((item) => item.coveragePct < 80);
         const maxChangedCrap = changedFunctions.reduce((max, item) => Math.max(max, item.crap), 0);
-        const focusedTestSelection = focusedTestDocuments(testDocuments, invariant, files);
+        const focusedTestSelection = focusedTestDocuments(options.rootDir, testDocuments, invariant, files);
         const focusedTests = focusedTestSelection.documents;
         const scenarioResults = [];
         const executionWitnessFiles = new Set();

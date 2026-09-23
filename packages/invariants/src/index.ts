@@ -512,7 +512,32 @@ function selectorHints(invariant: InvariantSpec): string[] {
   return unique(hints);
 }
 
-function focusedTestDocuments(testDocuments: TestDocument[], invariant: InvariantSpec, files: string[]): FocusedTestSelection {
+/**
+ * Resolves the npm name of the nearest workspace package that contains a repo-relative source file.
+ * The repo-root package is deliberately excluded: a self-import of the root package does not identify one source file.
+ */
+function workspacePackageName(rootDir: string, filePath: string): string | undefined {
+  let directory = path.posix.dirname(normalizePath(filePath));
+  while (directory !== '.' && directory !== '/' && directory !== '' && !directory.startsWith('..')) {
+    const manifestPath = path.join(rootDir, directory, 'package.json');
+    if (fs.existsSync(manifestPath)) {
+      try {
+        const name = readJson<Record<string, unknown>>(manifestPath)['name'];
+        return typeof name === 'string' && name.length > 0 ? name.toLowerCase() : undefined;
+      } catch {
+        return undefined;
+      }
+    }
+    directory = path.posix.dirname(directory);
+  }
+  return undefined;
+}
+
+function importsWorkspacePackage(document: TestDocument, packageNames: string[]): boolean {
+  return packageNames.some((name) => document.importHints.some((hint) => hint === name || hint.startsWith(`${name}/`)));
+}
+
+function focusedTestDocuments(rootDir: string, testDocuments: TestDocument[], invariant: InvariantSpec, files: string[]): FocusedTestSelection {
   if (invariant.requiredTestPatterns && invariant.requiredTestPatterns.length > 0) {
     const documents = testDocuments.filter((document) => invariant.requiredTestPatterns?.some((pattern) => matchPattern(pattern, document.filePath)));
     return {
@@ -529,16 +554,21 @@ function focusedTestDocuments(testDocuments: TestDocument[], invariant: Invarian
     ...selectorHints(invariant)
   ]).filter((hint) => hint.length >= 3);
 
-  const documents = testDocuments.filter((document) => {
+  const packageNames = unique(files.map((filePath) => workspacePackageName(rootDir, filePath) ?? ''));
+  const matchesLexically = (document: TestDocument): boolean => {
     const loweredPath = document.filePath.toLowerCase();
     return hints.some((hint) => loweredPath.includes(hint) || document.importHints.some((importHint) => importHint.includes(hint)));
-  });
+  };
+  const documents = testDocuments.filter((document) => matchesLexically(document) || importsWorkspacePackage(document, packageNames));
+  const packageOnlyMatch = documents.some((document) => !matchesLexically(document));
 
   return {
     documents,
     mode: documents.length > 0 ? 'inferred' : 'missing',
     modeReason: documents.length > 0
-      ? 'matched focused tests via deterministic path/import/selector hints'
+      ? packageOnlyMatch
+        ? `matched focused tests via deterministic path/import/selector hints and workspace package imports (${packageNames.join(', ')})`
+        : 'matched focused tests via deterministic path/import/selector hints'
       : 'no focused tests matched deterministic path/import/selector hints'
   } satisfies FocusedTestSelection;
 }
@@ -882,7 +912,7 @@ export function evaluateInvariants(options: InvariantEvaluationOptions): Behavio
       .sort((left, right) => left.filePath.localeCompare(right.filePath) || left.symbol.localeCompare(right.symbol));
     const lowCoverageChanged = changedFunctions.filter((item) => item.coveragePct < 80);
     const maxChangedCrap = changedFunctions.reduce((max, item) => Math.max(max, item.crap), 0);
-    const focusedTestSelection = focusedTestDocuments(testDocuments, invariant, files);
+    const focusedTestSelection = focusedTestDocuments(options.rootDir, testDocuments, invariant, files);
     const focusedTests = focusedTestSelection.documents;
     const scenarioResults: InvariantScenarioResult[] = [];
     const executionWitnessFiles = new Set<string>();
