@@ -1,0 +1,26 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "84da94811e2f9e9052e6ea72cc711e7869e6030b"
+created_at: "2026-09-23T19:40:48Z"
+intent: "Link every workspace node_modules into mutant workspaces so strict pnpm package-only dependencies resolve; bump mutation runtime version to invalidate cached false kills"
+files:
+  - "packages/ts-mutate/src/index.ts"
+  - "dist/packages/ts-mutate/src/index.js"
+  - "dist/packages/ts-mutate/src/index.js.map"
+  - "test/ts-mutate.test.mjs"
+  - "docs/adoption/2026-09-23-workspace-platform-tsx-pnpm-vitest-adoption.md"
+validation:
+  fast_gate:
+    command: "npm run -s build && npm run -s typecheck && npm run -s lint && node --test test/ts-mutate.test.mjs && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict >/dev/null"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 1
+  total: 1
+links:
+  task_ids:
+    - 5900
