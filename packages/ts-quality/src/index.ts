@@ -1841,8 +1841,21 @@ function attachEvidenceClosureSufficiency(action: NextEvidenceAction['primaryAct
   };
 }
 
-function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGeneration' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction['evidenceBasis'] {
-  const coveragePct = run.coverage.map((item) => item.pct).filter((value) => Number.isFinite(value));
+/**
+ * LCOV records for files inside the run's source scope. Some runners also report test files
+ * (Node 20's built-in coverage does; Node 22+ excludes them by default), which are not coverage evidence.
+ */
+function sourceScopedCoverage(run: Pick<RunArtifact, 'coverage' | 'files'>): RunArtifact['coverage'] {
+  if (run.files.length === 0) {
+    return run.coverage;
+  }
+  const sourcePaths = new Set(run.files.map((item) => item.filePath));
+  return run.coverage.filter((item) => sourcePaths.has(item.filePath));
+}
+
+function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGeneration' | 'files' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction['evidenceBasis'] {
+  const scopedCoverage = sourceScopedCoverage(run);
+  const coveragePct = scopedCoverage.map((item) => item.pct).filter((value) => Number.isFinite(value));
   const changedFunctionCoveragePct = run.behaviorClaims.flatMap((claim) => claim.evidenceSummary?.changedFunctions ?? []).map((item) => item.coveragePct).filter((value) => Number.isFinite(value));
   const changedFunctionsUnder80 = run.behaviorClaims.reduce((total, claim) => total + (claim.evidenceSummary?.changedFunctionsUnder80Coverage ?? 0), 0);
   const survived = run.mutations.filter((item) => item.status === 'survived').length;
@@ -1852,15 +1865,15 @@ function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGenerat
   const governanceErrors = run.governance.filter((item) => item.level === 'error').length;
   const governanceWarnings = run.governance.filter((item) => item.level === 'warn').length;
   const nonBlockingSignals = [
-    ...(run.coverage.length > 0 && changedFunctionsUnder80 === 0 ? [`coverage is present; changed functions under 80% coverage: ${changedFunctionsUnder80}`] : []),
+    ...(scopedCoverage.length > 0 && changedFunctionsUnder80 === 0 ? [`coverage is present; changed functions under 80% coverage: ${changedFunctionsUnder80}`] : []),
     ...(executionWitnessFiles.length > 0 ? [`execution witness evidence is present (${executionWitnessFiles.length} file(s))`] : []),
     ...(governanceErrors === 0 ? ['governance has no blocking errors'] : []),
     ...(survived === 0 && errors === 0 && run.mutations.length > 0 ? ['mutation pressure has no survivors or execution errors'] : [])
   ];
   return {
     coverage: {
-      status: run.coverage.length > 0 ? 'present' : (run.coverageGeneration ? `generation-${run.coverageGeneration.receipt.status}` : 'missing'),
-      fileCount: run.coverage.length,
+      status: scopedCoverage.length > 0 ? 'present' : (run.coverageGeneration ? `generation-${run.coverageGeneration.receipt.status}` : 'missing'),
+      fileCount: scopedCoverage.length,
       ...(coveragePct.length > 0 ? { minPct: Math.min(...coveragePct) } : {}),
       ...(changedFunctionCoveragePct.length > 0 ? { changedFunctionMinPct: Math.min(...changedFunctionCoveragePct) } : {}),
       changedFunctionsUnder80,
@@ -2133,7 +2146,7 @@ function buildPrimaryEvidenceClosureAction(
   };
 }
 
-function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'executionWitnesses' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims' | 'symbols'>): NextEvidenceAction {
+function buildNextEvidenceAction(run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'executionWitnesses' | 'files' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims' | 'symbols'>): NextEvidenceAction {
   const remainingBlocker = run.verdict.findings.find((item) => item.code === 'surviving-mutant' || item.code === 'mutation-score-budget')
     ? 'mutation-pressure'
     : run.verdict.findings.find((item) => item.code === 'mutation-baseline')

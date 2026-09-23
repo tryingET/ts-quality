@@ -112,3 +112,25 @@ test('minimal external adoption fixture preserves truthful mutation-survivor fai
   assert.deepEqual(run.nextEvidenceAction?.primaryAction.suggestedEditFiles, ['test/token.test.js']);
   assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'runs', 'auth-token-weak-boundary', 'mutation-remediation.json')), true);
 });
+
+test('coverage basis counts only source-scoped LCOV records even when the runner also reports test files', () => {
+  const target = tempCopyOfFixture('minimal-external-adoption');
+  const env = { ...process.env };
+  delete env['NODE_TEST_CONTEXT'];
+  const quality = spawnSync('npm', ['run', 'quality', '--silent'], { cwd: target, encoding: 'utf8', env });
+  assert.equal(quality.status, 0, quality.stderr);
+  // Node 20's built-in coverage also reports the test file itself; Node 22+ excludes test files by default.
+  const lcovPath = path.join(target, 'coverage', 'lcov.info');
+  const lcov = fs.readFileSync(lcovPath, 'utf8');
+  if (!lcov.includes('SF:test/token.test.js')) {
+    fs.writeFileSync(lcovPath, `${lcov}TN:\nSF:test/token.test.js\nDA:1,1\nLF:1\nLH:1\nend_of_record\n`, 'utf8');
+  }
+
+  const check = runCli(['check', '--root', target, '--config', 'ts-quality.config.json', '--changed', 'src/auth/token.js', '--run-id', 'auth-token-test-file-lcov'], target);
+  assert.equal(check.status, 0, check.stderr);
+  assert.match(check.stdout, /Coverage basis: 1 file\(s\), changed-function min 100%/);
+
+  const run = readJson(path.join(target, '.ts-quality', 'runs', 'auth-token-test-file-lcov', 'run.json'));
+  assert.ok(run.coverage.some((entry) => entry.filePath === 'test/token.test.js'), 'raw LCOV records stay in run.json');
+  assert.equal(run.nextEvidenceAction?.evidenceBasis.coverage.fileCount, 1);
+});
