@@ -32,7 +32,7 @@ clean_dist() {
   # edits (receipts excluded; override with ROCS_ALLOW_DIRTY_DIST=1) and restore dist
   # if the ROCS lane fails after the clean.
   local dirty
-  dirty="$(git -C "$ROCS_REPO" status --porcelain -- ontology/dist \
+  dirty="$(git -C "$ROCS_REPO" status --porcelain --untracked-files=no -- ontology/dist \
     ':(exclude)ontology/dist/authority-receipt*.json' \
     ':(exclude)ontology/dist/.authority-receipt.lock' 2>/dev/null || true)"
   if [[ -n "$dirty" && "${ROCS_ALLOW_DIRTY_DIST:-0}" != 1 ]]; then

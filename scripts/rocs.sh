@@ -15,7 +15,7 @@ if [ "${1:-}" = build ] && [ "${ROCS_DIST_GUARD_ACTIVE:-0}" != 1 ] && [ -x "$0" 
   done
   rocs_guard_repo="$(CDPATH= cd -- "$rocs_guard_repo" 2>/dev/null && pwd || true)"
   if [ "$rocs_guard_clean" = 1 ] && [ -n "$rocs_guard_repo" ] && [ -d "$rocs_guard_repo/ontology/dist" ]; then
-    rocs_guard_dirty="$(git -C "$rocs_guard_repo" status --porcelain -- ontology/dist \
+    rocs_guard_dirty="$(git -C "$rocs_guard_repo" status --porcelain --untracked-files=no -- ontology/dist \
       ':(exclude)ontology/dist/authority-receipt*.json' \
       ':(exclude)ontology/dist/.authority-receipt.lock' 2>/dev/null || true)"
     if [ -n "$rocs_guard_dirty" ] && [ "${ROCS_ALLOW_DIRTY_DIST:-0}" != 1 ]; then
