@@ -1,0 +1,4233 @@
+{
+  "analysis": {
+    "changedFiles": [
+      "packages/react/src/index.tsx"
+    ],
+    "changedRegions": [],
+    "configPath": "ts-quality.config.ts",
+    "coverageLcovPath": ".ts-quality/adoption/coverage/lcov.info",
+    "createdAt": "2026-09-23T18:26:01.788Z",
+    "executionFingerprint": "sha256:624096cd300524e2ff32b4674a491d89d81f0f5041bf9f47c762f1071041c20e",
+    "runId": "tsx-pnpm-vitest-adoption",
+    "runtimeMirrorRoots": [
+      "dist"
+    ],
+    "sourceFiles": [
+      "packages/react/src/index.tsx"
+    ]
+  },
+  "approvals": [],
+  "attestations": [],
+  "behaviorClaims": [
+    {
+      "description": "Missing view exports render a deterministic fallback applies to packages/react/src/index.tsx",
+      "evidence": [
+        "5 surviving mutants in impacted invariant scope",
+        "19 changed functions under 80% coverage in invariant scope"
+      ],
+      "evidenceSummary": {
+        "changedFunctions": [
+          {
+            "coveragePct": 95,
+            "crap": 5,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@1031>"
+          },
+          {
+            "coveragePct": 96.77,
+            "crap": 4,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@1040>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@1076>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@393>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@446>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@456>"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@515>"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@516>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@531>"
+          },
+          {
+            "coveragePct": 83.33,
+            "crap": 2.02,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@534>"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@537>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@539>"
+          },
+          {
+            "coveragePct": 93.02,
+            "crap": 14.07,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@558>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@583>"
+          },
+          {
+            "coveragePct": 87.5,
+            "crap": 2.01,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@584>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@595>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@635>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@722>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@723>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@724>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@725>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@780>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@814>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@818>"
+          },
+          {
+            "coveragePct": 75,
+            "crap": 2.06,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@831>"
+          },
+          {
+            "coveragePct": 75,
+            "crap": 2.06,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@845>"
+          },
+          {
+            "coveragePct": 25,
+            "crap": 3.69,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@853>"
+          },
+          {
+            "coveragePct": 5,
+            "crap": 36.87,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@861>"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 12,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@880>"
+          },
+          {
+            "coveragePct": 85,
+            "crap": 6.12,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@891>"
+          },
+          {
+            "coveragePct": 87.5,
+            "crap": 3.02,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@907>"
+          },
+          {
+            "coveragePct": 92.86,
+            "crap": 10.04,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@919>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@936>"
+          },
+          {
+            "coveragePct": 3.45,
+            "crap": 81.9,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@974>"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "arrow:<anonymous@985>"
+          },
+          {
+            "coveragePct": 90.91,
+            "crap": 3.01,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:defaultMissingViewRenderer"
+          },
+          {
+            "coveragePct": 92.31,
+            "crap": 3,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:defaultViewRenderer"
+          },
+          {
+            "coveragePct": 95.12,
+            "crap": 10.01,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:DropZoneOverlay"
+          },
+          {
+            "coveragePct": 75,
+            "crap": 3.14,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:getActiveViewId"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 6,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:getIntentLabel"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:getViewLabel"
+          },
+          {
+            "coveragePct": 71.43,
+            "crap": 5.58,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:isRenderableComponentType"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 5,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:resolveChromeContext"
+          },
+          {
+            "coveragePct": 95.83,
+            "crap": 9.01,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:resolveDropOverlayState"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 6,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:resolveWorkspaceBounds"
+          },
+          {
+            "coveragePct": 91.18,
+            "crap": 10.07,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:StackSurface"
+          },
+          {
+            "coveragePct": 93.94,
+            "crap": 14.04,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:TabStrip"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 3,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:themeTokensToCssVariables"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:toCssVariableName"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 12,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:toFallbackMode"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 3,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:toLayoutPoint"
+          },
+          {
+            "coveragePct": 10,
+            "crap": 1.73,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useCommandExecutor"
+          },
+          {
+            "coveragePct": 33.33,
+            "crap": 3.19,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useDiagnostics"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useFocusedStackId"
+          },
+          {
+            "coveragePct": 33.33,
+            "crap": 3.19,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useHotkeyResolution"
+          },
+          {
+            "coveragePct": 91.67,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useInspectableSnapshot"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 2,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:usePaletteItems"
+          },
+          {
+            "coveragePct": 66.67,
+            "crap": 2.15,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useWorkspaceChromeContext"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useWorkspaceMode"
+          },
+          {
+            "coveragePct": 50,
+            "crap": 1.13,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useWorkspacePlatform"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:useWorkspaceTheme"
+          },
+          {
+            "coveragePct": 72.88,
+            "crap": 79.88,
+            "filePath": "packages/react/src/index.tsx",
+            "symbol": "function:WorkspaceRoot"
+          }
+        ],
+        "changedFunctionsUnder80Coverage": 19,
+        "evidenceSemantics": "execution-backed",
+        "evidenceSemanticsSummary": "execution-backed witness artifacts matched the invariant scenario scope",
+        "executionWitnessFiles": [
+          ".ts-quality/witnesses/react-missing-view-fallback.json"
+        ],
+        "focusedTests": [
+          "tests/react-renderer.test.tsx"
+        ],
+        "impactedFiles": [
+          "packages/react/src/index.tsx"
+        ],
+        "invariantId": "react.missing-view-fallback",
+        "killedMutantsInScope": 7,
+        "maxChangedCrap": 81.9,
+        "mutationSitesInScope": 12,
+        "scenarioResults": [
+          {
+            "assertionMatched": true,
+            "description": "The demo manifest registers view.preview without a PreviewView export; the stack renders the missing-view fallback.",
+            "expected": "Registration fails and the view.preview stack renders \"Missing view export\" with the view title and stack id.",
+            "failurePathKeywordsMatched": true,
+            "keywordsMatched": false,
+            "scenarioId": "demo-manifest-missing-preview",
+            "supported": true,
+            "supportKind": "execution-witness"
+          }
+        ],
+        "subSignals": [
+          {
+            "facts": [
+              "mode reason: matched focused tests via deterministic path/import/selector hints and workspace package imports (@workspace-platform/react)",
+              "impacted files: packages/react/src/index.tsx",
+              "focused tests: tests/react-renderer.test.tsx"
+            ],
+            "label": "Focused test alignment",
+            "level": "clear",
+            "mode": "inferred",
+            "modeReason": "matched focused tests via deterministic path/import/selector hints and workspace package imports (@workspace-platform/react)",
+            "signalId": "focused-test-alignment",
+            "summary": "1 focused test file aligned to invariant scope"
+          },
+          {
+            "facts": [
+              "mode reason: execution witness artifacts matched invariant id, scenario id, pass status, and impacted source scope",
+              "impacted files: packages/react/src/index.tsx",
+              "execution witness files: .ts-quality/witnesses/react-missing-view-fallback.json"
+            ],
+            "label": "Execution witness",
+            "level": "clear",
+            "mode": "explicit",
+            "modeReason": "execution witness artifacts matched invariant id, scenario id, pass status, and impacted source scope",
+            "signalId": "execution-witness",
+            "summary": "1 execution witness file matched invariant scenario scope"
+          },
+          {
+            "facts": [
+              "mode reason: scenario support came from explicit execution witness artifacts",
+              "demo-manifest-missing-preview: execution-backed witness matched"
+            ],
+            "label": "Scenario support",
+            "level": "clear",
+            "mode": "explicit",
+            "modeReason": "scenario support came from explicit execution witness artifacts",
+            "signalId": "scenario-support",
+            "summary": "1/1 scenario(s) have execution-backed support"
+          },
+          {
+            "facts": [
+              "mode reason: coverage evidence came from LCOV for changed functions in invariant scope",
+              "arrow:<anonymous@515> (packages/react/src/index.tsx, coverage 0%, CRAP 2)",
+              "arrow:<anonymous@516> (packages/react/src/index.tsx, coverage 0%, CRAP 2)",
+              "arrow:<anonymous@537> (packages/react/src/index.tsx, coverage 0%, CRAP 2)",
+              "arrow:<anonymous@831> (packages/react/src/index.tsx, coverage 75%, CRAP 2.06)",
+              "arrow:<anonymous@845> (packages/react/src/index.tsx, coverage 75%, CRAP 2.06)",
+              "arrow:<anonymous@853> (packages/react/src/index.tsx, coverage 25%, CRAP 3.69)",
+              "arrow:<anonymous@861> (packages/react/src/index.tsx, coverage 5%, CRAP 36.87)",
+              "arrow:<anonymous@880> (packages/react/src/index.tsx, coverage 0%, CRAP 12)",
+              "arrow:<anonymous@974> (packages/react/src/index.tsx, coverage 3.45%, CRAP 81.9)",
+              "arrow:<anonymous@985> (packages/react/src/index.tsx, coverage 0%, CRAP 2)",
+              "function:getActiveViewId (packages/react/src/index.tsx, coverage 75%, CRAP 3.14)",
+              "function:isRenderableComponentType (packages/react/src/index.tsx, coverage 71.43%, CRAP 5.58)",
+              "function:toFallbackMode (packages/react/src/index.tsx, coverage 0%, CRAP 12)",
+              "function:useCommandExecutor (packages/react/src/index.tsx, coverage 10%, CRAP 1.73)",
+              "function:useDiagnostics (packages/react/src/index.tsx, coverage 33.33%, CRAP 3.19)",
+              "function:useHotkeyResolution (packages/react/src/index.tsx, coverage 33.33%, CRAP 3.19)",
+              "function:useWorkspaceChromeContext (packages/react/src/index.tsx, coverage 66.67%, CRAP 2.15)",
+              "function:useWorkspacePlatform (packages/react/src/index.tsx, coverage 50%, CRAP 1.13)",
+              "function:WorkspaceRoot (packages/react/src/index.tsx, coverage 72.88%, CRAP 79.88)"
+            ],
+            "label": "Coverage pressure",
+            "level": "warning",
+            "mode": "explicit",
+            "modeReason": "coverage evidence came from LCOV for changed functions in invariant scope",
+            "signalId": "coverage-pressure",
+            "summary": "19 changed functions under 80% coverage"
+          },
+          {
+            "facts": [
+              "mode reason: mutation evidence came from selected mutation sites in invariant scope",
+              "mutation sites in scope: 12",
+              "killed mutants in scope: 7",
+              "surviving mutants in scope: 5"
+            ],
+            "label": "Mutation pressure",
+            "level": "warning",
+            "mode": "explicit",
+            "modeReason": "mutation evidence came from selected mutation sites in invariant scope",
+            "signalId": "mutation-pressure",
+            "summary": "5 surviving mutants across 12 mutation sites"
+          },
+          {
+            "facts": [
+              "mode reason: changed-function evidence came from CRAP/changed-function mapping in invariant scope",
+              "arrow:<anonymous@1031> (packages/react/src/index.tsx, coverage 95%, CRAP 5)",
+              "arrow:<anonymous@1040> (packages/react/src/index.tsx, coverage 96.77%, CRAP 4)",
+              "arrow:<anonymous@1076> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@393> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@446> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@456> (packages/react/src/index.tsx, coverage 100%, CRAP 2)",
+              "arrow:<anonymous@515> (packages/react/src/index.tsx, coverage 0%, CRAP 2)",
+              "arrow:<anonymous@516> (packages/react/src/index.tsx, coverage 0%, CRAP 2)",
+              "arrow:<anonymous@531> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@534> (packages/react/src/index.tsx, coverage 83.33%, CRAP 2.02)",
+              "arrow:<anonymous@537> (packages/react/src/index.tsx, coverage 0%, CRAP 2)",
+              "arrow:<anonymous@539> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@558> (packages/react/src/index.tsx, coverage 93.02%, CRAP 14.07)",
+              "arrow:<anonymous@583> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@584> (packages/react/src/index.tsx, coverage 87.5%, CRAP 2.01)",
+              "arrow:<anonymous@595> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@635> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@722> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@723> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@724> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@725> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@780> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@814> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@818> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@831> (packages/react/src/index.tsx, coverage 75%, CRAP 2.06)",
+              "arrow:<anonymous@845> (packages/react/src/index.tsx, coverage 75%, CRAP 2.06)",
+              "arrow:<anonymous@853> (packages/react/src/index.tsx, coverage 25%, CRAP 3.69)",
+              "arrow:<anonymous@861> (packages/react/src/index.tsx, coverage 5%, CRAP 36.87)",
+              "arrow:<anonymous@880> (packages/react/src/index.tsx, coverage 0%, CRAP 12)",
+              "arrow:<anonymous@891> (packages/react/src/index.tsx, coverage 85%, CRAP 6.12)",
+              "arrow:<anonymous@907> (packages/react/src/index.tsx, coverage 87.5%, CRAP 3.02)",
+              "arrow:<anonymous@919> (packages/react/src/index.tsx, coverage 92.86%, CRAP 10.04)",
+              "arrow:<anonymous@936> (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@974> (packages/react/src/index.tsx, coverage 3.45%, CRAP 81.9)",
+              "arrow:<anonymous@985> (packages/react/src/index.tsx, coverage 0%, CRAP 2)",
+              "function:defaultMissingViewRenderer (packages/react/src/index.tsx, coverage 90.91%, CRAP 3.01)",
+              "function:defaultViewRenderer (packages/react/src/index.tsx, coverage 92.31%, CRAP 3)",
+              "function:DropZoneOverlay (packages/react/src/index.tsx, coverage 95.12%, CRAP 10.01)",
+              "function:getActiveViewId (packages/react/src/index.tsx, coverage 75%, CRAP 3.14)",
+              "function:getIntentLabel (packages/react/src/index.tsx, coverage 100%, CRAP 6)",
+              "function:getViewLabel (packages/react/src/index.tsx, coverage 100%, CRAP 2)",
+              "function:isRenderableComponentType (packages/react/src/index.tsx, coverage 71.43%, CRAP 5.58)",
+              "function:resolveChromeContext (packages/react/src/index.tsx, coverage 100%, CRAP 5)",
+              "function:resolveDropOverlayState (packages/react/src/index.tsx, coverage 95.83%, CRAP 9.01)",
+              "function:resolveWorkspaceBounds (packages/react/src/index.tsx, coverage 100%, CRAP 6)",
+              "function:StackSurface (packages/react/src/index.tsx, coverage 91.18%, CRAP 10.07)",
+              "function:TabStrip (packages/react/src/index.tsx, coverage 93.94%, CRAP 14.04)",
+              "function:themeTokensToCssVariables (packages/react/src/index.tsx, coverage 100%, CRAP 3)",
+              "function:toCssVariableName (packages/react/src/index.tsx, coverage 100%, CRAP 2)",
+              "function:toFallbackMode (packages/react/src/index.tsx, coverage 0%, CRAP 12)",
+              "function:toLayoutPoint (packages/react/src/index.tsx, coverage 100%, CRAP 3)",
+              "function:useCommandExecutor (packages/react/src/index.tsx, coverage 10%, CRAP 1.73)",
+              "function:useDiagnostics (packages/react/src/index.tsx, coverage 33.33%, CRAP 3.19)",
+              "function:useFocusedStackId (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "function:useHotkeyResolution (packages/react/src/index.tsx, coverage 33.33%, CRAP 3.19)",
+              "function:useInspectableSnapshot (packages/react/src/index.tsx, coverage 91.67%, CRAP 2)",
+              "function:usePaletteItems (packages/react/src/index.tsx, coverage 100%, CRAP 2)",
+              "function:useWorkspaceChromeContext (packages/react/src/index.tsx, coverage 66.67%, CRAP 2.15)",
+              "function:useWorkspaceMode (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "function:useWorkspacePlatform (packages/react/src/index.tsx, coverage 50%, CRAP 1.13)",
+              "function:useWorkspaceTheme (packages/react/src/index.tsx, coverage 100%, CRAP 1)",
+              "function:WorkspaceRoot (packages/react/src/index.tsx, coverage 72.88%, CRAP 79.88)"
+            ],
+            "label": "Changed function pressure",
+            "level": "info",
+            "mode": "explicit",
+            "modeReason": "changed-function evidence came from CRAP/changed-function mapping in invariant scope",
+            "signalId": "changed-function-pressure",
+            "summary": "62 changed functions in invariant scope; max changed CRAP 81.9"
+          }
+        ],
+        "survivingMutantsInScope": 5
+      },
+      "id": "react.missing-view-fallback:claim",
+      "invariantId": "react.missing-view-fallback",
+      "obligations": [],
+      "status": "at-risk"
+    }
+  ],
+  "changedFiles": [
+    "packages/react/src/index.tsx"
+  ],
+  "changedRegions": [],
+  "complexity": [
+    {
+      "changed": true,
+      "complexity": 9,
+      "coveragePct": 3.45,
+      "crap": 81.9,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 1012,
+        "startLine": 974
+      },
+      "symbol": "arrow:<anonymous@974>"
+    },
+    {
+      "changed": true,
+      "complexity": 43,
+      "coveragePct": 72.88,
+      "crap": 79.88,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 1088,
+        "startLine": 788
+      },
+      "symbol": "function:WorkspaceRoot"
+    },
+    {
+      "changed": true,
+      "complexity": 6,
+      "coveragePct": 5,
+      "crap": 36.87,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 889,
+        "startLine": 861
+      },
+      "symbol": "arrow:<anonymous@861>"
+    },
+    {
+      "changed": true,
+      "complexity": 14,
+      "coveragePct": 93.02,
+      "crap": 14.07,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 654,
+        "startLine": 558
+      },
+      "symbol": "arrow:<anonymous@558>"
+    },
+    {
+      "changed": true,
+      "complexity": 14,
+      "coveragePct": 93.94,
+      "crap": 14.04,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 657,
+        "startLine": 545
+      },
+      "symbol": "function:TabStrip"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 0,
+      "crap": 12,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 263,
+        "startLine": 253
+      },
+      "symbol": "function:toFallbackMode"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 0,
+      "crap": 12,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 887,
+        "startLine": 880
+      },
+      "symbol": "arrow:<anonymous@880>"
+    },
+    {
+      "changed": true,
+      "complexity": 10,
+      "coveragePct": 91.18,
+      "crap": 10.07,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 739,
+        "startLine": 659
+      },
+      "symbol": "function:StackSurface"
+    },
+    {
+      "changed": true,
+      "complexity": 10,
+      "coveragePct": 92.86,
+      "crap": 10.04,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 972,
+        "startLine": 919
+      },
+      "symbol": "arrow:<anonymous@919>"
+    },
+    {
+      "changed": true,
+      "complexity": 10,
+      "coveragePct": 95.12,
+      "crap": 10.01,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 786,
+        "startLine": 741
+      },
+      "symbol": "function:DropZoneOverlay"
+    },
+    {
+      "changed": true,
+      "complexity": 9,
+      "coveragePct": 95.83,
+      "crap": 9.01,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 481,
+        "startLine": 420
+      },
+      "symbol": "function:resolveDropOverlayState"
+    },
+    {
+      "changed": true,
+      "complexity": 6,
+      "coveragePct": 85,
+      "crap": 6.12,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 917,
+        "startLine": 891
+      },
+      "symbol": "arrow:<anonymous@891>"
+    },
+    {
+      "changed": true,
+      "complexity": 6,
+      "coveragePct": 100,
+      "crap": 6,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 310,
+        "startLine": 297
+      },
+      "symbol": "function:getIntentLabel"
+    },
+    {
+      "changed": true,
+      "complexity": 6,
+      "coveragePct": 100,
+      "crap": 6,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 403,
+        "startLine": 386
+      },
+      "symbol": "function:resolveWorkspaceBounds"
+    },
+    {
+      "changed": true,
+      "complexity": 5,
+      "coveragePct": 71.43,
+      "crap": 5.58,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 291,
+        "startLine": 282
+      },
+      "symbol": "function:isRenderableComponentType"
+    },
+    {
+      "changed": true,
+      "complexity": 5,
+      "coveragePct": 100,
+      "crap": 5,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 332,
+        "startLine": 312
+      },
+      "symbol": "function:resolveChromeContext"
+    },
+    {
+      "changed": true,
+      "complexity": 5,
+      "coveragePct": 95,
+      "crap": 5,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 1075,
+        "startLine": 1031
+      },
+      "symbol": "arrow:<anonymous@1031>"
+    },
+    {
+      "changed": true,
+      "complexity": 4,
+      "coveragePct": 96.77,
+      "crap": 4,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 1073,
+        "startLine": 1040
+      },
+      "symbol": "arrow:<anonymous@1040>"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 25,
+      "crap": 3.69,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 859,
+        "startLine": 853
+      },
+      "symbol": "arrow:<anonymous@853>"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 33.33,
+      "crap": 3.19,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 507,
+        "startLine": 504
+      },
+      "symbol": "function:useDiagnostics"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 33.33,
+      "crap": 3.19,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 525,
+        "startLine": 522
+      },
+      "symbol": "function:useHotkeyResolution"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 75,
+      "crap": 3.14,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 280,
+        "startLine": 275
+      },
+      "symbol": "function:getActiveViewId"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 87.5,
+      "crap": 3.02,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 915,
+        "startLine": 907
+      },
+      "symbol": "arrow:<anonymous@907>"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 90.91,
+      "crap": 3.01,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 356,
+        "startLine": 344
+      },
+      "symbol": "function:defaultMissingViewRenderer"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 92.31,
+      "crap": 3,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 375,
+        "startLine": 358
+      },
+      "symbol": "function:defaultViewRenderer"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 100,
+      "crap": 3,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 384,
+        "startLine": 377
+      },
+      "symbol": "function:themeTokensToCssVariables"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 100,
+      "crap": 3,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 418,
+        "startLine": 405
+      },
+      "symbol": "function:toLayoutPoint"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 66.67,
+      "crap": 2.15,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 342,
+        "startLine": 334
+      },
+      "symbol": "function:useWorkspaceChromeContext"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 75,
+      "crap": 2.06,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 843,
+        "startLine": 831
+      },
+      "symbol": "arrow:<anonymous@831>"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 75,
+      "crap": 2.06,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 851,
+        "startLine": 845
+      },
+      "symbol": "arrow:<anonymous@845>"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 83.33,
+      "crap": 2.02,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 540,
+        "startLine": 534
+      },
+      "symbol": "arrow:<anonymous@534>"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 87.5,
+      "crap": 2.01,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 594,
+        "startLine": 584
+      },
+      "symbol": "arrow:<anonymous@584>"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 100,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 273,
+        "startLine": 265
+      },
+      "symbol": "function:toCssVariableName"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 100,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 295,
+        "startLine": 293
+      },
+      "symbol": "function:getViewLabel"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 100,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 462,
+        "startLine": 456
+      },
+      "symbol": "arrow:<anonymous@456>"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 100,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 502,
+        "startLine": 499
+      },
+      "symbol": "function:usePaletteItems"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 517,
+        "startLine": 515
+      },
+      "symbol": "arrow:<anonymous@515>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 517,
+        "startLine": 516
+      },
+      "symbol": "arrow:<anonymous@516>"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 91.67,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 543,
+        "startLine": 527
+      },
+      "symbol": "function:useInspectableSnapshot"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 537,
+        "startLine": 537
+      },
+      "symbol": "arrow:<anonymous@537>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 985,
+        "startLine": 985
+      },
+      "symbol": "arrow:<anonymous@985>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 10,
+      "crap": 1.73,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 520,
+        "startLine": 509
+      },
+      "symbol": "function:useCommandExecutor"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 50,
+      "crap": 1.13,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 485,
+        "startLine": 483
+      },
+      "symbol": "function:useWorkspacePlatform"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 393,
+        "startLine": 393
+      },
+      "symbol": "arrow:<anonymous@393>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 446,
+        "startLine": 446
+      },
+      "symbol": "arrow:<anonymous@446>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 489,
+        "startLine": 487
+      },
+      "symbol": "function:useWorkspaceMode"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 493,
+        "startLine": 491
+      },
+      "symbol": "function:useWorkspaceTheme"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 497,
+        "startLine": 495
+      },
+      "symbol": "function:useFocusedStackId"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 531,
+        "startLine": 531
+      },
+      "symbol": "arrow:<anonymous@531>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 539,
+        "startLine": 539
+      },
+      "symbol": "arrow:<anonymous@539>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 583,
+        "startLine": 583
+      },
+      "symbol": "arrow:<anonymous@583>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 595,
+        "startLine": 595
+      },
+      "symbol": "arrow:<anonymous@595>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 638,
+        "startLine": 635
+      },
+      "symbol": "arrow:<anonymous@635>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 722,
+        "startLine": 722
+      },
+      "symbol": "arrow:<anonymous@722>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 723,
+        "startLine": 723
+      },
+      "symbol": "arrow:<anonymous@723>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 724,
+        "startLine": 724
+      },
+      "symbol": "arrow:<anonymous@724>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 725,
+        "startLine": 725
+      },
+      "symbol": "arrow:<anonymous@725>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 780,
+        "startLine": 780
+      },
+      "symbol": "arrow:<anonymous@780>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 814,
+        "startLine": 814
+      },
+      "symbol": "arrow:<anonymous@814>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 818,
+        "startLine": 818
+      },
+      "symbol": "arrow:<anonymous@818>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 936,
+        "startLine": 936
+      },
+      "symbol": "arrow:<anonymous@936>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "complexity",
+      "span": {
+        "endLine": 1084,
+        "startLine": 1076
+      },
+      "symbol": "arrow:<anonymous@1076>"
+    }
+  ],
+  "controlPlane": {
+    "agents": [
+      {
+        "grants": [
+          {
+            "actions": [
+              "merge",
+              "override",
+              "amend"
+            ],
+            "id": "maintainer-merge",
+            "minMergeConfidence": 60,
+            "paths": [
+              "src/**"
+            ]
+          }
+        ],
+        "id": "maintainer",
+        "kind": "human",
+        "roles": [
+          "maintainer"
+        ]
+      },
+      {
+        "grants": [
+          {
+            "actions": [
+              "merge"
+            ],
+            "id": "release-bot-merge",
+            "minMergeConfidence": 80,
+            "paths": [
+              "src/**"
+            ],
+            "requireAttestations": [
+              "ci.tests.passed"
+            ],
+            "requireHumanReview": true
+          }
+        ],
+        "id": "release-bot",
+        "kind": "automation",
+        "roles": [
+          "ci"
+        ]
+      }
+    ],
+    "agentsDigest": "sha256:b0e2fd14daa47b20ec1477e846101bd8ba9d257412eb1a8a32773933db6927bf",
+    "agentsPath": ".ts-quality/agents.ts",
+    "approvalsPath": ".ts-quality/approvals.json",
+    "attestationsDir": ".ts-quality/attestations",
+    "configDigest": "sha256:20610cb9284469a3d13fe6a29d8cc604de211c13fdcfbee9a73431188428a725",
+    "configPath": "ts-quality.config.ts",
+    "constitution": [
+      {
+        "id": "default-risk",
+        "kind": "risk",
+        "maxCrap": 30,
+        "message": "Changed source must stay within risk budgets.",
+        "minMergeConfidence": 70,
+        "minMutationScore": 0.8,
+        "paths": [
+          "src/**"
+        ]
+      },
+      {
+        "id": "payments-review",
+        "kind": "approval",
+        "message": "Payments changes require a maintainer approval.",
+        "minApprovals": 1,
+        "paths": [
+          "src/payments/**"
+        ],
+        "roles": [
+          "maintainer"
+        ]
+      }
+    ],
+    "constitutionDigest": "sha256:7bfa4a3b155c33221e2c08bf7e109c80c86d537e2c940bb1132d4eae206dc31f",
+    "constitutionPath": ".ts-quality/constitution.ts",
+    "overridesPath": ".ts-quality/overrides.json",
+    "policy": {
+      "maxChangedCrap": 80,
+      "minMergeConfidence": 60,
+      "minMutationScore": 0.6
+    },
+    "schemaVersion": 1,
+    "trustedKeysDir": ".ts-quality/keys",
+    "waiversPath": ".ts-quality/waivers.json"
+  },
+  "coverage": [
+    {
+      "coveredLines": 699,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "coverage",
+      "lines": {
+        "1": 1,
+        "39": 1,
+        "41": 1,
+        "42": 1,
+        "43": 1,
+        "44": 1,
+        "45": 1,
+        "46": 1,
+        "47": 1,
+        "48": 1,
+        "49": 1,
+        "50": 1,
+        "51": 1,
+        "52": 1,
+        "53": 1,
+        "54": 1,
+        "55": 1,
+        "56": 1,
+        "57": 1,
+        "58": 1,
+        "59": 1,
+        "61": 1,
+        "62": 1,
+        "63": 1,
+        "64": 1,
+        "65": 1,
+        "66": 1,
+        "67": 1,
+        "68": 1,
+        "70": 1,
+        "71": 1,
+        "72": 1,
+        "73": 1,
+        "74": 1,
+        "75": 1,
+        "76": 1,
+        "77": 1,
+        "78": 1,
+        "79": 1,
+        "80": 1,
+        "81": 1,
+        "82": 1,
+        "83": 1,
+        "85": 1,
+        "86": 1,
+        "87": 1,
+        "88": 1,
+        "89": 1,
+        "90": 1,
+        "91": 1,
+        "92": 1,
+        "93": 1,
+        "94": 1,
+        "96": 1,
+        "97": 1,
+        "98": 1,
+        "99": 1,
+        "100": 1,
+        "101": 1,
+        "102": 1,
+        "104": 1,
+        "105": 1,
+        "106": 1,
+        "107": 1,
+        "108": 1,
+        "109": 1,
+        "110": 1,
+        "111": 1,
+        "112": 1,
+        "114": 1,
+        "115": 1,
+        "116": 1,
+        "117": 1,
+        "118": 1,
+        "119": 1,
+        "120": 1,
+        "121": 1,
+        "122": 1,
+        "123": 1,
+        "124": 1,
+        "125": 1,
+        "126": 1,
+        "127": 1,
+        "249": 1,
+        "250": 1,
+        "251": 1,
+        "253": 0,
+        "254": 0,
+        "255": 0,
+        "256": 0,
+        "257": 0,
+        "258": 0,
+        "259": 0,
+        "260": 0,
+        "261": 0,
+        "262": 0,
+        "263": 0,
+        "265": 2,
+        "266": 2,
+        "267": 2,
+        "268": 2,
+        "269": 2,
+        "270": 2,
+        "271": 2,
+        "272": 2,
+        "273": 2,
+        "275": 30,
+        "276": 30,
+        "277": 30,
+        "278": 30,
+        "279": 0,
+        "280": 0,
+        "282": 15,
+        "283": 15,
+        "284": 14,
+        "285": 14,
+        "286": 1,
+        "287": 1,
+        "288": 0,
+        "289": 0,
+        "291": 15,
+        "293": 22,
+        "294": 22,
+        "295": 22,
+        "297": 20,
+        "298": 20,
+        "299": 20,
+        "300": 4,
+        "301": 20,
+        "302": 4,
+        "303": 20,
+        "304": 4,
+        "305": 20,
+        "306": 4,
+        "307": 20,
+        "308": 4,
+        "309": 20,
+        "310": 20,
+        "312": 5,
+        "313": 5,
+        "314": 5,
+        "315": 5,
+        "316": 5,
+        "317": 5,
+        "318": 5,
+        "319": 5,
+        "320": 5,
+        "321": 5,
+        "322": 5,
+        "323": 5,
+        "324": 5,
+        "325": 5,
+        "326": 5,
+        "327": 5,
+        "328": 5,
+        "329": 5,
+        "330": 5,
+        "331": 5,
+        "332": 5,
+        "334": 26,
+        "335": 26,
+        "336": 26,
+        "337": 0,
+        "338": 0,
+        "339": 0,
+        "340": 0,
+        "341": 26,
+        "342": 26,
+        "344": 1,
+        "345": 1,
+        "346": 1,
+        "347": 1,
+        "348": 1,
+        "349": 0,
+        "350": 1,
+        "351": 1,
+        "352": 1,
+        "353": 1,
+        "354": 1,
+        "356": 1,
+        "358": 15,
+        "359": 15,
+        "360": 0,
+        "361": 0,
+        "362": 15,
+        "363": 14,
+        "364": 14,
+        "365": 14,
+        "366": 14,
+        "367": 14,
+        "368": 1,
+        "369": 1,
+        "370": 1,
+        "371": 1,
+        "372": 1,
+        "373": 1,
+        "374": 1,
+        "375": 1,
+        "377": 1,
+        "378": 8,
+        "379": 8,
+        "380": 2,
+        "381": 2,
+        "382": 2,
+        "383": 8,
+        "384": 8,
+        "386": 1,
+        "387": 8,
+        "388": 8,
+        "389": 8,
+        "390": 8,
+        "391": 8,
+        "392": 8,
+        "393": 8,
+        "394": 8,
+        "396": 8,
+        "397": 8,
+        "398": 8,
+        "399": 8,
+        "400": 8,
+        "401": 8,
+        "402": 8,
+        "403": 8,
+        "405": 1,
+        "406": 1,
+        "407": 1,
+        "408": 1,
+        "409": 1,
+        "410": 1,
+        "411": 1,
+        "412": 1,
+        "414": 1,
+        "415": 1,
+        "416": 1,
+        "417": 1,
+        "418": 1,
+        "420": 1,
+        "421": 8,
+        "422": 8,
+        "423": 8,
+        "424": 8,
+        "425": 8,
+        "426": 8,
+        "428": 8,
+        "429": 5,
+        "430": 5,
+        "432": 3,
+        "433": 2,
+        "434": 2,
+        "435": 2,
+        "436": 2,
+        "437": 2,
+        "438": 2,
+        "439": 1,
+        "440": 8,
+        "442": 8,
+        "443": 1,
+        "444": 1,
+        "446": 2,
+        "447": 8,
+        "448": 0,
+        "449": 0,
+        "451": 2,
+        "452": 2,
+        "453": 2,
+        "454": 2,
+        "455": 2,
+        "456": 2,
+        "457": 10,
+        "458": 10,
+        "459": 10,
+        "460": 10,
+        "461": 10,
+        "462": 2,
+        "464": 2,
+        "465": 2,
+        "466": 2,
+        "467": 2,
+        "468": 2,
+        "469": 2,
+        "470": 2,
+        "471": 2,
+        "472": 0,
+        "474": 8,
+        "475": 8,
+        "476": 8,
+        "477": 8,
+        "478": 8,
+        "479": 8,
+        "480": 8,
+        "481": 8,
+        "483": 1,
+        "484": 0,
+        "485": 0,
+        "487": 1,
+        "488": 11,
+        "489": 11,
+        "491": 1,
+        "492": 2,
+        "493": 2,
+        "495": 1,
+        "496": 2,
+        "497": 2,
+        "499": 1,
+        "500": 11,
+        "501": 11,
+        "502": 11,
+        "504": 1,
+        "505": 0,
+        "506": 0,
+        "507": 0,
+        "509": 1,
+        "512": 0,
+        "513": 0,
+        "514": 0,
+        "515": 0,
+        "516": 0,
+        "517": 0,
+        "518": 0,
+        "519": 0,
+        "520": 0,
+        "522": 1,
+        "523": 0,
+        "524": 0,
+        "525": 0,
+        "527": 1,
+        "528": 11,
+        "529": 11,
+        "530": 11,
+        "531": 11,
+        "532": 11,
+        "534": 11,
+        "535": 4,
+        "536": 4,
+        "537": 0,
+        "538": 0,
+        "539": 4,
+        "540": 11,
+        "542": 11,
+        "543": 11,
+        "545": 1,
+        "546": 15,
+        "547": 15,
+        "548": 15,
+        "549": 15,
+        "550": 15,
+        "551": 15,
+        "552": 15,
+        "553": 15,
+        "554": 15,
+        "556": 15,
+        "557": 15,
+        "558": 15,
+        "559": 20,
+        "560": 20,
+        "561": 20,
+        "562": 20,
+        "563": 0,
+        "564": 20,
+        "566": 20,
+        "567": 20,
+        "568": 20,
+        "569": 20,
+        "570": 20,
+        "571": 20,
+        "572": 20,
+        "573": 20,
+        "574": 20,
+        "576": 20,
+        "577": 20,
+        "578": 20,
+        "579": 20,
+        "580": 20,
+        "581": 20,
+        "582": 20,
+        "583": 20,
+        "584": 20,
+        "585": 1,
+        "586": 1,
+        "587": 1,
+        "588": 1,
+        "589": 1,
+        "590": 1,
+        "591": 0,
+        "592": 0,
+        "593": 1,
+        "594": 1,
+        "595": 20,
+        "596": 20,
+        "597": 20,
+        "598": 20,
+        "599": 20,
+        "600": 20,
+        "601": 20,
+        "602": 20,
+        "603": 20,
+        "604": 20,
+        "605": 15,
+        "606": 5,
+        "607": 20,
+        "608": 15,
+        "609": 5,
+        "610": 20,
+        "611": 20,
+        "612": 15,
+        "613": 5,
+        "614": 20,
+        "615": 20,
+        "616": 20,
+        "617": 20,
+        "619": 20,
+        "620": 20,
+        "621": 20,
+        "622": 20,
+        "623": 20,
+        "624": 20,
+        "625": 20,
+        "627": 20,
+        "628": 20,
+        "629": 20,
+        "630": 20,
+        "631": 2,
+        "632": 2,
+        "633": 2,
+        "634": 2,
+        "635": 2,
+        "636": 1,
+        "637": 1,
+        "638": 1,
+        "639": 2,
+        "640": 2,
+        "641": 2,
+        "642": 2,
+        "643": 2,
+        "644": 2,
+        "645": 2,
+        "646": 2,
+        "647": 2,
+        "648": 2,
+        "650": 2,
+        "651": 18,
+        "652": 20,
+        "654": 15,
+        "655": 15,
+        "657": 15,
+        "659": 1,
+        "660": 15,
+        "661": 15,
+        "662": 15,
+        "663": 15,
+        "664": 15,
+        "665": 15,
+        "666": 15,
+        "667": 15,
+        "668": 15,
+        "669": 15,
+        "670": 15,
+        "671": 15,
+        "672": 15,
+        "673": 15,
+        "674": 15,
+        "675": 15,
+        "676": 15,
+        "678": 15,
+        "679": 15,
+        "680": 15,
+        "681": 15,
+        "682": 15,
+        "684": 15,
+        "685": 15,
+        "688": 15,
+        "689": 15,
+        "690": 15,
+        "691": 15,
+        "692": 0,
+        "693": 0,
+        "694": 0,
+        "695": 0,
+        "696": 0,
+        "697": 0,
+        "698": 15,
+        "699": 15,
+        "700": 15,
+        "701": 15,
+        "702": 15,
+        "703": 15,
+        "704": 15,
+        "705": 15,
+        "706": 15,
+        "707": 15,
+        "708": 15,
+        "709": 15,
+        "710": 15,
+        "711": 15,
+        "712": 15,
+        "713": 15,
+        "715": 15,
+        "716": 15,
+        "717": 15,
+        "718": 15,
+        "719": 15,
+        "720": 15,
+        "721": 15,
+        "722": 15,
+        "723": 15,
+        "724": 15,
+        "725": 15,
+        "727": 15,
+        "728": 15,
+        "729": 15,
+        "730": 15,
+        "731": 15,
+        "732": 15,
+        "733": 15,
+        "734": 15,
+        "735": 15,
+        "736": 15,
+        "737": 15,
+        "739": 15,
+        "741": 1,
+        "742": 10,
+        "743": 10,
+        "744": 10,
+        "745": 10,
+        "746": 10,
+        "747": 10,
+        "748": 10,
+        "750": 10,
+        "751": 10,
+        "752": 10,
+        "753": 10,
+        "754": 10,
+        "755": 10,
+        "756": 10,
+        "757": 1,
+        "758": 9,
+        "759": 1,
+        "760": 8,
+        "761": 10,
+        "762": 10,
+        "763": 2,
+        "764": 1,
+        "765": 1,
+        "766": 8,
+        "767": 0,
+        "768": 8,
+        "769": 10,
+        "770": 10,
+        "771": 10,
+        "773": 10,
+        "774": 10,
+        "775": 10,
+        "776": 10,
+        "777": 10,
+        "778": 10,
+        "779": 10,
+        "780": 10,
+        "781": 10,
+        "783": 10,
+        "784": 10,
+        "786": 10,
+        "788": 1,
+        "789": 8,
+        "790": 8,
+        "791": 8,
+        "792": 8,
+        "793": 8,
+        "794": 8,
+        "795": 8,
+        "796": 8,
+        "797": 8,
+        "798": 8,
+        "799": 8,
+        "800": 8,
+        "801": 8,
+        "802": 8,
+        "803": 8,
+        "804": 8,
+        "805": 8,
+        "806": 8,
+        "807": 8,
+        "808": 8,
+        "810": 8,
+        "811": 8,
+        "812": 8,
+        "813": 8,
+        "814": 8,
+        "815": 8,
+        "816": 8,
+        "817": 8,
+        "818": 8,
+        "819": 8,
+        "820": 8,
+        "822": 8,
+        "823": 8,
+        "824": 8,
+        "825": 8,
+        "826": 8,
+        "827": 8,
+        "828": 8,
+        "829": 8,
+        "831": 8,
+        "832": 3,
+        "836": 3,
+        "837": 3,
+        "838": 3,
+        "839": 1,
+        "840": 2,
+        "841": 3,
+        "842": 3,
+        "843": 3,
+        "845": 8,
+        "846": 1,
+        "847": 0,
+        "848": 0,
+        "850": 1,
+        "851": 1,
+        "853": 8,
+        "854": 0,
+        "855": 0,
+        "856": 0,
+        "858": 0,
+        "859": 0,
+        "861": 8,
+        "862": 0,
+        "863": 0,
+        "864": 0,
+        "865": 0,
+        "867": 0,
+        "868": 0,
+        "869": 0,
+        "870": 0,
+        "872": 0,
+        "873": 0,
+        "874": 0,
+        "875": 0,
+        "876": 0,
+        "877": 0,
+        "878": 0,
+        "880": 0,
+        "881": 0,
+        "882": 0,
+        "883": 0,
+        "884": 0,
+        "885": 0,
+        "886": 0,
+        "887": 0,
+        "888": 0,
+        "889": 0,
+        "891": 8,
+        "892": 1,
+        "893": 1,
+        "894": 1,
+        "895": 1,
+        "896": 1,
+        "897": 0,
+        "898": 0,
+        "900": 1,
+        "901": 1,
+        "902": 1,
+        "903": 0,
+        "904": 0,
+        "906": 1,
+        "907": 1,
+        "908": 1,
+        "909": 1,
+        "910": 1,
+        "911": 1,
+        "912": 1,
+        "913": 1,
+        "914": 1,
+        "915": 0,
+        "916": 1,
+        "917": 1,
+        "919": 8,
+        "920": 1,
+        "921": 1,
+        "922": 1,
+        "923": 1,
+        "924": 1,
+        "925": 1,
+        "926": 1,
+        "927": 1,
+        "928": 1,
+        "929": 0,
+        "930": 0,
+        "932": 1,
+        "933": 1,
+        "935": 1,
+        "936": 1,
+        "937": 1,
+        "938": 1,
+        "939": 1,
+        "940": 1,
+        "941": 1,
+        "942": 1,
+        "943": 1,
+        "944": 1,
+        "945": 0,
+        "947": 1,
+        "948": 1,
+        "949": 1,
+        "950": 1,
+        "951": 1,
+        "952": 1,
+        "953": 1,
+        "954": 1,
+        "955": 1,
+        "956": 1,
+        "957": 1,
+        "958": 1,
+        "959": 1,
+        "960": 1,
+        "961": 1,
+        "962": 0,
+        "964": 1,
+        "965": 1,
+        "966": 1,
+        "967": 1,
+        "968": 1,
+        "969": 1,
+        "971": 1,
+        "972": 1,
+        "974": 8,
+        "975": 0,
+        "976": 0,
+        "977": 0,
+        "978": 0,
+        "980": 0,
+        "981": 0,
+        "982": 0,
+        "983": 0,
+        "984": 0,
+        "985": 0,
+        "986": 0,
+        "987": 0,
+        "988": 0,
+        "989": 0,
+        "990": 0,
+        "991": 0,
+        "992": 0,
+        "993": 0,
+        "994": 0,
+        "995": 0,
+        "996": 0,
+        "997": 0,
+        "998": 0,
+        "999": 0,
+        "1000": 0,
+        "1001": 0,
+        "1002": 0,
+        "1004": 0,
+        "1005": 0,
+        "1006": 0,
+        "1007": 0,
+        "1008": 0,
+        "1009": 0,
+        "1011": 0,
+        "1012": 0,
+        "1014": 8,
+        "1015": 8,
+        "1016": 8,
+        "1017": 8,
+        "1018": 8,
+        "1019": 8,
+        "1020": 8,
+        "1021": 8,
+        "1022": 8,
+        "1023": 8,
+        "1024": 8,
+        "1025": 8,
+        "1026": 8,
+        "1027": 8,
+        "1028": 8,
+        "1029": 8,
+        "1031": 8,
+        "1032": 15,
+        "1033": 15,
+        "1034": 15,
+        "1035": 15,
+        "1036": 15,
+        "1037": 15,
+        "1038": 15,
+        "1040": 15,
+        "1041": 15,
+        "1042": 15,
+        "1043": 15,
+        "1044": 15,
+        "1045": 15,
+        "1046": 15,
+        "1047": 15,
+        "1048": 15,
+        "1049": 15,
+        "1051": 15,
+        "1052": 15,
+        "1053": 15,
+        "1054": 15,
+        "1055": 15,
+        "1056": 15,
+        "1057": 15,
+        "1058": 3,
+        "1059": 12,
+        "1061": 15,
+        "1062": 15,
+        "1063": 15,
+        "1064": 15,
+        "1065": 15,
+        "1066": 15,
+        "1067": 15,
+        "1068": 15,
+        "1069": 15,
+        "1070": 15,
+        "1071": 15,
+        "1072": 15,
+        "1073": 15,
+        "1074": 15,
+        "1075": 8,
+        "1076": 8,
+        "1077": 10,
+        "1078": 10,
+        "1079": 10,
+        "1080": 10,
+        "1081": 10,
+        "1082": 10,
+        "1083": 10,
+        "1084": 8,
+        "1085": 8,
+        "1086": 8,
+        "1088": 8
+      },
+      "pct": 84.32,
+      "source": "",
+      "totalLines": 829
+    }
+  ],
+  "coverageGeneration": {
+    "attemptedAt": "2026-09-23T18:26:01.788Z",
+    "command": [
+      "pnpm",
+      "exec",
+      "vitest",
+      "run",
+      "tests/react-renderer.test.tsx",
+      "--coverage.enabled",
+      "--coverage.provider=v8",
+      "--coverage.reporter=lcov",
+      "--coverage.reportsDirectory=.ts-quality/adoption/coverage",
+      "--coverage.include=packages/react/src/**"
+    ],
+    "lcovPath": ".ts-quality/adoption/coverage/lcov.info",
+    "receipt": {
+      "details": "RUN  v2.1.4 <target-root>\n      Coverage enabled with v8\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 167ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:02\n   Duration  943ms (transform 101ms, se",
+      "durationMs": 1885,
+      "exitCode": 0,
+      "status": "pass"
+    }
+  },
+  "createdAt": "2026-09-23T18:26:01.788Z",
+  "files": [
+    {
+      "digest": "sha256:ca7e0d32d77fa9b77785dab0f7fb3b1140d6b4151194f688e3cbf70737744a59",
+      "filePath": "packages/react/src/index.tsx",
+      "packageName": "@workspace-platform/react"
+    }
+  ],
+  "governance": [],
+  "invariants": [
+    {
+      "description": "When a registered view has no renderable component export, WorkspaceRoot renders a labelled fallback instead of crashing the shell.",
+      "id": "react.missing-view-fallback",
+      "scenarios": [
+        {
+          "description": "The demo manifest registers view.preview without a PreviewView export; the stack renders the missing-view fallback.",
+          "executionWitnessPatterns": [
+            ".ts-quality/witnesses/react-missing-view-fallback.json"
+          ],
+          "expected": "Registration fails and the view.preview stack renders \"Missing view export\" with the view title and stack id.",
+          "id": "demo-manifest-missing-preview",
+          "keywords": [
+            "Missing view export",
+            "data-missing-view",
+            "isRenderableComponentType",
+            "fallback"
+          ]
+        }
+      ],
+      "selectors": [
+        "packages/react/src/index.tsx"
+      ],
+      "severity": "high",
+      "title": "Missing view exports render a deterministic fallback"
+    }
+  ],
+  "mutationBaseline": {
+    "details": "RUN  v2.1.4 <target-root>\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 167ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:04\n   Duration  840ms (transform 114ms, setup 63ms, collect 123ms, tests ",
+    "durationMs": 1702,
+    "exitCode": 0,
+    "status": "pass"
+  },
+  "mutationRemediation": {
+    "survivors": [
+      {
+        "assertionHint": "Assert the combined-condition case around packages/react/src/index.tsx:272; this mutant changed || to &&.",
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+        "filePath": "packages/react/src/index.tsx",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "&&",
+        "observableBehavior": "Combined-condition behavior changed (|| -> &&); an input satisfying only one side of the condition may now take the opposite branch.",
+        "operator": "||",
+        "original": "||",
+        "replacement": "&&",
+        "siteId": "sha256:15db1c5f31d8db856c2f117e6c620486979463463e04aa5edf6e79604a135e0a",
+        "span": {
+          "endLine": 272,
+          "startLine": 272
+        },
+        "testCommand": [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "tests/react-renderer.test.tsx"
+        ]
+      },
+      {
+        "assertionHint": "Assert the combined-condition case around packages/react/src/index.tsx:276; this mutant changed && to ||.",
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+        "filePath": "packages/react/src/index.tsx",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "||",
+        "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+        "operator": "&&",
+        "original": "&&",
+        "replacement": "||",
+        "siteId": "sha256:3abc9f1f1fd6ab4a2e3bfffa63a56658732d3dce8d89141920bf841786263657",
+        "span": {
+          "endLine": 276,
+          "startLine": 276
+        },
+        "testCommand": [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "tests/react-renderer.test.tsx"
+        ]
+      },
+      {
+        "assertionHint": "Assert both equality and inequality behavior around packages/react/src/index.tsx:381; this mutant changed === to !==.",
+        "assertionStrategy": "Assert both the equality case and a nearby inequality case through the externally observable API behavior.",
+        "filePath": "packages/react/src/index.tsx",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "!==",
+        "observableBehavior": "Equality behavior changed (=== -> !==); matching and non-matching values may now take opposite branches.",
+        "operator": "===",
+        "original": "===",
+        "replacement": "!==",
+        "siteId": "sha256:8bb99286b52976792c39d171df65d0ccb58a12552c5bb5e19f73db6c7e80a7b1",
+        "span": {
+          "endLine": 381,
+          "startLine": 381
+        },
+        "testCommand": [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "tests/react-renderer.test.tsx"
+        ]
+      },
+      {
+        "assertionHint": "Add or tighten a focused assertion around packages/react/src/index.tsx:411; this mutant changed - to +.",
+        "assertionStrategy": "Create a focused input that distinguishes original and mutated behavior at the nearest externally observable boundary.",
+        "filePath": "packages/react/src/index.tsx",
+        "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "+",
+        "observableBehavior": "Mutated behavior changed (- -> +); choose an input where the changed value reaches an externally visible result.",
+        "operator": "-",
+        "original": "-",
+        "replacement": "+",
+        "siteId": "sha256:3f51ef504980640df3b7087a7a75c4f93592ebcf9ed4841caffe0894cc2b784a",
+        "span": {
+          "endLine": 411,
+          "startLine": 411
+        },
+        "testCommand": [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "tests/react-renderer.test.tsx"
+        ]
+      },
+      {
+        "assertionHint": "Add or tighten a focused assertion around packages/react/src/index.tsx:412; this mutant changed - to +.",
+        "assertionStrategy": "Create a focused input that distinguishes original and mutated behavior at the nearest externally observable boundary.",
+        "filePath": "packages/react/src/index.tsx",
+        "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "+",
+        "observableBehavior": "Mutated behavior changed (- -> +); choose an input where the changed value reaches an externally visible result.",
+        "operator": "-",
+        "original": "-",
+        "replacement": "+",
+        "siteId": "sha256:2ea5453348851a4d77f5f268d5b205f8ae752d0c4a80e6b8b72560dc58cab4d7",
+        "span": {
+          "endLine": 412,
+          "startLine": 412
+        },
+        "testCommand": [
+          "pnpm",
+          "exec",
+          "vitest",
+          "run",
+          "tests/react-renderer.test.tsx"
+        ]
+      }
+    ]
+  },
+  "mutations": [
+    {
+      "assertionHint": "Assert the combined-condition case around packages/react/src/index.tsx:272; this mutant changed || to &&.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 139ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:06\n   Duration  814ms (transform 13",
+      "durationMs": 1670,
+      "endOffset": 6974,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "&&",
+      "operator": "||",
+      "original": "||",
+      "replacement": "&&",
+      "siteId": "sha256:15db1c5f31d8db856c2f117e6c620486979463463e04aa5edf6e79604a135e0a",
+      "span": {
+        "endLine": 272,
+        "startLine": 272
+      },
+      "startOffset": 6972,
+      "status": "survived",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around packages/react/src/index.tsx:276; this mutant changed && to ||.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 141ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:08\n   Duration  788ms (transform 10",
+      "durationMs": 1670,
+      "endOffset": 7083,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "siteId": "sha256:3abc9f1f1fd6ab4a2e3bfffa63a56658732d3dce8d89141920bf841786263657",
+      "span": {
+        "endLine": 276,
+        "startLine": 276
+      },
+      "startOffset": 7081,
+      "status": "survived",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around packages/react/src/index.tsx:283; this mutant changed || to &&.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ❯ tests/react-renderer.test.tsx  (5 tests | 3 failed) 142ms\n   × react renderer package > mounts registered views inside the real shell and exposes renderer",
+      "durationMs": 1648,
+      "endOffset": 7291,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "&&",
+      "operator": "||",
+      "original": "||",
+      "replacement": "&&",
+      "siteId": "sha256:622b2bd84a74b9ff3c37016f40e6add04b817e05a79077e3ce22fbb07152017b",
+      "span": {
+        "endLine": 283,
+        "startLine": 283
+      },
+      "startOffset": 7289,
+      "status": "killed",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert both equality and inequality behavior around packages/react/src/index.tsx:283; this mutant changed === to !==.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ❯ tests/react-renderer.test.tsx  (5 tests | 1 failed) 147ms\n   × react renderer package > renders a deterministic fallback when a registered view export is ",
+      "durationMs": 1642,
+      "endOffset": 7279,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "siteId": "sha256:252213c9d18a9b5a342ae0f0bb343a955a416256b128e8bb611a67b953983e93",
+      "span": {
+        "endLine": 283,
+        "startLine": 283
+      },
+      "startOffset": 7276,
+      "status": "killed",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert both equality and inequality behavior around packages/react/src/index.tsx:283; this mutant changed === to !==.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ❯ tests/react-renderer.test.tsx  (5 tests | 3 failed) 149ms\n   × react renderer package > mounts registered views inside the real shell and exposes renderer",
+      "durationMs": 1720,
+      "endOffset": 7308,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "siteId": "sha256:a796d8cd12b5f7974e0428e173d31b432d960d62564cff072535253668b182ea",
+      "span": {
+        "endLine": 283,
+        "startLine": 283
+      },
+      "startOffset": 7305,
+      "status": "killed",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert the opposite boolean branch around packages/react/src/index.tsx:284; this mutant flipped true to false.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ❯ tests/react-renderer.test.tsx  (5 tests | 3 failed) 144ms\n   × react renderer package > mounts registered views inside the real shell and exposes renderer",
+      "durationMs": 1702,
+      "endOffset": 7338,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "false",
+      "operator": "true",
+      "original": "true",
+      "replacement": "false",
+      "siteId": "sha256:fb24d10a5195033aaf26d4768c2a8b2a133eadbd5c9de78aec9f70d7abc6bfc2",
+      "span": {
+        "endLine": 284,
+        "startLine": 284
+      },
+      "startOffset": 7334,
+      "status": "killed",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around packages/react/src/index.tsx:287; this mutant changed && to ||.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ❯ tests/react-renderer.test.tsx  (5 tests | 1 failed) 146ms\n   × react renderer package > renders a deterministic fallback when a registered view export is ",
+      "durationMs": 1689,
+      "endOffset": 7387,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "siteId": "sha256:4bff5292caf3d6792fd51ebe7ef9dd5c4f6717e7c421ee94045218e9f69757b2",
+      "span": {
+        "endLine": 287,
+        "startLine": 287
+      },
+      "startOffset": 7385,
+      "status": "killed",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert both equality and inequality behavior around packages/react/src/index.tsx:287; this mutant changed === to !==.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ❯ tests/react-renderer.test.tsx  (5 tests | 1 failed) 145ms\n   × react renderer package > renders a deterministic fallback when a registered view export is ",
+      "durationMs": 1670,
+      "endOffset": 7375,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "siteId": "sha256:ce62e99b8f5da3061e8bac77ce24dda6baf517c25370b87872e776e3f3944673",
+      "span": {
+        "endLine": 287,
+        "startLine": 287
+      },
+      "startOffset": 7372,
+      "status": "killed",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert both equality and inequality behavior around packages/react/src/index.tsx:348; this mutant changed === to !==.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ❯ tests/react-renderer.test.tsx  (5 tests | 1 failed) 151ms\n   × react renderer package > renders a deterministic fallback when a registered view export is ",
+      "durationMs": 1746,
+      "endOffset": 8938,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "siteId": "sha256:d1ef703232c474fc86972822d2c0b864360c820bcec3fd7049bfdefd1afb49ae",
+      "span": {
+        "endLine": 348,
+        "startLine": 348
+      },
+      "startOffset": 8935,
+      "status": "killed",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Assert both equality and inequality behavior around packages/react/src/index.tsx:381; this mutant changed === to !==.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 141ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:21\n   Duration  795ms (transform 11",
+      "durationMs": 1696,
+      "endOffset": 9908,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "siteId": "sha256:8bb99286b52976792c39d171df65d0ccb58a12552c5bb5e19f73db6c7e80a7b1",
+      "span": {
+        "endLine": 381,
+        "startLine": 381
+      },
+      "startOffset": 9905,
+      "status": "survived",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Add or tighten a focused assertion around packages/react/src/index.tsx:411; this mutant changed - to +.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 147ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:23\n   Duration  795ms (transform 11",
+      "durationMs": 1700,
+      "endOffset": 10781,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "+",
+      "operator": "-",
+      "original": "-",
+      "replacement": "+",
+      "siteId": "sha256:3f51ef504980640df3b7087a7a75c4f93592ebcf9ed4841caffe0894cc2b784a",
+      "span": {
+        "endLine": 411,
+        "startLine": 411
+      },
+      "startOffset": 10780,
+      "status": "survived",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    },
+    {
+      "assertionHint": "Add or tighten a focused assertion around packages/react/src/index.tsx:412; this mutant changed - to +.",
+      "details": "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 162ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:25\n   Duration  842ms (transform 11",
+      "durationMs": 1744,
+      "endOffset": 10851,
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "mutation-result",
+      "mutated": "+",
+      "operator": "-",
+      "original": "-",
+      "replacement": "+",
+      "siteId": "sha256:2ea5453348851a4d77f5f268d5b205f8ae752d0c4a80e6b8b72560dc58cab4d7",
+      "span": {
+        "endLine": 412,
+        "startLine": 412
+      },
+      "startOffset": 10850,
+      "status": "survived",
+      "testCommand": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/react-renderer.test.tsx"
+      ]
+    }
+  ],
+  "mutationSites": [
+    {
+      "description": "or to and",
+      "endOffset": 6974,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:15db1c5f31d8db856c2f117e6c620486979463463e04aa5edf6e79604a135e0a",
+      "operator": "||",
+      "original": "||",
+      "replacement": "&&",
+      "span": {
+        "endLine": 272,
+        "startLine": 272
+      },
+      "startOffset": 6972
+    },
+    {
+      "description": "and to or",
+      "endOffset": 7083,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:3abc9f1f1fd6ab4a2e3bfffa63a56658732d3dce8d89141920bf841786263657",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "span": {
+        "endLine": 276,
+        "startLine": 276
+      },
+      "startOffset": 7081
+    },
+    {
+      "description": "or to and",
+      "endOffset": 7291,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:622b2bd84a74b9ff3c37016f40e6add04b817e05a79077e3ce22fbb07152017b",
+      "operator": "||",
+      "original": "||",
+      "replacement": "&&",
+      "span": {
+        "endLine": 283,
+        "startLine": 283
+      },
+      "startOffset": 7289
+    },
+    {
+      "description": "strict equality inversion",
+      "endOffset": 7279,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:252213c9d18a9b5a342ae0f0bb343a955a416256b128e8bb611a67b953983e93",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "span": {
+        "endLine": 283,
+        "startLine": 283
+      },
+      "startOffset": 7276
+    },
+    {
+      "description": "strict equality inversion",
+      "endOffset": 7308,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:a796d8cd12b5f7974e0428e173d31b432d960d62564cff072535253668b182ea",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "span": {
+        "endLine": 283,
+        "startLine": 283
+      },
+      "startOffset": 7305
+    },
+    {
+      "description": "boolean flip true->false",
+      "endOffset": 7338,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:fb24d10a5195033aaf26d4768c2a8b2a133eadbd5c9de78aec9f70d7abc6bfc2",
+      "operator": "true",
+      "original": "true",
+      "replacement": "false",
+      "span": {
+        "endLine": 284,
+        "startLine": 284
+      },
+      "startOffset": 7334
+    },
+    {
+      "description": "and to or",
+      "endOffset": 7387,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:4bff5292caf3d6792fd51ebe7ef9dd5c4f6717e7c421ee94045218e9f69757b2",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "span": {
+        "endLine": 287,
+        "startLine": 287
+      },
+      "startOffset": 7385
+    },
+    {
+      "description": "strict equality inversion",
+      "endOffset": 7375,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:ce62e99b8f5da3061e8bac77ce24dda6baf517c25370b87872e776e3f3944673",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "span": {
+        "endLine": 287,
+        "startLine": 287
+      },
+      "startOffset": 7372
+    },
+    {
+      "description": "strict equality inversion",
+      "endOffset": 8938,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:d1ef703232c474fc86972822d2c0b864360c820bcec3fd7049bfdefd1afb49ae",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "span": {
+        "endLine": 348,
+        "startLine": 348
+      },
+      "startOffset": 8935
+    },
+    {
+      "description": "strict equality inversion",
+      "endOffset": 9908,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:8bb99286b52976792c39d171df65d0ccb58a12552c5bb5e19f73db6c7e80a7b1",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "span": {
+        "endLine": 381,
+        "startLine": 381
+      },
+      "startOffset": 9905
+    },
+    {
+      "description": "subtraction to addition",
+      "endOffset": 10781,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:3f51ef504980640df3b7087a7a75c4f93592ebcf9ed4841caffe0894cc2b784a",
+      "operator": "-",
+      "original": "-",
+      "replacement": "+",
+      "span": {
+        "endLine": 411,
+        "startLine": 411
+      },
+      "startOffset": 10780
+    },
+    {
+      "description": "subtraction to addition",
+      "endOffset": 10851,
+      "filePath": "packages/react/src/index.tsx",
+      "id": "sha256:2ea5453348851a4d77f5f268d5b205f8ae752d0c4a80e6b8b72560dc58cab4d7",
+      "operator": "-",
+      "original": "-",
+      "replacement": "+",
+      "span": {
+        "endLine": 412,
+        "startLine": 412
+      },
+      "startOffset": 10850
+    }
+  ],
+  "nextEvidenceAction": {
+    "evidenceBasis": {
+      "confidence": {
+        "base": 100,
+        "credits": [],
+        "final": 62,
+        "penalties": [
+          {
+            "amount": 3,
+            "details": [
+              "arrow:<anonymous@974> CRAP=81.90",
+              "budget=80"
+            ],
+            "id": "crap",
+            "label": "CRAP hotspot penalty"
+          },
+          {
+            "amount": 1,
+            "details": [
+              "score=0.58",
+              "budget=0.60",
+              "killed=7",
+              "survived=5"
+            ],
+            "id": "mutation-score",
+            "label": "Mutation score penalty"
+          },
+          {
+            "amount": 24,
+            "details": [
+              "packages/react/src/index.tsx:272 ||",
+              "packages/react/src/index.tsx:276 &&",
+              "packages/react/src/index.tsx:381 ===",
+              "packages/react/src/index.tsx:411 -",
+              "packages/react/src/index.tsx:412 -"
+            ],
+            "id": "surviving-mutants",
+            "label": "Surviving mutants penalty"
+          },
+          {
+            "amount": 10,
+            "details": [
+              "react.missing-view-fallback:at-risk"
+            ],
+            "id": "risky-invariants",
+            "label": "Risky invariant/residual pressure penalty"
+          }
+        ]
+      },
+      "coverage": {
+        "changedFunctionMinPct": 0,
+        "changedFunctionsUnder80": 19,
+        "fileCount": 1,
+        "lcovPath": ".ts-quality/adoption/coverage/lcov.info",
+        "minPct": 84.32,
+        "status": "present"
+      },
+      "governance": {
+        "errors": 0,
+        "status": "clear",
+        "warnings": 0
+      },
+      "mutation": {
+        "errors": 0,
+        "killed": 7,
+        "sites": 12,
+        "status": "survivors",
+        "survived": 5
+      },
+      "nonBlockingSignals": [
+        "execution witness evidence is present (1 file(s))",
+        "governance has no blocking errors"
+      ],
+      "witness": {
+        "executionWitnessFiles": [
+          ".ts-quality/witnesses/react-missing-view-fallback.json"
+        ],
+        "status": "execution-backed"
+      }
+    },
+    "primaryAction": {
+      "artifactPaths": {
+        "explain": ".ts-quality/runs/tsx-pnpm-vitest-adoption/explain.txt",
+        "mutationRemediation": ".ts-quality/runs/tsx-pnpm-vitest-adoption/mutation-remediation.json",
+        "prompt": ".ts-quality/runs/tsx-pnpm-vitest-adoption/next-evidence-action.prompt.md",
+        "report": ".ts-quality/runs/tsx-pnpm-vitest-adoption/report.md",
+        "taskManifest": ".ts-quality/runs/tsx-pnpm-vitest-adoption/next-evidence-action.ak-task.json"
+      },
+      "commands": [
+        {
+          "command": [
+            "pnpm",
+            "exec",
+            "vitest",
+            "run",
+            "tests/react-renderer.test.tsx"
+          ],
+          "reason": "Rerun the focused test command after adding the missing assertion."
+        }
+      ],
+      "completionCriteria": [
+        "Add assertions that fail for each listed surviving mutation group.",
+        "Rerun the focused test command and then ts-quality check for the same changed scope.",
+        "The next run reports zero surviving mutants for this scope."
+      ],
+      "evidenceTargets": [
+        "packages/react/src/index.tsx"
+      ],
+      "expectedConfidenceLift": 35,
+      "groups": [
+        {
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "mutation-group-1",
+          "stepIds": [
+            "survivor-group-1"
+          ],
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Assert the combined-condition case around packages/react/src/index.tsx:272; this mutant changed || to &&."
+        },
+        {
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "mutation-group-2",
+          "stepIds": [
+            "survivor-group-2"
+          ],
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Assert the combined-condition case around packages/react/src/index.tsx:276; this mutant changed && to ||."
+        },
+        {
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "mutation-group-3",
+          "stepIds": [
+            "survivor-group-3"
+          ],
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Assert both equality and inequality behavior around packages/react/src/index.tsx:381; this mutant changed === to !==."
+        },
+        {
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "mutation-group-4",
+          "stepIds": [
+            "survivor-group-4"
+          ],
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Add or tighten a focused assertion around packages/react/src/index.tsx:411; this mutant changed - to +."
+        },
+        {
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "mutation-group-5",
+          "stepIds": [
+            "survivor-group-5"
+          ],
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Add or tighten a focused assertion around packages/react/src/index.tsx:412; this mutant changed - to +."
+        }
+      ],
+      "id": "close-mutation-survivors",
+      "kind": "mutation-survivors",
+      "rationale": "Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.",
+      "sidecarSufficiency": {
+        "level": "actionable",
+        "reasons": [
+          "Likely focused test edit files are identified.",
+          "A focused rerun command is present.",
+          "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+        ]
+      },
+      "steps": [
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/tsx-pnpm-vitest-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+          "commands": [
+            {
+              "command": [
+                "pnpm",
+                "exec",
+                "vitest",
+                "run",
+                "tests/react-renderer.test.tsx"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:toCssVariableName",
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "survivor-group-1",
+          "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Combined-condition behavior changed (|| -> &&); an input satisfying only one side of the condition may now take the opposite branch.",
+          "rationale": "This mutation group changed || to &&; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Assert the combined-condition case around packages/react/src/index.tsx:272; this mutant changed || to &&."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/tsx-pnpm-vitest-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+          "commands": [
+            {
+              "command": [
+                "pnpm",
+                "exec",
+                "vitest",
+                "run",
+                "tests/react-renderer.test.tsx"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:getActiveViewId",
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "survivor-group-2",
+          "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+          "rationale": "This mutation group changed && to ||; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Assert the combined-condition case around packages/react/src/index.tsx:276; this mutant changed && to ||."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/tsx-pnpm-vitest-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert both the equality case and a nearby inequality case through the externally observable API behavior.",
+          "commands": [
+            {
+              "command": [
+                "pnpm",
+                "exec",
+                "vitest",
+                "run",
+                "tests/react-renderer.test.tsx"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:themeTokensToCssVariables",
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "survivor-group-3",
+          "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Equality behavior changed (=== -> !==); matching and non-matching values may now take opposite branches.",
+          "rationale": "This mutation group changed === to !==; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Assert both equality and inequality behavior around packages/react/src/index.tsx:381; this mutant changed === to !==."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/tsx-pnpm-vitest-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Create a focused input that distinguishes original and mutated behavior at the nearest externally observable boundary.",
+          "commands": [
+            {
+              "command": [
+                "pnpm",
+                "exec",
+                "vitest",
+                "run",
+                "tests/react-renderer.test.tsx"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:toLayoutPoint",
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "survivor-group-4",
+          "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Mutated behavior changed (- -> +); choose an input where the changed value reaches an externally visible result.",
+          "rationale": "This mutation group changed - to +; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Add or tighten a focused assertion around packages/react/src/index.tsx:411; this mutant changed - to +."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/tsx-pnpm-vitest-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Create a focused input that distinguishes original and mutated behavior at the nearest externally observable boundary.",
+          "commands": [
+            {
+              "command": [
+                "pnpm",
+                "exec",
+                "vitest",
+                "run",
+                "tests/react-renderer.test.tsx"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:toLayoutPoint",
+          "evidenceTargets": [
+            "packages/react/src/index.tsx"
+          ],
+          "id": "survivor-group-5",
+          "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Mutated behavior changed (- -> +); choose an input where the changed value reaches an externally visible result.",
+          "rationale": "This mutation group changed - to +; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "tests/react-renderer.test.tsx"
+          ],
+          "targetFiles": [
+            "packages/react/src/index.tsx"
+          ],
+          "title": "Add or tighten a focused assertion around packages/react/src/index.tsx:412; this mutant changed - to +."
+        }
+      ],
+      "suggestedEditFiles": [
+        "tests/react-renderer.test.tsx"
+      ],
+      "targetFiles": [
+        "packages/react/src/index.tsx"
+      ],
+      "taskManifest": {
+        "allowedPaths": [
+          "packages/react/src/index.tsx",
+          "tests/react-renderer.test.tsx"
+        ],
+        "commands": [
+          {
+            "command": [
+              "pnpm",
+              "exec",
+              "vitest",
+              "run",
+              "tests/react-renderer.test.tsx"
+            ],
+            "reason": "Rerun the focused test command after adding the missing assertion."
+          }
+        ],
+        "completionCriteria": [
+          "Add assertions that fail for each listed surviving mutation group.",
+          "Rerun the focused test command and then ts-quality check for the same changed scope.",
+          "The next run reports zero surviving mutants for this scope."
+        ],
+        "guidance": [
+          "Affected symbol: function:toCssVariableName",
+          "Combined-condition behavior changed (|| -> &&); an input satisfying only one side of the condition may now take the opposite branch.",
+          "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+          "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "Affected symbol: function:getActiveViewId",
+          "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+          "Affected symbol: function:themeTokensToCssVariables",
+          "Equality behavior changed (=== -> !==); matching and non-matching values may now take opposite branches.",
+          "Assert both the equality case and a nearby inequality case through the externally observable API behavior.",
+          "Affected symbol: function:toLayoutPoint",
+          "Mutated behavior changed (- -> +); choose an input where the changed value reaches an externally visible result.",
+          "Create a focused input that distinguishes original and mutated behavior at the nearest externally observable boundary.",
+          "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact."
+        ],
+        "requiredPaths": [
+          "tests/react-renderer.test.tsx"
+        ],
+        "sidecarSufficiency": {
+          "level": "actionable",
+          "reasons": [
+            "Likely focused test edit files are identified.",
+            "A focused rerun command is present.",
+            "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+          ]
+        },
+        "title": "Tighten focused assertions for 5 surviving mutant(s) across 5 mutation group(s)."
+      },
+      "title": "Tighten focused assertions for 5 surviving mutant(s) across 5 mutation group(s)."
+    }
+  },
+  "overrides": [],
+  "repo": {
+    "digest": "sha256:2f4a219078029042284c0b3973182024d7d6179b8ca32a259ff1276fb7b99f5d",
+    "name": "workspace-platform",
+    "packages": [
+      {
+        "dir": "apps/reference-shell",
+        "name": "@workspace-platform/reference-shell"
+      },
+      {
+        "dir": "",
+        "name": "workspace-platform"
+      },
+      {
+        "dir": "packages/contracts",
+        "name": "@workspace-platform/contracts"
+      },
+      {
+        "dir": "packages/core",
+        "name": "@workspace-platform/core"
+      },
+      {
+        "dir": "packages/engine-bounded-grid",
+        "name": "@workspace-platform/engine-bounded-grid"
+      },
+      {
+        "dir": "packages/kcs-adapter",
+        "name": "@workspace-platform/kcs-adapter"
+      },
+      {
+        "dir": "packages/react",
+        "name": "@workspace-platform/react"
+      },
+      {
+        "dir": "packages/sdk",
+        "name": "@workspace-platform/sdk"
+      },
+      {
+        "dir": "packages/testkit",
+        "name": "@workspace-platform/testkit"
+      },
+      {
+        "dir": "packages/theme",
+        "name": "@workspace-platform/theme"
+      },
+      {
+        "dir": "packages/xstate",
+        "name": "@workspace-platform/xstate"
+      }
+    ],
+    "rootDir": "fixtures/artifact-compatibility/real-tsx-pnpm-vitest"
+  },
+  "runId": "tsx-pnpm-vitest-adoption",
+  "symbols": [
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 1012,
+        "startLine": 974
+      },
+      "symbol": "arrow:<anonymous@974>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 1088,
+        "startLine": 788
+      },
+      "symbol": "function:WorkspaceRoot"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 889,
+        "startLine": 861
+      },
+      "symbol": "arrow:<anonymous@861>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 654,
+        "startLine": 558
+      },
+      "symbol": "arrow:<anonymous@558>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 657,
+        "startLine": 545
+      },
+      "symbol": "function:TabStrip"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 263,
+        "startLine": 253
+      },
+      "symbol": "function:toFallbackMode"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 887,
+        "startLine": 880
+      },
+      "symbol": "arrow:<anonymous@880>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 739,
+        "startLine": 659
+      },
+      "symbol": "function:StackSurface"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 972,
+        "startLine": 919
+      },
+      "symbol": "arrow:<anonymous@919>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 786,
+        "startLine": 741
+      },
+      "symbol": "function:DropZoneOverlay"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 481,
+        "startLine": 420
+      },
+      "symbol": "function:resolveDropOverlayState"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 917,
+        "startLine": 891
+      },
+      "symbol": "arrow:<anonymous@891>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 310,
+        "startLine": 297
+      },
+      "symbol": "function:getIntentLabel"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 403,
+        "startLine": 386
+      },
+      "symbol": "function:resolveWorkspaceBounds"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 291,
+        "startLine": 282
+      },
+      "symbol": "function:isRenderableComponentType"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 332,
+        "startLine": 312
+      },
+      "symbol": "function:resolveChromeContext"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 1075,
+        "startLine": 1031
+      },
+      "symbol": "arrow:<anonymous@1031>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 1073,
+        "startLine": 1040
+      },
+      "symbol": "arrow:<anonymous@1040>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 859,
+        "startLine": 853
+      },
+      "symbol": "arrow:<anonymous@853>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 507,
+        "startLine": 504
+      },
+      "symbol": "function:useDiagnostics"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 525,
+        "startLine": 522
+      },
+      "symbol": "function:useHotkeyResolution"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 280,
+        "startLine": 275
+      },
+      "symbol": "function:getActiveViewId"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 915,
+        "startLine": 907
+      },
+      "symbol": "arrow:<anonymous@907>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 356,
+        "startLine": 344
+      },
+      "symbol": "function:defaultMissingViewRenderer"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 375,
+        "startLine": 358
+      },
+      "symbol": "function:defaultViewRenderer"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 384,
+        "startLine": 377
+      },
+      "symbol": "function:themeTokensToCssVariables"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 418,
+        "startLine": 405
+      },
+      "symbol": "function:toLayoutPoint"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 342,
+        "startLine": 334
+      },
+      "symbol": "function:useWorkspaceChromeContext"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 843,
+        "startLine": 831
+      },
+      "symbol": "arrow:<anonymous@831>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 851,
+        "startLine": 845
+      },
+      "symbol": "arrow:<anonymous@845>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 540,
+        "startLine": 534
+      },
+      "symbol": "arrow:<anonymous@534>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 594,
+        "startLine": 584
+      },
+      "symbol": "arrow:<anonymous@584>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 273,
+        "startLine": 265
+      },
+      "symbol": "function:toCssVariableName"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 295,
+        "startLine": 293
+      },
+      "symbol": "function:getViewLabel"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 462,
+        "startLine": 456
+      },
+      "symbol": "arrow:<anonymous@456>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 502,
+        "startLine": 499
+      },
+      "symbol": "function:usePaletteItems"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 517,
+        "startLine": 515
+      },
+      "symbol": "arrow:<anonymous@515>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 517,
+        "startLine": 516
+      },
+      "symbol": "arrow:<anonymous@516>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 543,
+        "startLine": 527
+      },
+      "symbol": "function:useInspectableSnapshot"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 537,
+        "startLine": 537
+      },
+      "symbol": "arrow:<anonymous@537>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 985,
+        "startLine": 985
+      },
+      "symbol": "arrow:<anonymous@985>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 520,
+        "startLine": 509
+      },
+      "symbol": "function:useCommandExecutor"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 485,
+        "startLine": 483
+      },
+      "symbol": "function:useWorkspacePlatform"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 393,
+        "startLine": 393
+      },
+      "symbol": "arrow:<anonymous@393>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 446,
+        "startLine": 446
+      },
+      "symbol": "arrow:<anonymous@446>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 489,
+        "startLine": 487
+      },
+      "symbol": "function:useWorkspaceMode"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 493,
+        "startLine": 491
+      },
+      "symbol": "function:useWorkspaceTheme"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "function",
+      "span": {
+        "endLine": 497,
+        "startLine": 495
+      },
+      "symbol": "function:useFocusedStackId"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 531,
+        "startLine": 531
+      },
+      "symbol": "arrow:<anonymous@531>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 539,
+        "startLine": 539
+      },
+      "symbol": "arrow:<anonymous@539>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 583,
+        "startLine": 583
+      },
+      "symbol": "arrow:<anonymous@583>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 595,
+        "startLine": 595
+      },
+      "symbol": "arrow:<anonymous@595>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 638,
+        "startLine": 635
+      },
+      "symbol": "arrow:<anonymous@635>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 722,
+        "startLine": 722
+      },
+      "symbol": "arrow:<anonymous@722>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 723,
+        "startLine": 723
+      },
+      "symbol": "arrow:<anonymous@723>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 724,
+        "startLine": 724
+      },
+      "symbol": "arrow:<anonymous@724>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 725,
+        "startLine": 725
+      },
+      "symbol": "arrow:<anonymous@725>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 780,
+        "startLine": 780
+      },
+      "symbol": "arrow:<anonymous@780>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 814,
+        "startLine": 814
+      },
+      "symbol": "arrow:<anonymous@814>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 818,
+        "startLine": 818
+      },
+      "symbol": "arrow:<anonymous@818>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 936,
+        "startLine": 936
+      },
+      "symbol": "arrow:<anonymous@936>"
+    },
+    {
+      "filePath": "packages/react/src/index.tsx",
+      "kind": "arrow",
+      "span": {
+        "endLine": 1084,
+        "startLine": 1076
+      },
+      "symbol": "arrow:<anonymous@1076>"
+    }
+  ],
+  "verdict": {
+    "bestNextAction": "Add or tighten an assertion covering packages/react/src/index.tsx around the surviving mutant.",
+    "blockedBy": [
+      "Changed code exceeds CRAP budget 80",
+      "Mutation score 0.58 is below budget 0.60",
+      "Surviving mutant in packages/react/src/index.tsx",
+      "Surviving mutant in packages/react/src/index.tsx",
+      "Surviving mutant in packages/react/src/index.tsx",
+      "Surviving mutant in packages/react/src/index.tsx",
+      "Surviving mutant in packages/react/src/index.tsx",
+      "Invariant react.missing-view-fallback is at-risk"
+    ],
+    "confidenceBreakdown": {
+      "base": 100,
+      "credits": [],
+      "final": 62,
+      "penalties": [
+        {
+          "amount": 3,
+          "details": [
+            "arrow:<anonymous@974> CRAP=81.90",
+            "budget=80"
+          ],
+          "id": "crap",
+          "label": "CRAP hotspot penalty"
+        },
+        {
+          "amount": 1,
+          "details": [
+            "score=0.58",
+            "budget=0.60",
+            "killed=7",
+            "survived=5"
+          ],
+          "id": "mutation-score",
+          "label": "Mutation score penalty"
+        },
+        {
+          "amount": 24,
+          "details": [
+            "packages/react/src/index.tsx:272 ||",
+            "packages/react/src/index.tsx:276 &&",
+            "packages/react/src/index.tsx:381 ===",
+            "packages/react/src/index.tsx:411 -",
+            "packages/react/src/index.tsx:412 -"
+          ],
+          "id": "surviving-mutants",
+          "label": "Surviving mutants penalty"
+        },
+        {
+          "amount": 10,
+          "details": [
+            "react.missing-view-fallback:at-risk"
+          ],
+          "id": "risky-invariants",
+          "label": "Risky invariant/residual pressure penalty"
+        }
+      ]
+    },
+    "findings": [
+      {
+        "code": "changed-crap-budget",
+        "evidence": [
+          "arrow:<anonymous@974> CRAP=81.9"
+        ],
+        "id": "policy:crap",
+        "level": "error",
+        "message": "Changed code exceeds CRAP budget 80",
+        "scope": [
+          "packages/react/src/index.tsx"
+        ]
+      },
+      {
+        "code": "mutation-score-budget",
+        "evidence": [
+          "Killed 7, survived 5"
+        ],
+        "id": "policy:mutation-score",
+        "level": "error",
+        "message": "Mutation score 0.58 is below budget 0.60",
+        "scope": [
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx",
+          "packages/react/src/index.tsx"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 139ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:06\n   Duration  814ms (transform 13"
+        ],
+        "id": "policy:surviving:sha256:15db1c5f31d8db856c2f117e6c620486979463463e04aa5edf6e79604a135e0a",
+        "level": "error",
+        "message": "Surviving mutant in packages/react/src/index.tsx",
+        "scope": [
+          "packages/react/src/index.tsx"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 141ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:08\n   Duration  788ms (transform 10"
+        ],
+        "id": "policy:surviving:sha256:3abc9f1f1fd6ab4a2e3bfffa63a56658732d3dce8d89141920bf841786263657",
+        "level": "error",
+        "message": "Surviving mutant in packages/react/src/index.tsx",
+        "scope": [
+          "packages/react/src/index.tsx"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 141ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:21\n   Duration  795ms (transform 11"
+        ],
+        "id": "policy:surviving:sha256:8bb99286b52976792c39d171df65d0ccb58a12552c5bb5e19f73db6c7e80a7b1",
+        "level": "error",
+        "message": "Surviving mutant in packages/react/src/index.tsx",
+        "scope": [
+          "packages/react/src/index.tsx"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 147ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:23\n   Duration  795ms (transform 11"
+        ],
+        "id": "policy:surviving:sha256:3f51ef504980640df3b7087a7a75c4f93592ebcf9ed4841caffe0894cc2b784a",
+        "level": "error",
+        "message": "Surviving mutant in packages/react/src/index.tsx",
+        "scope": [
+          "packages/react/src/index.tsx"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "RUN  v2.1.4 <target-root>/.ts-quality/tmp-mutants/mutant-LFSYLq\n\n ✓ tests/react-renderer.test.tsx  (5 tests) 162ms\n\n Test Files  1 passed (1)\n      Tests  5 passed (5)\n   Start at  20:26:25\n   Duration  842ms (transform 11"
+        ],
+        "id": "policy:surviving:sha256:2ea5453348851a4d77f5f268d5b205f8ae752d0c4a80e6b8b72560dc58cab4d7",
+        "level": "error",
+        "message": "Surviving mutant in packages/react/src/index.tsx",
+        "scope": [
+          "packages/react/src/index.tsx"
+        ]
+      },
+      {
+        "code": "invariant-risk",
+        "evidence": [
+          "5 surviving mutants in impacted invariant scope",
+          "19 changed functions under 80% coverage in invariant scope",
+          "Invariant evidence semantics: execution-backed witness artifacts matched the invariant scenario scope; Invariant evidence modes: focused-test-alignment=inferred; execution-witness=explicit; scenario-support=explicit; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit"
+        ],
+        "id": "policy:invariant:react.missing-view-fallback",
+        "level": "error",
+        "message": "Invariant react.missing-view-fallback is at-risk",
+        "scope": [
+          "react.missing-view-fallback"
+        ]
+      }
+    ],
+    "mergeConfidence": 62,
+    "outcome": "fail",
+    "reasons": [
+      "CRAP hotspot arrow:<anonymous@974> is 81.90 in changed code.",
+      "Mutation score is 58/100 with 5 surviving mutants.",
+      "5 surviving mutant(s) remain in changed or covered logic.",
+      "1 execution-backed invariant(s) still carry residual evidence pressure: coverage-pressure, mutation-pressure."
+    ],
+    "warnings": []
+  },
+  "version": "0.2.0"
+}

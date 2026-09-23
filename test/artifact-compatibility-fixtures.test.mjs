@@ -125,7 +125,8 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
     'nextEvidenceMinimal020',
     'unsupportedControlPlane',
     'malformedControlPlane',
-    'realKineticVitestEsm020'
+    'realKineticVitestEsm020',
+    'realTsxPnpmVitest020'
   ]);
 
   const profiles = Object.fromEntries(manifest.fixtures.map((fixture) => {
@@ -159,6 +160,12 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
   assert.deepEqual(profiles.realKineticVitestEsm020.missingOptionalRunFields, [
     'analysisWarnings',
     'mutationRemediation',
+    'executionWitnesses'
+  ]);
+  assert.equal(profiles.realTsxPnpmVitest020.decisionStatus, 'usable');
+  assert.equal(profiles.realTsxPnpmVitest020.nextEvidence.kind, 'mutation-survivors');
+  assert.deepEqual(profiles.realTsxPnpmVitest020.missingOptionalRunFields, [
+    'analysisWarnings',
     'executionWitnesses'
   ]);
 });
@@ -268,4 +275,46 @@ test('CLI projections consume compatible run-artifact fixtures and reject malfor
   assert.equal(malformed.status, 1);
   assert.match(malformed.stderr, /malformed control-plane snapshot schema 1: field configPath must be a non-empty string/);
   assert.match(malformed.stderr, /Re-run ts-quality check/);
+});
+
+test('real TSX/pnpm/Vitest adoption capture remains projectable through compatibility surfaces', () => {
+  const fixturesById = Object.fromEntries(manifest.fixtures.map((fixture) => [fixture.id, fixture]));
+  const fixture = fixturesById.realTsxPnpmVitest020;
+  const target = tempCopyOfArtifactCompatibilityFixture('real-tsx-pnpm-vitest');
+  const run = installRunFixture(target, fixture);
+
+  assert.deepEqual(run.changedFiles, ['packages/react/src/index.tsx']);
+  assert.ok(run.mutations.length > 0);
+  assert.ok(run.mutations.every((result) => result.filePath === 'packages/react/src/index.tsx'));
+  assert.equal(run.coverageGeneration.receipt.status, 'pass');
+
+  const report = runCli(['report', '--root', target, '--json', '--run-id', fixture.runId]);
+  assert.equal(report.status, 0, report.stderr);
+  const reportJson = JSON.parse(report.stdout);
+  assert.equal(reportJson.runId, fixture.runId);
+  assert.equal(reportJson.verdict.outcome, 'fail');
+  assert.equal(reportJson.verdict.mergeConfidence, 62);
+
+  const explain = runCli(['explain', '--root', target, '--run-id', fixture.runId]);
+  assert.equal(explain.status, 0, explain.stderr);
+  assert.match(explain.stdout, /react\.missing-view-fallback: at-risk/);
+  assert.match(explain.stdout, /execution-backed witness artifacts matched the invariant scenario scope/);
+  assert.doesNotMatch(explain.stdout, /drift/i);
+
+  const plan = runCli(['plan', '--root', target, '--run-id', fixture.runId]);
+  assert.equal(plan.status, 0, plan.stderr);
+  assert.match(plan.stdout, /Generated 1 governance step\(s\) from 0 finding\(s\) and 12 mutation result\(s\)/);
+  assert.match(plan.stdout, /focused-test-alignment \[clear; mode=inferred\]: 1 focused test file aligned to invariant scope/);
+
+  const govern = runCli(['govern', '--root', target, '--run-id', fixture.runId]);
+  assert.equal(govern.status, 0, govern.stderr);
+  assert.match(govern.stdout, /Evidence provenance: explicit 5, inferred 1, missing 0/);
+
+  const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', fixture.runId]);
+  assert.equal(authorize.status, 0, authorize.stderr);
+  const authorization = JSON.parse(authorize.stdout);
+  assert.equal(authorization.outcome, fixture.authorizationOutcome);
+  assert.ok(authorization.reasons.includes(fixture.authorizationReason));
+  assert.equal(authorization.evidenceContext?.runId, fixture.runId);
+  assert.equal(authorization.evidenceContext?.runOutcome, 'fail');
 });

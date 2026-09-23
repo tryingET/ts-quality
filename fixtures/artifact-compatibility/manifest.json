@@ -98,6 +98,17 @@
       "authorizationReason": "Unknown agent release-bot",
       "targetShape": "clean ESM TypeScript package using Vitest plus a focused node --import tsx witness/coverage proof",
       "expectation": "real target-shape packet remains parseable and projectable through report, explain, plan, govern, and authorize surfaces while preserving execution-backed witness, coverage generation, mutation pressure, and next-evidence-action fields; authorization is expected to deny because the captured control-plane snapshot has no release-bot grant"
+    },
+    {
+      "id": "realTsxPnpmVitest020",
+      "file": "real-tsx-pnpm-vitest/run.json.fixture",
+      "runId": "tsx-pnpm-vitest-adoption",
+      "version": "0.2.0",
+      "decisionPolicy": "usable-real-target-shape-capture",
+      "authorizationOutcome": "deny",
+      "authorizationReason": "No authority grant covers the requested action and scope.",
+      "targetShape": "pnpm workspace with React TSX source, Vitest + jsdom tests, and vite-tsconfig-paths workspace package aliases",
+      "expectation": "real failing target-shape packet remains parseable and projectable through report, explain, plan, govern, and authorize surfaces while preserving TSX mutation evidence, surviving-mutant next-evidence action, Vitest v8 coverage generation, execution-backed witness support, and workspace-package focused-test alignment; authorization is expected to deny because the starter control plane grants no merge authority"
     }
   ]
 }

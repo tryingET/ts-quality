@@ -18,5 +18,7 @@ Source artifact: `examples/artifacts/governed-app/run.json` (`sample-governed-ap
 - `next-evidence-minimal-0.2.0.run.json.fixture` — current packet with recent optional next-evidence actionability fields removed.
 - `unsupported-control-plane.run.json.fixture` — packet that must fail closed for decision projections.
 - `malformed-control-plane.run.json.fixture` — packet that must fail closed for decision projections.
+- `real-kinetic-vitest-esm/` — real ESM TypeScript/Vitest target capture (pass).
+- `real-tsx-pnpm-vitest/` — real pnpm-workspace React TSX/Vitest+jsdom target capture (fail with surviving mutants); see `docs/adoption/2026-09-23-workspace-platform-tsx-pnpm-vitest-adoption.md`.
 
 `manifest.json` records the expected parser policy. `test/artifact-compatibility-fixtures.test.mjs` verifies both consumer-parser habits and the repo CLI projection behavior against these fixtures.
