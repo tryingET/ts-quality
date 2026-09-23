@@ -233,12 +233,16 @@ test('check fails closed when configured LCOV generation fails', () => {
   const configPath = path.join(target, 'ts-quality.config.ts');
   fs.writeFileSync(configPath, fs.readFileSync(configPath, 'utf8').replace(
     "coverage: { lcovPath: 'coverage/lcov.info' },",
-    "coverage: { lcovPath: 'coverage/lcov.info', generateCommand: ['node', '-e', 'process.exit(2)'], generateTimeoutMs: 5000 },"
+    "coverage: { lcovPath: 'coverage/lcov.info', generateCommand: ['node', '-e', 'console.error([\"first line\", \"second line\"].join(String.fromCharCode(10))); process.exit(2)'], generateTimeoutMs: 5000 },"
   ), 'utf8');
 
   const result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'failed-lcov'], { encoding: 'utf8' });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /coverage generation command fail; expected LCOV at coverage\/lcov\.info/);
+  // The CLI error boundary escapes control characters exactly once; the message must not be pre-escaped.
+  assert.match(result.stderr, /first line\\u000asecond line/);
+  assert.doesNotMatch(result.stderr, /\\\\u000a/);
+  assert.equal(result.stderr.trimEnd().includes('\n'), false);
   assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'runs', 'failed-lcov')), false);
 });
 

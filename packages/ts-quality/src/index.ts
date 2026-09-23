@@ -1494,10 +1494,11 @@ function readCoverageWithOptionalGeneration(rootDir: string, input: { coveragePa
     attemptedAt: input.attemptedAt
   });
   if (coverageGeneration.receipt.status !== 'pass') {
-    throw new Error(`coverage generation command ${coverageGeneration.receipt.status}; expected LCOV at ${renderSafeText(input.coveragePath)}${coverageGeneration.receipt.details ? `\n${renderSafeText(coverageGeneration.receipt.details)}` : ''}`);
+    // Raw text: the CLI error boundary escapes control characters once; pre-escaping here double-escaped them.
+    throw new Error(`coverage generation command ${coverageGeneration.receipt.status}; expected LCOV at ${input.coveragePath}${coverageGeneration.receipt.details ? `\n${coverageGeneration.receipt.details}` : ''}`);
   }
   if (!fs.existsSync(coverageAbsolutePath)) {
-    throw new Error(`coverage generation command passed but did not create expected LCOV at ${renderSafeText(input.coveragePath)}`);
+    throw new Error(`coverage generation command passed but did not create expected LCOV at ${input.coveragePath}`);
   }
   return {
     coverage: parseLcov(fs.readFileSync(coverageAbsolutePath, 'utf8')),
