@@ -20,6 +20,7 @@
     "scripts/smoke.mjs",
     "scripts/register-screening-catalog.mjs",
     "scripts/validate-release-intent.mjs",
-    "scripts/release-orchestrator.mjs"
+    "scripts/release-orchestrator.mjs",
+    "scripts/loop-phase.mjs"
   ]
 }

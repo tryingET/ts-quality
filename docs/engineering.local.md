@@ -66,12 +66,17 @@ uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-t
 
 ts-quality adopts `repo-loop-validation-v1` for deterministic TypeScript quality, artifact, and report loop work. The machine-readable declaration lives in `policy/engineering-lane.json`.
 
-- `loop-doctor`: `npm run loop-doctor` (non-failing git/Node/npm diagnostics)
-- `loop-verify-fast`: `npm run loop-verify-fast` (maps to `npm test`)
-- `loop-impact-plan`: `npm run loop-impact-plan` (changed-file listing plus run/wide recommendation)
-- `loop-impact-run`: `npm run loop-impact-run` (maps to typecheck, lint, and tests)
-- `loop-impact-wide`: `npm run loop-impact-wide` (maps to the root `npm run verify` gate)
-- `loop-landing-check`: `npm run loop-landing-check` (maps to the repo-declared root `npm run verify` gate)
+All six phases are implemented by `scripts/loop-phase.mjs` (tests: `test/loop-phase.test.mjs`) and print `key=value` evidence lines: `phase`, `scope`, `result` (`passed`, `failed`, `blocked`, `diagnostic`), plus phase-specific fields and an `authority` boundary line. Exit codes: `0` passed/diagnostic, `1` a check failed, `2` blocked/refused.
+
+- `loop-doctor`: `npm run loop-doctor` (always exits 0; reports Node version, dirty files, and blockers such as missing `node_modules`; `result=diagnostic`, never a validation pass)
+- `loop-verify-fast`: `npm run loop-verify-fast` (runs `npm test`; names the covered slice: the full node:test suite)
+- `loop-impact-plan`: `npm run loop-impact-plan` (classifies changed files from `git status` as `bounded`, `expanded`, or `wide`, names the checks and the `next` command; runs nothing)
+  - `wide`: `package.json`, `package-lock.json`, `tsconfig*.json`, `scripts/`, `packages/`, `fixtures/`, `examples/` → `npm run verify`
+  - `bounded`: prose only (`docs/`, `diary/`, `*.md`) → `npm run lint`
+  - `expanded`: everything else (tests, policy, unclassified files) → typecheck, lint, tests
+- `loop-impact-run`: `npm run loop-impact-run` (re-plans and runs the bounded/expanded checks; refuses a wide plan with `result=blocked`, exit 2, and names the `loop-impact-wide` escalation)
+- `loop-impact-wide`: `LOOP_WIDE_REASON="<why>" npm run loop-impact-wide` (refuses with exit 2 unless a non-empty acceptance reason is given; then runs the root `npm run verify` gate and echoes `accepted=<reason>`)
+- `loop-landing-check`: `npm run loop-landing-check` (runs the repo-declared `npm run verify` gate, names it as `gate=`, lists `VERIFICATION.md` and `verification/verification.log` as artifacts, and names the remaining AK/CI/merge/release handoff)
 
 These commands produce repo-local evidence for loop orchestration. They do not replace AK task/evidence/decision authority, release approval, package publication authority, merge approval, or downstream production activation authority.
 
