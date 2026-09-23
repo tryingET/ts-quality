@@ -1,0 +1,3 @@
+# ROCS local execution receipts: every validate/build rewrites them.
+dist/authority-receipt*.json
+dist/.authority-receipt.lock

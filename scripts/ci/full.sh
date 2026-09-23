@@ -28,7 +28,36 @@ run_rocs() {
 }
 
 clean_dist() {
+  # ROCS dist guard (softwareco AK #5891): refuse to delete uncommitted tracked dist
+  # edits (receipts excluded; override with ROCS_ALLOW_DIRTY_DIST=1) and restore dist
+  # if the ROCS lane fails after the clean.
+  local dirty
+  dirty="$(git -C "$ROCS_REPO" status --porcelain -- ontology/dist \
+    ':(exclude)ontology/dist/authority-receipt*.json' \
+    ':(exclude)ontology/dist/.authority-receipt.lock' 2>/dev/null || true)"
+  if [[ -n "$dirty" && "${ROCS_ALLOW_DIRTY_DIST:-0}" != 1 ]]; then
+    echo "error: ontology/dist has uncommitted changes; commit or stash them first," >&2
+    echo "or set ROCS_ALLOW_DIRTY_DIST=1 to overwrite them:" >&2
+    echo "$dirty" >&2
+    exit 1
+  fi
+  if [[ -d "$ROCS_REPO/ontology/dist" ]]; then
+    dist_backup="$(mktemp -d "${TMPDIR:-/tmp}/rocs-dist-guard.XXXXXX")"
+    cp -a "$ROCS_REPO/ontology/dist" "$dist_backup/dist"
+    trap 'restore_dist_on_failure' EXIT
+  fi
   rm -rf "$ROCS_REPO/ontology/dist"
+}
+
+restore_dist_on_failure() {
+  local status=$?
+  if [[ "$status" -ne 0 && -d "${dist_backup:-}/dist" ]]; then
+    rm -rf "$ROCS_REPO/ontology/dist"
+    cp -a "$dist_backup/dist" "$ROCS_REPO/ontology/dist"
+    echo "error: ROCS lane failed (exit $status); ontology/dist restored" >&2
+  fi
+  rm -rf "${dist_backup:-}"
+  return "$status"
 }
 
 strict_gate() {
