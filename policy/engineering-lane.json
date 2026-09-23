@@ -1,5 +1,6 @@
 {
   "engineering_core": {
+    "schema_version": "1",
     "tool": "engineering-core",
     "repository": "https://github.com/lightningralf/engineering-core",
     "ref": "v0.10.0",
@@ -18,6 +19,10 @@
       "engineering-reasoning"
     ],
     "lane": "ts",
+    "lanes": [
+      "ts"
+    ],
+    "deviations": [],
     "command": "uv tool -n run --from 'git+file:///home/tryinget/ai-society/core/engineering-core@9038d1ed3d443f44e18624d908d266e5e6dfd934' engineering-core show ts",
     "loop_validation": {
       "version": "repo-loop-validation-v1",
