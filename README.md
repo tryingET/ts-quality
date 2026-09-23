@@ -11,7 +11,7 @@ type: "reference"
 [![Completely Vibe Engineered](https://img.shields.io/badge/completely-vibe%20engineered-ff4fd8?style=for-the-badge)](https://github.com/tryingET/ts-quality)
 [![Alpha](https://img.shields.io/badge/status-alpha-f59e0b?style=for-the-badge)](https://github.com/tryingET/ts-quality/blob/main/CHANGELOG.md)
 [![Verify](https://img.shields.io/github/actions/workflow/status/tryingET/ts-quality/ci.yml?branch=main&style=for-the-badge&label=verify)](https://github.com/tryingET/ts-quality/actions/workflows/ci.yml)
-[![Node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://github.com/tryingET/ts-quality/blob/main/package.json)
+[![Node >=22](https://img.shields.io/badge/node-%3E%3D22-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://github.com/tryingET/ts-quality/blob/main/package.json)
 [![MIT License](https://img.shields.io/badge/license-MIT-2563eb?style=for-the-badge)](https://github.com/tryingET/ts-quality/blob/main/LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/tryingET/ts-quality?style=for-the-badge)](https://github.com/tryingET/ts-quality/releases)
 

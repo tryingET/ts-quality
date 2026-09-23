@@ -10,6 +10,10 @@ type: "reference"
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Raised the supported Node.js floor from `>=20` to `>=22` (`engines.node`). Node 20 reached end of life on 2026-04-30. CI now verifies Node 22, 24, and 26.
+
 ## [0.5.1] - 2026-05-08
 
 ### Breaking Changes

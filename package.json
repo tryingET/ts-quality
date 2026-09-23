@@ -5,7 +5,7 @@
   "description": "ts-quality alpha - evidence, judgment, understanding, governance, legitimacy for TypeScript changes",
   "license": "SEE LICENSE IN LICENSE",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "bin": {
     "ts-quality": "dist/packages/ts-quality/src/cli.js"
