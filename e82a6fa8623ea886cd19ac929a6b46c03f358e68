@@ -1,0 +1,30 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "e82a6fa8623ea886cd19ac929a6b46c03f358e68"
+created_at: "2026-09-23T18:48:47Z"
+intent: "Capture the workspace-platform TSX/pnpm/Vitest adoption run as an artifact compatibility fixture with projection tests and adoption evidence docs"
+files:
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/package.json"
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/packages/react/src/index.tsx"
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/run.json.fixture"
+  - "fixtures/artifact-compatibility/real-tsx-pnpm-vitest/ts-quality.config.ts"
+  - "fixtures/artifact-compatibility/README.md"
+  - "fixtures/artifact-compatibility/manifest.json"
+  - "test/artifact-compatibility-fixtures.test.mjs"
+  - "docs/adoption/2026-09-23-workspace-platform-tsx-pnpm-vitest-adoption.md"
+  - "docs/project/product-posture.md"
+validation:
+  fast_gate:
+    command: "npm run -s build && npm run -s lint && node --test test/artifact-compatibility-fixtures.test.mjs && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict >/dev/null"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 4
+  total: 4
+links:
+  task_ids:
+    - 5890
