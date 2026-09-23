@@ -1,0 +1,26 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "2541d48456a54a32514d783cc45c53842d06c48d"
+created_at: "2026-09-23T17:59:54Z"
+intent: "Implement the repo-loop-validation-v1 output contract for the six loop-* phases in scripts/loop-phase.mjs"
+files:
+  - "scripts/loop-phase.mjs"
+  - "test/loop-phase.test.mjs"
+  - "package.json"
+  - "tsconfig.scripts-check.json"
+  - "docs/engineering.local.md"
+validation:
+  fast_gate:
+    command: "npm run -s typecheck:scripts && npm run -s lint && node --test test/loop-phase.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 1
+  total: 1
+links:
+  task_ids:
+    - 5882
