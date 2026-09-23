@@ -27,6 +27,7 @@ exports.attestGenerateKey = attestGenerateKey;
 exports.runAmend = runAmend;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const crypto_1 = require("crypto");
 const child_process_1 = require("child_process");
 const index_1 = require("../../evidence-model/src/index");
 const index_2 = require("../../crap4ts/src/index");
@@ -840,10 +841,16 @@ function verifyAttestationRecordAtRoot(rootDir, source, attestation, trustedKeys
         return { ...record, reason: signature.reason };
     }
     const digest = (0, index_1.fileDigest)(subjectResolution.canonicalPath);
-    if (digest !== attestation.subjectDigest) {
+    if (!digestsMatch(digest, attestation.subjectDigest)) {
         return { ...record, reason: 'subject digest mismatch' };
     }
     return { ...record, ok: true, reason: 'verified' };
+}
+/** Compares digest strings in constant time for equal lengths; unequal lengths are simply unequal. */
+function digestsMatch(actual, expected) {
+    const actualBytes = Buffer.from(actual, 'utf8');
+    const expectedBytes = Buffer.from(expected, 'utf8');
+    return actualBytes.length === expectedBytes.length && (0, crypto_1.timingSafeEqual)(actualBytes, expectedBytes);
 }
 function renderAttestationVerificationRecord(record) {
     const lines = [`${renderVerificationText(record.issuer ?? record.source)}: ${record.ok ? 'verified' : 'failed'} (${renderVerificationText(record.reason)})`];
@@ -2637,7 +2644,7 @@ function attestSign(rootDir, issuer, keyId, privateKeyPath, subjectFile, claims,
         issuer,
         keyId,
         privateKeyPem: fs_1.default.readFileSync(resolvedKey, 'utf8'),
-        subjectType: path_1.default.extname(resolvedSubject.canonicalPath) === '.json' ? 'json-artifact' : 'file',
+        subjectType: path_1.default.extname(resolvedSubject.canonicalPath) === '.json' ? 'json-artifact' : 'file', // ubs:ignore file-extension check, not a secret comparison
         subjectDigest: (0, index_1.fileDigest)(resolvedSubject.canonicalPath),
         claims,
         payload: {
@@ -2794,7 +2801,7 @@ function runAmend(rootDir, proposalFile, apply = false, options) {
     (0, index_1.ensureDir)(path_1.default.dirname(resultPath));
     (0, index_1.writeJson)(resultPath, decision);
     fs_1.default.writeFileSync(resultTextPath, renderAmendmentDecisionText(decision), 'utf8');
-    if (apply && decision.outcome === 'approved') {
+    if (apply && decision.outcome === 'approved') { // ubs:ignore amendment outcome enum check, not a secret comparison
         const nextConstitution = (0, index_7.applyAmendment)(proposal, constitution);
         const constitutionPath = (0, index_1.resolveRepoLocalPath)(rootDir, loaded.config.constitutionPath, { allowMissing: true, kind: 'constitution path' }).absolutePath;
         writeModuleExport(constitutionPath, nextConstitution);

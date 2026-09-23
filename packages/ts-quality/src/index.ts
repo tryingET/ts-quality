@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { timingSafeEqual } from 'crypto';
 import { spawnSync } from 'child_process';
 import {
   type Agent,
@@ -1020,10 +1021,17 @@ function verifyAttestationRecordAtRoot(rootDir: string, source: string, attestat
     return { ...record, reason: signature.reason };
   }
   const digest = fileDigest(subjectResolution.canonicalPath);
-  if (digest !== attestation.subjectDigest) {
+  if (!digestsMatch(digest, attestation.subjectDigest)) {
     return { ...record, reason: 'subject digest mismatch' };
   }
   return { ...record, ok: true, reason: 'verified' };
+}
+
+/** Compares digest strings in constant time for equal lengths; unequal lengths are simply unequal. */
+function digestsMatch(actual: string, expected: string): boolean {
+  const actualBytes = Buffer.from(actual, 'utf8');
+  const expectedBytes = Buffer.from(expected, 'utf8');
+  return actualBytes.length === expectedBytes.length && timingSafeEqual(actualBytes, expectedBytes);
 }
 
 function renderAttestationVerificationRecord(record: AttestationVerificationRecord): string {
@@ -3044,7 +3052,7 @@ export function attestSign(rootDir: string, issuer: string, keyId: string, priva
     issuer,
     keyId,
     privateKeyPem: fs.readFileSync(resolvedKey, 'utf8'),
-    subjectType: path.extname(resolvedSubject.canonicalPath) === '.json' ? 'json-artifact' : 'file',
+    subjectType: path.extname(resolvedSubject.canonicalPath) === '.json' ? 'json-artifact' : 'file', // ubs:ignore file-extension check, not a secret comparison
     subjectDigest: fileDigest(resolvedSubject.canonicalPath),
     claims,
     payload: {
@@ -3211,7 +3219,7 @@ export function runAmend(rootDir: string, proposalFile: string, apply = false, o
   ensureDir(path.dirname(resultPath));
   writeJson(resultPath, decision);
   fs.writeFileSync(resultTextPath, renderAmendmentDecisionText(decision), 'utf8');
-  if (apply && decision.outcome === 'approved') {
+  if (apply && decision.outcome === 'approved') { // ubs:ignore amendment outcome enum check, not a secret comparison
     const nextConstitution = applyAmendment(proposal, constitution);
     const constitutionPath = resolveRepoLocalPath(rootDir, loaded.config.constitutionPath, { allowMissing: true, kind: 'constitution path' }).absolutePath;
     writeModuleExport(constitutionPath, nextConstitution);
