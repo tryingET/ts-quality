@@ -1,7 +1,7 @@
 ---
 summary: "Reusable product posture template for repos whose vision-to-strategy bridge needs an explicit maturity snapshot."
 read_when:
-  - "When creating docs/project/product_posture.md for a product repo"
+  - "When creating docs/project/product-posture.md for a product repo"
   - "When deciding whether a product posture file is warranted"
   - "When adapting the product posture pattern before broader template rollout"
 type: "template"
@@ -12,14 +12,14 @@ type: "template"
 Copy this template to:
 
 ```text
-docs/project/product_posture.md
+docs/project/product-posture.md
 ```
 
 when the repo needs a product-level maturity bridge between durable vision and active direction.
 
 ## Use rule
 
-Create `product_posture.md` when at least one is true:
+Create `product-posture.md` when at least one is true:
 
 - the repo is a product or platform with multiple capability layers,
 - the vision is durable but strategy selection needs a high-level maturity snapshot,
@@ -108,7 +108,7 @@ This file should be **exceptionally useful**: concise, grounded in shipped truth
 
 ## Quality bar
 
-An excellent `product_posture.md` is:
+An excellent `product-posture.md` is:
 
 - grounded in shipped code, artifacts, docs, tests, or authoritative runtime state;
 - short enough to read before strategy work;
@@ -118,7 +118,7 @@ An excellent `product_posture.md` is:
 
 ## Prompt/template integration rule
 
-Prompt Vault and local prompts may read or update `product_posture.md` when explicitly doing product posture or convergence work.
+Prompt Vault and local prompts may read or update `product-posture.md` when explicitly doing product posture or convergence work.
 They should not require the file for ordinary repo-direction execution.
 
 If a concern is a specific authority/cutover seam, prefer a dated seam packet instead of product posture, for example:
@@ -127,4 +127,4 @@ If a concern is a specific authority/cutover seam, prefer a dated seam packet in
 docs/project/YYYY-MM-DD-<seam>-current-vs-target-boundary.md
 ```
 
-Use `product_posture.md` for product-wide maturity posture, not every transition boundary.
+Use `product-posture.md` for product-wide maturity posture, not every transition boundary.

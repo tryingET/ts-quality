@@ -17,6 +17,6 @@ Live sequencing and task execution are intentionally not modeled here; use repo-
 ## Direction document roles
 
 - `purpose.md` / `mission.md` / `vision.md` define durable product intent.
-- `product_posture.md` is a high-quality status-bearing bridge for product maturity and convergence; it is not a task log and should not become mandatory for every repo.
+- `product-posture.md` is a high-quality status-bearing bridge for product maturity and convergence; it is not a task log and should not become mandatory for every repo.
 - Repo-local AK tasks are the live sequencing and execution authority; do not recreate a parallel strategic/tactical/operating-plan document ladder in this repo.
 
