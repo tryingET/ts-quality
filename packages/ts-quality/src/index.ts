@@ -50,7 +50,8 @@ import {
   stableStringify,
   writeJson,
   writeRunArtifact,
-  runtimeMirrorCandidates
+  runtimeMirrorCandidates,
+  findCoverageEvidence
 } from '../../evidence-model/src/index';
 import { analyzeCrap, parseLcov } from '../../crap4ts/src/index';
 import { runMutations } from '../../ts-mutate/src/index';
@@ -1850,8 +1851,9 @@ function sourceScopedCoverage(run: Pick<RunArtifact, 'coverage' | 'files'>): Run
   if (run.files.length === 0) {
     return run.coverage;
   }
-  const sourcePaths = new Set(run.files.map((item) => item.filePath));
-  return run.coverage.filter((item) => sourcePaths.has(item.filePath));
+  // Same exact-or-unique-suffix matching coverage analysis uses, so absolute or prefixed SF paths still count.
+  const matched = new Set(run.files.map((item) => findCoverageEvidence(item.filePath, run.coverage)).filter((item) => item !== undefined));
+  return run.coverage.filter((item) => matched.has(item));
 }
 
 function buildEvidenceBasis(run: Pick<RunArtifact, 'coverage' | 'coverageGeneration' | 'files' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims'>): NextEvidenceAction['evidenceBasis'] {
@@ -1919,7 +1921,7 @@ interface RunArtifactPaths {
 }
 
 function buildPrimaryEvidenceClosureAction(
-  run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims' | 'symbols'>,
+  run: Pick<RunArtifact, 'runId' | 'coverage' | 'coverageGeneration' | 'files' | 'mutations' | 'governance' | 'verdict' | 'behaviorClaims' | 'symbols'>,
   remainingBlocker: string,
   artifactPaths: RunArtifactPaths
 ): NextEvidenceAction['primaryAction'] {
@@ -2082,7 +2084,7 @@ function buildPrimaryEvidenceClosureAction(
     };
   }
 
-  if (run.coverage.length === 0 && (!run.coverageGeneration || run.coverageGeneration.receipt.status !== 'pass')) {
+  if (sourceScopedCoverage(run).length === 0 && (!run.coverageGeneration || run.coverageGeneration.receipt.status !== 'pass')) {
     const title = 'Create LCOV coverage evidence for the changed scope.';
     const commands = run.coverageGeneration?.command && run.coverageGeneration.command.length > 0 ? [{ command: run.coverageGeneration.command, reason: 'Generate the configured LCOV artifact.' }] : [];
     const completionCriteria = ['Create the configured LCOV file.', 'Rerun ts-quality check and confirm coverage evidence is present.'];

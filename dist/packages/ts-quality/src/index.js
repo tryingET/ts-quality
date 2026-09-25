@@ -1575,8 +1575,9 @@ function sourceScopedCoverage(run) {
     if (run.files.length === 0) {
         return run.coverage;
     }
-    const sourcePaths = new Set(run.files.map((item) => item.filePath));
-    return run.coverage.filter((item) => sourcePaths.has(item.filePath));
+    // Same exact-or-unique-suffix matching coverage analysis uses, so absolute or prefixed SF paths still count.
+    const matched = new Set(run.files.map((item) => (0, index_1.findCoverageEvidence)(item.filePath, run.coverage)).filter((item) => item !== undefined));
+    return run.coverage.filter((item) => matched.has(item));
 }
 function buildEvidenceBasis(run) {
     const scopedCoverage = sourceScopedCoverage(run);
@@ -1785,7 +1786,7 @@ function buildPrimaryEvidenceClosureAction(run, remainingBlocker, artifactPaths)
             taskManifest: buildEvidenceClosureTaskManifest({ title, targetFiles, suggestedEditFiles: targetFiles, commands: [], completionCriteria })
         };
     }
-    if (run.coverage.length === 0 && (!run.coverageGeneration || run.coverageGeneration.receipt.status !== 'pass')) {
+    if (sourceScopedCoverage(run).length === 0 && (!run.coverageGeneration || run.coverageGeneration.receipt.status !== 'pass')) {
         const title = 'Create LCOV coverage evidence for the changed scope.';
         const commands = run.coverageGeneration?.command && run.coverageGeneration.command.length > 0 ? [{ command: run.coverageGeneration.command, reason: 'Generate the configured LCOV artifact.' }] : [];
         const completionCriteria = ['Create the configured LCOV file.', 'Rerun ts-quality check and confirm coverage evidence is present.'];

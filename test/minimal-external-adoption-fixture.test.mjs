@@ -134,3 +134,42 @@ test('coverage basis counts only source-scoped LCOV records even when the runner
   assert.ok(run.coverage.some((entry) => entry.filePath === 'test/token.test.js'), 'raw LCOV records stay in run.json');
   assert.equal(run.nextEvidenceAction?.evidenceBasis.coverage.fileCount, 1);
 });
+
+function generateFixtureLcov(target) {
+  const env = { ...process.env };
+  delete env['NODE_TEST_CONTEXT'];
+  const quality = spawnSync('npm', ['run', 'quality', '--silent'], { cwd: target, encoding: 'utf8', env });
+  assert.equal(quality.status, 0, quality.stderr);
+  return path.join(target, 'coverage', 'lcov.info');
+}
+
+test('coverage basis resolves absolute LCOV paths the same way coverage analysis does', () => {
+  const target = tempCopyOfFixture('minimal-external-adoption');
+  const lcovPath = generateFixtureLcov(target);
+  const lcov = fs.readFileSync(lcovPath, 'utf8').replace(/^SF:(?!\/)(.*)$/gm, (_line, filePath) => `SF:${path.join(target, filePath)}`);
+  fs.writeFileSync(lcovPath, lcov, 'utf8');
+
+  const check = runCli(['check', '--root', target, '--config', 'ts-quality.config.json', '--changed', 'src/auth/token.js', '--run-id', 'absolute-lcov'], target);
+  assert.equal(check.status, 0, check.stderr);
+  const run = readJson(path.join(target, '.ts-quality', 'runs', 'absolute-lcov', 'run.json'));
+  assert.equal(run.nextEvidenceAction?.evidenceBasis.coverage.fileCount, 1);
+  assert.equal(run.nextEvidenceAction?.evidenceBasis.coverage.status, 'present');
+});
+
+test('LCOV with only test-file records asks for coverage evidence on both basis and next action', () => {
+  const target = tempCopyOfFixture('minimal-external-adoption');
+  const lcovPath = generateFixtureLcov(target);
+  fs.writeFileSync(lcovPath, 'TN:\nSF:test/token.test.js\nDA:1,1\nLF:1\nLH:1\nend_of_record\n', 'utf8');
+  // Mutation evidence must exist for the coverage action to be the primary gap (mutation gaps rank first).
+  const configPath = path.join(target, 'ts-quality.config.json');
+  const config = readJson(configPath);
+  config.mutations.coveredOnly = false;
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+
+  const check = runCli(['check', '--root', target, '--config', 'ts-quality.config.json', '--changed', 'src/auth/token.js', '--run-id', 'test-only-lcov'], target);
+  assert.equal(check.status, 0, check.stderr);
+  const run = readJson(path.join(target, '.ts-quality', 'runs', 'test-only-lcov', 'run.json'));
+  assert.equal(run.nextEvidenceAction?.evidenceBasis.coverage.fileCount, 0);
+  assert.equal(run.mutations.some((mutation) => mutation.status === 'killed'), true);
+  assert.equal(run.nextEvidenceAction?.primaryAction.id, 'create-coverage-evidence');
+});
