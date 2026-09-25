@@ -2,7 +2,7 @@
   "name": "ts-quality",
   "version": "0.5.1",
   "description": "Deterministic trust for TypeScript changes in agent-built systems: mutation testing, invariants, governance, and attestable authorization.",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tryingET/ts-quality.git"

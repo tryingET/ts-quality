@@ -1,7 +1,7 @@
 {
   "name": "ts-mutate",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "main": "dist/packages/ts-mutate/src/index.js",
   "types": "dist/packages/ts-mutate/src/index.d.ts",
   "bin": {

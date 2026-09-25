@@ -1,7 +1,7 @@
 {
   "name": "@ts-quality/legitimacy",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "main": "dist/packages/legitimacy/src/index.js",
   "types": "dist/packages/legitimacy/src/index.d.ts"
 }

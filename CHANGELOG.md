@@ -13,6 +13,31 @@ type: "reference"
 ### Breaking Changes
 
 - Raised the supported Node.js floor from `>=20` to `>=22` (`engines.node`). Node 20 reached end of life on 2026-04-30. CI now verifies Node 22, 24, and 26.
+- Licensing: this is the first npm release under the repository `LICENSE` as amended on 2026-05-17, which is the MIT License with an added rider that grants no rights to the restricted parties it names. The package manifests now declare `"license": "SEE LICENSE IN LICENSE"` instead of `"MIT"`, so npm and license scanners no longer present the terms as plain MIT. Read `LICENSE` before depending on this version.
+
+### Added
+
+- Added a real pnpm-workspace React TSX + Vitest/jsdom target-shape adoption capture from `workspace-platform`, with run-artifact compatibility coverage for `report`, `explain`, `plan`, `govern`, and run-bound `authorize` projections.
+- Added `repo-loop-validation-v1` loop commands (`npm run loop-doctor`, `loop-verify-fast`, `loop-impact-plan`, `loop-impact-run`, `loop-impact-wide`, `loop-landing-check`) for contributors and agent loops working on this repository.
+
+### Changed
+
+- `doctor` now suggests commands for the package manager a repository declares (`packageManager`, falling back to lockfile detection, then npm).
+- `doctor` warns with `changed-outside-source-patterns` when changed source-code files fall outside `sourcePatterns`, because `check` cannot attribute coverage, complexity, or mutation evidence to them. Tests, docs, and manifests are not flagged.
+- Focused-test alignment now also recognizes tests that import the changed file through its workspace package name (for example `@scope/pkg` resolved by pnpm or tsconfig `paths`), matching exact package names or subpaths from raw import specifiers.
+
+### Fixed
+
+- Mutation testing no longer reports false kills on strict pnpm workspaces: mutant workspaces now resolve package-local `node_modules`, where mutants previously died on `Cannot find module` and could turn an untested change into a passing verdict.
+- Mutation testing no longer reports false survivors for tests that reach a sibling workspace package through a workspace link: those links now resolve to the mutated copy instead of the unmutated original. Cached mutation results from earlier versions are invalidated.
+- The evidence coverage basis now counts only LCOV records for the run's source files, matched the same way coverage analysis matches them (exact path or unique suffix). Test-file records, which Node 20's built-in coverage emits, no longer inflate it, and the next-evidence action agrees with the basis when only test files have coverage.
+- `doctor` no longer recommends destructive or cleanup scripts (for example a `clean` script running `rimraf coverage`) as coverage commands, and no longer recommends `pre`/`post` lifecycle or cleanup scripts as the focused test command.
+- Coverage-generation and execution-witness command failures are escaped once at the CLI error boundary instead of twice.
+- Attestation subject digests are compared in constant time.
+
+### Agent migration notes
+
+- Agents must run on Node.js 22 or newer. Re-run `check` for runs whose mutation evidence came from pnpm or other workspace layouts with package-local `node_modules`; earlier kill counts there may be inflated or deflated. Treat the `LICENSE` terms, not the former `MIT` manifest field, as authoritative.
 
 ## [0.5.1] - 2026-05-08
 

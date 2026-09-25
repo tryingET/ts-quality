@@ -1,7 +1,7 @@
 {
   "name": "@ts-quality/invariants",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "main": "dist/packages/invariants/src/index.js",
   "types": "dist/packages/invariants/src/index.d.ts"
 }

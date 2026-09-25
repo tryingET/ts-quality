@@ -1,7 +1,7 @@
 {
   "name": "@ts-quality/evidence-model",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "main": "dist/packages/evidence-model/src/index.js",
   "types": "dist/packages/evidence-model/src/index.d.ts"
 }
