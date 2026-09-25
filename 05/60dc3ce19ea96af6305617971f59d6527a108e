@@ -3,10 +3,9 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "0560dc3ce19ea96af6305617971f59d6527a108e"
-created_at: "2026-09-25T12:29:19Z"
+created_at: "2026-09-25T12:37:10Z"
 intent: "Pin --test-reporter=spec on the sample mutation command instead of NODE_OPTIONS so commands that set their own reporter cannot collide; regenerate samples (review finding 7)"
 files:
-  - "scripts/generate-samples.mjs"
   - "examples/artifacts/governed-app/explain.txt"
   - "examples/artifacts/governed-app/next-evidence-action.ak-task.json"
   - "examples/artifacts/governed-app/next-evidence-action.json"
@@ -15,13 +14,14 @@ files:
   - "examples/artifacts/governed-app/report.json"
   - "examples/artifacts/governed-app/report.md"
   - "examples/artifacts/governed-app/run.json"
+  - "scripts/generate-samples.mjs"
 validation:
   fast_gate:
-    command: "npm run -s typecheck:scripts && npm run -s lint && npm run -s sample-artifacts && git diff --exit-code -- examples/artifacts"
+    command: "see group fast gate (build/typecheck/lint/focused tests)"
     status: "pass"
   full_gate:
-    command: "npm run verify"
-    status: "pending"
+    command: "npm run verify:ci on Node 22.23.3 / 24.21.0 (identical tree a9a96c2) and Node 26; packed-RC dogfood on real pnpm targets"
+    status: "pass"
 group:
   index: 6
   total: 7
