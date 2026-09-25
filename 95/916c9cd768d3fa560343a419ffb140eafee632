@@ -1,0 +1,23 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "95916c9cd768d3fa560343a419ffb140eafee632"
+created_at: "2026-09-25T12:38:51Z"
+intent: "Add the v0.6.0 agent migration map required by release policy for breaking changes and link it from the changelog"
+files:
+  - "docs/releases/migrations/v0.6.0.md"
+  - "CHANGELOG.md"
+validation:
+  fast_gate:
+    command: "npm run -s lint && docs-list --strict"
+    status: "pass"
+  full_gate:
+    command: "npm run release:prepare --apply (runs npm run verify)"
+    status: "pending"
+group:
+  index: 1
+  total: 1
+links:
+  task_ids:
+    - 5935
