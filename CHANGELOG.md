@@ -12,6 +12,8 @@ type: "reference"
 
 ### Breaking Changes
 
+Migration map for agents and operators: [`docs/releases/migrations/v0.6.0.md`](docs/releases/migrations/v0.6.0.md).
+
 - Raised the supported Node.js floor from `>=20` to `>=22` (`engines.node`). Node 20 reached end of life on 2026-04-30. CI now verifies Node 22, 24, and 26.
 - Licensing: this is the first npm release under the repository `LICENSE` as amended on 2026-05-17, which is the MIT License with an added rider that grants no rights to the restricted parties it names. The package manifests now declare `"license": "SEE LICENSE IN LICENSE"` instead of `"MIT"`, so npm and license scanners no longer present the terms as plain MIT. Read `LICENSE` before depending on this version.
 
@@ -37,7 +39,7 @@ type: "reference"
 
 ### Agent migration notes
 
-- Agents must run on Node.js 22 or newer. Re-run `check` for runs whose mutation evidence came from pnpm or other workspace layouts with package-local `node_modules`; earlier kill counts there may be inflated or deflated. Treat the `LICENSE` terms, not the former `MIT` manifest field, as authoritative.
+- Follow [`docs/releases/migrations/v0.6.0.md`](docs/releases/migrations/v0.6.0.md). Agents must run on Node.js 22 or newer. Re-run `check` for runs whose mutation evidence came from pnpm or other workspace layouts with package-local `node_modules`; earlier kill counts there may be inflated or deflated. Treat the `LICENSE` terms, not the former `MIT` manifest field, as authoritative.
 
 ## [0.5.1] - 2026-05-08
 
