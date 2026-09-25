@@ -651,7 +651,8 @@ function main() {
                 process.stdout.write(`Wrote execution witness: ${result.outputPath}\nReceipt: ${result.receiptPath}\nStatus: pass\n`);
                 return;
             }
-            throw new Error(`execution witness command ${result.receipt.status}; wrote fail witness to ${(0, index_1.renderSafeText)(result.outputPath)} (receipt ${(0, index_1.renderSafeText)(result.receiptPath)})${result.receipt.details ? `\n${(0, index_1.renderSafeText)(result.receipt.details)}` : ''}`);
+            // Raw text: the error boundary below escapes control characters once.
+            throw new Error(`execution witness command ${result.receipt.status}; wrote fail witness to ${result.outputPath} (receipt ${result.receiptPath})${result.receipt.details ? `\n${result.receipt.details}` : ''}`);
         }
         throw new Error('witness requires subcommand test|refresh');
     }

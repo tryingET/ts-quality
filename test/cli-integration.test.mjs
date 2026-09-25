@@ -1536,10 +1536,13 @@ test('witness test writes a fail execution witness when the runtime proof comman
     '--test-files', 'test/token.test.js',
     '--out', out,
     '--',
-    'node', '--eval', 'process.exit(2)'
+    'node', '--eval', 'console.error(["first line", "second line"].join(String.fromCharCode(10))); process.exit(2)'
   ], { encoding: 'utf8' });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /execution witness command fail; wrote fail witness to/);
+  // Escaped exactly once at the CLI error boundary, never pre-escaped.
+  assert.match(result.stderr, /first line\\u000asecond line/);
+  assert.doesNotMatch(result.stderr, /\\\\u000a/);
   const witness = JSON.parse(fs.readFileSync(path.join(target, out), 'utf8'));
   assert.equal(witness.status, 'fail');
   assert.equal(witness.invariantId, 'auth.refresh.validity');
