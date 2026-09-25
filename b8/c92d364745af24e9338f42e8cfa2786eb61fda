@@ -1,0 +1,25 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "b8c92d364745af24e9338f42e8cfa2786eb61fda"
+created_at: "2026-09-25T12:29:06Z"
+intent: "Raise execution-witness command errors raw so the CLI error boundary escapes control characters exactly once (review finding 9)"
+files:
+  - "packages/ts-quality/src/cli.ts"
+  - "dist/packages/ts-quality/src/cli.js"
+  - "dist/packages/ts-quality/src/cli.js.map"
+  - "test/cli-integration.test.mjs"
+validation:
+  fast_gate:
+    command: "npm run -s build && npm run -s typecheck && npm run -s lint && node --test test/cli-integration.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 5
+  total: 7
+links:
+  task_ids:
+    - 5934
