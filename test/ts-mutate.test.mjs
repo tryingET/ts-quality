@@ -141,6 +141,46 @@ test('runMutations resolves workspace-package node_modules inside the mutant wor
   assert.equal(fs.existsSync(path.join(rootDir, 'packages/a/node_modules/local-dep/index.js')), true, 'workspace disposal must not delete linked real node_modules');
 });
 
+for (const layout of ['pnpm package link', 'npm workspaces root link']) {
+  test(`runMutations keeps workspace-package links inside the mutant workspace (${layout})`, () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-workspace-links-'));
+    const write = (relativePath, contents) => {
+      fs.mkdirSync(path.dirname(path.join(rootDir, relativePath)), { recursive: true });
+      fs.writeFileSync(path.join(rootDir, relativePath), contents, 'utf8');
+    };
+    write('package.json', JSON.stringify({ name: 'ws-root', private: true }));
+    write('packages/a/package.json', JSON.stringify({ name: '@ws/a', main: 'src/index.js' }));
+    write('packages/a/src/index.js', 'function isPositive(value) { return value > 0; }\nmodule.exports = { isPositive };\n');
+    write('packages/b/package.json', JSON.stringify({ name: '@ws/b', dependencies: { '@ws/a': 'workspace:*' } }));
+    write('packages/b/src/use.js', "const { isPositive } = require('@ws/a');\nmodule.exports = { check: (value) => isPositive(value) };\n");
+    // Workspace managers link sibling packages with relative symlinks that must resolve to the mutated copy.
+    if (layout === 'pnpm package link') {
+      fs.mkdirSync(path.join(rootDir, 'packages/b/node_modules/@ws'), { recursive: true });
+      fs.symlinkSync('../../../a', path.join(rootDir, 'packages/b/node_modules/@ws/a'), 'dir');
+    } else {
+      fs.mkdirSync(path.join(rootDir, 'node_modules/@ws'), { recursive: true });
+      fs.symlinkSync('../../packages/a', path.join(rootDir, 'node_modules/@ws/a'), 'dir');
+    }
+    write('check.js', "const assert = require('node:assert/strict');\nconst { check } = require('./packages/b/src/use.js');\nassert.equal(check(1), true);\nassert.equal(check(0), false);\n");
+
+    const run = mutate.runMutations({
+      repoRoot: rootDir,
+      sourceFiles: ['packages/a/src/index.js'],
+      changedFiles: ['packages/a/src/index.js'],
+      testCommand: ['node', 'check.js'],
+      coveredOnly: false,
+      maxSites: 10,
+      timeoutMs: 10_000
+    });
+
+    assert.equal(run.baseline.status, 'pass');
+    const boundary = run.results.find((result) => result.original === '>');
+    assert.ok(boundary);
+    assert.equal(boundary.status, 'killed', 'a mutant reached only through a workspace link must run the mutated copy');
+    assert.equal(fs.readFileSync(path.join(rootDir, 'packages/a/src/index.js'), 'utf8').includes('value > 0'), true, 'the real source stays unmutated');
+  });
+}
+
 test('runMutations invalidates manifest entries when the test corpus changes', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-manifest-'));
   const manifestPath = path.join(rootDir, '.ts-quality', 'mutation-manifest.json');

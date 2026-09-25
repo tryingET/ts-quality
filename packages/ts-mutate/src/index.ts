@@ -71,7 +71,7 @@ interface MutationSourceSpan {
 }
 
 // Bumped when mutant-workspace semantics change so cached results from older workspaces are not reused.
-const MUTATION_RUNTIME_VERSION = '6';
+const MUTATION_RUNTIME_VERSION = '7';
 const SANITIZED_MUTATION_ENV_KEYS = ['NODE_TEST_CONTEXT'];
 const MUTATION_WORKSPACE_EXCLUDES = ['.git', 'node_modules', '.ts-quality'];
 const MUTATION_WORKSPACE_EXCLUDE_SET = new Set(MUTATION_WORKSPACE_EXCLUDES);
@@ -361,13 +361,52 @@ function nodeModulesRoots(repoRoot: string, currentDir = repoRoot): string[] {
   return roots;
 }
 
+/** Repo-relative path of a workspace package a node_modules link resolves to, or undefined for third-party targets. */
+function workspaceLinkTarget(realRepoRoot: string, linkPath: string): string | undefined {
+  let realTarget: string;
+  try {
+    realTarget = fs.realpathSync(linkPath);
+  } catch {
+    return undefined;
+  }
+  const relativeTarget = path.relative(realRepoRoot, realTarget);
+  if (relativeTarget === '' || relativeTarget.startsWith('..') || path.isAbsolute(relativeTarget)) {
+    return undefined;
+  }
+  return relativeTarget.split(path.sep).includes('node_modules') ? undefined : relativeTarget;
+}
+
+/**
+ * Mirrors one node_modules directory entry by entry. Third-party entries link to the real repo, but workspace-package
+ * links (pnpm `packages/b/node_modules/@scope/a -> ../../../a`, npm `node_modules/@scope/a -> ../packages/a`) are
+ * re-pointed at the mutant workspace so tests that import a sibling package by name exercise the mutated copy.
+ */
+function mirrorNodeModules(repoRoot: string, realRepoRoot: string, tempDir: string, relativeDir: string): void {
+  const sourceDir = path.join(repoRoot, relativeDir);
+  const destinationDir = path.join(tempDir, relativeDir);
+  fs.mkdirSync(destinationDir, { recursive: true });
+  for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
+    const entryRelative = path.join(relativeDir, entry.name);
+    if (entry.name.startsWith('@') && entry.isDirectory()) {
+      mirrorNodeModules(repoRoot, realRepoRoot, tempDir, entryRelative);
+      continue;
+    }
+    const workspaceTarget = entry.isSymbolicLink() ? workspaceLinkTarget(realRepoRoot, path.join(repoRoot, entryRelative)) : undefined;
+    if (workspaceTarget !== undefined) {
+      fs.symlinkSync(path.join(tempDir, workspaceTarget), path.join(tempDir, entryRelative), 'junction');
+      continue;
+    }
+    linkSharedPath(path.join(repoRoot, entryRelative), path.join(tempDir, entryRelative));
+  }
+}
+
 // Workspace managers such as pnpm keep package-only dependencies in each package's own node_modules,
 // so linking only the root one would make mutants fail on module resolution and count as killed.
 function hydrateTempRuntime(repoRoot: string, tempDir: string): void {
+  const realRepoRoot = fs.realpathSync(repoRoot);
   for (const relativePath of nodeModulesRoots(repoRoot)) {
-    const destinationPath = path.join(tempDir, relativePath);
-    if (fs.existsSync(path.dirname(destinationPath))) {
-      linkSharedPath(path.join(repoRoot, relativePath), destinationPath);
+    if (fs.existsSync(path.dirname(path.join(tempDir, relativePath)))) {
+      mirrorNodeModules(repoRoot, realRepoRoot, tempDir, relativePath);
     }
   }
 }
