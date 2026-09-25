@@ -1,0 +1,25 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "abb97670c217a6c7a7f9ae12473430253c115d7e"
+created_at: "2026-09-25T12:25:43Z"
+intent: "Match workspace package imports against raw import specifiers, not lexical variants, and keep walking past nameless package.json markers (review findings 5, 6)"
+files:
+  - "packages/invariants/src/index.ts"
+  - "dist/packages/invariants/src/index.js"
+  - "dist/packages/invariants/src/index.js.map"
+  - "test/invariants.test.mjs"
+validation:
+  fast_gate:
+    command: "npm run -s build && npm run -s typecheck && npm run -s lint && node --test test/invariants.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 2
+  total: 7
+links:
+  task_ids:
+    - 5934
