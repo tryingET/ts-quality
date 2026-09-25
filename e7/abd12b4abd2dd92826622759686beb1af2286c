@@ -1,0 +1,23 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "e7abd12b4abd2dd92826622759686beb1af2286c"
+created_at: "2026-09-25T12:42:50Z"
+intent: "Fix markdownSection so generated release notes and release-policy checks see whole changelog sections instead of only their first line; guard the CLI entry so the parser is testable"
+files:
+  - "scripts/release-orchestrator.mjs"
+  - "test/release-orchestrator.test.mjs"
+validation:
+  fast_gate:
+    command: "npm run -s typecheck:scripts && npm run -s lint && node --test test/release-orchestrator.test.mjs test/adoption-guidance.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 1
+  total: 1
+links:
+  task_ids:
+    - 5935
