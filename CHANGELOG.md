@@ -10,6 +10,8 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-25
+
 ### Breaking Changes
 
 Migration map for agents and operators: [`docs/releases/migrations/v0.6.0.md`](docs/releases/migrations/v0.6.0.md).
