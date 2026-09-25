@@ -3,9 +3,11 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "b2c81a92e10aa99275380b387e4645d078694c2a"
-created_at: "2026-09-25T12:29:29Z"
+created_at: "2026-09-25T12:37:10Z"
 intent: "Declare \"SEE LICENSE IN LICENSE\" in all package manifests and the README badge so npm and scanners do not present the rider license as plain MIT; document 0.6.0 changes in the changelog (review finding 8)"
 files:
+  - "CHANGELOG.md"
+  - "README.md"
   - "packages/crap4ts/package.json"
   - "packages/evidence-model/package.json"
   - "packages/governance/package.json"
@@ -14,16 +16,14 @@ files:
   - "packages/policy-engine/package.json"
   - "packages/ts-mutate/package.json"
   - "packages/ts-quality/package.json"
-  - "README.md"
-  - "CHANGELOG.md"
   - "verification/verification.log"
 validation:
   fast_gate:
-    command: "npm run -s lint && node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict >/dev/null && npm run -s pack:ts-quality >/dev/null && test \"$(tar -xzOf .ts-quality/npm/ts-quality/tarballs/ts-quality-0.5.1.tgz package/package.json | node -p \"JSON.parse(require(\\\"fs\\\").readFileSync(0,\\\"utf8\\\")).license\")\" = \"SEE LICENSE IN LICENSE\""
+    command: "see group fast gate (build/typecheck/lint/focused tests)"
     status: "pass"
   full_gate:
-    command: "npm run verify"
-    status: "pending"
+    command: "npm run verify:ci on Node 22.23.3 / 24.21.0 (identical tree a9a96c2) and Node 26; packed-RC dogfood on real pnpm targets"
+    status: "pass"
 group:
   index: 7
   total: 7
