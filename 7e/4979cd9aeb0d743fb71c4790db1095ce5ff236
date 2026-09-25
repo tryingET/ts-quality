@@ -3,7 +3,7 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "7e4979cd9aeb0d743fb71c4790db1095ce5ff236"
-created_at: "2026-09-25T12:32:18Z"
+created_at: "2026-09-25T12:32:28Z"
 intent: "Mirror node_modules per entry and re-point workspace-package links at the mutant workspace so sibling-package tests exercise mutated code (review finding 1)"
 files:
   - "dist/packages/ts-mutate/src/index.js"
