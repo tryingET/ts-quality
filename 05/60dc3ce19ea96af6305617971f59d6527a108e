@@ -1,0 +1,30 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "0560dc3ce19ea96af6305617971f59d6527a108e"
+created_at: "2026-09-25T12:29:19Z"
+intent: "Pin --test-reporter=spec on the sample mutation command instead of NODE_OPTIONS so commands that set their own reporter cannot collide; regenerate samples (review finding 7)"
+files:
+  - "scripts/generate-samples.mjs"
+  - "examples/artifacts/governed-app/explain.txt"
+  - "examples/artifacts/governed-app/next-evidence-action.ak-task.json"
+  - "examples/artifacts/governed-app/next-evidence-action.json"
+  - "examples/artifacts/governed-app/next-evidence-action.prompt.md"
+  - "examples/artifacts/governed-app/next-evidence-action.txt"
+  - "examples/artifacts/governed-app/report.json"
+  - "examples/artifacts/governed-app/report.md"
+  - "examples/artifacts/governed-app/run.json"
+validation:
+  fast_gate:
+    command: "npm run -s typecheck:scripts && npm run -s lint && npm run -s sample-artifacts && git diff --exit-code -- examples/artifacts"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 6
+  total: 7
+links:
+  task_ids:
+    - 5934
