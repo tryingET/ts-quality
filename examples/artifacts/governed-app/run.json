@@ -327,7 +327,7 @@
     "agentsPath": ".ts-quality/agents.ts",
     "approvalsPath": ".ts-quality/approvals.json",
     "attestationsDir": ".ts-quality/attestations",
-    "configDigest": "sha256:6401cc3091cc3728442181ede42dbb084d08ec787fb0ea758588a65a078253e4",
+    "configDigest": "sha256:5321532ca6fe41057129fbee88a02152c10cc3d69db153a7978e73e4a68fa374",
     "configPath": "ts-quality.config.ts",
     "constitution": [
       {
@@ -537,7 +537,8 @@
         },
         "testCommand": [
           "node",
-          "--test"
+          "--test",
+          "--test-reporter=spec"
         ]
       },
       {
@@ -557,7 +558,8 @@
         },
         "testCommand": [
           "node",
-          "--test"
+          "--test",
+          "--test-reporter=spec"
         ]
       },
       {
@@ -577,7 +579,8 @@
         },
         "testCommand": [
           "node",
-          "--test"
+          "--test",
+          "--test-reporter=spec"
         ]
       }
     ]
@@ -603,7 +606,8 @@
       "status": "survived",
       "testCommand": [
         "node",
-        "--test"
+        "--test",
+        "--test-reporter=spec"
       ]
     },
     {
@@ -626,7 +630,8 @@
       "status": "survived",
       "testCommand": [
         "node",
-        "--test"
+        "--test",
+        "--test-reporter=spec"
       ]
     },
     {
@@ -649,7 +654,8 @@
       "status": "survived",
       "testCommand": [
         "node",
-        "--test"
+        "--test",
+        "--test-reporter=spec"
       ]
     },
     {
@@ -672,7 +678,8 @@
       "status": "killed",
       "testCommand": [
         "node",
-        "--test"
+        "--test",
+        "--test-reporter=spec"
       ]
     }
   ],
@@ -827,7 +834,8 @@
         {
           "command": [
             "node",
-            "--test"
+            "--test",
+            "--test-reporter=spec"
           ],
           "reason": "Rerun the focused test command after adding the missing assertion."
         }
@@ -915,7 +923,8 @@
             {
               "command": [
                 "node",
-                "--test"
+                "--test",
+                "--test-reporter=spec"
               ],
               "reason": "Verify the added assertion kills this survivor group."
             }
@@ -945,7 +954,8 @@
             {
               "command": [
                 "node",
-                "--test"
+                "--test",
+                "--test-reporter=spec"
               ],
               "reason": "Verify the added assertion kills this survivor group."
             }
@@ -975,7 +985,8 @@
             {
               "command": [
                 "node",
-                "--test"
+                "--test",
+                "--test-reporter=spec"
               ],
               "reason": "Verify the added assertion kills this survivor group."
             }
@@ -1012,7 +1023,8 @@
           {
             "command": [
               "node",
-              "--test"
+              "--test",
+              "--test-reporter=spec"
             ],
             "reason": "Rerun the focused test command after adding the missing assertion."
           }

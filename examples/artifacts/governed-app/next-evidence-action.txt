@@ -17,7 +17,7 @@ targetFiles:
 suggestedEditFiles:
 - test/token.test.js
 commands:
-- node --test # Rerun the focused test command after adding the missing assertion.
+- node --test --test-reporter=spec # Rerun the focused test command after adding the missing assertion.
 groups:
 - mutation-group-1: Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >. (1 survivor(s))
 - mutation-group-2: Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||. (1 survivor(s))
@@ -30,7 +30,7 @@ steps:
   assertionStrategy: Assert the exact changed boundary through a public or exported behavior, then check the returned value, thrown error, side effect, or serialized artifact.
   maskingRisk: The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.
   suggestedEditFiles: test/token.test.js
-  command: node --test # Verify the added assertion kills this survivor group.
+  command: node --test --test-reporter=spec # Verify the added assertion kills this survivor group.
 - survivor-group-2: Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.
   rationale: This mutation group changed && to ||; the focused test command still passed.
   enclosingSymbol: function:canUseRefreshToken
@@ -38,7 +38,7 @@ steps:
   assertionStrategy: Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.
   maskingRisk: The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.
   suggestedEditFiles: test/token.test.js
-  command: node --test # Verify the added assertion kills this survivor group.
+  command: node --test --test-reporter=spec # Verify the added assertion kills this survivor group.
 - survivor-group-3: Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.
   rationale: This mutation group changed && to ||; the focused test command still passed.
   enclosingSymbol: function:canUseRefreshToken
@@ -46,7 +46,7 @@ steps:
   assertionStrategy: Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.
   maskingRisk: The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.
   suggestedEditFiles: test/token.test.js
-  command: node --test # Verify the added assertion kills this survivor group.
+  command: node --test --test-reporter=spec # Verify the added assertion kills this survivor group.
 completionCriteria:
 - Add assertions that fail for each listed surviving mutation group.
 - Rerun the focused test command and then ts-quality check for the same changed scope.

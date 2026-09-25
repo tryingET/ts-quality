@@ -91,7 +91,8 @@
       {
         "command": [
           "node",
-          "--test"
+          "--test",
+          "--test-reporter=spec"
         ],
         "reason": "Rerun the focused test command after adding the missing assertion."
       }
@@ -179,7 +180,8 @@
           {
             "command": [
               "node",
-              "--test"
+              "--test",
+              "--test-reporter=spec"
             ],
             "reason": "Verify the added assertion kills this survivor group."
           }
@@ -209,7 +211,8 @@
           {
             "command": [
               "node",
-              "--test"
+              "--test",
+              "--test-reporter=spec"
             ],
             "reason": "Verify the added assertion kills this survivor group."
           }
@@ -239,7 +242,8 @@
           {
             "command": [
               "node",
-              "--test"
+              "--test",
+              "--test-reporter=spec"
             ],
             "reason": "Verify the added assertion kills this survivor group."
           }
@@ -276,7 +280,8 @@
         {
           "command": [
             "node",
-            "--test"
+            "--test",
+            "--test-reporter=spec"
           ],
           "reason": "Rerun the focused test command after adding the missing assertion."
         }

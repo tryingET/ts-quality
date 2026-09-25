@@ -64,9 +64,6 @@ function sampleCommandEnv(baseEnv = process.env) {
     }
   }
   env['TZ'] = 'UTC';
-  // Pin the node:test reporter: Node 22 defaults to TAP for non-TTY output, whose variable-length duration
-  // lines shift detail truncation and made samples differ between passes and across Node versions.
-  env['NODE_OPTIONS'] = '--test-reporter=spec';
   return env;
 }
 
@@ -253,6 +250,22 @@ function writeNormalizedRunArtifacts(runDir, run) {
 }
 
 /**
+ * Pins the node:test reporter on the sample's mutation command. Node 22 defaults to TAP for non-TTY output, whose
+ * variable-length duration lines shift detail truncation, so samples differed between passes and across Node versions.
+ * The pin is per command rather than NODE_OPTIONS so it cannot collide with a command that sets its own reporter.
+ * @param {string} target
+ */
+function pinSampleTestReporter(target) {
+  const configPath = path.join(target, 'ts-quality.config.ts');
+  const original = fs.readFileSync(configPath, 'utf8');
+  const pinned = original.replace("testCommand: ['node', '--test']", "testCommand: ['node', '--test', '--test-reporter=spec']");
+  if (pinned === original) {
+    throw new Error('sample fixture mutation testCommand changed; update pinSampleTestReporter so samples stay deterministic');
+  }
+  fs.writeFileSync(configPath, pinned, 'utf8');
+}
+
+/**
  * @param {string} target
  * @param {string} runDir
  */
@@ -279,6 +292,7 @@ function writeStableAttestation(target, runDir) {
 }
 
 const target = prepareSampleRoot(SAMPLE_FIXTURE);
+pinSampleTestReporter(target);
 run(['check', '--run-id', SAMPLE_RUN_ID], target);
 const runDir = path.join(target, '.ts-quality', 'runs', SAMPLE_RUN_ID);
 const normalizedRun = normalizeRunArtifact(JSON.parse(fs.readFileSync(path.join(runDir, 'run.json'), 'utf8')), target);

@@ -29,13 +29,13 @@ Confidence breakdown: base 100
 
 ## Actionable surviving mutants
 - src/auth/token.js:2 >= -> >
-  command: node --test
+  command: node --test --test-reporter=spec
   next assertion: Add a boundary assertion around src/auth/token.js:2; this mutant changed >= to >.
 - src/auth/token.js:8 && -> ||
-  command: node --test
+  command: node --test --test-reporter=spec
   next assertion: Assert the combined-condition case around src/auth/token.js:8; this mutant changed && to ||.
 - src/auth/token.js:7 && -> ||
-  command: node --test
+  command: node --test --test-reporter=spec
   next assertion: Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.
 
 ## Findings

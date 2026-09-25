@@ -7,7 +7,8 @@
     {
       "command": [
         "node",
-        "--test"
+        "--test",
+        "--test-reporter=spec"
       ],
       "reason": "Rerun the focused test command after adding the missing assertion."
     }
