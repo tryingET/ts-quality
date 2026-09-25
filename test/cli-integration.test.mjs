@@ -134,6 +134,29 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /\nwarning\tprivate key material should not be committed: \.ts-quality\/keys\/sample\.pem/);
 });
 
+test('doctor never recommends lifecycle or destructive scripts and flags only source code outside sourcePatterns', () => {
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-lifecycle-'));
+  fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({
+    scripts: { pretest: 'rimraf dist', test: 'vitest run', 'test:clean': 'rm -rf coverage' }
+  }, null, 2), 'utf8');
+  fs.mkdirSync(path.join(target, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(target, 'test'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'src', 'a.ts'), 'export const a = 1;\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'test', 'a.test.ts'), 'test("a", () => {});\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'README.md'), '# a\n', 'utf8');
+  let result = spawnSync('node', [cli, 'init', '--root', target, '--preset', 'vitest'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'src/a.ts,test/a.test.ts,README.md', '--machine'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\nscripts\tnames=pretest,test,test:clean\tcoverage=\ttests=test\n/);
+  assert.match(result.stdout, /\nrecommend\tfocused-test\tfocused-test-command\tCandidate focused test command: npm run test /);
+  assert.doesNotMatch(result.stdout, /changed-outside-source-patterns/);
+
+  result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'lib/b.ts,README.md', '--machine'], { encoding: 'utf8' });
+  assert.match(result.stdout, /\nrisk\twarn\tchanged-outside-source-patterns\tChanged files are outside sourcePatterns: lib\/b\.ts\.\t/);
+});
+
 test('doctor gives pnpm workspaces safe coverage, package-manager, and source-pattern guidance', () => {
   const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-pnpm-'));
   fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({

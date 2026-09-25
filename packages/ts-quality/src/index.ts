@@ -2697,6 +2697,15 @@ function coverageScriptNames(scripts: Record<string, string>): string[] {
     .map((item) => item.name);
 }
 
+/** Scripts that plausibly run tests: never npm pre/post lifecycle hooks or destructive/clean scripts; exact `test` first. */
+function testScriptNames(scripts: Record<string, string>): string[] {
+  return likelyScriptNames(scripts, ['test'])
+    .filter((name) => !/^(?:pre|post)/u.test(name) && !/(?:^|:)clean(?:$|:)/u.test(name) && !DESTRUCTIVE_SCRIPT_PATTERN.test(scripts[name] ?? ''))
+    .sort((left, right) => Number(right === 'test') - Number(left === 'test'));
+}
+
+const SOURCE_CODE_FILE_PATTERN = /\.(?:[cm]?[jt]sx?)$/u;
+
 function likelyScriptNames(scripts: Record<string, string>, tokens: string[]): string[] {
   return Object.keys(scripts)
     .map((name) => {
@@ -2799,8 +2808,12 @@ function buildDoctorDiagnostic(rootDir: string, options?: { changedFiles?: strin
   const sourceDistRisk = changed.some(isSourceTsFile) && builtOutputRoots(runtimeMirrorRoots).some((root) => fs.existsSync(path.join(rootDir, root)));
   const packageManager = readPackageManager(rootDir);
   const coverageScripts = coverageScriptNames(scripts);
-  const testScripts = likelyScriptNames(scripts, ['test']);
-  const changedOutsideSources = changed.filter((filePath) => !sourcePatterns.some((pattern) => matchPattern(pattern, filePath)));
+  const testScripts = testScriptNames(scripts);
+  // Only source code can be attributed coverage/mutation evidence; tests, docs, and manifests are expected outside sourcePatterns.
+  const changedOutsideSources = changed.filter((filePath) => SOURCE_CODE_FILE_PATTERN.test(filePath)
+    && !filePath.endsWith('.d.ts')
+    && !testPatterns.some((pattern) => matchPattern(pattern, filePath))
+    && !sourcePatterns.some((pattern) => matchPattern(pattern, filePath)));
   const recommendations: DoctorDiagnostic['recommendations'] = [];
   const risks: DoctorDiagnostic['risks'] = [];
   if (changed.length === 0) {
