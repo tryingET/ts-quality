@@ -230,9 +230,10 @@ function releaseBodyFromNotes(markdown) {
  * @param {string} markdown
  * @param {string} heading
  */
-function markdownSection(markdown, heading) {
+export function markdownSection(markdown, heading) {
   const escaped = heading.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-  const match = new RegExp(`^### ${escaped}\\s+([\\s\\S]*?)(?:\\n### |$)`, 'mu').exec(markdown);
+  // End at the next ### heading or the true end of input; with the `m` flag a bare `$` would stop at the first line end.
+  const match = new RegExp(`^### ${escaped}\\s+([\\s\\S]*?)(?=\\n### |(?![\\s\\S]))`, 'mu').exec(markdown);
   return match?.[1]?.trim() ?? '';
 }
 
@@ -611,22 +612,24 @@ function commandVerifyPublic(options) {
   }, null, 2));
 }
 
-const { positional, options } = parseArgs(process.argv.slice(2));
-const command = positional[0] ?? 'plan';
+if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
+  const { positional, options } = parseArgs(process.argv.slice(2));
+  const command = positional[0] ?? 'plan';
 
-try {
-  if (command === 'plan') {
-    commandPlan(options);
-  } else if (command === 'prepare') {
-    commandPrepare(options);
-  } else if (command === 'github') {
-    commandGithub(options);
-  } else if (command === 'verify-public') {
-    commandVerifyPublic(options);
-  } else {
-    throw new Error(`Unknown release orchestrator command: ${command}`);
+  try {
+    if (command === 'plan') {
+      commandPlan(options);
+    } else if (command === 'prepare') {
+      commandPrepare(options);
+    } else if (command === 'github') {
+      commandGithub(options);
+    } else if (command === 'verify-public') {
+      commandVerifyPublic(options);
+    } else {
+      throw new Error(`Unknown release orchestrator command: ${command}`);
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
   }
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
 }
