@@ -34,11 +34,12 @@ function writeJson(filePath, value) {
  * @param {Record<string, string>} [env]
  * @returns {CommandResult}
  */
-function run(command, args, env = {}) {
+function run(command, args, env = {}, rawStdout = false) {
   const result = spawnSync(command, args, { cwd: root, encoding: 'utf8', env: { ...process.env, ...env } });
   return {
     status: result.status,
-    stdout: result.stdout.trim(),
+    // Byte-level public contract checks (for example a bare `x.y.z\n` version line) need untrimmed stdout.
+    stdout: rawStdout ? result.stdout : result.stdout.trim(),
     stderr: result.stderr.trim()
   };
 }
@@ -72,11 +73,11 @@ function sleep(milliseconds) {
  * @param {string} [exhaustedReason]
  * @returns {string}
  */
-function runRequiredWithRetry(label, command, args, env = {}, attempts = 8, retryReason = 'transient failure may still be resolving', exhaustedReason = 'command failed after bounded retries') {
+function runRequiredWithRetry(label, command, args, env = {}, attempts = 8, retryReason = 'transient failure may still be resolving', exhaustedReason = 'command failed after bounded retries', rawStdout = false) {
   /** @type {CommandResult | null} */
   let lastResult = null;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const result = run(command, args, env);
+    const result = run(command, args, env, rawStdout);
     if (result.status === 0) {
       return result.stdout;
     }
@@ -592,7 +593,8 @@ function commandVerifyPublic(options) {
     freshSelfPublishEnv,
     8,
     'npm registry sees the exact version, but npx install resolution or CLI startup may still be transient',
-    `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality ${contractCase.args.join(' ')} did not pass`
+    `npm registry resolves ${packageSpec}, but npx -p ${packageSpec} ts-quality ${contractCase.args.join(' ')} did not pass`,
+    true
   ));
   const publicCliSummary = summarizePublicCliContract(publicCliContract);
   const manualWitness = verifyPublicNpxManualWitnessContract({
