@@ -1,0 +1,25 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "7e4979cd9aeb0d743fb71c4790db1095ce5ff236"
+created_at: "2026-09-25T12:25:31Z"
+intent: "Mirror node_modules per entry and re-point workspace-package links at the mutant workspace so sibling-package tests exercise mutated code (review finding 1)"
+files:
+  - "packages/ts-mutate/src/index.ts"
+  - "dist/packages/ts-mutate/src/index.js"
+  - "dist/packages/ts-mutate/src/index.js.map"
+  - "test/ts-mutate.test.mjs"
+validation:
+  fast_gate:
+    command: "npm run -s build && npm run -s typecheck && npm run -s lint && node --test test/ts-mutate.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 1
+  total: 7
+links:
+  task_ids:
+    - 5934
