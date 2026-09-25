@@ -3,20 +3,20 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "abb97670c217a6c7a7f9ae12473430253c115d7e"
-created_at: "2026-09-25T12:25:43Z"
+created_at: "2026-09-25T12:37:08Z"
 intent: "Match workspace package imports against raw import specifiers, not lexical variants, and keep walking past nameless package.json markers (review findings 5, 6)"
 files:
-  - "packages/invariants/src/index.ts"
   - "dist/packages/invariants/src/index.js"
   - "dist/packages/invariants/src/index.js.map"
+  - "packages/invariants/src/index.ts"
   - "test/invariants.test.mjs"
 validation:
   fast_gate:
-    command: "npm run -s build && npm run -s typecheck && npm run -s lint && node --test test/invariants.test.mjs"
+    command: "see group fast gate (build/typecheck/lint/focused tests)"
     status: "pass"
   full_gate:
-    command: "npm run verify"
-    status: "pending"
+    command: "npm run verify:ci on Node 22.23.3 / 24.21.0 (identical tree a9a96c2) and Node 26; packed-RC dogfood on real pnpm targets"
+    status: "pass"
 group:
   index: 2
   total: 7
