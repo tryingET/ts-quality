@@ -1,0 +1,25 @@
+kind: "ai-society/commit-provenance/v1"
+tool: "/commit"
+actor: "tryinget"
+repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
+commit: "5349b2269d9165e7994c54642411baca8d38fc71"
+created_at: "2026-09-25T12:26:14Z"
+intent: "Scope the evidence coverage basis with exact-or-unique-suffix LCOV matching and use the same scoping for the create-coverage-evidence action (review findings 2, 3)"
+files:
+  - "packages/ts-quality/src/index.ts"
+  - "dist/packages/ts-quality/src/index.js"
+  - "dist/packages/ts-quality/src/index.js.map"
+  - "test/minimal-external-adoption-fixture.test.mjs"
+validation:
+  fast_gate:
+    command: "npm run -s build && npm run -s typecheck && npm run -s lint && node --test test/minimal-external-adoption-fixture.test.mjs"
+    status: "pass"
+  full_gate:
+    command: "npm run verify"
+    status: "pending"
+group:
+  index: 3
+  total: 7
+links:
+  task_ids:
+    - 5934
