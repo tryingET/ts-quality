@@ -66,6 +66,8 @@ interface TestWitnessScope {
 
 interface TestDocument {
   filePath: string;
+  /** Raw module specifiers, lowercased; package matching must not use lexical variants. */
+  importSpecifiers: string[];
   importHints: string[];
   witnessScopes: TestWitnessScope[];
 }
@@ -295,27 +297,27 @@ function requireSpecifier(node: ts.Node, sourceFile: ts.SourceFile): string | un
   return ts.isStringLiteral(argument) ? argument.text : undefined;
 }
 
-function importHintsForDocument(filePath: string, contents: string): string[] {
+function importSpecifiersForDocument(filePath: string, contents: string): string[] {
   const sourceFile = ts.createSourceFile(filePath, contents, ts.ScriptTarget.Latest, true);
-  const hints: string[] = [];
-
-  function pushSpecifier(specifier: string): void {
-    hints.push(...lexicalVariants(specifier));
-  }
+  const specifiers: string[] = [];
 
   function visit(node: ts.Node): void {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
-      pushSpecifier(node.moduleSpecifier.text);
+      specifiers.push(node.moduleSpecifier.text);
     }
     const specifier = requireSpecifier(node, sourceFile);
     if (specifier) {
-      pushSpecifier(specifier);
+      specifiers.push(specifier);
     }
     ts.forEachChild(node, visit);
   }
 
   visit(sourceFile);
-  return unique(hints.map((hint) => hint.toLowerCase()));
+  return unique(specifiers.map((specifier) => specifier.toLowerCase()));
+}
+
+function importHintsForSpecifiers(specifiers: string[]): string[] {
+  return unique(specifiers.flatMap((specifier) => lexicalVariants(specifier)).map((hint) => hint.toLowerCase()));
 }
 
 function calleeChain(expression: ts.Expression): string[] {
@@ -470,9 +472,11 @@ function loadTestDocuments(rootDir: string, patterns: string[]): TestDocument[] 
   const files = collectSourceFiles(rootDir, patterns);
   return files.map((filePath) => {
     const contents = fs.readFileSync(path.join(rootDir, filePath), 'utf8');
+    const importSpecifiers = importSpecifiersForDocument(filePath, contents);
     return {
       filePath,
-      importHints: importHintsForDocument(filePath, contents),
+      importSpecifiers,
+      importHints: importHintsForSpecifiers(importSpecifiers),
       witnessScopes: witnessScopesForDocument(filePath, contents)
     } satisfies TestDocument;
   });
@@ -523,7 +527,10 @@ function workspacePackageName(rootDir: string, filePath: string): string | undef
     if (fs.existsSync(manifestPath)) {
       try {
         const name = readJson<Record<string, unknown>>(manifestPath)['name'];
-        return typeof name === 'string' && name.length > 0 ? name.toLowerCase() : undefined;
+        if (typeof name === 'string' && name.length > 0) {
+          return name.toLowerCase();
+        }
+        // Nameless manifests (for example a nested {"type":"module"} marker) are not package roots; keep walking.
       } catch {
         return undefined;
       }
@@ -534,7 +541,7 @@ function workspacePackageName(rootDir: string, filePath: string): string | undef
 }
 
 function importsWorkspacePackage(document: TestDocument, packageNames: string[]): boolean {
-  return packageNames.some((name) => document.importHints.some((hint) => hint === name || hint.startsWith(`${name}/`)));
+  return packageNames.some((name) => document.importSpecifiers.some((specifier) => specifier === name || specifier.startsWith(`${name}/`)));
 }
 
 function focusedTestDocuments(rootDir: string, testDocuments: TestDocument[], invariant: InvariantSpec, files: string[]): FocusedTestSelection {

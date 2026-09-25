@@ -210,6 +210,45 @@ test('evaluateInvariants aligns TSX tests that import the impacted file through 
   assert.equal(claims[0].evidenceSummary.scenarioResults[0].supported, true);
 });
 
+for (const scenario of ['raw specifier only', 'nameless nested manifest']) {
+  test(`workspace package alignment: ${scenario}`, () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-invariants-workspace-raw-'));
+    const write = (relativePath, contents) => {
+      fs.mkdirSync(path.dirname(path.join(rootDir, relativePath)), { recursive: true });
+      fs.writeFileSync(path.join(rootDir, relativePath), contents, 'utf8');
+    };
+    write('packages/utils/package.json', JSON.stringify({ name: 'utils' }));
+    if (scenario === 'nameless nested manifest') {
+      // A nameless ESM marker below the package root must not hide the real workspace package name.
+      write('packages/utils/lib/package.json', JSON.stringify({ type: 'module' }));
+    }
+    write('packages/utils/lib/format.js', 'export function formatAmount(value) { return value.toFixed(2); }\n');
+    write('tests/amounts.test.js', "import { formatAmount } from 'utils';\ntest('formats amounts', () => { expect(formatAmount(1)).toBe('1.00'); });\n");
+    // A local module whose basename equals the unscoped package name is not an import of that package.
+    write('tests/slugs.test.js', "import { slug } from './helpers/utils';\ntest('slugs', () => { expect(slug('A B')).toBe('a-b'); });\n");
+
+    const claims = invariants.evaluateInvariants({
+      rootDir,
+      invariants: [{
+        id: 'utils.amount-format',
+        title: 'Amount formatting',
+        description: 'Amounts render with two decimals.',
+        severity: 'medium',
+        selectors: ['packages/utils/lib/format.js'],
+        scenarios: [{ id: 'two-decimals', description: 'two decimals', keywords: ['formatAmount'], expected: '1.00' }]
+      }],
+      changedFiles: ['packages/utils/lib/format.js'],
+      changedRegions: [],
+      complexity: [],
+      mutationSites: [],
+      mutations: [],
+      testPatterns: ['tests/**/*.js']
+    });
+
+    assert.deepEqual(claims[0].evidenceSummary.focusedTests, ['tests/amounts.test.js']);
+  });
+}
+
 test('evaluateInvariants requires assertion-bearing focused tests for lexical support', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-invariants-assertion-aware-'));
   fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
