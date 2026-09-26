@@ -71,7 +71,7 @@ interface MutationSourceSpan {
 }
 
 // Bumped when mutant-workspace semantics change so cached results from older workspaces are not reused.
-const MUTATION_RUNTIME_VERSION = '7';
+const MUTATION_RUNTIME_VERSION = '8';
 const SANITIZED_MUTATION_ENV_KEYS = ['NODE_TEST_CONTEXT'];
 const MUTATION_WORKSPACE_EXCLUDES = ['.git', 'node_modules', '.ts-quality'];
 const MUTATION_WORKSPACE_EXCLUDE_SET = new Set(MUTATION_WORKSPACE_EXCLUDES);
@@ -345,10 +345,12 @@ function linkSharedPath(sourcePath: string, destinationPath: string): void {
 function nodeModulesRoots(repoRoot: string, currentDir = repoRoot): string[] {
   const roots: string[] = [];
   for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) {
+    const absolutePath = path.join(currentDir, entry.name);
+    // A node_modules that is itself a symlink (shared install dirs, container volumes) is still the install root.
+    const symlinkedNodeModules = entry.name === 'node_modules' && entry.isSymbolicLink() && fs.existsSync(absolutePath) && fs.statSync(absolutePath).isDirectory();
+    if (!entry.isDirectory() && !symlinkedNodeModules) {
       continue;
     }
-    const absolutePath = path.join(currentDir, entry.name);
     if (entry.name === 'node_modules') {
       roots.push(normalizePath(path.relative(repoRoot, absolutePath)));
       continue;
@@ -640,22 +642,22 @@ export function runMutations(options: MutationOptions): MutationRun {
   const baseline = runCommandReceipt(options.repoRoot, options.testCommand, timeoutMs);
   const repoFiles = repoFileDigests(options.repoRoot);
   const executionFingerprint = buildExecutionFingerprint(options.testCommand, runtimeMirrorRoots, repoFiles);
-  if (baseline.status !== 'pass') {
-    const results = limitedSites.map((site) => mutationResultForSite(site, {
+  const untrustedRun = (failedBaseline: ExecutionReceipt): MutationRun => ({
+    sites: limitedSites,
+    results: limitedSites.map((site) => mutationResultForSite(site, {
       status: 'error',
-      durationMs: baseline.durationMs,
-      details: `Baseline test command must pass before mutation scoring is trusted. ${baseline.details}`.trim().slice(0, 280),
+      durationMs: failedBaseline.durationMs,
+      details: `Baseline test command must pass before mutation scoring is trusted. ${failedBaseline.details ?? ''}`.trim().slice(0, 280),
       testCommand: options.testCommand
-    }));
-    return {
-      sites: limitedSites,
-      results,
-      score: 0,
-      killed: 0,
-      survived: 0,
-      baseline,
-      executionFingerprint
-    };
+    })),
+    score: 0,
+    killed: 0,
+    survived: 0,
+    baseline: failedBaseline,
+    executionFingerprint
+  });
+  if (baseline.status !== 'pass') {
+    return untrustedRun(baseline);
   }
 
   const manifest = loadManifest(options.manifestPath);
@@ -681,7 +683,20 @@ export function runMutations(options: MutationOptions): MutationRun {
         });
         continue;
       }
-      workspace ??= prepareMutationWorkspace(options.repoRoot, repoFiles);
+      if (!workspace) {
+        workspace = prepareMutationWorkspace(options.repoRoot, repoFiles);
+        // A kill is evidence only if the unmutated code passes in this same workspace; otherwise any environment
+        // difference (missing install state, excluded files, absolute paths) would count as killing every mutant.
+        const workspaceBaseline = runCommandReceipt(workspace.tempDir, options.testCommand, timeoutMs);
+        // The baseline run may leave side effects; every mutant must start from the same pristine workspace.
+        resetMutationWorkspace(options.repoRoot, workspace);
+        if (workspaceBaseline.status !== 'pass') {
+          return untrustedRun({
+            ...workspaceBaseline,
+            details: `mutation workspace baseline: the unmutated test command fails inside the mutation workspace, so kills there would not be evidence. ${workspaceBaseline.details ?? ''}`.trim().slice(0, 280)
+          });
+        }
+      }
       const sourceText = fs.readFileSync(path.join(options.repoRoot, site.filePath), 'utf8');
       const mutatedSource = applyMutation(sourceText, site);
       const result = runSingleMutation(options.repoRoot, workspace, site, mutatedSource, options.testCommand, timeoutMs, runtimeMirrorRoots);

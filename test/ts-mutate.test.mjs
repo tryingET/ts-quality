@@ -181,6 +181,68 @@ for (const layout of ['pnpm package link', 'npm workspaces root link']) {
   });
 }
 
+// Feature: a mutant kill is evidence only when the unmutated code passes in the same mutant workspace
+
+test('Scenario: a test command that cannot run inside the mutant workspace yields no kills', () => {
+  // Given a test command that passes in the repository but depends on state the mutant workspace does not carry
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-workspace-baseline-'));
+  fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, '.ts-quality'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'flag.js'), 'function flag() { return true; }\nmodule.exports = { flag };\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, '.ts-quality', 'runtime-state'), 'ready\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, 'check.js'), "require('fs').readFileSync('.ts-quality/runtime-state');\n", 'utf8');
+
+  // When mutations run
+  const run = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['src/flag.js'],
+    changedFiles: ['src/flag.js'],
+    testCommand: ['node', 'check.js'],
+    coveredOnly: false,
+    maxSites: 5,
+    timeoutMs: 5_000
+  });
+
+  // Then no mutant counts as killed, the run fails closed, and the baseline names the workspace
+  assert.ok(run.results.length > 0);
+  assert.equal(run.results.some((result) => result.status === 'killed'), false);
+  assert.equal(run.results.every((result) => result.status === 'error'), true);
+  assert.equal(run.score, 0);
+  assert.equal(run.baseline.status, 'fail');
+  assert.match(run.baseline.details ?? '', /mutation workspace/i);
+});
+
+test('Scenario: a symlinked node_modules resolves inside the mutant workspace', () => {
+  // Given a repository whose node_modules is a symlink to an install directory outside the repository
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-symlinked-modules-'));
+  const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-external-install-'));
+  fs.mkdirSync(path.join(installDir, 'node_modules', 'external-dep'), { recursive: true });
+  fs.writeFileSync(path.join(installDir, 'node_modules', 'external-dep', 'index.js'), "module.exports = { tag: 'ok' };\n", 'utf8');
+  fs.symlinkSync(path.join(installDir, 'node_modules'), path.join(rootDir, 'node_modules'), 'dir');
+  fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'src', 'label.js'), "const { tag } = require('external-dep');\nfunction label() { return tag; }\nfunction verbose() { return true; }\nmodule.exports = { label, verbose };\n", 'utf8');
+  // Package managers look for install state at the project root (for example yarn's node_modules/.yarn-state.yml),
+  // not by walking up parent directories the way Node's resolver does.
+  fs.writeFileSync(path.join(rootDir, 'check.js'), "const assert = require('node:assert/strict');\nrequire('fs').statSync('node_modules/external-dep/index.js');\nassert.equal(require('./src/label.js').label(), 'ok');\n", 'utf8');
+
+  // When mutations run
+  const run = mutate.runMutations({
+    repoRoot: rootDir,
+    sourceFiles: ['src/label.js'],
+    changedFiles: ['src/label.js'],
+    testCommand: ['node', 'check.js'],
+    coveredOnly: false,
+    maxSites: 5,
+    timeoutMs: 5_000
+  });
+
+  // Then the dependency resolves, so the unasserted mutant survives instead of dying on module resolution
+  assert.equal(run.baseline.status, 'pass');
+  const verboseFlip = run.results.find((result) => result.original === 'true');
+  assert.ok(verboseFlip);
+  assert.equal(verboseFlip.status, 'survived');
+});
+
 test('runMutations invalidates manifest entries when the test corpus changes', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-mutant-manifest-'));
   const manifestPath = path.join(rootDir, '.ts-quality', 'mutation-manifest.json');
