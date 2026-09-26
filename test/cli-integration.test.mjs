@@ -134,6 +134,30 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /\nwarning\tprivate key material should not be committed: \.ts-quality\/keys\/sample\.pem/);
 });
 
+test('doctor and check treat colocated tests as tests and give Jest-aware coverage and runner advice', () => {
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-jest-'));
+  fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({ scripts: { test: 'jest' } }, null, 2), 'utf8');
+  fs.mkdirSync(path.join(target, 'src', '__tests__'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'src', 'a.ts'), 'export function a(value: number) { return value > 0; }\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'src', '__tests__', 'a.test.ts'), "import { a } from '../a';\ntest('a', () => { expect(a(1)).toBe(true); });\n", 'utf8');
+  let result = spawnSync('node', [cli, 'init', '--root', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+
+  result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'src/a.ts', '--machine'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  // Colocated tests under src/ are tests, not source.
+  assert.match(result.stdout, /\nfiles\tsources=1\ttests=1\n/);
+  assert.match(result.stdout, /\nrecommend\tcoverage\tcoverage-generate-command\t[^\n]*\tcommand_arg=npm\tcommand_arg=run\tcommand_arg=test\tcommand_arg=--\tcommand_arg=--coverage\tcommand_arg=--coverageReporters=lcov\tcommand_arg=--coverageDirectory=coverage\n/);
+  assert.match(result.stdout, /\nrisk\twarn\tmutation-test-runner-mismatch\tmutations\.testCommand runs node:test but the repository test script runs jest\.\t/);
+
+  const configPath = path.join(target, 'ts-quality.config.ts');
+  fs.writeFileSync(configPath, fs.readFileSync(configPath, 'utf8').replace("testCommand: ['node', '--test']", "testCommand: ['node', '-e', '0']"), 'utf8');
+  result = spawnSync('node', [cli, 'check', '--root', target, '--changed', 'src/a.ts', '--run-id', 'colocated'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const run = JSON.parse(fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'colocated', 'run.json'), 'utf8'));
+  assert.deepEqual(run.files.map((item) => item.filePath), ['src/a.ts']);
+});
+
 test('doctor never recommends lifecycle or destructive scripts and flags only source code outside sourcePatterns', () => {
   const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-lifecycle-'));
   fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({

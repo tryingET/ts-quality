@@ -1281,7 +1281,7 @@ function readCoverageWithOptionalGeneration(rootDir, input) {
 }
 function buildAnalysisManifest(rootDir, options) {
     const loaded = (0, config_1.loadContext)(rootDir, options?.configPath);
-    const sourceFiles = (0, index_1.collectSourceFiles)(rootDir, loaded.config.sourcePatterns);
+    const sourceFiles = sourceFilesExcludingTests(rootDir, loaded.config.sourcePatterns, loaded.config.testPatterns ?? [...index_1.DEFAULT_TEST_PATTERNS]);
     const changedRegions = loaded.config.changeSet.diffFile ? (0, config_1.loadChangedRegions)(rootDir, loaded.config.changeSet.diffFile) : [];
     const configuredChangedFiles = loaded.config.changeSet.files ?? [];
     const baseChangedFiles = options?.changedFiles
@@ -2359,6 +2359,34 @@ function testScriptNames(scripts) {
         .sort((left, right) => Number(right === 'test') - Number(left === 'test'));
 }
 const SOURCE_CODE_FILE_PATTERN = /\.(?:[cm]?[jt]sx?)$/u;
+function testRunnerOfCommand(command) {
+    if (/\bjest\b/u.test(command)) {
+        return 'jest';
+    }
+    if (/\bvitest\b/u.test(command)) {
+        return 'vitest';
+    }
+    if (/\bmocha\b/u.test(command)) {
+        return 'mocha';
+    }
+    return /\bnode\b[^&|;]*\s--test\b/u.test(command) ? 'node:test' : undefined;
+}
+/** Runner behind a command, resolving `npm test` / `<pm> run <script>` through package scripts. */
+function testRunnerOf(command, scripts) {
+    const [executable, first, second] = command;
+    if (executable && ['npm', 'pnpm', 'yarn', 'bun'].includes(executable)) {
+        const scriptName = first === 'run' ? second : first;
+        const script = scriptName ? scripts[scriptName] : undefined;
+        if (script !== undefined) {
+            return testRunnerOfCommand(script);
+        }
+    }
+    return testRunnerOfCommand(command.join(' '));
+}
+/** Source files are never test files, even when tests are colocated under a source root such as src/__tests__. */
+function sourceFilesExcludingTests(rootDir, sourcePatterns, testPatterns) {
+    return (0, index_1.collectSourceFiles)(rootDir, sourcePatterns).filter((filePath) => !testPatterns.some((pattern) => (0, index_1.matchPattern)(pattern, filePath)));
+}
 function likelyScriptNames(scripts, tokens) {
     return Object.keys(scripts)
         .map((name) => {
@@ -2389,6 +2417,18 @@ function focusedTestRecommendation(scriptName, scriptCommand, packageManager = '
         command: [packageManager, 'run', scriptName]
     };
 }
+function runnerCoverageRecommendation(runner, packageManager, scriptName) {
+    const forward = packageManager === 'npm' ? ['--'] : [];
+    if (scriptName && runner === 'jest') {
+        const command = [packageManager, 'run', scriptName, ...forward, '--coverage', '--coverageReporters=lcov', '--coverageDirectory=coverage'];
+        return { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run Jest with LCOV output: ${command.join(' ')}.`, command };
+    }
+    if (scriptName && runner === 'vitest') {
+        const command = [packageManager, 'run', scriptName, ...forward, '--coverage.enabled', '--coverage.reporter=lcov', '--coverage.reportsDirectory=coverage'];
+        return { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run Vitest with LCOV output (requires a coverage provider such as @vitest/coverage-v8): ${command.join(' ')}.`, command };
+    }
+    return { id: 'coverage-generate-command', kind: 'coverage', summary: 'Configure coverage.generateCommand to create coverage/lcov.info.', command: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'] };
+}
 function buildDoctorDiagnostic(rootDir, options) {
     const scripts = readPackageScripts(rootDir);
     let loaded;
@@ -2402,7 +2442,7 @@ function buildDoctorDiagnostic(rootDir, options) {
     const config = loaded?.config;
     const sourcePatterns = config?.sourcePatterns ?? [...index_1.DEFAULT_SOURCE_PATTERNS];
     const testPatterns = config?.testPatterns ?? [...index_1.DEFAULT_TEST_PATTERNS];
-    const sources = (0, index_1.collectSourceFiles)(rootDir, sourcePatterns);
+    const sources = sourceFilesExcludingTests(rootDir, sourcePatterns, testPatterns);
     const tests = (0, index_1.listFiles)(rootDir).filter((filePath) => testPatterns.some((pattern) => (0, index_1.matchPattern)(pattern, filePath)));
     const changed = uniquePaths([...(options?.changedFiles ?? []), ...(config?.changeSet.files ?? [])]);
     const lcovPath = config?.coverage.lcovPath ?? 'coverage/lcov.info';
@@ -2413,6 +2453,8 @@ function buildDoctorDiagnostic(rootDir, options) {
     const packageManager = readPackageManager(rootDir);
     const coverageScripts = coverageScriptNames(scripts);
     const testScripts = testScriptNames(scripts);
+    const repoTestRunner = testScripts[0] ? testRunnerOfCommand(scripts[testScripts[0]] ?? '') : undefined;
+    const mutationTestRunner = config?.mutations.testCommand ? testRunnerOf(config.mutations.testCommand, scripts) : undefined;
     // Only source code can be attributed coverage/mutation evidence; tests, docs, and manifests are expected outside sourcePatterns.
     const changedOutsideSources = changed.filter((filePath) => SOURCE_CODE_FILE_PATTERN.test(filePath)
         && !filePath.endsWith('.d.ts')
@@ -2427,7 +2469,7 @@ function buildDoctorDiagnostic(rootDir, options) {
     if (!lcovExists && generateCommand.length === 0) {
         recommendations.push(coverageScripts.length > 0
             ? { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run an existing script such as ${packageManager} run ${coverageScripts[0]}.`, command: [packageManager, 'run', coverageScripts[0] ?? 'coverage'] }
-            : { id: 'coverage-generate-command', kind: 'coverage', summary: 'Configure coverage.generateCommand to create coverage/lcov.info.', command: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'] });
+            : runnerCoverageRecommendation(repoTestRunner, packageManager, testScripts[0]));
         risks.push({ code: 'coverage-missing-without-generator', level: 'warn', message: 'LCOV is missing and coverage.generateCommand is not configured.', hint: 'Configure a deterministic coverage command or create the LCOV before check.', evidence: [`lcovPath=${lcovPath}`] });
     }
     if (changedOutsideSources.length > 0) {
@@ -2437,6 +2479,15 @@ function buildDoctorDiagnostic(rootDir, options) {
             message: `Changed files are outside sourcePatterns: ${changedOutsideSources.join(', ')}.`,
             hint: 'check cannot attribute coverage, complexity, or mutation evidence to them; extend sourcePatterns (for workspaces, for example packages/*/src/**/*.ts) or point it at the changed files.',
             evidence: changedOutsideSources.map((filePath) => `changed=${filePath}`)
+        });
+    }
+    if (repoTestRunner && mutationTestRunner && repoTestRunner !== mutationTestRunner) {
+        risks.push({
+            code: 'mutation-test-runner-mismatch',
+            level: 'warn',
+            message: `mutations.testCommand runs ${mutationTestRunner} but the repository test script runs ${repoTestRunner}.`,
+            hint: `Point mutations.testCommand at a focused ${repoTestRunner} command; otherwise the mutation baseline fails or mutants run against no tests.`,
+            evidence: [`testCommand=${(config?.mutations.testCommand ?? []).join(' ')}`, `testScript=${testScripts[0] ?? ''}`]
         });
     }
     if (sourceDistRisk) {
