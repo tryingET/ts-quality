@@ -10,6 +10,18 @@ type: "reference"
 
 ## [Unreleased]
 
+### Added
+
+- Added a real third-party Jest + @swc/jest + Yarn 4 target-shape adoption capture from `appmap-node`, with run-artifact compatibility coverage.
+
+### Changed
+
+- `doctor` recommends an LCOV coverage command for the repository's own test runner (Jest or Vitest) and warns with `mutation-test-runner-mismatch` when `mutations.testCommand` runs a different runner than the repository test script.
+
+### Fixed
+
+- Source discovery excludes files matching `testPatterns`, so tests colocated under a source root (for example `src/__tests__/`) are no longer treated as source code.
+
 ## [0.6.0] - 2026-09-25
 
 ### Breaking Changes

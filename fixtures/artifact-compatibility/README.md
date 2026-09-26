@@ -20,5 +20,6 @@ Source artifact: `examples/artifacts/governed-app/run.json` (`sample-governed-ap
 - `malformed-control-plane.run.json.fixture` — packet that must fail closed for decision projections.
 - `real-kinetic-vitest-esm/` — real ESM TypeScript/Vitest target capture (pass).
 - `real-tsx-pnpm-vitest/` — real pnpm-workspace React TSX/Vitest+jsdom target capture (fail with surviving mutants); see `docs/adoption/2026-09-23-workspace-platform-tsx-pnpm-vitest-adoption.md`.
+- `real-jest-yarn4/` — real third-party Jest + @swc/jest + Yarn 4 target capture from `appmap-node`; see `docs/adoption/2026-09-26-appmap-node-jest-yarn4-adoption.md`. The third-party source is deliberately not vendored, so decision projections fail closed with a run-drift notice. The packet contains short excerpts of appmap-node (Copyright 2023 AppLand Inc., MIT License with the Commons Clause), whose license is kept verbatim in `real-jest-yarn4/LICENSE`.
 
 `manifest.json` records the expected parser policy. `test/artifact-compatibility-fixtures.test.mjs` verifies both consumer-parser habits and the repo CLI projection behavior against these fixtures.

@@ -1,0 +1,2437 @@
+{
+  "analysis": {
+    "changedFiles": [
+      "src/config.ts"
+    ],
+    "changedRegions": [],
+    "configPath": "ts-quality.config.ts",
+    "coverageLcovPath": ".ts-quality/adoption/coverage/lcov.info",
+    "createdAt": "2026-09-26T18:43:25.923Z",
+    "executionFingerprint": "sha256:9adab25a024789cb66e9eebc628924fc0af004f047fa51e0dbdf1b16e207fb32",
+    "runId": "jest-yarn4-adoption",
+    "runtimeMirrorRoots": [
+      "dist"
+    ],
+    "sourceFiles": [
+      "src/config.ts"
+    ]
+  },
+  "approvals": [],
+  "attestations": [],
+  "behaviorClaims": [
+    {
+      "description": "Malformed appmap.yml fails with guidance and is never overwritten applies to src/config.ts",
+      "evidence": [
+        "8 surviving mutants in impacted invariant scope",
+        "12 changed functions under 80% coverage in invariant scope"
+      ],
+      "evidenceSummary": {
+        "changedFunctions": [
+          {
+            "coveragePct": 0,
+            "crap": 6,
+            "filePath": "src/config.ts",
+            "symbol": "arrow:<anonymous@102>"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 12,
+            "filePath": "src/config.ts",
+            "symbol": "arrow:<anonymous@132>"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 2,
+            "filePath": "src/config.ts",
+            "symbol": "arrow:<anonymous@136>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "src/config.ts",
+            "symbol": "arrow:<anonymous@196>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 2,
+            "filePath": "src/config.ts",
+            "symbol": "arrow:<anonymous@44>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "src/config.ts",
+            "symbol": "arrow:<anonymous@45>"
+          },
+          {
+            "coveragePct": 100,
+            "crap": 1,
+            "filePath": "src/config.ts",
+            "symbol": "arrow:<anonymous@46>"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 2,
+            "filePath": "src/config.ts",
+            "symbol": "function:config"
+          },
+          {
+            "coveragePct": 25,
+            "crap": 10.75,
+            "filePath": "src/config.ts",
+            "symbol": "function:getNonNegativeIntegerEnvVarValue"
+          },
+          {
+            "coveragePct": 64.29,
+            "crap": 10.91,
+            "filePath": "src/config.ts",
+            "symbol": "function:loadConfigDocument"
+          },
+          {
+            "coveragePct": 66.67,
+            "crap": 12,
+            "filePath": "src/config.ts",
+            "symbol": "function:readConfigFile"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 2,
+            "filePath": "src/config.ts",
+            "symbol": "method:export"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 20,
+            "filePath": "src/config.ts",
+            "symbol": "method:getFunctionLabels"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 20,
+            "filePath": "src/config.ts",
+            "symbol": "method:getPackage"
+          },
+          {
+            "coveragePct": 66.67,
+            "crap": 4.59,
+            "filePath": "src/config.ts",
+            "symbol": "method:migrate"
+          },
+          {
+            "coveragePct": 0,
+            "crap": 2,
+            "filePath": "src/config.ts",
+            "symbol": "method:toJSON"
+          }
+        ],
+        "changedFunctionsUnder80Coverage": 12,
+        "evidenceSemantics": "execution-backed",
+        "evidenceSemanticsSummary": "execution-backed witness artifacts matched the invariant scenario scope",
+        "executionWitnessFiles": [
+          ".ts-quality/witnesses/config-malformed-yaml.json"
+        ],
+        "focusedTests": [
+          "src/__tests__/config.test.ts"
+        ],
+        "impactedFiles": [
+          "src/config.ts"
+        ],
+        "invariantId": "config.malformed-yaml-fails-informatively",
+        "killedMutantsInScope": 4,
+        "maxChangedCrap": 20,
+        "mutationSitesInScope": 12,
+        "scenarioResults": [
+          {
+            "assertionMatched": true,
+            "description": "An unterminated flow mapping in appmap.yml makes new Config() throw.",
+            "expected": "new Config() throws the recovery hint and appmap.yml keeps its original content.",
+            "failurePathKeywordsMatched": true,
+            "keywordsMatched": true,
+            "scenarioId": "malformed-appmap-yml",
+            "supported": true,
+            "supportKind": "execution-witness"
+          }
+        ],
+        "subSignals": [
+          {
+            "facts": [
+              "mode reason: matched focused tests via deterministic path/import/selector hints",
+              "impacted files: src/config.ts",
+              "focused tests: src/__tests__/config.test.ts"
+            ],
+            "label": "Focused test alignment",
+            "level": "clear",
+            "mode": "inferred",
+            "modeReason": "matched focused tests via deterministic path/import/selector hints",
+            "signalId": "focused-test-alignment",
+            "summary": "1 focused test file aligned to invariant scope"
+          },
+          {
+            "facts": [
+              "mode reason: execution witness artifacts matched invariant id, scenario id, pass status, and impacted source scope",
+              "impacted files: src/config.ts",
+              "execution witness files: .ts-quality/witnesses/config-malformed-yaml.json"
+            ],
+            "label": "Execution witness",
+            "level": "clear",
+            "mode": "explicit",
+            "modeReason": "execution witness artifacts matched invariant id, scenario id, pass status, and impacted source scope",
+            "signalId": "execution-witness",
+            "summary": "1 execution witness file matched invariant scenario scope"
+          },
+          {
+            "facts": [
+              "mode reason: scenario support came from explicit execution witness artifacts",
+              "malformed-appmap-yml: execution-backed witness matched"
+            ],
+            "label": "Scenario support",
+            "level": "clear",
+            "mode": "explicit",
+            "modeReason": "scenario support came from explicit execution witness artifacts",
+            "signalId": "scenario-support",
+            "summary": "1/1 scenario(s) have execution-backed support"
+          },
+          {
+            "facts": [
+              "mode reason: coverage evidence came from LCOV for changed functions in invariant scope",
+              "arrow:<anonymous@102> (src/config.ts, coverage 0%, CRAP 6)",
+              "arrow:<anonymous@132> (src/config.ts, coverage 0%, CRAP 12)",
+              "arrow:<anonymous@136> (src/config.ts, coverage 0%, CRAP 2)",
+              "function:config (src/config.ts, coverage 0%, CRAP 2)",
+              "function:getNonNegativeIntegerEnvVarValue (src/config.ts, coverage 25%, CRAP 10.75)",
+              "function:loadConfigDocument (src/config.ts, coverage 64.29%, CRAP 10.91)",
+              "function:readConfigFile (src/config.ts, coverage 66.67%, CRAP 12)",
+              "method:export (src/config.ts, coverage 0%, CRAP 2)",
+              "method:getFunctionLabels (src/config.ts, coverage 0%, CRAP 20)",
+              "method:getPackage (src/config.ts, coverage 0%, CRAP 20)",
+              "method:migrate (src/config.ts, coverage 66.67%, CRAP 4.59)",
+              "method:toJSON (src/config.ts, coverage 0%, CRAP 2)"
+            ],
+            "label": "Coverage pressure",
+            "level": "warning",
+            "mode": "explicit",
+            "modeReason": "coverage evidence came from LCOV for changed functions in invariant scope",
+            "signalId": "coverage-pressure",
+            "summary": "12 changed functions under 80% coverage"
+          },
+          {
+            "facts": [
+              "mode reason: mutation evidence came from selected mutation sites in invariant scope",
+              "mutation sites in scope: 12",
+              "killed mutants in scope: 4",
+              "surviving mutants in scope: 8"
+            ],
+            "label": "Mutation pressure",
+            "level": "warning",
+            "mode": "explicit",
+            "modeReason": "mutation evidence came from selected mutation sites in invariant scope",
+            "signalId": "mutation-pressure",
+            "summary": "8 surviving mutants across 12 mutation sites"
+          },
+          {
+            "facts": [
+              "mode reason: changed-function evidence came from CRAP/changed-function mapping in invariant scope",
+              "arrow:<anonymous@102> (src/config.ts, coverage 0%, CRAP 6)",
+              "arrow:<anonymous@132> (src/config.ts, coverage 0%, CRAP 12)",
+              "arrow:<anonymous@136> (src/config.ts, coverage 0%, CRAP 2)",
+              "arrow:<anonymous@196> (src/config.ts, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@44> (src/config.ts, coverage 100%, CRAP 2)",
+              "arrow:<anonymous@45> (src/config.ts, coverage 100%, CRAP 1)",
+              "arrow:<anonymous@46> (src/config.ts, coverage 100%, CRAP 1)",
+              "function:config (src/config.ts, coverage 0%, CRAP 2)",
+              "function:getNonNegativeIntegerEnvVarValue (src/config.ts, coverage 25%, CRAP 10.75)",
+              "function:loadConfigDocument (src/config.ts, coverage 64.29%, CRAP 10.91)",
+              "function:readConfigFile (src/config.ts, coverage 66.67%, CRAP 12)",
+              "method:export (src/config.ts, coverage 0%, CRAP 2)",
+              "method:getFunctionLabels (src/config.ts, coverage 0%, CRAP 20)",
+              "method:getPackage (src/config.ts, coverage 0%, CRAP 20)",
+              "method:migrate (src/config.ts, coverage 66.67%, CRAP 4.59)",
+              "method:toJSON (src/config.ts, coverage 0%, CRAP 2)"
+            ],
+            "label": "Changed function pressure",
+            "level": "info",
+            "mode": "explicit",
+            "modeReason": "changed-function evidence came from CRAP/changed-function mapping in invariant scope",
+            "signalId": "changed-function-pressure",
+            "summary": "16 changed functions in invariant scope; max changed CRAP 20"
+          }
+        ],
+        "survivingMutantsInScope": 8
+      },
+      "id": "config.malformed-yaml-fails-informatively:claim",
+      "invariantId": "config.malformed-yaml-fails-informatively",
+      "obligations": [],
+      "status": "at-risk"
+    }
+  ],
+  "changedFiles": [
+    "src/config.ts"
+  ],
+  "changedRegions": [],
+  "complexity": [
+    {
+      "changed": true,
+      "complexity": 4,
+      "coveragePct": 0,
+      "crap": 20,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 122,
+        "startLine": 110
+      },
+      "symbol": "method:getPackage"
+    },
+    {
+      "changed": true,
+      "complexity": 4,
+      "coveragePct": 0,
+      "crap": 20,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 137,
+        "startLine": 124
+      },
+      "symbol": "method:getFunctionLabels"
+    },
+    {
+      "changed": true,
+      "complexity": 3,
+      "coveragePct": 0,
+      "crap": 12,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 134,
+        "startLine": 132
+      },
+      "symbol": "arrow:<anonymous@132>"
+    },
+    {
+      "changed": true,
+      "complexity": 9,
+      "coveragePct": 66.67,
+      "crap": 12,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 222,
+        "startLine": 204
+      },
+      "symbol": "function:readConfigFile"
+    },
+    {
+      "changed": true,
+      "complexity": 8,
+      "coveragePct": 64.29,
+      "crap": 10.91,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 202,
+        "startLine": 183
+      },
+      "symbol": "function:loadConfigDocument"
+    },
+    {
+      "changed": true,
+      "complexity": 4,
+      "coveragePct": 25,
+      "crap": 10.75,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 82,
+        "startLine": 73
+      },
+      "symbol": "function:getNonNegativeIntegerEnvVarValue"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 0,
+      "crap": 6,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 104,
+        "startLine": 102
+      },
+      "symbol": "arrow:<anonymous@102>"
+    },
+    {
+      "changed": true,
+      "complexity": 4,
+      "coveragePct": 66.67,
+      "crap": 4.59,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 169,
+        "startLine": 155
+      },
+      "symbol": "method:migrate"
+    },
+    {
+      "changed": true,
+      "complexity": 2,
+      "coveragePct": 100,
+      "crap": 2,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 44,
+        "startLine": 44
+      },
+      "symbol": "arrow:<anonymous@44>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 136,
+        "startLine": 136
+      },
+      "symbol": "arrow:<anonymous@136>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 141,
+        "startLine": 139
+      },
+      "symbol": "method:export"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 150,
+        "startLine": 143
+      },
+      "symbol": "method:toJSON"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 0,
+      "crap": 2,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 227,
+        "startLine": 225
+      },
+      "symbol": "function:config"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 46,
+        "startLine": 45
+      },
+      "symbol": "arrow:<anonymous@45>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 46,
+        "startLine": 46
+      },
+      "symbol": "arrow:<anonymous@46>"
+    },
+    {
+      "changed": true,
+      "complexity": 1,
+      "coveragePct": 100,
+      "crap": 1,
+      "filePath": "src/config.ts",
+      "kind": "complexity",
+      "span": {
+        "endLine": 196,
+        "startLine": 196
+      },
+      "symbol": "arrow:<anonymous@196>"
+    }
+  ],
+  "controlPlane": {
+    "agents": [
+      {
+        "grants": [
+          {
+            "actions": [
+              "merge",
+              "override",
+              "amend"
+            ],
+            "id": "maintainer-merge",
+            "minMergeConfidence": 60,
+            "paths": [
+              "src/**"
+            ]
+          }
+        ],
+        "id": "maintainer",
+        "kind": "human",
+        "roles": [
+          "maintainer"
+        ]
+      },
+      {
+        "grants": [
+          {
+            "actions": [
+              "merge"
+            ],
+            "id": "release-bot-merge",
+            "minMergeConfidence": 80,
+            "paths": [
+              "src/**"
+            ],
+            "requireAttestations": [
+              "ci.tests.passed"
+            ],
+            "requireHumanReview": true
+          }
+        ],
+        "id": "release-bot",
+        "kind": "automation",
+        "roles": [
+          "ci"
+        ]
+      }
+    ],
+    "agentsDigest": "sha256:b0e2fd14daa47b20ec1477e846101bd8ba9d257412eb1a8a32773933db6927bf",
+    "agentsPath": ".ts-quality/agents.ts",
+    "approvalsPath": ".ts-quality/approvals.json",
+    "attestationsDir": ".ts-quality/attestations",
+    "configDigest": "sha256:921f709835471b6576a97b277c864513a860f6243db391fa298a2d9dbc34deb5",
+    "configPath": "ts-quality.config.ts",
+    "constitution": [
+      {
+        "id": "default-risk",
+        "kind": "risk",
+        "maxCrap": 30,
+        "message": "Changed source must stay within risk budgets.",
+        "minMergeConfidence": 70,
+        "minMutationScore": 0.8,
+        "paths": [
+          "src/**"
+        ]
+      },
+      {
+        "id": "payments-review",
+        "kind": "approval",
+        "message": "Payments changes require a maintainer approval.",
+        "minApprovals": 1,
+        "paths": [
+          "src/payments/**"
+        ],
+        "roles": [
+          "maintainer"
+        ]
+      }
+    ],
+    "constitutionDigest": "sha256:7bfa4a3b155c33221e2c08bf7e109c80c86d537e2c940bb1132d4eae206dc31f",
+    "constitutionPath": ".ts-quality/constitution.ts",
+    "overridesPath": ".ts-quality/overrides.json",
+    "policy": {
+      "maxChangedCrap": 80,
+      "minMergeConfidence": 60,
+      "minMutationScore": 0.6
+    },
+    "schemaVersion": 1,
+    "trustedKeysDir": ".ts-quality/keys",
+    "waiversPath": ".ts-quality/waivers.json"
+  },
+  "coverage": [
+    {
+      "coveredLines": 73,
+      "filePath": "src/config.ts",
+      "kind": "coverage",
+      "lines": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "7": 1,
+        "9": 1,
+        "10": 1,
+        "11": 1,
+        "12": 1,
+        "13": 1,
+        "15": 1,
+        "16": 1,
+        "18": 1,
+        "19": 1,
+        "21": 9,
+        "22": 8,
+        "23": 8,
+        "24": 8,
+        "25": 8,
+        "26": 8,
+        "27": 8,
+        "28": 8,
+        "29": 8,
+        "31": 8,
+        "37": 8,
+        "39": 8,
+        "40": 8,
+        "43": 8,
+        "44": 3,
+        "45": 8,
+        "46": 1,
+        "49": 8,
+        "51": 8,
+        "52": 8,
+        "53": 7,
+        "54": 7,
+        "56": 7,
+        "58": 7,
+        "60": 7,
+        "61": 7,
+        "63": 7,
+        "75": 14,
+        "76": 0,
+        "77": 0,
+        "78": 0,
+        "79": 0,
+        "81": 14,
+        "84": 7,
+        "89": 7,
+        "95": 8,
+        "97": 0,
+        "101": 0,
+        "102": 0,
+        "103": 0,
+        "105": 0,
+        "108": 8,
+        "111": 0,
+        "112": 0,
+        "114": 0,
+        "115": 0,
+        "119": 0,
+        "121": 0,
+        "129": 0,
+        "130": 0,
+        "133": 0,
+        "136": 0,
+        "140": 0,
+        "144": 0,
+        "153": 8,
+        "156": 2,
+        "158": 1,
+        "159": 1,
+        "162": 1,
+        "163": 1,
+        "168": 1,
+        "184": 8,
+        "187": 8,
+        "188": 8,
+        "190": 3,
+        "191": 0,
+        "194": 5,
+        "195": 5,
+        "196": 1,
+        "197": 1,
+        "201": 4,
+        "205": 4,
+        "206": 4,
+        "207": 4,
+        "208": 4,
+        "209": 4,
+        "210": 4,
+        "211": 4,
+        "212": 4,
+        "213": 0,
+        "214": 0,
+        "216": 4,
+        "217": 0,
+        "218": 0,
+        "221": 4,
+        "225": 0,
+        "226": 0
+      },
+      "pct": 72.28,
+      "source": "",
+      "totalLines": 101
+    }
+  ],
+  "coverageGeneration": {
+    "attemptedAt": "2026-09-26T18:43:25.923Z",
+    "command": [
+      "node",
+      ".yarn/releases/yarn-4.13.0.cjs",
+      "jest",
+      "src/__tests__/config.test.ts",
+      "--coverage",
+      "--coverageReporters=lcov",
+      "--coverageDirectory=.ts-quality/adoption/coverage",
+      "--collectCoverageFrom=src/config.ts"
+    ],
+    "lcovPath": ".ts-quality/adoption/coverage/lcov.info",
+    "receipt": {
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.451 s, estimated 1 s",
+      "durationMs": 1161,
+      "exitCode": 0,
+      "status": "pass"
+    }
+  },
+  "createdAt": "2026-09-26T18:43:25.923Z",
+  "files": [
+    {
+      "digest": "sha256:21d70b0fa2da8649d0667d6179687c13e467df29ad2c52ad7f61ab0854627fd0",
+      "filePath": "src/config.ts",
+      "packageName": "appmap-node"
+    }
+  ],
+  "governance": [
+    {
+      "evidence": [
+        "Mutation score 0.33 below budget 0.80"
+      ],
+      "id": "default-risk:mutation",
+      "level": "error",
+      "message": "Changed source must stay within risk budgets.",
+      "ruleId": "default-risk",
+      "scope": [
+        "src/config.ts"
+      ]
+    },
+    {
+      "evidence": [
+        "Merge confidence 55 below minimum 70"
+      ],
+      "id": "default-risk:confidence",
+      "level": "error",
+      "message": "Changed source must stay within risk budgets.",
+      "ruleId": "default-risk",
+      "scope": [
+        "src/config.ts"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "description": "Loading a syntactically broken appmap.yml throws an informative error telling the user how to recover, and leaves the file untouched.",
+      "id": "config.malformed-yaml-fails-informatively",
+      "scenarios": [
+        {
+          "description": "An unterminated flow mapping in appmap.yml makes new Config() throw.",
+          "executionWitnessPatterns": [
+            ".ts-quality/witnesses/config-malformed-yaml.json"
+          ],
+          "expected": "new Config() throws the recovery hint and appmap.yml keeps its original content.",
+          "id": "malformed-appmap-yml",
+          "keywords": [
+            "malformed",
+            "toThrowError",
+            "You can remove the file to use the default configuration"
+          ]
+        }
+      ],
+      "selectors": [
+        "src/config.ts"
+      ],
+      "severity": "high",
+      "title": "Malformed appmap.yml fails with guidance and is never overwritten"
+    }
+  ],
+  "mutationBaseline": {
+    "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.173 s, estimated 1 s",
+    "durationMs": 772,
+    "exitCode": 0,
+    "status": "pass"
+  },
+  "mutationRemediation": {
+    "survivors": [
+      {
+        "assertionHint": "Assert the opposite boolean branch around src/config.ts:37; this mutant flipped true to false.",
+        "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+        "filePath": "src/config.ts",
+        "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "false",
+        "observableBehavior": "Boolean behavior changed (true -> false); the opposite branch may now be externally visible.",
+        "operator": "true",
+        "original": "true",
+        "replacement": "false",
+        "siteId": "sha256:790ed5ac49a061dacc32ec1317b8640aeb3e40ef7dc6d317d23dd254245b3553",
+        "span": {
+          "endLine": 37,
+          "startLine": 37
+        },
+        "testCommand": [
+          "node",
+          ".yarn/releases/yarn-4.13.0.cjs",
+          "jest",
+          "src/__tests__/config.test.ts",
+          "--runInBand"
+        ]
+      },
+      {
+        "assertionHint": "Assert the opposite boolean branch around src/config.ts:40; this mutant flipped false to true.",
+        "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+        "filePath": "src/config.ts",
+        "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "true",
+        "observableBehavior": "Boolean behavior changed (false -> true); the opposite branch may now be externally visible.",
+        "operator": "false",
+        "original": "false",
+        "replacement": "true",
+        "siteId": "sha256:5c2f5400f67c12f2865d390f4b686cc4cfdcafc271cad8f291a4dfea092d6560",
+        "span": {
+          "endLine": 40,
+          "startLine": 40
+        },
+        "testCommand": [
+          "node",
+          ".yarn/releases/yarn-4.13.0.cjs",
+          "jest",
+          "src/__tests__/config.test.ts",
+          "--runInBand"
+        ]
+      },
+      {
+        "assertionHint": "Assert the opposite boolean branch around src/config.ts:153; this mutant flipped true to false.",
+        "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+        "filePath": "src/config.ts",
+        "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "false",
+        "observableBehavior": "Boolean behavior changed (true -> false); the opposite branch may now be externally visible.",
+        "operator": "true",
+        "original": "true",
+        "replacement": "false",
+        "siteId": "sha256:6373dbb790d0fb2b7c88233978439ed64de7466454a9443829de55efe44ed9fa",
+        "span": {
+          "endLine": 153,
+          "startLine": 153
+        },
+        "testCommand": [
+          "node",
+          ".yarn/releases/yarn-4.13.0.cjs",
+          "jest",
+          "src/__tests__/config.test.ts",
+          "--runInBand"
+        ]
+      },
+      {
+        "assertionHint": "Assert the opposite boolean branch around src/config.ts:168; this mutant flipped false to true.",
+        "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+        "filePath": "src/config.ts",
+        "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "true",
+        "observableBehavior": "Boolean behavior changed (false -> true); the opposite branch may now be externally visible.",
+        "operator": "false",
+        "original": "false",
+        "replacement": "true",
+        "siteId": "sha256:f4122c94e2a16b77b84872fb62588d16bc5079841617034c77b1a5af26344ba0",
+        "span": {
+          "endLine": 168,
+          "startLine": 168
+        },
+        "testCommand": [
+          "node",
+          ".yarn/releases/yarn-4.13.0.cjs",
+          "jest",
+          "src/__tests__/config.test.ts",
+          "--runInBand"
+        ]
+      },
+      {
+        "assertionHint": "Assert the combined-condition case around src/config.ts:190; this mutant changed && to ||.",
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+        "filePath": "src/config.ts",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "||",
+        "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+        "operator": "&&",
+        "original": "&&",
+        "replacement": "||",
+        "siteId": "sha256:000fcf6db712a3ba48b3677c0c36ff790f1c3733a9d1298cc9b6903a52a02a5f",
+        "span": {
+          "endLine": 190,
+          "startLine": 190
+        },
+        "testCommand": [
+          "node",
+          ".yarn/releases/yarn-4.13.0.cjs",
+          "jest",
+          "src/__tests__/config.test.ts",
+          "--runInBand"
+        ]
+      },
+      {
+        "assertionHint": "Assert the combined-condition case around src/config.ts:190; this mutant changed && to ||.",
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+        "filePath": "src/config.ts",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "||",
+        "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+        "operator": "&&",
+        "original": "&&",
+        "replacement": "||",
+        "siteId": "sha256:16bb880982466ce1dbeeded0df79571766bf06562ab201b182f7b35410632dfa",
+        "span": {
+          "endLine": 190,
+          "startLine": 190
+        },
+        "testCommand": [
+          "node",
+          ".yarn/releases/yarn-4.13.0.cjs",
+          "jest",
+          "src/__tests__/config.test.ts",
+          "--runInBand"
+        ]
+      },
+      {
+        "assertionHint": "Assert the combined-condition case around src/config.ts:190; this mutant changed && to ||.",
+        "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+        "filePath": "src/config.ts",
+        "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "||",
+        "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+        "operator": "&&",
+        "original": "&&",
+        "replacement": "||",
+        "siteId": "sha256:38e7a1dae201fd57e059e05100231a7e956676eef87e9a790cdf0549fc27854c",
+        "span": {
+          "endLine": 190,
+          "startLine": 190
+        },
+        "testCommand": [
+          "node",
+          ".yarn/releases/yarn-4.13.0.cjs",
+          "jest",
+          "src/__tests__/config.test.ts",
+          "--runInBand"
+        ]
+      },
+      {
+        "assertionHint": "Assert the opposite boolean branch around src/config.ts:194; this mutant flipped true to false.",
+        "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+        "filePath": "src/config.ts",
+        "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+        "mutated": "false",
+        "observableBehavior": "Boolean behavior changed (true -> false); the opposite branch may now be externally visible.",
+        "operator": "true",
+        "original": "true",
+        "replacement": "false",
+        "siteId": "sha256:127e1368b29855c86752d42eed33367364a85d14d57574175faa689d4a64ab1e",
+        "span": {
+          "endLine": 194,
+          "startLine": 194
+        },
+        "testCommand": [
+          "node",
+          ".yarn/releases/yarn-4.13.0.cjs",
+          "jest",
+          "src/__tests__/config.test.ts",
+          "--runInBand"
+        ]
+      }
+    ]
+  },
+  "mutations": [
+    {
+      "assertionHint": "Assert the opposite boolean branch around src/config.ts:37; this mutant flipped true to false.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.215 s",
+      "durationMs": 1044,
+      "endOffset": 1516,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "false",
+      "operator": "true",
+      "original": "true",
+      "replacement": "false",
+      "siteId": "sha256:790ed5ac49a061dacc32ec1317b8640aeb3e40ef7dc6d317d23dd254245b3553",
+      "span": {
+        "endLine": 37,
+        "startLine": 37
+      },
+      "startOffset": 1512,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert the opposite boolean branch around src/config.ts:40; this mutant flipped false to true.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\n(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime",
+      "durationMs": 865,
+      "endOffset": 1593,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "true",
+      "operator": "false",
+      "original": "false",
+      "replacement": "true",
+      "siteId": "sha256:5c2f5400f67c12f2865d390f4b686cc4cfdcafc271cad8f291a4dfea092d6560",
+      "span": {
+        "endLine": 40,
+        "startLine": 40
+      },
+      "startOffset": 1588,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around src/config.ts:61; this mutant changed && to ||.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\n(Λ) appmap.yml requires migration, changes will be automatically applied.\nFAIL src/__tests__/config.test.ts\n  ● Config › respects environment variables\n\n    TypeError: Cannot read properties of undefined (r",
+      "durationMs": 965,
+      "endOffset": 2511,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "siteId": "sha256:b4ccbb825f5f334966875a8b2272bf94da843233e50f88dce08328c90a8ad5a9",
+      "span": {
+        "endLine": 61,
+        "startLine": 61
+      },
+      "startOffset": 2509,
+      "status": "killed",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert both equality and inequality behavior around src/config.ts:61; this mutant changed === to !==.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nFAIL src/__tests__/config.test.ts\n  ● Config › migrate › sets the language field in existing configs\n\n    expect(received).toMatchSnapshot()\n\n    Snapshot name: `Config migrate sets the language field in ex",
+      "durationMs": 886,
+      "endOffset": 2531,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "siteId": "sha256:50c9353376563b33d3336c0e0fc863091e482e91b501444abcf73fddcd3939d0",
+      "span": {
+        "endLine": 61,
+        "startLine": 61
+      },
+      "startOffset": 2528,
+      "status": "killed",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert the opposite boolean branch around src/config.ts:153; this mutant flipped true to false.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.234 s, estimated 1 s",
+      "durationMs": 853,
+      "endOffset": 5052,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "false",
+      "operator": "true",
+      "original": "true",
+      "replacement": "false",
+      "siteId": "sha256:6373dbb790d0fb2b7c88233978439ed64de7466454a9443829de55efe44ed9fa",
+      "span": {
+        "endLine": 153,
+        "startLine": 153
+      },
+      "startOffset": 5048,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert the opposite boolean branch around src/config.ts:168; this mutant flipped false to true.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.224 s, estimated 1 s",
+      "durationMs": 834,
+      "endOffset": 5433,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "true",
+      "operator": "false",
+      "original": "false",
+      "replacement": "true",
+      "siteId": "sha256:f4122c94e2a16b77b84872fb62588d16bc5079841617034c77b1a5af26344ba0",
+      "span": {
+        "endLine": 168,
+        "startLine": 168
+      },
+      "startOffset": 5428,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around src/config.ts:190; this mutant changed && to ||.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.209 s, estimated 1 s",
+      "durationMs": 810,
+      "endOffset": 5998,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "siteId": "sha256:000fcf6db712a3ba48b3677c0c36ff790f1c3733a9d1298cc9b6903a52a02a5f",
+      "span": {
+        "endLine": 190,
+        "startLine": 190
+      },
+      "startOffset": 5996,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around src/config.ts:190; this mutant changed && to ||.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.172 s, estimated 1 s",
+      "durationMs": 777,
+      "endOffset": 5981,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "siteId": "sha256:16bb880982466ce1dbeeded0df79571766bf06562ab201b182f7b35410632dfa",
+      "span": {
+        "endLine": 190,
+        "startLine": 190
+      },
+      "startOffset": 5979,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert the combined-condition case around src/config.ts:190; this mutant changed && to ||.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.189 s, estimated 1 s",
+      "durationMs": 831,
+      "endOffset": 5955,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "||",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "siteId": "sha256:38e7a1dae201fd57e059e05100231a7e956676eef87e9a790cdf0549fc27854c",
+      "span": {
+        "endLine": 190,
+        "startLine": 190
+      },
+      "startOffset": 5953,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert the opposite boolean branch around src/config.ts:194; this mutant flipped true to false.",
+      "details": "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.184 s, estimated 1 s",
+      "durationMs": 791,
+      "endOffset": 6124,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "false",
+      "operator": "true",
+      "original": "true",
+      "replacement": "false",
+      "siteId": "sha256:127e1368b29855c86752d42eed33367364a85d14d57574175faa689d4a64ab1e",
+      "span": {
+        "endLine": 194,
+        "startLine": 194
+      },
+      "startOffset": 6120,
+      "status": "survived",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Add a boundary assertion around src/config.ts:195; this mutant changed > to >=.",
+      "details": "FAIL src/__tests__/config.test.ts\n  ● Config › searches for appmap.yml and uses config from it\n\n    Failed to parse config file at <tmpdir>/tmp-2036959-il9PQCZCxHU7/appmap.yml\n\n    You can remove the file to use the default configuration.\n\n      1",
+      "durationMs": 777,
+      "endOffset": 6159,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": ">=",
+      "operator": ">",
+      "original": ">",
+      "replacement": ">=",
+      "siteId": "sha256:d24f6c89faa99b743d8316427d0927c82f08906f550fc376f1854715f3bfbdef",
+      "span": {
+        "endLine": 195,
+        "startLine": 195
+      },
+      "startOffset": 6158,
+      "status": "killed",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    },
+    {
+      "assertionHint": "Assert both equality and inequality behavior around src/config.ts:207; this mutant changed === to !==.",
+      "details": "FAIL src/__tests__/config.test.ts\n  ● Config › searches for appmap.yml and uses config from it\n\n    assert(received)\n\n    Expected value to be equal to:\n      true\n    Received:\n      false\n\n      205 |   const config = document.toJSON() as Record<string, unknown>;\n      206 |   ",
+      "durationMs": 743,
+      "endOffset": 6614,
+      "filePath": "src/config.ts",
+      "kind": "mutation-result",
+      "mutated": "!==",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "siteId": "sha256:e113f7d1a37e32db8481894b3f905058218180f0605eb3497ceb6c3392202174",
+      "span": {
+        "endLine": 207,
+        "startLine": 207
+      },
+      "startOffset": 6611,
+      "status": "killed",
+      "testCommand": [
+        "node",
+        ".yarn/releases/yarn-4.13.0.cjs",
+        "jest",
+        "src/__tests__/config.test.ts",
+        "--runInBand"
+      ]
+    }
+  ],
+  "mutationSites": [
+    {
+      "description": "boolean flip true->false",
+      "endOffset": 1516,
+      "filePath": "src/config.ts",
+      "id": "sha256:790ed5ac49a061dacc32ec1317b8640aeb3e40ef7dc6d317d23dd254245b3553",
+      "operator": "true",
+      "original": "true",
+      "replacement": "false",
+      "span": {
+        "endLine": 37,
+        "startLine": 37
+      },
+      "startOffset": 1512
+    },
+    {
+      "description": "boolean flip false->true",
+      "endOffset": 1593,
+      "filePath": "src/config.ts",
+      "id": "sha256:5c2f5400f67c12f2865d390f4b686cc4cfdcafc271cad8f291a4dfea092d6560",
+      "operator": "false",
+      "original": "false",
+      "replacement": "true",
+      "span": {
+        "endLine": 40,
+        "startLine": 40
+      },
+      "startOffset": 1588
+    },
+    {
+      "description": "and to or",
+      "endOffset": 2511,
+      "filePath": "src/config.ts",
+      "id": "sha256:b4ccbb825f5f334966875a8b2272bf94da843233e50f88dce08328c90a8ad5a9",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "span": {
+        "endLine": 61,
+        "startLine": 61
+      },
+      "startOffset": 2509
+    },
+    {
+      "description": "strict equality inversion",
+      "endOffset": 2531,
+      "filePath": "src/config.ts",
+      "id": "sha256:50c9353376563b33d3336c0e0fc863091e482e91b501444abcf73fddcd3939d0",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "span": {
+        "endLine": 61,
+        "startLine": 61
+      },
+      "startOffset": 2528
+    },
+    {
+      "description": "boolean flip true->false",
+      "endOffset": 5052,
+      "filePath": "src/config.ts",
+      "id": "sha256:6373dbb790d0fb2b7c88233978439ed64de7466454a9443829de55efe44ed9fa",
+      "operator": "true",
+      "original": "true",
+      "replacement": "false",
+      "span": {
+        "endLine": 153,
+        "startLine": 153
+      },
+      "startOffset": 5048
+    },
+    {
+      "description": "boolean flip false->true",
+      "endOffset": 5433,
+      "filePath": "src/config.ts",
+      "id": "sha256:f4122c94e2a16b77b84872fb62588d16bc5079841617034c77b1a5af26344ba0",
+      "operator": "false",
+      "original": "false",
+      "replacement": "true",
+      "span": {
+        "endLine": 168,
+        "startLine": 168
+      },
+      "startOffset": 5428
+    },
+    {
+      "description": "and to or",
+      "endOffset": 5998,
+      "filePath": "src/config.ts",
+      "id": "sha256:000fcf6db712a3ba48b3677c0c36ff790f1c3733a9d1298cc9b6903a52a02a5f",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "span": {
+        "endLine": 190,
+        "startLine": 190
+      },
+      "startOffset": 5996
+    },
+    {
+      "description": "and to or",
+      "endOffset": 5981,
+      "filePath": "src/config.ts",
+      "id": "sha256:16bb880982466ce1dbeeded0df79571766bf06562ab201b182f7b35410632dfa",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "span": {
+        "endLine": 190,
+        "startLine": 190
+      },
+      "startOffset": 5979
+    },
+    {
+      "description": "and to or",
+      "endOffset": 5955,
+      "filePath": "src/config.ts",
+      "id": "sha256:38e7a1dae201fd57e059e05100231a7e956676eef87e9a790cdf0549fc27854c",
+      "operator": "&&",
+      "original": "&&",
+      "replacement": "||",
+      "span": {
+        "endLine": 190,
+        "startLine": 190
+      },
+      "startOffset": 5953
+    },
+    {
+      "description": "boolean flip true->false",
+      "endOffset": 6124,
+      "filePath": "src/config.ts",
+      "id": "sha256:127e1368b29855c86752d42eed33367364a85d14d57574175faa689d4a64ab1e",
+      "operator": "true",
+      "original": "true",
+      "replacement": "false",
+      "span": {
+        "endLine": 194,
+        "startLine": 194
+      },
+      "startOffset": 6120
+    },
+    {
+      "description": "greater-than relaxation",
+      "endOffset": 6159,
+      "filePath": "src/config.ts",
+      "id": "sha256:d24f6c89faa99b743d8316427d0927c82f08906f550fc376f1854715f3bfbdef",
+      "operator": ">",
+      "original": ">",
+      "replacement": ">=",
+      "span": {
+        "endLine": 195,
+        "startLine": 195
+      },
+      "startOffset": 6158
+    },
+    {
+      "description": "strict equality inversion",
+      "endOffset": 6614,
+      "filePath": "src/config.ts",
+      "id": "sha256:e113f7d1a37e32db8481894b3f905058218180f0605eb3497ceb6c3392202174",
+      "operator": "===",
+      "original": "===",
+      "replacement": "!==",
+      "span": {
+        "endLine": 207,
+        "startLine": 207
+      },
+      "startOffset": 6611
+    }
+  ],
+  "nextEvidenceAction": {
+    "evidenceBasis": {
+      "confidence": {
+        "base": 100,
+        "credits": [],
+        "final": 15,
+        "penalties": [
+          {
+            "amount": 11,
+            "details": [
+              "score=0.33",
+              "budget=0.60",
+              "killed=4",
+              "survived=8"
+            ],
+            "id": "mutation-score",
+            "label": "Mutation score penalty"
+          },
+          {
+            "amount": 24,
+            "details": [
+              "src/config.ts:37 true",
+              "src/config.ts:40 false",
+              "src/config.ts:153 true",
+              "src/config.ts:168 false",
+              "src/config.ts:190 &&",
+              "src/config.ts:190 &&",
+              "src/config.ts:190 &&",
+              "src/config.ts:194 true"
+            ],
+            "id": "surviving-mutants",
+            "label": "Surviving mutants penalty"
+          },
+          {
+            "amount": 10,
+            "details": [
+              "config.malformed-yaml-fails-informatively:at-risk"
+            ],
+            "id": "risky-invariants",
+            "label": "Risky invariant/residual pressure penalty"
+          },
+          {
+            "amount": 20,
+            "details": [
+              "Changed source must stay within risk budgets."
+            ],
+            "id": "governance",
+            "label": "Governance penalty"
+          },
+          {
+            "amount": 20,
+            "details": [
+              "Changed source must stay within risk budgets."
+            ],
+            "id": "governance",
+            "label": "Governance penalty"
+          }
+        ]
+      },
+      "coverage": {
+        "changedFunctionMinPct": 0,
+        "changedFunctionsUnder80": 12,
+        "fileCount": 1,
+        "lcovPath": ".ts-quality/adoption/coverage/lcov.info",
+        "minPct": 72.28,
+        "status": "present"
+      },
+      "governance": {
+        "errors": 2,
+        "status": "errors",
+        "warnings": 0
+      },
+      "mutation": {
+        "errors": 0,
+        "killed": 4,
+        "sites": 12,
+        "status": "survivors",
+        "survived": 8
+      },
+      "nonBlockingSignals": [
+        "execution witness evidence is present (1 file(s))"
+      ],
+      "witness": {
+        "executionWitnessFiles": [
+          ".ts-quality/witnesses/config-malformed-yaml.json"
+        ],
+        "status": "execution-backed"
+      }
+    },
+    "primaryAction": {
+      "artifactPaths": {
+        "explain": ".ts-quality/runs/jest-yarn4-adoption/explain.txt",
+        "mutationRemediation": ".ts-quality/runs/jest-yarn4-adoption/mutation-remediation.json",
+        "prompt": ".ts-quality/runs/jest-yarn4-adoption/next-evidence-action.prompt.md",
+        "report": ".ts-quality/runs/jest-yarn4-adoption/report.md",
+        "taskManifest": ".ts-quality/runs/jest-yarn4-adoption/next-evidence-action.ak-task.json"
+      },
+      "commands": [
+        {
+          "command": [
+            "node",
+            ".yarn/releases/yarn-4.13.0.cjs",
+            "jest",
+            "src/__tests__/config.test.ts",
+            "--runInBand"
+          ],
+          "reason": "Rerun the focused test command after adding the missing assertion."
+        }
+      ],
+      "completionCriteria": [
+        "Add assertions that fail for each listed surviving mutation group.",
+        "Rerun the focused test command and then ts-quality check for the same changed scope.",
+        "The next run reports zero surviving mutants for this scope."
+      ],
+      "evidenceTargets": [
+        "src/config.ts"
+      ],
+      "expectedConfidenceLift": 45,
+      "groups": [
+        {
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "mutation-group-1",
+          "stepIds": [
+            "survivor-group-1"
+          ],
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:37; this mutant flipped true to false."
+        },
+        {
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "mutation-group-2",
+          "stepIds": [
+            "survivor-group-2"
+          ],
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:40; this mutant flipped false to true."
+        },
+        {
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "mutation-group-3",
+          "stepIds": [
+            "survivor-group-3"
+          ],
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:153; this mutant flipped true to false."
+        },
+        {
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "mutation-group-4",
+          "stepIds": [
+            "survivor-group-4"
+          ],
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:168; this mutant flipped false to true."
+        },
+        {
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "mutation-group-5",
+          "stepIds": [
+            "survivor-group-5"
+          ],
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "survivorCount": 3,
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the combined-condition case around src/config.ts:190; this mutant changed && to ||. (covers 3 equivalent survivors)"
+        },
+        {
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "mutation-group-6",
+          "stepIds": [
+            "survivor-group-6"
+          ],
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "survivorCount": 1,
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:194; this mutant flipped true to false."
+        }
+      ],
+      "id": "close-mutation-survivors",
+      "kind": "mutation-survivors",
+      "rationale": "Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.",
+      "sidecarSufficiency": {
+        "level": "actionable",
+        "reasons": [
+          "Likely focused test edit files are identified.",
+          "A focused rerun command is present.",
+          "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+        ]
+      },
+      "steps": [
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/jest-yarn4-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                ".yarn/releases/yarn-4.13.0.cjs",
+                "jest",
+                "src/__tests__/config.test.ts",
+                "--runInBand"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "survivor-group-1",
+          "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Boolean behavior changed (true -> false); the opposite branch may now be externally visible.",
+          "rationale": "This mutation group changed true to false; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:37; this mutant flipped true to false."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/jest-yarn4-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                ".yarn/releases/yarn-4.13.0.cjs",
+                "jest",
+                "src/__tests__/config.test.ts",
+                "--runInBand"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "survivor-group-2",
+          "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Boolean behavior changed (false -> true); the opposite branch may now be externally visible.",
+          "rationale": "This mutation group changed false to true; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:40; this mutant flipped false to true."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/jest-yarn4-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                ".yarn/releases/yarn-4.13.0.cjs",
+                "jest",
+                "src/__tests__/config.test.ts",
+                "--runInBand"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "survivor-group-3",
+          "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Boolean behavior changed (true -> false); the opposite branch may now be externally visible.",
+          "rationale": "This mutation group changed true to false; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:153; this mutant flipped true to false."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/jest-yarn4-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                ".yarn/releases/yarn-4.13.0.cjs",
+                "jest",
+                "src/__tests__/config.test.ts",
+                "--runInBand"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "method:migrate",
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "survivor-group-4",
+          "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Boolean behavior changed (false -> true); the opposite branch may now be externally visible.",
+          "rationale": "This mutation group changed false to true; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:168; this mutant flipped false to true."
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/jest-yarn4-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                ".yarn/releases/yarn-4.13.0.cjs",
+                "jest",
+                "src/__tests__/config.test.ts",
+                "--runInBand"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:loadConfigDocument",
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "survivor-group-5",
+          "maskingRisk": "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+          "rationale": "This mutation group changed && to ||; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the combined-condition case around src/config.ts:190; this mutant changed && to ||. (covers 3 equivalent survivors)"
+        },
+        {
+          "artifactPaths": {
+            "mutationRemediation": ".ts-quality/runs/jest-yarn4-adoption/mutation-remediation.json"
+          },
+          "assertionStrategy": "Assert both boolean branches through the externally observable API behavior.",
+          "commands": [
+            {
+              "command": [
+                "node",
+                ".yarn/releases/yarn-4.13.0.cjs",
+                "jest",
+                "src/__tests__/config.test.ts",
+                "--runInBand"
+              ],
+              "reason": "Verify the added assertion kills this survivor group."
+            }
+          ],
+          "enclosingSymbol": "function:loadConfigDocument",
+          "evidenceTargets": [
+            "src/config.ts"
+          ],
+          "id": "survivor-group-6",
+          "maskingRisk": "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "observableBehavior": "Boolean behavior changed (true -> false); the opposite branch may now be externally visible.",
+          "rationale": "This mutation group changed true to false; the focused test command still passed.",
+          "suggestedEditFiles": [
+            "src/__tests__/config.test.ts"
+          ],
+          "targetFiles": [
+            "src/config.ts"
+          ],
+          "title": "Assert the opposite boolean branch around src/config.ts:194; this mutant flipped true to false."
+        }
+      ],
+      "suggestedEditFiles": [
+        "src/__tests__/config.test.ts"
+      ],
+      "targetFiles": [
+        "src/config.ts"
+      ],
+      "taskManifest": {
+        "allowedPaths": [
+          "src/config.ts",
+          "src/__tests__/config.test.ts"
+        ],
+        "commands": [
+          {
+            "command": [
+              "node",
+              ".yarn/releases/yarn-4.13.0.cjs",
+              "jest",
+              "src/__tests__/config.test.ts",
+              "--runInBand"
+            ],
+            "reason": "Rerun the focused test command after adding the missing assertion."
+          }
+        ],
+        "completionCriteria": [
+          "Add assertions that fail for each listed surviving mutation group.",
+          "Rerun the focused test command and then ts-quality check for the same changed scope.",
+          "The next run reports zero surviving mutants for this scope."
+        ],
+        "guidance": [
+          "Boolean behavior changed (true -> false); the opposite branch may now be externally visible.",
+          "Assert both boolean branches through the externally observable API behavior.",
+          "A survivor can remain if the tested call path masks the changed value before it reaches an assertion. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact.",
+          "Boolean behavior changed (false -> true); the opposite branch may now be externally visible.",
+          "Affected symbol: method:migrate",
+          "Affected symbol: function:loadConfigDocument",
+          "Combined-condition behavior changed (&& -> ||); an input satisfying only one side of the condition may now take the opposite branch.",
+          "Assert the mixed-input case where only one side of the condition is true, using an observable public behavior rather than the internal condition alone.",
+          "The obvious assertion path may still pass if a later guard, fallback, normalization, or serialization step collapses original and mutated values. Prefer a call path where the mutated value changes returned output, thrown error, side effect, or persisted artifact."
+        ],
+        "requiredPaths": [
+          "src/__tests__/config.test.ts"
+        ],
+        "sidecarSufficiency": {
+          "level": "actionable",
+          "reasons": [
+            "Likely focused test edit files are identified.",
+            "A focused rerun command is present.",
+            "Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance."
+          ]
+        },
+        "title": "Tighten focused assertions for 8 surviving mutant(s) across 6 mutation group(s)."
+      },
+      "title": "Tighten focused assertions for 8 surviving mutant(s) across 6 mutation group(s)."
+    }
+  },
+  "overrides": [],
+  "repo": {
+    "digest": "sha256:a6eee74fd0023a921a0e126ebd45726965539609b86bff61a77fe8c4bc9b730b",
+    "name": "target",
+    "packages": [
+      {
+        "dir": "",
+        "name": "appmap-node"
+      },
+      {
+        "dir": "test/betterSqlite3",
+        "name": "better-sqlite3-appmap-node-test"
+      },
+      {
+        "dir": "test/httpClient",
+        "name": "http-client-appmap-node-test"
+      },
+      {
+        "dir": "test/httpServer",
+        "name": "http-server-appmap-node-test"
+      },
+      {
+        "dir": "test/jest",
+        "name": "jest-appmap-node-test"
+      },
+      {
+        "dir": "test/libraryCalls",
+        "name": "library-calls"
+      },
+      {
+        "dir": "test/mocha",
+        "name": "mocha-appmap-node-test"
+      },
+      {
+        "dir": "test/mongo",
+        "name": "mongo-appmap-node-test"
+      },
+      {
+        "dir": "test/mysql",
+        "name": "mysql-appmap-node-test"
+      },
+      {
+        "dir": "test/next/.next",
+        "name": "test/next/.next"
+      },
+      {
+        "dir": "test/next/.next/types",
+        "name": "test/next/.next/types"
+      },
+      {
+        "dir": "test/next",
+        "name": "next-appmap-node-test"
+      },
+      {
+        "dir": "test/next16/.next/dev/build",
+        "name": "test/next16/.next/dev/build"
+      },
+      {
+        "dir": "test/next16/.next/dev",
+        "name": "test/next16/.next/dev"
+      },
+      {
+        "dir": "test/next16",
+        "name": "next16-appmap-node-test"
+      },
+      {
+        "dir": "test/pnpm-compat",
+        "name": "pnpm-compat-appmap-node-test"
+      },
+      {
+        "dir": "test/postgres",
+        "name": "postgresql-appmap-node-test"
+      },
+      {
+        "dir": "test/prisma",
+        "name": "prisma"
+      },
+      {
+        "dir": "test/simple",
+        "name": "test/simple"
+      },
+      {
+        "dir": "test/sourceMapPath",
+        "name": "source-map-path-appmap-node-test"
+      },
+      {
+        "dir": "test/sqlite",
+        "name": "sqlite-appmap-node-test"
+      },
+      {
+        "dir": "test/typescript-esm",
+        "name": "appmap-node-typescript-esm-test"
+      },
+      {
+        "dir": "test/vitest",
+        "name": "vitest-appmap-node-test"
+      },
+      {
+        "dir": "test/vitest1",
+        "name": "vitest1-appmap-node-test"
+      },
+      {
+        "dir": "test/vitest2",
+        "name": "vitest2-appmap-node-test"
+      },
+      {
+        "dir": "test/vitest3",
+        "name": "vitest3-appmap-node-test"
+      },
+      {
+        "dir": "test/vitest4",
+        "name": "vitest4-appmap-node-test"
+      }
+    ],
+    "rootDir": "fixtures/artifact-compatibility/real-jest-yarn4"
+  },
+  "runId": "jest-yarn4-adoption",
+  "symbols": [
+    {
+      "filePath": "src/config.ts",
+      "kind": "method",
+      "span": {
+        "endLine": 122,
+        "startLine": 110
+      },
+      "symbol": "method:getPackage"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "method",
+      "span": {
+        "endLine": 137,
+        "startLine": 124
+      },
+      "symbol": "method:getFunctionLabels"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "arrow",
+      "span": {
+        "endLine": 134,
+        "startLine": 132
+      },
+      "symbol": "arrow:<anonymous@132>"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "function",
+      "span": {
+        "endLine": 222,
+        "startLine": 204
+      },
+      "symbol": "function:readConfigFile"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "function",
+      "span": {
+        "endLine": 202,
+        "startLine": 183
+      },
+      "symbol": "function:loadConfigDocument"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "function",
+      "span": {
+        "endLine": 82,
+        "startLine": 73
+      },
+      "symbol": "function:getNonNegativeIntegerEnvVarValue"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "arrow",
+      "span": {
+        "endLine": 104,
+        "startLine": 102
+      },
+      "symbol": "arrow:<anonymous@102>"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "method",
+      "span": {
+        "endLine": 169,
+        "startLine": 155
+      },
+      "symbol": "method:migrate"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "arrow",
+      "span": {
+        "endLine": 44,
+        "startLine": 44
+      },
+      "symbol": "arrow:<anonymous@44>"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "arrow",
+      "span": {
+        "endLine": 136,
+        "startLine": 136
+      },
+      "symbol": "arrow:<anonymous@136>"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "method",
+      "span": {
+        "endLine": 141,
+        "startLine": 139
+      },
+      "symbol": "method:export"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "method",
+      "span": {
+        "endLine": 150,
+        "startLine": 143
+      },
+      "symbol": "method:toJSON"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "function",
+      "span": {
+        "endLine": 227,
+        "startLine": 225
+      },
+      "symbol": "function:config"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "arrow",
+      "span": {
+        "endLine": 46,
+        "startLine": 45
+      },
+      "symbol": "arrow:<anonymous@45>"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "arrow",
+      "span": {
+        "endLine": 46,
+        "startLine": 46
+      },
+      "symbol": "arrow:<anonymous@46>"
+    },
+    {
+      "filePath": "src/config.ts",
+      "kind": "arrow",
+      "span": {
+        "endLine": 196,
+        "startLine": 196
+      },
+      "symbol": "arrow:<anonymous@196>"
+    }
+  ],
+  "verdict": {
+    "bestNextAction": "Add or tighten an assertion covering src/config.ts around the surviving mutant.",
+    "blockedBy": [
+      "Merge confidence 15 below minimum 60",
+      "Mutation score 0.33 is below budget 0.60",
+      "Surviving mutant in src/config.ts",
+      "Surviving mutant in src/config.ts",
+      "Surviving mutant in src/config.ts",
+      "Surviving mutant in src/config.ts",
+      "Surviving mutant in src/config.ts",
+      "Surviving mutant in src/config.ts",
+      "Surviving mutant in src/config.ts",
+      "Surviving mutant in src/config.ts",
+      "Invariant config.malformed-yaml-fails-informatively is at-risk",
+      "Changed source must stay within risk budgets.",
+      "Changed source must stay within risk budgets."
+    ],
+    "confidenceBreakdown": {
+      "base": 100,
+      "credits": [],
+      "final": 15,
+      "penalties": [
+        {
+          "amount": 11,
+          "details": [
+            "score=0.33",
+            "budget=0.60",
+            "killed=4",
+            "survived=8"
+          ],
+          "id": "mutation-score",
+          "label": "Mutation score penalty"
+        },
+        {
+          "amount": 24,
+          "details": [
+            "src/config.ts:37 true",
+            "src/config.ts:40 false",
+            "src/config.ts:153 true",
+            "src/config.ts:168 false",
+            "src/config.ts:190 &&",
+            "src/config.ts:190 &&",
+            "src/config.ts:190 &&",
+            "src/config.ts:194 true"
+          ],
+          "id": "surviving-mutants",
+          "label": "Surviving mutants penalty"
+        },
+        {
+          "amount": 10,
+          "details": [
+            "config.malformed-yaml-fails-informatively:at-risk"
+          ],
+          "id": "risky-invariants",
+          "label": "Risky invariant/residual pressure penalty"
+        },
+        {
+          "amount": 20,
+          "details": [
+            "Changed source must stay within risk budgets."
+          ],
+          "id": "governance",
+          "label": "Governance penalty"
+        },
+        {
+          "amount": 20,
+          "details": [
+            "Changed source must stay within risk budgets."
+          ],
+          "id": "governance",
+          "label": "Governance penalty"
+        }
+      ]
+    },
+    "findings": [
+      {
+        "code": "mutation-score-budget",
+        "evidence": [
+          "Killed 4, survived 8"
+        ],
+        "id": "policy:mutation-score",
+        "level": "error",
+        "message": "Mutation score 0.33 is below budget 0.60",
+        "scope": [
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts",
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.215 s"
+        ],
+        "id": "policy:surviving:sha256:790ed5ac49a061dacc32ec1317b8640aeb3e40ef7dc6d317d23dd254245b3553",
+        "level": "error",
+        "message": "Surviving mutant in src/config.ts",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "(Λ) appmap.yml requires migration, changes will be automatically applied.\n(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime"
+        ],
+        "id": "policy:surviving:sha256:5c2f5400f67c12f2865d390f4b686cc4cfdcafc271cad8f291a4dfea092d6560",
+        "level": "error",
+        "message": "Surviving mutant in src/config.ts",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.234 s, estimated 1 s"
+        ],
+        "id": "policy:surviving:sha256:6373dbb790d0fb2b7c88233978439ed64de7466454a9443829de55efe44ed9fa",
+        "level": "error",
+        "message": "Surviving mutant in src/config.ts",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.224 s, estimated 1 s"
+        ],
+        "id": "policy:surviving:sha256:f4122c94e2a16b77b84872fb62588d16bc5079841617034c77b1a5af26344ba0",
+        "level": "error",
+        "message": "Surviving mutant in src/config.ts",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.209 s, estimated 1 s"
+        ],
+        "id": "policy:surviving:sha256:000fcf6db712a3ba48b3677c0c36ff790f1c3733a9d1298cc9b6903a52a02a5f",
+        "level": "error",
+        "message": "Surviving mutant in src/config.ts",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.172 s, estimated 1 s"
+        ],
+        "id": "policy:surviving:sha256:16bb880982466ce1dbeeded0df79571766bf06562ab201b182f7b35410632dfa",
+        "level": "error",
+        "message": "Surviving mutant in src/config.ts",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.189 s, estimated 1 s"
+        ],
+        "id": "policy:surviving:sha256:38e7a1dae201fd57e059e05100231a7e956676eef87e9a790cdf0549fc27854c",
+        "level": "error",
+        "message": "Surviving mutant in src/config.ts",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "surviving-mutant",
+        "evidence": [
+          "(Λ) appmap.yml requires migration, changes will be automatically applied.\nPASS src/__tests__/config.test.ts\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   2 passed, 2 total\nTime:        0.184 s, estimated 1 s"
+        ],
+        "id": "policy:surviving:sha256:127e1368b29855c86752d42eed33367364a85d14d57574175faa689d4a64ab1e",
+        "level": "error",
+        "message": "Surviving mutant in src/config.ts",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "invariant-risk",
+        "evidence": [
+          "8 surviving mutants in impacted invariant scope",
+          "12 changed functions under 80% coverage in invariant scope",
+          "Invariant evidence semantics: execution-backed witness artifacts matched the invariant scenario scope; Invariant evidence modes: focused-test-alignment=inferred; execution-witness=explicit; scenario-support=explicit; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit"
+        ],
+        "id": "policy:invariant:config.malformed-yaml-fails-informatively",
+        "level": "error",
+        "message": "Invariant config.malformed-yaml-fails-informatively is at-risk",
+        "scope": [
+          "config.malformed-yaml-fails-informatively"
+        ]
+      },
+      {
+        "code": "governance",
+        "evidence": [
+          "Mutation score 0.33 below budget 0.80"
+        ],
+        "id": "policy:governance:default-risk:mutation",
+        "level": "error",
+        "message": "Changed source must stay within risk budgets.",
+        "ruleId": "default-risk",
+        "scope": [
+          "src/config.ts"
+        ]
+      },
+      {
+        "code": "governance",
+        "evidence": [
+          "Merge confidence 55 below minimum 70"
+        ],
+        "id": "policy:governance:default-risk:confidence",
+        "level": "error",
+        "message": "Changed source must stay within risk budgets.",
+        "ruleId": "default-risk",
+        "scope": [
+          "src/config.ts"
+        ]
+      }
+    ],
+    "mergeConfidence": 15,
+    "outcome": "fail",
+    "reasons": [
+      "Mutation score is 33/100 with 8 surviving mutants.",
+      "8 surviving mutant(s) remain in changed or covered logic.",
+      "1 execution-backed invariant(s) still carry residual evidence pressure: coverage-pressure, mutation-pressure.",
+      "Changed source must stay within risk budgets.",
+      "Changed source must stay within risk budgets."
+    ],
+    "warnings": []
+  },
+  "version": "0.2.0"
+}

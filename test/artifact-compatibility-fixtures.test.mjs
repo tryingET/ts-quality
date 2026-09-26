@@ -126,7 +126,8 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
     'unsupportedControlPlane',
     'malformedControlPlane',
     'realKineticVitestEsm020',
-    'realTsxPnpmVitest020'
+    'realTsxPnpmVitest020',
+    'realJestYarn4020'
   ]);
 
   const profiles = Object.fromEntries(manifest.fixtures.map((fixture) => {
@@ -167,7 +168,9 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
   assert.deepEqual(profiles.realTsxPnpmVitest020.missingOptionalRunFields, [
     'analysisWarnings',
     'executionWitnesses'
-  ]);
+  ]);  assert.equal(profiles.realJestYarn4020.decisionStatus, 'usable');
+  assert.equal(profiles.realJestYarn4020.nextEvidence.kind, 'mutation-survivors');
+  assert.deepEqual(profiles.realJestYarn4020.missingOptionalRunFields, ['analysisWarnings', 'executionWitnesses']);
 });
 
 test('checked-in historical governed-app run capture remains projectable through compatibility surfaces', () => {
@@ -317,4 +320,34 @@ test('real TSX/pnpm/Vitest adoption capture remains projectable through compatib
   assert.ok(authorization.reasons.includes(fixture.authorizationReason));
   assert.equal(authorization.evidenceContext?.runId, fixture.runId);
   assert.equal(authorization.evidenceContext?.runOutcome, 'fail');
+});
+
+test('real Jest/Yarn 4 capture without vendored source projects and fails closed on drift', () => {
+  // The third-party source (appmap-node src/config.ts) is deliberately not vendored, so the captured file digest
+  // cannot match: decision surfaces must flag run drift instead of trusting the packet.
+  const fixturesById = Object.fromEntries(manifest.fixtures.map((fixture) => [fixture.id, fixture]));
+  const fixture = fixturesById.realJestYarn4020;
+  const target = tempCopyOfArtifactCompatibilityFixture('real-jest-yarn4');
+  const run = installRunFixture(target, fixture);
+
+  assert.deepEqual(run.files.map((item) => item.filePath), ['src/config.ts']);
+  assert.equal(fs.existsSync(path.join(target, 'src', 'config.ts')), false);
+  assert.equal(run.coverageGeneration.receipt.status, 'pass');
+  assert.equal(run.mutations.filter((item) => item.status === 'survived').length, 8);
+
+  const report = runCli(['report', '--root', target, '--json', '--run-id', fixture.runId]);
+  assert.equal(report.status, 0, report.stderr);
+  assert.equal(JSON.parse(report.stdout).verdict.mergeConfidence, 15);
+
+  for (const command of ['explain', 'plan', 'govern']) {
+    const projection = runCli([command, '--root', target, '--run-id', fixture.runId]);
+    assert.equal(projection.status, 0, projection.stderr);
+    assert.match(projection.stdout, /Run drift detected for jest-yarn4-adoption/);
+  }
+
+  const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', fixture.runId]);
+  assert.equal(authorize.status, 0, authorize.stderr);
+  const authorization = JSON.parse(authorize.stdout);
+  assert.equal(authorization.outcome, fixture.authorizationOutcome);
+  assert.ok(authorization.reasons.includes(fixture.authorizationReason));
 });
