@@ -3,26 +3,26 @@ tool: "/commit"
 actor: "tryinget"
 repo: "/home/tryinget/ai-society/softwareco/owned/ts-quality"
 commit: "ecef70d3b5d366fcdd3a4fcceac85c416fd33e0c"
-created_at: "2026-09-26T20:08:13Z"
-intent: "Read repo-local shell wrappers (contained, bounded) to find the real runner incl. Bun, reject coverage scripts that write no LCOV, recommend direct runner commands behind wrappers, and add a package-manager-aware Jest preset"
+created_at: "2026-09-26T20:11:01Z"
+intent: "feat(doctor): evidence-based runner and coverage advice; init --preset jest"
 files:
-  - "packages/ts-quality/src/index.ts"
-  - "packages/ts-quality/src/cli.ts"
-  - "dist/packages/ts-quality/src/index.js"
-  - "dist/packages/ts-quality/src/index.js.map"
-  - "dist/packages/ts-quality/src/index.d.ts"
+  - "README.md"
   - "dist/packages/ts-quality/src/cli.js"
   - "dist/packages/ts-quality/src/cli.js.map"
-  - "test/cli-integration.test.mjs"
+  - "dist/packages/ts-quality/src/index.d.ts"
+  - "dist/packages/ts-quality/src/index.js"
+  - "dist/packages/ts-quality/src/index.js.map"
   - "docs/cli-command-manifest.json"
-  - "README.md"
+  - "packages/ts-quality/src/cli.ts"
+  - "packages/ts-quality/src/index.ts"
+  - "test/cli-integration.test.mjs"
 validation:
   fast_gate:
-    command: "npm run -s build && npm run -s typecheck && npm run -s lint && node --test test/cli-integration.test.mjs test/adoption-guidance.test.mjs test/cli-command-manifest.test.mjs"
+    command: "group fast gate (build/typecheck/lint/focused tests)"
     status: "pass"
   full_gate:
-    command: "npm run verify"
-    status: "pending"
+    command: "npm test + npm run verify + verify:ci on HEAD; packed-build dogfood on appmap-node and semantic-code-intelligence"
+    status: "pass"
 group:
   index: 2
   total: 3
