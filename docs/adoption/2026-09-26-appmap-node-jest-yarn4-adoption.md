@@ -66,7 +66,8 @@ After the fixes, the repacked CLI was reinstalled and run on a fresh copy with i
 
 Observations that are not defects:
 
-- There is no `init --preset jest`; the corrected `doctor` advice covers the gap for now.
+- `init --preset jest` was added the same day. Dogfooding it here exposed a regression in mutation workspaces: with a symlinked `node_modules`, every mutant died on `yarn run` failing to find its install state, and the run reported a false `pass` (12 of 12 killed). The root cause was broader than the symlink: a kill was never checked against the unmutated code in the same workspace. Mutation runs now execute a workspace baseline first and fail closed when it fails; the same slice then reports the genuine 4 killed / 8 survived.
+- The preset's commands run the whole Jest suite until narrowed; in a fresh copy of this repository two integration suites fail without built fixtures, and `check` correctly refuses the failed coverage run.
 - The starter constitution includes an example `payments-review` rule that matches nothing in this repository.
 
 ## Compatibility capture

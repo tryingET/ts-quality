@@ -50,10 +50,7 @@ Mutation evidence on the Bun path was checked: kills show Bun assertion frames f
 |---|---|---|
 | S1 | Source and test discovery walked into hidden directories. The target's own test run generates untracked `.ontology/snapshots/<uuid>/` copies of the repository, so 16 of 17 "focused tests" were snapshot copies, `doctor` reported `tests=587`, and evidence closure told the operator to edit `.ontology/snapshots/.../tests/runtime-config.test.ts`. | Fixed: discovery skips files under hidden directories unless the matching pattern names a hidden directory explicitly (for example `.storybook/**`). After the fix the same target reports `tests=231`, the single real focused test, and `Suggested edit files: tests/runtime-config.test.ts`, with an unchanged verdict. |
 
-Observations that are not fixed here:
-
-- `doctor` suggests reusing the repository's `test:coverage` script. Here that script runs the whole suite with `bun test --coverage` and no LCOV reporter; under `check` it hit the 60 s generation timeout and fails closed with a clear message. For large repositories a focused LCOV command is the right advice; the wrapper script hides the runner, so `doctor` cannot detect this yet.
-- The repository test script is a shell wrapper, so runner detection cannot see that it runs Bun; runner-mismatch warnings therefore do not fire for this shape.
+Follow-up fixes (same day): the observations first recorded here were fixed with Given/When/Then red-green tests. `doctor` now reads repo-local shell wrappers (read-only, contained, bounded) to find the real runner, so this repository's `scripts/run-normal-tests.sh` is recognized as Bun and the default `node --test` mutation command raises `mutation-test-runner-mismatch`; `test:coverage` is reported as `coverage-script-without-lcov` instead of being recommended; and the recommended coverage command is `bun test --coverage --coverage-reporter=lcov --coverage-dir=coverage`, to be narrowed to the slice's tests.
 
 ## Compatibility capture
 

@@ -12,15 +12,18 @@ type: "reference"
 
 ### Added
 
+- Added `init --preset jest`, which writes Jest coverage (LCOV) and in-band mutation commands through the repository's package manager.
 - Added a real third-party Jest + @swc/jest + Yarn 4 target-shape adoption capture from `appmap-node`, with run-artifact compatibility coverage.
 - Added a real Bun-runner ESM service capture from `semantic-code-intelligence`, and scale evidence for `check` across about 170 source files.
 
 ### Changed
 
+- `doctor` reads repo-local shell wrappers that package scripts invoke (read-only, contained to the repository, bounded size) to find the real test runner, including Bun, and judges coverage scripts by whether they write LCOV: a script that demonstrably writes none is reported as `coverage-script-without-lcov` instead of being recommended. When the test script is a wrapper, the recommended coverage command invokes the runner directly.
 - `doctor` recommends an LCOV coverage command for the repository's own test runner (Jest or Vitest) and warns with `mutation-test-runner-mismatch` when `mutations.testCommand` runs a different runner than the repository test script.
 
 ### Fixed
 
+- Mutation testing runs the unmutated test command once inside the mutation workspace before scoring. If it fails there (missing install state, excluded files, absolute paths), the run fails closed as a baseline failure instead of counting every mutant as killed. This also covers repositories whose `node_modules` is a symlink, which now resolves inside mutant workspaces; previously such a repository could receive a false `pass`.
 - Source discovery excludes files matching `testPatterns`, so tests colocated under a source root (for example `src/__tests__/`) are no longer treated as source code.
 - Source and test discovery skip hidden directories such as `.next`, `.cache`, or generated `.ontology/snapshots` copies unless a pattern names that directory explicitly, so snapshot copies are no longer treated as the repository's tests or suggested as files to edit.
 
