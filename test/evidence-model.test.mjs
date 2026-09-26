@@ -72,3 +72,22 @@ test('resolveRepoLocalPath rejects symlink escapes outside the repository root',
     /attestations dir must stay inside repository root/
   );
 });
+
+test('collectSourceFiles skips hidden tool-state directories unless a pattern targets them explicitly', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-hidden-dirs-'));
+  const write = (relativePath) => {
+    fs.mkdirSync(path.dirname(path.join(rootDir, relativePath)), { recursive: true });
+    fs.writeFileSync(path.join(rootDir, relativePath), 'export {};\n', 'utf8');
+  };
+  write('src/a.ts');
+  write('tests/a.test.ts');
+  // Generated snapshots and caches copy repo files into hidden directories.
+  write('.ontology/snapshots/1234/tests/a.test.ts');
+  write('.ontology/snapshots/1234/src/a.ts');
+  write('.cache/build/src/b.ts');
+  write('.storybook/preview.ts');
+
+  assert.deepEqual(evidence.collectSourceFiles(rootDir, ['**/*.ts']).sort(), ['src/a.ts', 'tests/a.test.ts']);
+  assert.deepEqual(evidence.collectSourceFiles(rootDir, ['**/*.test.ts']), ['tests/a.test.ts']);
+  assert.deepEqual(evidence.collectSourceFiles(rootDir, ['.storybook/**/*.ts']), ['.storybook/preview.ts']);
+});

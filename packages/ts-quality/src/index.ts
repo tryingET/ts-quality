@@ -51,7 +51,8 @@ import {
   writeJson,
   writeRunArtifact,
   runtimeMirrorCandidates,
-  findCoverageEvidence
+  findCoverageEvidence,
+  matchesDiscoveryPattern
 } from '../../evidence-model/src/index';
 import { analyzeCrap, parseLcov } from '../../crap4ts/src/index';
 import { runMutations } from '../../ts-mutate/src/index';
@@ -2845,7 +2846,7 @@ function buildDoctorDiagnostic(rootDir: string, options?: { changedFiles?: strin
   const sourcePatterns = config?.sourcePatterns ?? [...DEFAULT_SOURCE_PATTERNS];
   const testPatterns = config?.testPatterns ?? [...DEFAULT_TEST_PATTERNS];
   const sources = sourceFilesExcludingTests(rootDir, sourcePatterns, testPatterns);
-  const tests = listFiles(rootDir).filter((filePath) => testPatterns.some((pattern) => matchPattern(pattern, filePath)));
+  const tests = listFiles(rootDir).filter((filePath) => testPatterns.some((pattern) => matchesDiscoveryPattern(pattern, filePath)));
   const changed = uniquePaths([...(options?.changedFiles ?? []), ...(config?.changeSet.files ?? [])]);
   const lcovPath = config?.coverage.lcovPath ?? 'coverage/lcov.info';
   const lcovExists = fs.existsSync(path.join(rootDir, lcovPath));

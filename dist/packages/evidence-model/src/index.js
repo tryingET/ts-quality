@@ -25,6 +25,7 @@ exports.readJson = readJson;
 exports.writeJson = writeJson;
 exports.fileDigest = fileDigest;
 exports.listFiles = listFiles;
+exports.matchesDiscoveryPattern = matchesDiscoveryPattern;
 exports.collectSourceFiles = collectSourceFiles;
 exports.globToRegExp = globToRegExp;
 exports.matchPattern = matchPattern;
@@ -351,9 +352,23 @@ function listFiles(rootDir, options) {
     }
     return output.sort();
 }
+function hasHiddenDirectory(filePath) {
+    return normalizePath(filePath).split('/').slice(0, -1).some((segment) => segment.startsWith('.') && segment !== '.' && segment !== '..');
+}
+function patternTargetsHiddenDirectory(pattern) {
+    return normalizePath(pattern).split('/').some((segment) => segment.startsWith('.') && segment !== '.' && segment !== '..');
+}
+/**
+ * Pattern match for source/test discovery. Hidden directories (.next, .turbo, .cache, generated snapshots such as
+ * .ontology/snapshots) hold tool state rather than repository code, so a broad pattern like `**\/*.test.ts` must not
+ * reach into them; a pattern that names a hidden directory explicitly (for example `.storybook/**`) still does.
+ */
+function matchesDiscoveryPattern(pattern, filePath) {
+    return matchPattern(pattern, filePath) && (!hasHiddenDirectory(filePath) || patternTargetsHiddenDirectory(pattern));
+}
 function collectSourceFiles(rootDir, patterns = [...exports.DEFAULT_SOURCE_PATTERNS]) {
     const files = listFiles(rootDir, { include: /\.(ts|tsx|js|jsx|mjs|cjs)$/ });
-    return files.filter((filePath) => patterns.some((pattern) => matchPattern(pattern, filePath)));
+    return files.filter((filePath) => patterns.some((pattern) => matchesDiscoveryPattern(pattern, filePath)));
 }
 function globToRegExp(pattern) {
     const normalized = normalizePath(pattern);

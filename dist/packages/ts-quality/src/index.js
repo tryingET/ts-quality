@@ -2443,7 +2443,7 @@ function buildDoctorDiagnostic(rootDir, options) {
     const sourcePatterns = config?.sourcePatterns ?? [...index_1.DEFAULT_SOURCE_PATTERNS];
     const testPatterns = config?.testPatterns ?? [...index_1.DEFAULT_TEST_PATTERNS];
     const sources = sourceFilesExcludingTests(rootDir, sourcePatterns, testPatterns);
-    const tests = (0, index_1.listFiles)(rootDir).filter((filePath) => testPatterns.some((pattern) => (0, index_1.matchPattern)(pattern, filePath)));
+    const tests = (0, index_1.listFiles)(rootDir).filter((filePath) => testPatterns.some((pattern) => (0, index_1.matchesDiscoveryPattern)(pattern, filePath)));
     const changed = uniquePaths([...(options?.changedFiles ?? []), ...(config?.changeSet.files ?? [])]);
     const lcovPath = config?.coverage.lcovPath ?? 'coverage/lcov.info';
     const lcovExists = fs_1.default.existsSync(path_1.default.join(rootDir, lcovPath));

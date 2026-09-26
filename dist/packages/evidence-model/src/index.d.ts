@@ -698,6 +698,12 @@ export declare function listFiles(rootDir: string, options?: {
     include?: RegExp;
     excludeDirs?: string[];
 }): string[];
+/**
+ * Pattern match for source/test discovery. Hidden directories (.next, .turbo, .cache, generated snapshots such as
+ * .ontology/snapshots) hold tool state rather than repository code, so a broad pattern like `**\/*.test.ts` must not
+ * reach into them; a pattern that names a hidden directory explicitly (for example `.storybook/**`) still does.
+ */
+export declare function matchesDiscoveryPattern(pattern: string, filePath: string): boolean;
 export declare function collectSourceFiles(rootDir: string, patterns?: string[]): string[];
 export declare function globToRegExp(pattern: string): RegExp;
 export declare function matchPattern(pattern: string, value: string): boolean;
