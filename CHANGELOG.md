@@ -13,6 +13,7 @@ type: "reference"
 ### Added
 
 - Added a real third-party Jest + @swc/jest + Yarn 4 target-shape adoption capture from `appmap-node`, with run-artifact compatibility coverage.
+- Added a real Bun-runner ESM service capture from `semantic-code-intelligence`, and scale evidence for `check` across about 170 source files.
 
 ### Changed
 
@@ -21,6 +22,7 @@ type: "reference"
 ### Fixed
 
 - Source discovery excludes files matching `testPatterns`, so tests colocated under a source root (for example `src/__tests__/`) are no longer treated as source code.
+- Source and test discovery skip hidden directories such as `.next`, `.cache`, or generated `.ontology/snapshots` copies unless a pattern names that directory explicitly, so snapshot copies are no longer treated as the repository's tests or suggested as files to edit.
 
 ## [0.6.0] - 2026-09-25
 

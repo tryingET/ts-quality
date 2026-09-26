@@ -120,6 +120,17 @@
       "authorizationReason": "Repository changed since run jest-yarn4-adoption or its control plane drifted. Re-run ts-quality check before authorizing merge.",
       "targetShape": "CommonJS TypeScript library tested with Jest + @swc/jest under Yarn 4 (node-modules linker), tests colocated in src/__tests__",
       "expectation": "real third-party Jest target packet remains parseable and projectable through report, explain, plan, govern, and authorize; the third-party source is deliberately not vendored, so decision projections must fail closed with a run-drift notice and authorize must deny for drift, while report still exposes the captured verdict"
+    },
+    {
+      "id": "realBunEsm020",
+      "file": "real-bun-esm/run.json.fixture",
+      "runId": "bun-esm-adoption",
+      "version": "0.2.0",
+      "decisionPolicy": "usable-real-target-shape-capture",
+      "authorizationOutcome": "deny",
+      "authorizationReason": "Governance violations block authorization until resolved or explicitly overridden.",
+      "targetShape": "large ESM TypeScript service (Express, ~170 source files) tested with the Bun test runner and Bun LCOV coverage",
+      "expectation": "real Bun-runner packet remains parseable and projectable through report, explain, plan, govern, and authorize without drift, preserving Bun coverage generation scoped to the changed source, genuine mutation survivors, execution-backed witness support, and governance-blocked authorization"
     }
   ]
 }

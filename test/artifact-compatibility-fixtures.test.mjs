@@ -127,7 +127,8 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
     'malformedControlPlane',
     'realKineticVitestEsm020',
     'realTsxPnpmVitest020',
-    'realJestYarn4020'
+    'realJestYarn4020',
+    'realBunEsm020'
   ]);
 
   const profiles = Object.fromEntries(manifest.fixtures.map((fixture) => {
@@ -170,7 +171,8 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
     'executionWitnesses'
   ]);  assert.equal(profiles.realJestYarn4020.decisionStatus, 'usable');
   assert.equal(profiles.realJestYarn4020.nextEvidence.kind, 'mutation-survivors');
-  assert.deepEqual(profiles.realJestYarn4020.missingOptionalRunFields, ['analysisWarnings', 'executionWitnesses']);
+  assert.deepEqual(profiles.realJestYarn4020.missingOptionalRunFields, ['analysisWarnings', 'executionWitnesses']);  assert.equal(profiles.realBunEsm020.decisionStatus, 'usable');
+  assert.equal(profiles.realBunEsm020.nextEvidence.kind, 'mutation-survivors');
 });
 
 test('checked-in historical governed-app run capture remains projectable through compatibility surfaces', () => {
@@ -344,6 +346,36 @@ test('real Jest/Yarn 4 capture without vendored source projects and fails closed
     assert.equal(projection.status, 0, projection.stderr);
     assert.match(projection.stdout, /Run drift detected for jest-yarn4-adoption/);
   }
+
+  const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', fixture.runId]);
+  assert.equal(authorize.status, 0, authorize.stderr);
+  const authorization = JSON.parse(authorize.stdout);
+  assert.equal(authorization.outcome, fixture.authorizationOutcome);
+  assert.ok(authorization.reasons.includes(fixture.authorizationReason));
+});
+
+test('real Bun/ESM adoption capture remains projectable through compatibility surfaces', () => {
+  const fixturesById = Object.fromEntries(manifest.fixtures.map((fixture) => [fixture.id, fixture]));
+  const fixture = fixturesById.realBunEsm020;
+  const target = tempCopyOfArtifactCompatibilityFixture('real-bun-esm');
+  const run = installRunFixture(target, fixture);
+
+  assert.deepEqual(run.files.map((item) => item.filePath), ['src/core/runtime-config.ts']);
+  assert.deepEqual(run.coverageGeneration.command.slice(0, 2), ['bun', 'test']);
+  assert.equal(run.nextEvidenceAction.evidenceBasis.coverage.fileCount, 1);
+  assert.deepEqual(run.nextEvidenceAction.primaryAction.suggestedEditFiles, ['tests/runtime-config.test.ts']);
+
+  const report = runCli(['report', '--root', target, '--json', '--run-id', fixture.runId]);
+  assert.equal(report.status, 0, report.stderr);
+  assert.equal(JSON.parse(report.stdout).verdict.mergeConfidence, 19);
+
+  for (const command of ['explain', 'plan', 'govern']) {
+    const projection = runCli([command, '--root', target, '--run-id', fixture.runId]);
+    assert.equal(projection.status, 0, projection.stderr);
+    assert.doesNotMatch(projection.stdout, /drift/i);
+  }
+  const plan = runCli(['plan', '--root', target, '--run-id', fixture.runId]);
+  assert.match(plan.stdout, /Evidence provenance: explicit 5, inferred 1, missing 0/);
 
   const authorize = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', fixture.runId]);
   assert.equal(authorize.status, 0, authorize.stderr);
