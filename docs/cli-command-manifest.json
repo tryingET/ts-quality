@@ -48,7 +48,7 @@
       "reads": ["target repo root"],
       "writes": ["ts-quality starter control-plane files under the target repo"],
       "artifacts": [],
-      "automationNotes": ["Use only when intentionally initializing or refreshing the target repo control plane.", "Supported presets: default, node-test, node-test-ts-dist, vitest."]
+      "automationNotes": ["Use only when intentionally initializing or refreshing the target repo control plane.", "Supported presets: default, node-test, node-test-ts-dist, vitest, jest."]
     },
     {
       "name": "doctor",

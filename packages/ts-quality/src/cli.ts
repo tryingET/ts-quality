@@ -255,12 +255,12 @@ function fromRun(parsed: ParsedArgs): string | undefined {
   return takeOption(parsed, '--from-run');
 }
 
-function preset(parsed: ParsedArgs): 'default' | 'node-test' | 'node-test-ts-dist' | 'vitest' | undefined {
+function preset(parsed: ParsedArgs): 'default' | 'node-test' | 'node-test-ts-dist' | 'vitest' | 'jest' | undefined {
   const value = takeOption(parsed, '--preset');
   if (!value) {
     return undefined;
   }
-  if (value === 'default' || value === 'node-test' || value === 'node-test-ts-dist' || value === 'vitest') {
+  if (value === 'default' || value === 'node-test' || value === 'node-test-ts-dist' || value === 'vitest' || value === 'jest') {
     return value;
   }
   throw new Error(`unsupported init preset ${value}`);
@@ -332,12 +332,13 @@ Use: ts-quality <command> --help
 `;
   }
   if (command === 'init') {
-    return `Usage: ts-quality init [--root <dir>] [--preset default|node-test|node-test-ts-dist|vitest]
+    return `Usage: ts-quality init [--root <dir>] [--preset default|node-test|node-test-ts-dist|vitest|jest]
 
 Creates starter control-plane files. Presets only change generated starter config guidance; existing files are preserved.
 - node-test: Node's built-in test runner with LCOV generation.
 - node-test-ts-dist: built-output TypeScript repos; includes source-map coverage guidance and dist/lib/build runtime mirrors.
 - vitest: advisory npm run coverage / npm test starter shape.
+- jest: Jest through the repository's package manager, with LCOV coverage and in-band mutation runs.
 `;
   }
   if (command === 'doctor') {

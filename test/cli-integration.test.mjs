@@ -134,6 +134,105 @@ test('init presets and doctor expose adoption diagnostics without running tests'
   assert.match(result.stdout, /\nwarning\tprivate key material should not be committed: \.ts-quality\/keys\/sample\.pem/);
 });
 
+// Feature: doctor derives runner and coverage advice from what commands do, not from script names
+
+function doctorTarget(files) {
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-evidence-'));
+  for (const [relativePath, contents] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(target, relativePath)), { recursive: true });
+    fs.writeFileSync(path.join(target, relativePath), contents, 'utf8');
+  }
+  fs.mkdirSync(path.join(target, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'src', 'a.ts'), 'export const a = 1;\n', 'utf8');
+  return target;
+}
+
+function doctorMachine(target) {
+  const result = spawnSync('node', [cli, 'doctor', '--root', target, '--changed', 'src/a.ts', '--machine'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout;
+}
+
+test('Scenario: a Bun runner hidden behind a repo-local shell wrapper is still detected', () => {
+  // Given a test script that delegates to scripts/run-tests.sh, which runs bun test
+  const target = doctorTarget({
+    'package.json': JSON.stringify({ scripts: { test: 'scripts/run-tests.sh' } }),
+    'bun.lock': '',
+    'scripts/run-tests.sh': '#!/usr/bin/env bash\nset -euo pipefail\nbun test --timeout 5000 "$@"\n'
+  });
+  assert.equal(spawnSync('node', [cli, 'init', '--root', target], { encoding: 'utf8' }).status, 0);
+  // When doctor inspects the repository
+  const stdout = doctorMachine(target);
+  // Then the default node:test mutation command is flagged against the real Bun runner
+  assert.match(stdout, /\nrisk\twarn\tmutation-test-runner-mismatch\tmutations\.testCommand runs node:test but the repository test script runs bun\.\t/);
+  // And the coverage advice is a Bun command that writes LCOV
+  assert.match(stdout, /\nrecommend\tcoverage\tcoverage-generate-command\t[^\n]*\tcommand_arg=bun\tcommand_arg=test\tcommand_arg=--coverage\tcommand_arg=--coverage-reporter=lcov\tcommand_arg=--coverage-dir=coverage\n/);
+});
+
+test('Scenario: a coverage-named script that writes no LCOV is not recommended as the coverage command', () => {
+  // Given a test:coverage script whose wrapper runs bun test --coverage without an LCOV reporter
+  const target = doctorTarget({
+    'package.json': JSON.stringify({ scripts: { test: 'bun test', 'test:coverage': 'scripts/run-coverage-tests.sh' } }),
+    'bun.lock': '',
+    'scripts/run-coverage-tests.sh': '#!/usr/bin/env bash\nbun test --coverage $TARGETS\n'
+  });
+  // When doctor inspects the repository
+  const stdout = doctorMachine(target);
+  // Then the script is not a coverage candidate and the operator is told why
+  assert.match(stdout, /\nscripts\tnames=test,test:coverage\tcoverage=\t/);
+  assert.match(stdout, /\nrisk\twarn\tcoverage-script-without-lcov\tScript test:coverage runs coverage but writes no LCOV\.\t/);
+  // And the recommendation is the LCOV-writing Bun command instead
+  assert.match(stdout, /\tcommand_arg=bun\tcommand_arg=test\tcommand_arg=--coverage\tcommand_arg=--coverage-reporter=lcov\t/);
+});
+
+test('Scenario: coverage scripts that do or may write LCOV stay candidates', () => {
+  // Given Jest coverage (LCOV is a default Jest reporter) and an opaque make target
+  const target = doctorTarget({
+    'package.json': JSON.stringify({ scripts: { test: 'jest', coverage: 'jest --coverage', 'coverage:ci': 'make coverage' } })
+  });
+  // When doctor inspects the repository
+  const stdout = doctorMachine(target);
+  // Then both remain candidates and nothing is flagged as LCOV-less
+  assert.match(stdout, /\nscripts\tnames=coverage,coverage:ci,test\tcoverage=coverage,coverage:ci\t/);
+  assert.doesNotMatch(stdout, /coverage-script-without-lcov/);
+});
+
+test('Scenario: doctor never reads wrapper scripts outside the repository', () => {
+  // Given a test script that points outside the root and a symlinked wrapper that escapes it
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-outside-'));
+  fs.writeFileSync(path.join(outside, 'run.sh'), 'bun test\n', 'utf8');
+  const target = doctorTarget({
+    'package.json': JSON.stringify({ scripts: { test: 'bash ../' + path.basename(outside) + '/run.sh', 'test:link': 'scripts/link.sh' } })
+  });
+  fs.mkdirSync(path.join(target, 'scripts'), { recursive: true });
+  fs.symlinkSync(path.join(outside, 'run.sh'), path.join(target, 'scripts', 'link.sh'));
+  assert.equal(spawnSync('node', [cli, 'init', '--root', target], { encoding: 'utf8' }).status, 0);
+  // When doctor inspects the repository
+  const stdout = doctorMachine(target);
+  // Then no runner is inferred from outside content
+  assert.doesNotMatch(stdout, /runs bun/);
+});
+
+test('Scenario: init --preset jest writes package-manager-aware Jest commands that doctor accepts', () => {
+  // Given a Yarn repository whose tests run with Jest
+  const target = doctorTarget({
+    'package.json': JSON.stringify({ scripts: { test: 'jest' } }),
+    'yarn.lock': ''
+  });
+  // When the operator initializes with the Jest preset
+  const init = spawnSync('node', [cli, 'init', '--root', target, '--preset', 'jest'], { encoding: 'utf8' });
+  assert.equal(init.status, 0, init.stderr);
+  const configText = fs.readFileSync(path.join(target, 'ts-quality.config.ts'), 'utf8');
+  // Then coverage and mutation commands run Jest through Yarn, with LCOV output
+  assert.match(configText, /generateCommand: \['yarn', 'run', 'jest', '--coverage', '--coverageReporters=lcov', '--coverageDirectory=coverage'\]/);
+  assert.match(configText, /testCommand: \['yarn', 'run', 'jest', '--runInBand'\]/);
+  // And doctor sees no runner mismatch
+  assert.doesNotMatch(doctorMachine(target), /mutation-test-runner-mismatch/);
+  // And the preset is discoverable from help
+  const help = spawnSync('node', [cli, 'init', '--help'], { encoding: 'utf8' });
+  assert.match(help.stdout, /--preset default\|node-test\|node-test-ts-dist\|vitest\|jest/);
+});
+
 test('doctor and check treat colocated tests as tests and give Jest-aware coverage and runner advice', () => {
   const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-doctor-jest-'));
   fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({ scripts: { test: 'jest' } }, null, 2), 'utf8');

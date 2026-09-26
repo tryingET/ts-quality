@@ -51,7 +51,7 @@ export declare function runCheck(rootDir: string, options?: {
     configPath?: string;
     runId?: string;
 }): CheckResult;
-export type InitPreset = 'default' | 'node-test' | 'node-test-ts-dist' | 'vitest';
+export type InitPreset = 'default' | 'node-test' | 'node-test-ts-dist' | 'vitest' | 'jest';
 export declare function initProject(rootDir: string, options?: {
     preset?: InitPreset;
 }): void;

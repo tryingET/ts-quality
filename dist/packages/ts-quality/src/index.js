@@ -2065,21 +2065,31 @@ function runCheck(rootDir, options) {
     fs_1.default.writeFileSync(path_1.default.join(artifactDir, 'govern.txt'), renderGovernanceArtifactText(run, plan), 'utf8');
     return { run, artifactDir };
 }
-function initConfigText(preset) {
-    const coverageCommand = preset === 'node-test-ts-dist'
-        ? "generateCommand: ['node', '--enable-source-maps', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],"
-        : preset === 'node-test'
-            ? "generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],"
-            : preset === 'vitest'
-                ? "generateCommand: ['npm', 'run', 'coverage'],"
-                : "// generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],";
-    const mutationCommand = preset === 'vitest' ? "['npm', 'test', '--', '--run']" : "['node', '--test']";
+function configArrayText(values) {
+    return `[${values.map((value) => `'${value}'`).join(', ')}]`;
+}
+function initConfigText(preset, packageManager) {
+    const jest = packageManagerExec(packageManager, 'jest');
+    const coverageCommand = preset === 'jest'
+        ? `generateCommand: ${configArrayText([...jest, '--coverage', '--coverageReporters=lcov', '--coverageDirectory=coverage'])},`
+        : preset === 'node-test-ts-dist'
+            ? "generateCommand: ['node', '--enable-source-maps', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],"
+            : preset === 'node-test'
+                ? "generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],"
+                : preset === 'vitest'
+                    ? "generateCommand: ['npm', 'run', 'coverage'],"
+                    : "// generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'],";
+    const mutationCommand = preset === 'jest'
+        ? configArrayText([...jest, '--runInBand'])
+        : preset === 'vitest' ? "['npm', 'test', '--', '--run']" : "['node', '--test']";
     const runtimeMirrorRoots = preset === 'node-test-ts-dist' ? "['dist', 'lib', 'build']" : "['dist']";
     const presetComment = preset === 'node-test-ts-dist'
         ? 'TypeScript projects that execute built output should keep source-map coverage enabled so LCOV maps back to src/**.'
-        : preset === 'vitest'
-            ? 'Vitest projects should make npm run coverage write coverage/lcov.info deterministically.'
-            : 'Node test projects can let check create coverage/lcov.info when it is missing.';
+        : preset === 'jest'
+            ? `Jest projects run through ${packageManager}; narrow these commands to the changed slice's tests.`
+            : preset === 'vitest'
+                ? 'Vitest projects should make npm run coverage write coverage/lcov.info deterministically.'
+                : 'Node test projects can let check create coverage/lcov.info when it is missing.';
     return `// ts-quality init preset: ${preset}\n// ${presetComment}\nexport default {\n  sourcePatterns: ${(0, index_1.stableStringify)([...index_1.DEFAULT_SOURCE_PATTERNS])},\n  testPatterns: ${(0, index_1.stableStringify)([...index_1.DEFAULT_TEST_PATTERNS])},\n  coverage: {\n    lcovPath: 'coverage/lcov.info',\n    // When lcovPath is missing, check can run this command after creating the parent directory.\n    ${coverageCommand}\n    generateTimeoutMs: 60000\n  },\n  mutations: { testCommand: ${mutationCommand}, coveredOnly: true, timeoutMs: 15000, maxSites: 25, runtimeMirrorRoots: ${runtimeMirrorRoots} },\n  policy: { maxChangedCrap: 30, minMutationScore: 0.8, minMergeConfidence: 70 },\n  // Provide --changed <a,b,c> or set changeSet.files / changeSet.diffFile before running check.\n  changeSet: { files: [] },\n  invariantsPath: '.ts-quality/invariants.ts',\n  constitutionPath: '.ts-quality/constitution.ts',\n  agentsPath: '.ts-quality/agents.ts'\n};\n`;
 }
 function initProject(rootDir, options) {
@@ -2089,7 +2099,7 @@ function initProject(rootDir, options) {
     const preset = options?.preset ?? 'default';
     const configPath = path_1.default.join(rootDir, 'ts-quality.config.ts');
     if (!fs_1.default.existsSync(configPath)) {
-        fs_1.default.writeFileSync(configPath, initConfigText(preset), 'utf8');
+        fs_1.default.writeFileSync(configPath, initConfigText(preset, readPackageManager(rootDir)), 'utf8');
     }
     const invariantsPath = path_1.default.join(rootDir, '.ts-quality', 'invariants.ts');
     if (!fs_1.default.existsSync(invariantsPath)) {
@@ -2334,16 +2344,80 @@ function readPackageManager(rootDir) {
 }
 const DESTRUCTIVE_SCRIPT_PATTERN = /\b(?:rimraf|del-cli|trash)\b|\brm\s+-[a-z]*r/u;
 const COVERAGE_PRODUCING_COMMAND_PATTERN = /--coverage\b|--experimental-test-coverage\b|\bc8\b|\bnyc\b|\blcov\b|--test-reporter=lcov\b/u;
-/** Scripts that plausibly produce coverage: named for coverage/LCOV or running a coverage tool, and never destructive cleanup. */
-function coverageScriptNames(scripts) {
-    return Object.keys(scripts)
+const MAX_WRAPPER_SCRIPT_BYTES = 64 * 1024;
+/**
+ * Text a package script really runs: the script plus the contents of repo-local shell wrappers it invokes
+ * (`scripts/run-tests.sh`, `bash ./ci/test.sh`). Script names and wrapper paths say nothing about the runner or the
+ * coverage format, so advice must come from what the commands do. Read-only and one level deep; wrappers that
+ * resolve (including through symlinks) outside the repository, non-files, and oversized files are never read.
+ */
+function resolvedScriptText(rootDir, command) {
+    let realRoot;
+    try {
+        realRoot = fs_1.default.realpathSync(rootDir);
+    }
+    catch {
+        return command;
+    }
+    const wrapperTexts = [];
+    for (const token of command.split(/\s+/u)) {
+        if (!/\.(?:sh|bash)$/u.test(token)) {
+            continue;
+        }
+        try {
+            const realWrapper = fs_1.default.realpathSync(path_1.default.resolve(rootDir, token));
+            const relative = path_1.default.relative(realRoot, realWrapper);
+            if (relative.startsWith('..') || path_1.default.isAbsolute(relative)) {
+                continue;
+            }
+            const stat = fs_1.default.statSync(realWrapper);
+            if (stat.isFile() && stat.size <= MAX_WRAPPER_SCRIPT_BYTES) {
+                wrapperTexts.push(fs_1.default.readFileSync(realWrapper, 'utf8'));
+            }
+        }
+        catch {
+            continue;
+        }
+    }
+    return [command, ...wrapperTexts].join('\n');
+}
+/**
+ * Positive evidence that a coverage command writes no LCOV. Jest's default coverage reporters include LCOV; Bun,
+ * Vitest, node:test, c8, and nyc need an explicit LCOV reporter. Unknown commands (for example `make coverage`) are
+ * not evidence either way.
+ */
+function coverageWritesNoLcov(text) {
+    const mentionsLcov = /lcov/u.test(text);
+    if (/\bbun\s+test\b[^\n]*--coverage\b/u.test(text)) {
+        return !/--coverage-reporter[= ]\S*lcov/u.test(text);
+    }
+    if (/\bjest\b[^\n]*--coverage\b/u.test(text)) {
+        return /--coverageReporters[= ]/u.test(text) && !mentionsLcov;
+    }
+    if (/\bvitest\b[^\n]*--coverage\b/u.test(text) || /--experimental-test-coverage\b/u.test(text) || /\b(?:c8|nyc)\b/u.test(text)) {
+        return !mentionsLcov;
+    }
+    return false;
+}
+/**
+ * Scripts that plausibly produce coverage: named for coverage/LCOV or running a coverage tool, never destructive
+ * cleanup, and never a script whose resolved command demonstrably writes no LCOV (reported separately).
+ */
+function coverageScriptNames(scripts, rootDir) {
+    const withoutLcov = [];
+    const candidates = Object.keys(scripts)
         .map((name) => {
         const command = scripts[name] ?? '';
         if (DESTRUCTIVE_SCRIPT_PATTERN.test(command) || /(?:^|:)clean(?:$|:)/u.test(name)) {
             return null;
         }
         const nameMatches = /coverage|lcov/u.test(name);
-        if (!nameMatches && !COVERAGE_PRODUCING_COMMAND_PATTERN.test(command)) {
+        const resolved = resolvedScriptText(rootDir, command);
+        if (!nameMatches && !COVERAGE_PRODUCING_COMMAND_PATTERN.test(resolved)) {
+            return null;
+        }
+        if (coverageWritesNoLcov(resolved)) {
+            withoutLcov.push(name);
             return null;
         }
         return { name, rank: nameMatches ? 0 : 1 };
@@ -2351,6 +2425,7 @@ function coverageScriptNames(scripts) {
         .filter((item) => item !== null)
         .sort((left, right) => left.rank - right.rank || left.name.localeCompare(right.name))
         .map((item) => item.name);
+    return { candidates, withoutLcov: withoutLcov.sort() };
 }
 /** Scripts that plausibly run tests: never npm pre/post lifecycle hooks or destructive/clean scripts; exact `test` first. */
 function testScriptNames(scripts) {
@@ -2369,19 +2444,37 @@ function testRunnerOfCommand(command) {
     if (/\bmocha\b/u.test(command)) {
         return 'mocha';
     }
+    if (/\bbun\s+test\b/u.test(command)) {
+        return 'bun';
+    }
     return /\bnode\b[^&|;]*\s--test\b/u.test(command) ? 'node:test' : undefined;
 }
-/** Runner behind a command, resolving `npm test` / `<pm> run <script>` through package scripts. */
-function testRunnerOf(command, scripts) {
+/** Runner behind a command, resolving `npm test` / `<pm> run <script>` through package scripts and repo-local wrappers. */
+function testRunnerOf(command, scripts, rootDir) {
     const [executable, first, second] = command;
-    if (executable && ['npm', 'pnpm', 'yarn', 'bun'].includes(executable)) {
+    // `bun test ...` is the Bun runner itself, not a package script named test.
+    const isBunRunner = executable === 'bun' && first === 'test';
+    if (executable && ['npm', 'pnpm', 'yarn', 'bun'].includes(executable) && !isBunRunner) {
         const scriptName = first === 'run' ? second : first;
         const script = scriptName ? scripts[scriptName] : undefined;
         if (script !== undefined) {
-            return testRunnerOfCommand(script);
+            return testRunnerOfCommand(resolvedScriptText(rootDir, script));
         }
     }
-    return testRunnerOfCommand(command.join(' '));
+    return testRunnerOfCommand(resolvedScriptText(rootDir, command.join(' ')));
+}
+/** Command that runs a package binary through the repository's package manager. */
+function packageManagerExec(packageManager, binary) {
+    switch (packageManager) {
+        case 'pnpm':
+            return ['pnpm', 'exec', binary];
+        case 'yarn':
+            return ['yarn', 'run', binary];
+        case 'bun':
+            return ['bunx', binary];
+        default:
+            return ['npx', binary];
+    }
 }
 /** Source files are never test files, even when tests are colocated under a source root such as src/__tests__. */
 function sourceFilesExcludingTests(rootDir, sourcePatterns, testPatterns) {
@@ -2417,15 +2510,23 @@ function focusedTestRecommendation(scriptName, scriptCommand, packageManager = '
         command: [packageManager, 'run', scriptName]
     };
 }
-function runnerCoverageRecommendation(runner, packageManager, scriptName) {
+function runnerCoverageRecommendation(runner, packageManager, scriptName, scriptInvokesRunnerDirectly) {
     const forward = packageManager === 'npm' ? ['--'] : [];
-    if (scriptName && runner === 'jest') {
-        const command = [packageManager, 'run', scriptName, ...forward, '--coverage', '--coverageReporters=lcov', '--coverageDirectory=coverage'];
-        return { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run Jest with LCOV output: ${command.join(' ')}.`, command };
+    // Flags can be forwarded only when the script itself invokes the runner; a wrapper may not pass them through.
+    const viaScript = (flags) => (scriptName && scriptInvokesRunnerDirectly ? [packageManager, 'run', scriptName, ...forward, ...flags] : undefined);
+    if (runner === 'jest') {
+        const flags = ['--coverage', '--coverageReporters=lcov', '--coverageDirectory=coverage'];
+        const command = viaScript(flags) ?? [...packageManagerExec(packageManager, 'jest'), ...flags];
+        return { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run Jest with LCOV output, narrowed to the changed slice's tests: ${command.join(' ')}.`, command };
     }
-    if (scriptName && runner === 'vitest') {
-        const command = [packageManager, 'run', scriptName, ...forward, '--coverage.enabled', '--coverage.reporter=lcov', '--coverage.reportsDirectory=coverage'];
-        return { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run Vitest with LCOV output (requires a coverage provider such as @vitest/coverage-v8): ${command.join(' ')}.`, command };
+    if (runner === 'vitest') {
+        const flags = ['--coverage.enabled', '--coverage.reporter=lcov', '--coverage.reportsDirectory=coverage'];
+        const command = viaScript(flags) ?? [...packageManagerExec(packageManager, 'vitest'), 'run', ...flags];
+        return { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run Vitest with LCOV output (requires a coverage provider such as @vitest/coverage-v8), narrowed to the changed slice's tests: ${command.join(' ')}.`, command };
+    }
+    if (runner === 'bun') {
+        const command = ['bun', 'test', '--coverage', '--coverage-reporter=lcov', '--coverage-dir=coverage'];
+        return { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run Bun with LCOV output, narrowed to the changed slice's tests: ${command.join(' ')}.`, command };
     }
     return { id: 'coverage-generate-command', kind: 'coverage', summary: 'Configure coverage.generateCommand to create coverage/lcov.info.', command: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info'] };
 }
@@ -2451,10 +2552,12 @@ function buildDoctorDiagnostic(rootDir, options) {
     const runtimeMirrorRoots = config?.mutations.runtimeMirrorRoots ?? ['dist'];
     const sourceDistRisk = changed.some(isSourceTsFile) && builtOutputRoots(runtimeMirrorRoots).some((root) => fs_1.default.existsSync(path_1.default.join(rootDir, root)));
     const packageManager = readPackageManager(rootDir);
-    const coverageScripts = coverageScriptNames(scripts);
+    const { candidates: coverageScripts, withoutLcov: coverageScriptsWithoutLcov } = coverageScriptNames(scripts, rootDir);
     const testScripts = testScriptNames(scripts);
-    const repoTestRunner = testScripts[0] ? testRunnerOfCommand(scripts[testScripts[0]] ?? '') : undefined;
-    const mutationTestRunner = config?.mutations.testCommand ? testRunnerOf(config.mutations.testCommand, scripts) : undefined;
+    const testScriptCommand = testScripts[0] ? scripts[testScripts[0]] ?? '' : '';
+    const repoTestRunner = testScripts[0] ? testRunnerOfCommand(resolvedScriptText(rootDir, testScriptCommand)) : undefined;
+    const testScriptInvokesRunnerDirectly = repoTestRunner !== undefined && testRunnerOfCommand(testScriptCommand) === repoTestRunner;
+    const mutationTestRunner = config?.mutations.testCommand ? testRunnerOf(config.mutations.testCommand, scripts, rootDir) : undefined;
     // Only source code can be attributed coverage/mutation evidence; tests, docs, and manifests are expected outside sourcePatterns.
     const changedOutsideSources = changed.filter((filePath) => SOURCE_CODE_FILE_PATTERN.test(filePath)
         && !filePath.endsWith('.d.ts')
@@ -2469,8 +2572,17 @@ function buildDoctorDiagnostic(rootDir, options) {
     if (!lcovExists && generateCommand.length === 0) {
         recommendations.push(coverageScripts.length > 0
             ? { id: 'coverage-generate-command', kind: 'coverage', summary: `Configure coverage.generateCommand to run an existing script such as ${packageManager} run ${coverageScripts[0]}.`, command: [packageManager, 'run', coverageScripts[0] ?? 'coverage'] }
-            : runnerCoverageRecommendation(repoTestRunner, packageManager, testScripts[0]));
+            : runnerCoverageRecommendation(repoTestRunner, packageManager, testScripts[0], testScriptInvokesRunnerDirectly));
         risks.push({ code: 'coverage-missing-without-generator', level: 'warn', message: 'LCOV is missing and coverage.generateCommand is not configured.', hint: 'Configure a deterministic coverage command or create the LCOV before check.', evidence: [`lcovPath=${lcovPath}`] });
+    }
+    for (const scriptName of coverageScriptsWithoutLcov) {
+        risks.push({
+            code: 'coverage-script-without-lcov',
+            level: 'warn',
+            message: `Script ${scriptName} runs coverage but writes no LCOV.`,
+            hint: 'check reads LCOV only; add an LCOV reporter to that script or use the recommended coverage command.',
+            evidence: [`script=${scriptName}`]
+        });
     }
     if (changedOutsideSources.length > 0) {
         risks.push({
