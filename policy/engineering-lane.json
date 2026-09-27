@@ -3,10 +3,10 @@
     "schema_version": "1",
     "tool": "engineering-core",
     "repository": "https://github.com/tryingET/core_engineering-core",
-    "ref": "v0.12.0",
-    "catalog_command": "uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core catalog --pretty",
-    "list_disciplines_command": "uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core list-disciplines",
-    "list_templates_command": "uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core list-templates",
+    "ref": "v0.12.2",
+    "catalog_command": "uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae' engineering-core catalog --pretty",
+    "list_disciplines_command": "uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae' engineering-core list-disciplines",
+    "list_templates_command": "uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae' engineering-core list-templates",
     "disciplines": [
       "validation",
       "testing",
@@ -23,7 +23,7 @@
       "ts"
     ],
     "deviations": [],
-    "command": "uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core show ts",
+    "command": "uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae' engineering-core show ts",
     "loop_validation": {
       "version": "repo-loop-validation-v1",
       "contract_doc": "docs/engineering.local.md#repo-loop-validation",
@@ -52,9 +52,9 @@
     },
     "release_pin": {
       "kind": "git-commit",
-      "ref": "v0.12.0",
-      "resolved_commit": "3fc8387274dddccbae3d7fab80954ad483c9b681",
-      "source": "git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681"
+      "ref": "v0.12.2",
+      "resolved_commit": "27ff32a529b6da6b27051e97fdb1d95a0a9be4ae",
+      "source": "git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae"
     }
   }
 }

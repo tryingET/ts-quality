@@ -13,7 +13,7 @@ type: "reference"
 Shared engineering lane and discipline guidance comes from `https://github.com/tryingET/core_engineering-core`.
 This file records repo-local overrides for ts-quality. The repo `AGENTS.md` remains the operating authority for deterministic evidence, task workflow, product/runtime truth, and validation commands.
 
-- Release pin: `v0.12.0` (`3fc8387274dddccbae3d7fab80954ad483c9b681`)
+- Release pin: `v0.12.2` (`27ff32a529b6da6b27051e97fdb1d95a0a9be4ae`)
 - Machine-readable selection lives in `policy/engineering-lane.json`.
 
 ## Selected lane
@@ -21,7 +21,7 @@ This file records repo-local overrides for ts-quality. The repo `AGENTS.md` rema
 - `ts` — TypeScript CLI/platform package with npm scripts and generated report/artifact surfaces.
 
 ```bash
-uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core show ts
+uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae' engineering-core show ts
 ```
 
 ## Selected disciplines
@@ -39,9 +39,9 @@ uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git
 Catalog/list commands:
 
 ```bash
-uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core catalog --pretty
-uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core list-disciplines
-uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core list-templates
+uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae' engineering-core catalog --pretty
+uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae' engineering-core list-disciplines
+uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@27ff32a529b6da6b27051e97fdb1d95a0a9be4ae' engineering-core list-templates
 ```
 
 ## Repo-local deviations and emphasis
