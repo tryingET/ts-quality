@@ -10,17 +10,18 @@ type: "reference"
 
 ## Upstream owner
 
-Shared engineering lane and discipline guidance comes from `/home/tryinget/ai-society/core/engineering-core`.
+Shared engineering lane and discipline guidance comes from `https://github.com/tryingET/core_engineering-core`.
 This file records repo-local overrides for ts-quality. The repo `AGENTS.md` remains the operating authority for deterministic evidence, task workflow, product/runtime truth, and validation commands.
 
-Machine-readable selection lives in `policy/engineering-lane.json`.
+- Release pin: `v0.12.0` (`3fc8387274dddccbae3d7fab80954ad483c9b681`)
+- Machine-readable selection lives in `policy/engineering-lane.json`.
 
 ## Selected lane
 
 - `ts` — TypeScript CLI/platform package with npm scripts and generated report/artifact surfaces.
 
 ```bash
-uv tool -n run --from ~/ai-society/core/engineering-core engineering-core show ts
+uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core show ts
 ```
 
 ## Selected disciplines
@@ -38,9 +39,9 @@ uv tool -n run --from ~/ai-society/core/engineering-core engineering-core show t
 Catalog/list commands:
 
 ```bash
-uv tool -n run --from ~/ai-society/core/engineering-core engineering-core catalog --pretty
-uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-disciplines
-uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-templates
+uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core catalog --pretty
+uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core list-disciplines
+uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git@3fc8387274dddccbae3d7fab80954ad483c9b681' engineering-core list-templates
 ```
 
 ## Repo-local deviations and emphasis
@@ -50,6 +51,7 @@ uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-t
 - Artifact/report evolution should be additive-first whenever possible.
 - Keep generated sample artifacts under `examples/artifacts/` intentional and reviewable when runtime behavior changes.
 - Do not broaden evidence search just to improve scores; support invariants with aligned or explicitly scoped tests.
+- **TypeScript 7 toolchain deferred:** this repo's own runtime imports the classic `typescript` compiler API (`ts.createSourceFile`, `ts.transpileModule` in `packages/ts-quality`, `packages/ts-mutate`, `packages/invariants`, `packages/crap4ts`, and `packages/governance`). Its root `typescript` dependency and `tsc` build/typecheck remain on the current TypeScript 5 line. Changing that product dependency and all API consumers requires a separate design/validation decision; this rollout moves only the engineering-core guidance pin. Do not claim that the TypeScript 7 lane gate is adopted.
 
 ## Canonical local commands
 
