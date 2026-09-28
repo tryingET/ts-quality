@@ -26,7 +26,7 @@ If the operator supplies an exact AK task id, ignore this file and follow task t
 
 ## Guardrails
 - AK is live task truth.
-- `governance/work-items.json` is an exported projection, not the live queue.
+- No checked-in work-items projection exists; use `ak task ready` for live work.
 - `docs/project/*` is optional direction context, not default startup for exact-task sessions.
 - Do not update this file during normal implementation work.
 - Update this file only when the repo's handoff contract changes materially.
@@ -34,5 +34,4 @@ If the operator supplies an exact AK task id, ignore this file and follow task t
 ## Optional deeper context
 Read these only if the chosen task is meta/control-plane work or truly needs them:
 - `docs/project/*`
-- `governance/work-items.json`
 - relevant `docs/learnings/` or `diary/`

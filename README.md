@@ -386,16 +386,16 @@ ak task claim 182 --agent pi
 
 ## Repo-local handoff sync
 
-`governance/work-items.json` is an exported AK projection, while `docs/project/*` and `next_session_prompt.md` remain manually curated downstream handoff surfaces.
-Use the handoff helper to keep those repo-local projections reconciled against AK without treating them as the live queue.
+The AK DB is the sole work authority (`ak task ...`); no checked-in work-items projection exists. `docs/project/*` and `next_session_prompt.md` remain manually curated downstream handoff surfaces.
+Use the handoff helper to keep the direction state reconciled against AK without treating those docs as the live queue.
 
 ```bash
 npm run handoff:sync
 npm run handoff:check
 ```
 
-`npm run handoff:sync` exports `governance/work-items.json` and runs the direction reconciliation flow (`ak direction import`, `ak direction check`, `ak direction export`).
-`npm run handoff:check` fails closed when the checked-in work-items projection or downstream handoff docs drift from AK, but it is only a repo-local drift check: it does **not** replace `ak task *` for live queue truth or CI/job status for live automation truth.
+`npm run handoff:sync` runs the direction reconciliation flow (`ak direction import`, `ak direction check`, `ak direction export`).
+`npm run handoff:check` fails closed when the direction state drifts from AK, but it is only a repo-local drift check: it does **not** replace `ak task *` for live queue truth or CI/job status for live automation truth.
 
 ## Verification artifacts and guardrails
 

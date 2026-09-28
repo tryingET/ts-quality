@@ -1,52 +1,19 @@
 ---
-summary: "Planning-model contract for the repo-local governance work-items projection."
+summary: "Governance for ts-quality: the Agent Kernel DB is the sole work authority; the work-items projection is retired."
 read_when:
-  - "When validating governance/work-items.json"
-  - "When deciding whether work belongs in the repo-local planning model"
+  - "You are looking for deferred or active work for ts-quality."
+  - "You are tempted to reintroduce a checked-in governance/work-items.json projection."
 type: "reference"
 ---
 
-# Project Work Items
+# Governance — ts-quality
 
-`governance/work-items.json` is the project-local planning model for this repository.
+Deferred and active work for this repo lives in the **Agent Kernel DB** (`ak task ...`).
+The AK DB is the sole work authority; no checked-in work-items projection exists or should be reintroduced.
 
-## Purpose
-
-- Scope: **single repo** (features, bugs, improvements)
-- Authority: planning/coordination
-- Operational status: **non-operational** (no scheduler)
-
-Use this when work is local to this repo. Use L0/FCOS programs when work spans repos.
-
-## Contract (must stay aligned)
-
-- Schema: `governance/work-items.cue`
-- Seed model: `governance/work-items.json`
-
-Core fields:
-- `schema_version`
-- `updated_at`
-- `owner`
-- `project_name`
-- `milestones[]`
-
-Issue state machine:
-- `triage -> queued -> doing -> review -> done`
-
-## Validation
-
-```bash
-cue vet governance/work-items.json governance/work-items.cue
-```
-
-## Use this vs alternatives
-
-| Use this file when | Use alternative when |
-|---|---|
-| Work is repo-local and needs milestone/issue/task structure | Work spans multiple repos/programs (use FCOS/L0 program models) |
-| You need deterministic schema checks | You only need lightweight conversational triage (use issues/notes) |
+The retired `governance/work-items.json` / `work-items.cue` pair contained only completed (`done`) historical task references already recorded in AK; nothing was lost at retirement.
 
 ## Non-negotiable
 
-Do not leave deferred work as ad-hoc comments or scattered markdown notes.
-Track deferred work in the authoritative work-items model.
+- Do not leave deferred work as ad-hoc code comments or scattered markdown notes.
+- Do not reintroduce a checked-in `governance/work-items.json` projection; the AK DB is authoritative.

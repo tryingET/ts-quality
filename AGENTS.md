@@ -36,7 +36,7 @@ The monorepo root is the control plane; package-specific runtime behavior belong
 
 ## AK workflow
 - Agent Kernel is authoritative for live repo task state.
-- `governance/work-items.json` is a checked-in projection/planning artifact, not the live queue.
+- The AK DB is the sole work authority; no checked-in work-items projection exists. Track deferred work with `ak task ...`.
 - Use plain installed `ak` for all AK operations:
   - canonical entrypoint: `ak`
   - doctor / runner resolution: `ak --doctor`
@@ -60,7 +60,6 @@ Default flow:
 In exact-task mode, do **not** read or update:
 - `next_session_prompt.md`
 - `docs/project/**`
-- `governance/work-items.json`
 - `diary/**`
 
 unless:

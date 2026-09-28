@@ -13,8 +13,8 @@ if (args.has('--help') || args.has('-h')) {
     'Usage: node scripts/handoff-sync.mjs [--check]',
     '',
     'Modes:',
-    '  default  Export repo-local AK projections and reconcile direction state.',
-    '  --check  Fail closed when governance/work-items.json or direction state drift.',
+    '  default  Reconcile repo-local AK direction state.',
+    '  --check  Fail closed when direction state drifts.',
     ''
   ].join('\n'));
   process.exit(0);
@@ -41,12 +41,10 @@ function run(command, commandArgs) {
 }
 
 if (args.has('--check')) {
-  run('ak', ['work-items', 'check']);
   run('ak', ['direction', 'check']);
   process.exit(0);
 }
 
-run('ak', ['work-items', 'export']);
 run('ak', ['direction', 'import']);
 run('ak', ['direction', 'check']);
 run('ak', ['direction', 'export']);
