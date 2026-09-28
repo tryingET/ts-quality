@@ -1,0 +1,5 @@
+# Force LF line endings: CRLF breaks shebangs of the ROCS launcher and CI scripts.
+*.sh text eol=lf
+scripts/rocs.sh text eol=lf
+scripts/ci/*.sh text eol=lf
+.githooks/* text eol=lf

@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ROCS CI profile wrapper
 # Profiles:
-#   - local-dev   : offline-first by default (refs optional)
+#   - local-dev   : workspace refs resolved from the enclosing workspace (launcher default)
 #   - branch-ci   : strict refs required
 #   - main-strict : strict refs required (authoritative gate)
 
@@ -11,11 +11,7 @@ ROCS_CI_PROFILE="${ROCS_CI_PROFILE:-local-dev}"
 ROCS_REPO="${ROCS_REPO:-.}"
 ROCS_PROFILE="${ROCS_PROFILE:-}"
 ROCS_CMD="${ROCS_CMD:-./scripts/rocs.sh}"
-workspace_root="${ROCS_WORKSPACE_ROOT:-$HOME/ai-society}"
-workspace_ref_mode="${ROCS_WORKSPACE_REF_MODE:-loose}"
 export ROCS_AUTHORITY_AGGREGATE=1
-export ROCS_WORKSPACE_ROOT="$workspace_root"
-export ROCS_WORKSPACE_REF_MODE="$workspace_ref_mode"
 
 common_args=(--repo "$ROCS_REPO")
 if [[ -n "$ROCS_PROFILE" ]]; then
@@ -24,77 +20,36 @@ fi
 
 run_rocs() {
   # shellcheck disable=SC2086
-  ROCS_WORKSPACE_ROOT="$workspace_root" ROCS_WORKSPACE_REF_MODE="$workspace_ref_mode" $ROCS_CMD "$@"
-}
-
-clean_dist() {
-  # ROCS dist guard (softwareco AK #5891): refuse to delete uncommitted tracked dist
-  # edits (receipts excluded; override with ROCS_ALLOW_DIRTY_DIST=1) and restore dist
-  # if the ROCS lane fails after the clean.
-  local dirty
-  dirty="$(git -C "$ROCS_REPO" status --porcelain --untracked-files=no -- ontology/dist \
-    ':(exclude)ontology/dist/authority-receipt*.json' \
-    ':(exclude)ontology/dist/.authority-receipt.lock' 2>/dev/null || true)"
-  if [[ -n "$dirty" && "${ROCS_ALLOW_DIRTY_DIST:-0}" != 1 ]]; then
-    echo "error: ontology/dist has uncommitted changes; commit or stash them first," >&2
-    echo "or set ROCS_ALLOW_DIRTY_DIST=1 to overwrite them:" >&2
-    echo "$dirty" >&2
-    exit 1
-  fi
-  if [[ -d "$ROCS_REPO/ontology/dist" ]]; then
-    dist_backup="$(mktemp -d "${TMPDIR:-/tmp}/rocs-dist-guard.XXXXXX")"
-    cp -a "$ROCS_REPO/ontology/dist" "$dist_backup/dist"
-    trap 'restore_dist_on_failure' EXIT
-  fi
-  rm -rf "$ROCS_REPO/ontology/dist"
-}
-
-restore_dist_on_failure() {
-  local status=$?
-  if [[ "$status" -ne 0 && -d "${dist_backup:-}/dist" ]]; then
-    rm -rf "$ROCS_REPO/ontology/dist"
-    cp -a "$dist_backup/dist" "$ROCS_REPO/ontology/dist"
-    echo "error: ROCS lane failed (exit $status); ontology/dist restored" >&2
-  fi
-  rm -rf "${dist_backup:-}"
-  return "$status"
-}
-
-strict_gate() {
-  clean_dist
-  run_rocs validate "${common_args[@]}" --resolve-refs
-  run_rocs build "${common_args[@]}" --resolve-refs
+  $ROCS_CMD "$@"
 }
 
 case "$ROCS_CI_PROFILE" in
-  local-dev)
-    # Keep local loops fast/offline unless explicitly requested.
-    clean_dist
-    if [[ "${ROCS_LOCAL_RESOLVE_REFS:-0}" == "1" ]]; then
-      run_rocs validate "${common_args[@]}" --resolve-refs
-      run_rocs build "${common_args[@]}" --resolve-refs
-    else
-      run_rocs validate "${common_args[@]}"
-      run_rocs build "${common_args[@]}"
-    fi
-    ;;
-
+  local-dev) ;;
   branch-ci)
     : "${ROCS_GITLAB_TIMEOUT_S:=30}"
     : "${ROCS_GITLAB_RETRIES:=3}"
     export ROCS_GITLAB_TIMEOUT_S ROCS_GITLAB_RETRIES
-    strict_gate
     ;;
-
   main-strict)
     : "${ROCS_GITLAB_TIMEOUT_S:=60}"
     : "${ROCS_GITLAB_RETRIES:=3}"
     export ROCS_GITLAB_TIMEOUT_S ROCS_GITLAB_RETRIES
-    strict_gate
     ;;
-
   *)
     echo "unknown ROCS_CI_PROFILE: $ROCS_CI_PROFILE (expected: local-dev|branch-ci|main-strict)" >&2
     exit 1
     ;;
 esac
+
+run_rocs version
+# Managed ROCS gate: cleanup -> validate -> build (validate before build; never wipe ontology/dist first).
+# ontology/dist is gitignored generated output; the sealed launcher resolves refs from the enclosing workspace.
+rocs_ref_mode_args=""
+case "$ROCS_CI_PROFILE" in
+main-strict | branch-ci) rocs_ref_mode_args="--workspace-ref-mode strict" ;;
+esac
+run_rocs cleanup "${common_args[@]}"
+# shellcheck disable=SC2086
+run_rocs validate "${common_args[@]}" $rocs_ref_mode_args
+# shellcheck disable=SC2086
+run_rocs build "${common_args[@]}" $rocs_ref_mode_args

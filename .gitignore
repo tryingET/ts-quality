@@ -4,3 +4,6 @@ coverage/
 .pi-subagent-sessions/
 .pi-subagent-sessions.self-memory.json
 *.log
+# ROCS generated outputs: validate/build rewrite ontology/dist (including
+# authority receipts); `./scripts/rocs.sh cleanup --repo .` removes them.
+/ontology/dist/

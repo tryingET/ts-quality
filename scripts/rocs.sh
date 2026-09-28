@@ -1,176 +1,135 @@
 #!/usr/bin/env sh
+# ROCS launcher: runs the workspace rocs-cli core checkout pinned by this repo.
+#
+# - Pin: rocs_cli_pin (copier answer `rocs_cli_version`). The core checkout must
+#   report the same major.minor and a patch >= the pin; anything else exits 2.
+# - Core: ROCS_CORE_PROJECT (default: $HOME/ai-society/core/rocs-cli), run via
+#   `uv run --frozen --project <core>` (the core pins its Python via .python-version).
+# - Workspace: when ROCS_WORKSPACE_ROOT is unset it defaults to the nearest
+#   ancestor of the repo that contains every <repo:PATH@ref> layer named by the
+#   ontology manifest (else $HOME/ai-society); ROCS_RESOLVE_REFS defaults to 1,
+#   so plain `./scripts/rocs.sh validate --repo .` checks every layer.
+# No ephemeral-tool, PATH, or vendored fallbacks.
 set -eu
 
-# ROCS dist guard (softwareco AK #5891): `rocs build --clean` deletes ontology/dist
-# before rebuilding. Refuse to overwrite uncommitted tracked dist edits (receipts
-# excluded; override with ROCS_ALLOW_DIRTY_DIST=1) and restore dist if the build fails.
-if [ "${1:-}" = build ] && [ "${ROCS_DIST_GUARD_ACTIVE:-0}" != 1 ] && [ -x "$0" ]; then
-  rocs_guard_clean=0
-  rocs_guard_repo="."
-  rocs_guard_prev=""
-  for rocs_guard_arg in "$@"; do
-    [ "$rocs_guard_arg" = --clean ] && rocs_guard_clean=1
-    [ "$rocs_guard_prev" = --repo ] && rocs_guard_repo="$rocs_guard_arg"
-    rocs_guard_prev="$rocs_guard_arg"
-  done
-  rocs_guard_repo="$(CDPATH= cd -- "$rocs_guard_repo" 2>/dev/null && pwd || true)"
-  if [ "$rocs_guard_clean" = 1 ] && [ -n "$rocs_guard_repo" ] && [ -d "$rocs_guard_repo/ontology/dist" ]; then
-    rocs_guard_dirty="$(git -C "$rocs_guard_repo" status --porcelain --untracked-files=no -- ontology/dist \
-      ':(exclude)ontology/dist/authority-receipt*.json' \
-      ':(exclude)ontology/dist/.authority-receipt.lock' 2>/dev/null || true)"
-    if [ -n "$rocs_guard_dirty" ] && [ "${ROCS_ALLOW_DIRTY_DIST:-0}" != 1 ]; then
-      printf '%s\n' "error: ontology/dist has uncommitted changes; commit or stash them before" \
-        "rocs build --clean, or set ROCS_ALLOW_DIRTY_DIST=1 to overwrite them:" "$rocs_guard_dirty" >&2
-      exit 1
-    fi
-    rocs_guard_backup="$(mktemp -d "${TMPDIR:-/tmp}/rocs-dist-guard.XXXXXX")"
-    cp -a "$rocs_guard_repo/ontology/dist" "$rocs_guard_backup/dist"
-    rocs_guard_status=0
-    ROCS_DIST_GUARD_ACTIVE=1 "$0" "$@" || rocs_guard_status=$?
-    if [ "$rocs_guard_status" -ne 0 ]; then
-      rm -rf "$rocs_guard_repo/ontology/dist"
-      cp -a "$rocs_guard_backup/dist" "$rocs_guard_repo/ontology/dist"
-      printf '%s\n' "error: rocs build failed (exit $rocs_guard_status); ontology/dist restored" >&2
-    fi
-    rm -rf "$rocs_guard_backup"
-    exit "$rocs_guard_status"
-  fi
-fi
+rocs_cli_pin="0.4.4"
 
-repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-core_project_default="${ROCS_CORE_PROJECT:-$HOME/ai-society/core/rocs-cli}"
-workspace_root_default="${ROCS_WORKSPACE_ROOT:-$HOME/ai-society}"
-workspace_ref_mode_default="${ROCS_WORKSPACE_REF_MODE:-loose}"
-
-say() {
-  printf '%s\n' "$*"
-}
+repo="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
+core="${ROCS_CORE_PROJECT:-$HOME/ai-society/core/rocs-cli}"
 
 err() {
   printf '%s\n' "$*" >&2
 }
 
-die() {
+fail_setup() {
   err "error: $*"
-  exit 1
-}
-
-has_cmd() {
-  command -v "$1" >/dev/null 2>&1
+  exit 2
 }
 
 usage() {
   cat <<'EOF'
-usage: scripts/rocs.sh [--doctor|--which|--help] [rocs args...]
+usage: scripts/rocs.sh [--doctor|--help] [rocs args...]
 
-Portable ROCS launcher with deterministic resolution order:
-  1) ROCS_BIN override
-  2) workspace core ~/ai-society/core/rocs-cli (or ROCS_CORE_PROJECT)
-  3) rocs on PATH
-
-Defaults passed through when unset:
-  - ROCS_WORKSPACE_ROOT=$HOME/ai-society
-  - ROCS_WORKSPACE_REF_MODE=loose
+Runs the pinned workspace rocs-cli core checkout:
+  uv run --frozen --project "${ROCS_CORE_PROJECT:-$HOME/ai-society/core/rocs-cli}" python -m rocs_cli <args>
 
 Examples:
-  ./scripts/rocs.sh version
-  ./scripts/rocs.sh validate --repo .
   ./scripts/rocs.sh --doctor
-  ./scripts/rocs.sh --which
+  ./scripts/rocs.sh validate --repo .
+  ./scripts/rocs.sh build --repo .
 EOF
 }
 
-select_runner() {
-  if [ -n "${ROCS_BIN:-}" ]; then
-    printf '%s\n' "rocs-bin"
-    return
-  fi
-
-  if [ -d "$core_project_default" ] && [ -f "$core_project_default/pyproject.toml" ] && has_cmd uv; then
-    printf '%s\n' "workspace-core-uv"
-    return
-  fi
-
-  if has_cmd rocs; then
-    printf '%s\n' "path-rocs"
-    return
-  fi
-
-  printf '%s\n' "missing"
+core_version() {
+  sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*["'\'']\([^"'\'']*\)["'\''].*/\1/p' "$core/pyproject.toml" 2>/dev/null | head -n 1
 }
 
-runner_desc() {
-  case "$1" in
-    rocs-bin)
-      printf 'ROCS_BIN=%s\n' "${ROCS_BIN}"
-      ;;
-    workspace-core-uv)
-      printf 'workspace core via uv --project %s\n' "$core_project_default"
-      ;;
-    path-rocs)
-      printf 'rocs on PATH (%s)\n' "$(command -v rocs)"
-      ;;
-    missing)
-      printf 'unresolved (no viable rocs runner)\n'
-      ;;
-    *)
-      printf 'unknown runner token: %s\n' "$1"
-      ;;
-  esac
+# 0 when $1 (core) is compatible with $2 (pin): same major.minor, patch >= pin.
+version_compatible() {
+  have="$1"
+  want="$2"
+  for candidate in "$have" "$want"; do
+    case "$candidate" in
+      *.*.*.* | *[!0-9.]* | '') return 1 ;;
+      *.*.*) ;;
+      *) return 1 ;;
+    esac
+  done
+  have_major="${have%%.*}"
+  have_rest="${have#*.}"
+  have_minor="${have_rest%%.*}"
+  have_patch="${have_rest#*.}"
+  want_major="${want%%.*}"
+  want_rest="${want#*.}"
+  want_minor="${want_rest%%.*}"
+  want_patch="${want_rest#*.}"
+  for part in "$have_major" "$have_minor" "$have_patch" "$want_major" "$want_minor" "$want_patch"; do
+    case "$part" in
+      '' | *[!0-9]*) return 1 ;;
+    esac
+  done
+  [ "$have_major" -eq "$want_major" ] && [ "$have_minor" -eq "$want_minor" ] && [ "$have_patch" -ge "$want_patch" ]
 }
 
-doctor() {
-  runner="$(select_runner)"
-
-  say "rocs launcher doctor"
-  say "- repo_root: $repo_root"
-  say "- core_project_default: $core_project_default"
-  say "- workspace_root_default: $workspace_root_default"
-  say "- workspace_ref_mode_default: $workspace_ref_mode_default"
-  say "- has uv: $(has_cmd uv && printf yes || printf no)"
-  say "- has rocs on PATH: $(has_cmd rocs && printf yes || printf no)"
-  say "- selected runner: $(runner_desc "$runner")"
-
-  if [ "$runner" = "missing" ]; then
-    return 1
+require_core() {
+  if [ ! -f "$core/pyproject.toml" ] || [ ! -d "$core/src/rocs_cli" ]; then
+    fail_setup "rocs-cli core checkout not found at $core (pin $rocs_cli_pin). Clone ai-society/core/rocs-cli there, or set ROCS_CORE_PROJECT to a rocs-cli $rocs_cli_pin checkout."
   fi
-  return 0
+  version="$(core_version)"
+  if [ -z "$version" ]; then
+    fail_setup "cannot read the rocs-cli version from $core/pyproject.toml (pin $rocs_cli_pin)."
+  fi
+  if ! version_compatible "$version" "$rocs_cli_pin"; then
+    fail_setup "rocs-cli core at $core is $version but this repo pins $rocs_cli_pin (accepts ${rocs_cli_pin%.*}.x with patch >= ${rocs_cli_pin##*.}). Update the core checkout to $rocs_cli_pin or newer within ${rocs_cli_pin%.*}.x, or re-render with a matching rocs_cli_version."
+  fi
+  command -v uv >/dev/null 2>&1 || fail_setup "uv is required to run the rocs-cli core checkout at $core."
 }
 
-if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-  usage
-  exit 0
-fi
-
-if [ "${1:-}" = "--doctor" ]; then
-  doctor
-  exit $?
-fi
-
-runner="$(select_runner)"
-
-if [ "${1:-}" = "--which" ]; then
-  runner_desc "$runner"
-  if [ "$runner" = "missing" ]; then
-    exit 1
+# Workspace default (mirrors rocs-cli >= 0.4.3 verified_runtime._GENERIC_WORKSPACE_DEFAULT,
+# falling back to $HOME/ai-society instead of the repo).
+if [ -z "${ROCS_WORKSPACE_ROOT:-}" ]; then
+  ROCS_WORKSPACE_ROOT="$HOME/ai-society"
+  refs="$(sed -n 's/.*<repo:\([^@>]*\)@.*/\1/p' "$repo/ontology/manifest.yaml" "$repo/manifest.yaml" 2>/dev/null || true)"
+  if [ -n "$refs" ]; then
+    ws="$(dirname -- "$repo")"
+    while :; do
+      found=1
+      for ref in $refs; do
+        if [ ! -d "$ws/$ref" ] && [ ! -d "$ws/${ref#*/}" ]; then
+          found=0
+          break
+        fi
+      done
+      if [ "$found" = 1 ]; then
+        ROCS_WORKSPACE_ROOT="$ws"
+        break
+      fi
+      [ "$ws" = / ] && break
+      ws="$(dirname -- "$ws")"
+    done
   fi
-  exit 0
 fi
+export ROCS_WORKSPACE_ROOT
+ROCS_RESOLVE_REFS="${ROCS_RESOLVE_REFS:-1}"
+export ROCS_RESOLVE_REFS
 
-export ROCS_WORKSPACE_ROOT="$workspace_root_default"
-export ROCS_WORKSPACE_REF_MODE="$workspace_ref_mode_default"
-
-case "$runner" in
-  rocs-bin)
-    exec "$ROCS_BIN" "$@"
+case "${1:-}" in
+  -h | --help)
+    usage
+    exit 0
     ;;
-  workspace-core-uv)
-    exec uv --project "$core_project_default" run rocs "$@"
-    ;;
-  path-rocs)
-    exec rocs "$@"
-    ;;
-  *)
-    die "unable to locate rocs runner; install rocs, install uv with workspace core checkout, or set ROCS_BIN"
+  --doctor)
+    printf 'repo: %s\n' "$repo"
+    printf 'core: %s\n' "$core"
+    printf 'core version: %s\n' "$(core_version || true)"
+    printf 'pin: %s\n' "$rocs_cli_pin"
+    printf 'workspace root: %s\n' "$ROCS_WORKSPACE_ROOT"
+    printf 'resolve refs: %s\n' "$ROCS_RESOLVE_REFS"
+    require_core
+    printf 'ok: rocs-cli %s satisfies pin %s\n' "$version" "$rocs_cli_pin"
+    exit 0
     ;;
 esac
+
+require_core
+exec uv run --frozen --project "$core" python -m rocs_cli "$@"
