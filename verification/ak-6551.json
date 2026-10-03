@@ -1,5 +1,7 @@
 {
   "schemaVersion": 1,
+  "recordKind": "historical partial-slice receipt, not current task status",
+  "currentScaleProof": "verification/ak-6551-scale.json",
   "taskId": 6551,
   "sourceBaseCommit": "7d3d712",
   "claimant": "session-01a10137-e94f-7744-acc8-0e94d843b532",

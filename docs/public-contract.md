@@ -229,7 +229,7 @@ Installed-package smoke, checked-in parser fixtures under `fixtures/artifact-com
 - older checked-in governed-app run captures that predate current additive fields remain readable through selected-run report, explain, plan, govern, and authorize projections
 - packaging smoke replays that historical capture and all four real target captures through the fresh installed tarball, preserving packet bytes; Jest missing-source drift still denies authorization, and real Bun-derived absent/future-field cases remain projectable while invalid snapshots reject every projection
 
-Captured-packet replay is compatibility proof, not current target execution, refreshed witness binding, accepted adoption, or scale proof. The Bun capture analyzes one source; the separately reported ~170-source historical result lacks a retained full-scale packet/environment receipt here. See `docs/adoption/bun-scale-reproducibility-assessment.json`.
+Captured-packet replay is compatibility proof, not current target execution, refreshed witness binding, accepted adoption, or scale proof. The Bun compatibility capture still analyzes one source. Separately, `fixtures/bun-scale-proof/` retains a **new 176-source** pinned execution and tested cold-cache reconstruction with complete compressed raw evidence, current witness/baseline support and genuine fail19/deny. It uses local prepared0.7/Node26/Bun1.3.12; historical Node22/public0.6 packet identity remains unrecovered. Neither proof is accepted adoption or public availability. See `docs/adoption/bun-scale-reproducibility-assessment.json`.
 
 Protected compatibility principle:
 

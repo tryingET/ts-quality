@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "taskId": 6551,
+  "recordKind": "new pinned execution proof; task status remains authoritative in AK",
+  "sourceBaseCommit": "b67c2a720d67f7908894cc2bab7e7186375eb1f9",
+  "historicalPartialSlice": "verification/ak-6551.json",
+  "installedCompatibilityEvidence": [12918, 12919, 12935, 12936, 12947, 12949],
+  "proofManifest": "fixtures/bun-scale-proof/manifest.json",
+  "rawEvidence": {
+    "file": "fixtures/bun-scale-proof/raw-evidence.tar.gz",
+    "sha256": "54a9a229af8bfeef83f175468efea5a7a3aa3d36809c4e9601de8fad0d2bf3ae",
+    "runId": "task6551-lean-cold-20261003T122921Z-41233d5d",
+    "runSha256": "7ccaa678528c20e180399baf9cbb6321addfca6c58d5e809dd17c02c3e0184d3"
+  },
+  "recipe": {
+    "file": "fixtures/bun-scale-proof/replay-recipe.tar.gz",
+    "sha256": "bd046e9ed9aaa00ce42a98b9211987cbbabc5b32842dabf1d2eea6560dd09cef",
+    "testedFromEmptyCache": true,
+    "retainedDependencySeedRequired": false,
+    "sourceArchiveSuppliedFromExactGitObject": true,
+    "originalLocksUnchanged": true,
+    "endpointOnlyFetchProjection": "Separate frozen retrieval project maps archived mirror URLs to official npm while retaining every locked version/key/metadata/integrity. Original target subsequently installs offline.",
+    "networkProofPhase": "disabled via bwrap; host filesystem read-only except owned scratch",
+    "networkInstallerBoundary": "trusted frozen ignore-scripts Bun installer using official-only CONNECT proxy; not arbitrary-code isolation"
+  },
+  "source": {
+    "commit": "bbeebdfd1935afff65b8e8dcd1aa46753a229440",
+    "tree": "cb60d31393d292bab89cee5caa74e5dbef1ce9b8",
+    "archiveSha256": "53af4392788656a8d9d11b188f3094365ae32746df45748048d61c2d14ac5b97",
+    "archiveOriginalFilesUnchanged": 807
+  },
+  "cli": {
+    "version": "0.7.0",
+    "sourceCommit": "07f3529a714f63157d6e66d2866d6254c97a3259",
+    "tarballSha256": "6da7db1de4ca272346677740f20f2ab6c7a125bd96e40d58a5c52af9b77334ae",
+    "origin": "retained local prepared package, not public npm availability"
+  },
+  "runtime": { "node": "v26.9.0", "bun": "1.3.12", "platform": "linux", "arch": "x64" },
+  "observed": {
+    "focusedTests": 17,
+    "sourceFiles": 176,
+    "lcovEntries": 60,
+    "mutationSites": 25,
+    "killed": 16,
+    "survived": 9,
+    "errors": 0,
+    "baseline": "pass",
+    "currentContentBoundWitness": true,
+    "qualityOutcome": "fail",
+    "mergeConfidence": 19,
+    "governanceErrors": 2,
+    "mergeAuthorization": "deny",
+    "projectionDrift": []
+  },
+  "executionDispatch": "dispatch-1791028854556",
+  "evidenceIds": { "newPinnedScale": 13043, "independentInspection": 13044, "rootVerification": 13045 },
+  "independentInspection": {
+    "dispatch": "dispatch-1791031438166",
+    "result": "final followup found exact #6551 installed-matrix and separate reproducible approximate170-source obligations met; documentation reconciliation confirmed and focused tests/strict docs passed",
+    "checks": ["125 raw and 20 recipe manifest files", "13 command-log hashes", "807 original source bytes", "176 analyzed digests", "original locks", "control-plane/witness bindings", "CLI installed bytes", "6066 downloaded cache file digests in retained scratch"],
+    "freshColdReplayPerformedByReviewer": false
+  },
+  "validation": {
+    "focusedProofTests": "3 passed, including full archive manifests, manifest observations, command-log hashes and control-plane/witness bindings",
+    "fullVerify": "npm run verify: pass; includes installed captured-artifact corpus",
+    "strictDocs": "pass",
+    "diffCheck": "pass",
+    "runtimeSourceManifestsAndRootVerificationMdUnchanged": true
+  },
+  "boundaries": {
+    "historicalPacketRecovered": false,
+    "historicalNode22Parity": false,
+    "newIsolatedTargetExecution": true,
+    "liveTargetCheckoutMutations": false,
+    "acceptedAdoption": false,
+    "publicPublication": false,
+    "newTasksCreated": false,
+    "fullTargetSuiteOrServices": false
+  }
+}

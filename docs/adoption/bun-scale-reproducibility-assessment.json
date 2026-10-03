@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "taskId": 6551,
-  "status": "durable-scale-reproducibility-gap",
+  "status": "new-pinned-scale-proof-preserved-historical-identity-unrecovered",
   "historicalScale": {
     "authority": "Historical AK #6004 result and adoption document; not a new run",
     "document": "docs/adoption/2026-09-26-semantic-code-intelligence-bun-scale-adoption.md",
@@ -87,7 +87,7 @@
     "mutationSites": 25,
     "killed": 16,
     "survived": 9,
-    "meaning": "Projection compatibility only: one analyzed source; no test/witness execution or scale run performed by #6551"
+    "meaning": "This fixture remains projection compatibility only: one analyzed source. Separate new full-scope execution proof is preserved below; it does not rewrite this historical packet."
   },
   "gaps": [
     "No retained bun-large-esm-adoption run.json / full 170-source packet found in the task-relevant tracked corpus; the existing document explicitly says it was not vendored.",
@@ -97,7 +97,36 @@
     "Focused Bun test and witness files/dependencies are not vendored in the compatibility fixture; it is intentionally not a standalone check reproduction."
   ],
   "targetCheckoutMutations": false,
-  "newTargetRuns": false,
+  "newTargetRuns": true,
+  "newLiveCheckoutRuns": false,
   "newAdoptionClaim": false,
-  "outcome": "Installed corpus can verify compatibility; historical scale report remains historical, not durably reproduced. Owner-authorized recovery or a separately scoped pinned scale rerun is needed to close that outcome."
+  "outcome": "Installed real-capture compatibility and separate reproducible full-scope scale proof are now retained. Historical Node22/public0.6 packet identity is not recovered; new proof uses local0.7, Node26.9.0 and Bun1.3.12 in isolated scratch, not acceptance or public availability.",
+  "newPinnedReplay": {
+    "manifest": "fixtures/bun-scale-proof/manifest.json",
+    "rawEvidence": "fixtures/bun-scale-proof/raw-evidence.tar.gz",
+    "replayRecipe": "fixtures/bun-scale-proof/replay-recipe.tar.gz",
+    "verification": "verification/ak-6551-scale.json",
+    "resolvedTargetCommit": "bbeebdfd1935afff65b8e8dcd1aa46753a229440",
+    "cliSourceCommit": "07f3529a714f63157d6e66d2866d6254c97a3259",
+    "cliOrigin": "local prepared0.7 tarball, not public package proof",
+    "runtime": { "node": "v26.9.0", "bun": "1.3.12", "platform": "linux", "arch": "x64" },
+    "sourceFiles": 176,
+    "lcovEntries": 60,
+    "mutationSites": 25,
+    "killed": 16,
+    "survived": 9,
+    "errors": 0,
+    "baseline": "pass",
+    "witness": "current content-bound pass",
+    "outcome": "fail",
+    "mergeConfidence": 19,
+    "authorization": "deny",
+    "testedColdCacheReconstruction": true,
+    "retainedSeedRequired": false,
+    "originalLocksUnchanged": true,
+    "transport": "Separate endpoint-only frozen fetch-project projection from npmmirror URLs to official npm; versions/metadata/integrities retained. Original target subsequently installs offline.",
+    "historicalPacketRecovered": false,
+    "historicalNode22Parity": false,
+    "acceptedAdoption": false
+  }
 }

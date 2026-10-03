@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "kind": "new-pinned-bun-scale-replay",
+  "taskId": 6551,
+  "historicalPacketRecovered": false,
+  "acceptedAdoption": false,
+  "publicPackageProof": false,
+  "source": {
+    "repo": "softwareco/owned/semantic-code-intelligence",
+    "commit": "bbeebdfd1935afff65b8e8dcd1aa46753a229440",
+    "tree": "cb60d31393d292bab89cee5caa74e5dbef1ce9b8",
+    "archiveSha256": "53af4392788656a8d9d11b188f3094365ae32746df45748048d61c2d14ac5b97",
+    "lockSha256": "11fa1a4f8a711bc2b6c48e8d4379063e3233103f3f4a3e7dfbae2990124f44da"
+  },
+  "runtime": { "node": "v26.9.0", "bun": "1.3.12", "platform": "linux", "arch": "x64" },
+  "cli": {
+    "version": "0.7.0",
+    "sourceCommit": "07f3529a714f63157d6e66d2866d6254c97a3259",
+    "origin": "local prepared tarball, not public npm availability",
+    "file": "ts-quality-0.7.0.tgz.fixture",
+    "sha256": "6da7db1de4ca272346677740f20f2ab6c7a125bd96e40d58a5c52af9b77334ae"
+  },
+  "recipe": {
+    "file": "replay-recipe.tar.gz",
+    "sha256": "bd046e9ed9aaa00ce42a98b9211987cbbabc5b32842dabf1d2eea6560dd09cef",
+    "testedFromEmptyCache": true,
+    "seedCacheRequired": false,
+    "sourceArchiveSuppliedSeparately": true,
+    "originalLocksRewritten": false,
+    "transportProjection": "Separate frozen fetch-project changes only npmmirror endpoint prefixes to registry.npmjs.org; versions, keys, metadata and SHA-512 integrities unchanged. Original target installs offline from fresh retrieved bytes."
+  },
+  "evidence": {
+    "file": "raw-evidence.tar.gz",
+    "sha256": "54a9a229af8bfeef83f175468efea5a7a3aa3d36809c4e9601de8fad0d2bf3ae",
+    "runId": "task6551-lean-cold-20261003T122921Z-41233d5d",
+    "runSha256": "7ccaa678528c20e180399baf9cbb6321addfca6c58d5e809dd17c02c3e0184d3"
+  },
+  "observed": {
+    "focusedTestsPassed": 17,
+    "sourceFiles": 176,
+    "lcovEntries": 60,
+    "mutationSites": 25,
+    "killed": 16,
+    "survived": 9,
+    "errors": 0,
+    "baseline": "pass",
+    "witness": "current content-bound pass",
+    "verdict": "fail",
+    "mergeConfidence": 19,
+    "governanceErrors": 2,
+    "authorization": "deny",
+    "projectionDrift": []
+  },
+  "limits": [
+    "New execution, not recovery of historical run or Node 22 parity.",
+    "Only the declared focused test executed; analysis of 176 sources does not certify tests for every source.",
+    "Mutants capped at 25; survivors are residual evidence pressure, not automatically production bugs.",
+    "Future registry availability and different runtime/ABI remain external risks.",
+    "Original lock bytes retained; separate endpoint-only retrieval projection is explicit, not hidden lock equivalence.",
+    "No live checkout mutation, public publication or accepted adoption."
+  ]
+}
