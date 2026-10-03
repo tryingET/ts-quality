@@ -9,6 +9,7 @@ const crap = await importDist('packages', 'crap4ts', 'src', 'index.js');
 const mutate = await importDist('packages', 'ts-mutate', 'src', 'index.js');
 const invariants = await importDist('packages', 'invariants', 'src', 'index.js');
 const config = await importDist('packages', 'ts-quality', 'src', 'config.js');
+const api = await importDist('packages', 'ts-quality', 'src', 'index.js');
 
 test('evaluateInvariants produces obligations for missing failure-path tests', () => {
   const rootDir = fixturePath('governed-app');
@@ -375,16 +376,12 @@ test('evaluateInvariants accepts execution-backed witnesses without focused test
   fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, '.ts-quality', 'witnesses'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'src', 'TriggerEditor.js'), 'export function getContext() { return true; }\n', 'utf8');
-  fs.writeFileSync(path.join(rootDir, '.ts-quality', 'witnesses', 'context-has-cwd.json'), JSON.stringify({
-    version: '1',
-    kind: 'execution-witness',
-    invariantId: 'trigger-editor.session-context',
-    scenarioId: 'context-has-cwd',
-    status: 'pass',
+  api.runExecutionWitnessCommand(rootDir, {
+    invariantId: 'trigger-editor.session-context', scenarioId: 'context-has-cwd',
     sourceFiles: ['src/TriggerEditor.js'],
-    testFiles: ['tests/runtime-witness.test.mjs'],
-    observedAt: '2026-04-21T00:00:00.000Z'
-  }, null, 2), 'utf8');
+    command: [process.execPath, '-e', 'process.exit(0)'],
+    outputPath: '.ts-quality/witnesses/context-has-cwd.json'
+  });
 
   const claims = invariants.evaluateInvariants({
     rootDir,

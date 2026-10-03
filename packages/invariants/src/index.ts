@@ -1,11 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import ts from 'typescript';
+import { executionWitnessBindingIssue } from '../../evidence-model/src/witness';
 import {
   type BehaviorClaim,
   type ChangedRegion,
   type ComplexityEvidence,
   type ExecutionWitnessRecord,
+  type ExecutionWitnessBinding,
   type InvariantEvidenceMode,
   type InvariantEvidenceSemantics,
   type InvariantEvidenceSubSignal,
@@ -136,18 +138,18 @@ function parseExecutionWitnessRecord(rootDir: string, filePath: string): Executi
   if (testFiles !== undefined && (!Array.isArray(testFiles) || testFiles.some((item) => typeof item !== 'string'))) {
     throw new Error(`Execution witness ${filePath} must declare testFiles as an array of strings when present`);
   }
-  if (observedAt !== undefined && typeof observedAt !== 'string') {
-    throw new Error(`Execution witness ${filePath} must declare observedAt as a string when present`);
-  }
+  // Observation metadata has no bearing on safety/selection. Malformed metadata
+  // cannot hide a current failure in default discovery.
   return {
     version: '1',
     kind: 'execution-witness',
+    ...(raw['binding'] !== undefined ? { binding: raw['binding'] as ExecutionWitnessBinding } : {}),
     invariantId,
     scenarioId,
     status,
     sourceFiles: sourceFiles.map((item) => normalizePath(item)),
     ...(testFiles ? { testFiles: testFiles.map((item) => normalizePath(item)) } : {}),
-    ...(observedAt ? { observedAt } : {})
+    ...(typeof observedAt === 'string' ? { observedAt } : {})
   };
 }
 
@@ -197,8 +199,37 @@ function executionWitnessSelection(
     };
   }
 
-  const witnessFiles = relevantRecords
-    .filter(({ record }) => record.status === 'pass' && files.every((impactedFile) => record.sourceFiles.includes(impactedFile)))
+  const rejected: string[] = [];
+  const currentRecords = relevantRecords.filter(({ filePath, record }) => {
+    const scopeMatches = record.status === 'fail'
+      ? files.some(file => record.sourceFiles.includes(file))
+      : files.every(file => record.sourceFiles.includes(file));
+    if (!scopeMatches) {
+      rejected.push(`${filePath}: source scope mismatch`);
+      return false;
+    }
+    const issue = executionWitnessBindingIssue(rootDir, record);
+    if (issue) {
+      rejected.push(`${filePath}: ${issue}`);
+      return false;
+    }
+    return true;
+  });
+  // A current failure for this invariant/scenario/scope vetoes all current passes,
+  // including those produced by different commands. Time never selects a winner.
+  const contradicted = currentRecords.some(({ record }) => record.status === 'fail');
+  const witnessFiles = contradicted ? [] : currentRecords
+    .filter(({ record }) => record.status === 'pass')
+    .filter(({ filePath, record }) => {
+      const binding = record.binding;
+      if (scenario.executionWitnessCommand && JSON.stringify(binding?.command) !== JSON.stringify(scenario.executionWitnessCommand)
+        || scenario.executionWitnessTestFiles?.some(file => !record.testFiles?.includes(normalizePath(file)))
+        || scenario.executionWitnessTimeoutMs !== undefined && binding?.timeoutMs !== scenario.executionWitnessTimeoutMs) {
+        rejected.push(`${filePath}: configured execution context mismatch`);
+        return false;
+      }
+      return true;
+    })
     .map(({ filePath }) => filePath)
     .sort();
 
@@ -208,12 +239,10 @@ function executionWitnessSelection(
     witnessFiles,
     mode: witnessFiles.length > 0 ? 'explicit' : 'missing',
     modeReason: witnessFiles.length > 0
-      ? (usingDefaultDiscovery
-        ? 'default .ts-quality/witnesses artifacts matched invariant id, scenario id, pass status, and impacted source scope'
-        : 'execution witness artifacts matched invariant id, scenario id, pass status, and impacted source scope')
-      : (usingDefaultDiscovery
-        ? 'default .ts-quality/witnesses artifacts did not match invariant id, scenario id, pass status, and impacted source scope'
-        : 'execution witness artifacts did not match invariant id, scenario id, pass status, and impacted source scope')
+      ? 'content-bound execution witness artifacts matched invariant/scenario, current digests, execution context and impacted source scope'
+      : contradicted
+        ? 'current failing execution witness contradicts passing support; rerun after repairing the failure and retire obsolete contradictory records explicitly'
+        : `no current bound passing execution witness: ${rejected.sort().join('; ') || 'no matching pass'}`
   };
 }
 
@@ -940,6 +969,9 @@ export function evaluateInvariants(options: InvariantEvaluationOptions): Behavio
         ? scenarioSupportAcrossDocuments(focusedTests, scenario)
         : { keywordsMatched: false, failurePathKeywordsMatched: scenario.failurePathKeywords ? false : true, assertionMatched: false, supported: false };
       const executionWitness = executionWitnessSelection(options.rootDir, invariant, scenario, files);
+      if (executionWitness.configured && !executionWitness.matched) {
+        evidence.push(`Execution witness ${scenario.id}: ${executionWitness.modeReason}`);
+      }
       if (executionWitness.configured) {
         executionWitnessConfigured = true;
       }

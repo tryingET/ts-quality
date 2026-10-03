@@ -51,7 +51,10 @@ const expectedStageRuntimeFilesByPackage = {
   'evidence-model': [
     'src/index.d.ts',
     'src/index.js',
-    'src/index.js.map'
+    'src/index.js.map',
+    'src/witness.d.ts',
+    'src/witness.js',
+    'src/witness.js.map'
   ],
   governance: [
     'src/import-collector.d.ts',
@@ -160,6 +163,8 @@ const expectedInstalledCliProofs = {
     stderrIncludes: 'Changed scope is required.'
   },
   manualWitness: {
+    contentBindingVerified: true,
+    staleSourceSupportRejected: true,
     fixture: 'manual-witness-contract',
     story: 'doctor-machine -> manual witness -> check -> report/explain by run id',
     runId: 'public-manual-witness-contract',

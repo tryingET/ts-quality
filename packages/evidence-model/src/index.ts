@@ -119,7 +119,20 @@ export interface InvariantScenario {
   expected: string;
 }
 
+export interface ExecutionWitnessBinding {
+  version: '1';
+  sourceDigests: Record<string, string>;
+  testDigests: Record<string, string>;
+  contextDigests: Record<string, string>;
+  command: string[];
+  timeoutMs: number | null;
+  environmentDigest: string;
+  runtime: { node: string; platform: string; arch: string };
+  fingerprint: string;
+}
+
 export interface ExecutionWitnessRecord {
+  binding?: ExecutionWitnessBinding | undefined;
   version: '1';
   kind: 'execution-witness';
   invariantId: string;
@@ -476,6 +489,7 @@ export interface ExecutionReceipt {
 }
 
 export interface ExecutionWitnessReceiptArtifact {
+  binding?: ExecutionWitnessBinding | undefined;
   version: '1';
   kind: 'execution-witness-receipt';
   invariantId: string;

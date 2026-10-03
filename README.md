@@ -72,7 +72,7 @@ It progresses through five layers:
 
 Invariant scenario support is therefore a deterministic lexical witness, not execution-backed behavioral proof. Current lexical-only matches are reported as `lexically-supported`. The plain `supported` label is now reserved for scenarios backed by explicit execution witness artifacts, so the tool is no longer silently upgrading deterministic lexical alignment into proof-like status.
 
-**Current witness limitation:** matching execution witnesses are not yet bound to current source/test content digests. An old pass can remain selected after source changes or alongside a new failure. Refresh the focused witness immediately before review; this is an operator precaution, not an enforced freshness guarantee. Content-bound witness support is tracked as AK #6547.
+**Unreleased witness safety:** generated witnesses and receipts now bind declared source/test bytes, command, runtime and relevant execution context. `check` rejects stale/unbound support; any current scoped failure vetoes matching passes without timestamp-based selection. Regenerate legacy witnesses rather than hand-editing digests; see `docs/releases/migrations/content-bound-witnesses.md`. This is current-source behavior, not a claim about npm `0.6.0`, exhaustive dependency discovery, or an overall passing verdict.
 
 That makes the system explainable and debuggable. It also means shallow tests produce shallow evidence.
 

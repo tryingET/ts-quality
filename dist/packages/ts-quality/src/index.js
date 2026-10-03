@@ -28,6 +28,7 @@ exports.runAmend = runAmend;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const crypto_1 = require("crypto");
+const witness_1 = require("../../evidence-model/src/witness");
 const child_process_1 = require("child_process");
 const index_1 = require("../../evidence-model/src/index");
 const index_2 = require("../../crap4ts/src/index");
@@ -2833,12 +2834,37 @@ function runExecutionWitnessCommand(rootDir, input) {
     const outputResolution = resolveCliRepoLocalPath(rootDir, input.outputPath, { allowMissing: true, kind: 'execution witness output' });
     const recordedReceiptPath = executionWitnessReceiptPath(outputResolution.relativePath);
     const receiptResolution = resolveCliRepoLocalPath(rootDir, recordedReceiptPath, { allowMissing: true, kind: 'execution witness receipt output' });
+    (0, witness_1.assertExecutionWitnessOutputPath)(rootDir, outputResolution.absolutePath);
+    (0, witness_1.assertExecutionWitnessOutputPath)(rootDir, receiptResolution.absolutePath);
     (0, index_1.ensureDir)(path_1.default.dirname(outputResolution.absolutePath));
     (0, index_1.ensureDir)(path_1.default.dirname(receiptResolution.absolutePath));
     const executable = command[0];
     if (!executable) {
         throw new Error('execution witness command requires an executable argument');
     }
+    const binding = (0, witness_1.createExecutionWitnessBinding)(rootDir, sourceFiles, testFiles, command, input.timeoutMs);
+    const boundPaths = [...Object.keys(binding.sourceDigests), ...Object.keys(binding.testDigests), ...Object.keys(binding.contextDigests)];
+    const assertSafeOutputTargets = () => {
+        for (const output of [outputResolution, receiptResolution]) {
+            (0, witness_1.assertExecutionWitnessOutputPath)(rootDir, output.absolutePath);
+            // Revalidate the original publication path, not only its old canonical label.
+            const current = resolveCliRepoLocalPath(rootDir, output.absolutePath, { allowMissing: true, kind: 'execution witness output' });
+            if (current.canonicalPath !== output.canonicalPath || boundPaths.includes(current.relativePath)) {
+                throw new Error('execution witness outputs cannot overwrite bound inputs or change containment');
+            }
+            if (fs_1.default.existsSync(current.absolutePath)) {
+                const stat = fs_1.default.statSync(current.absolutePath);
+                if (!stat.isFile() || stat.nlink > 1) {
+                    throw new Error('execution witness outputs must be regular files without hardlink aliases');
+                }
+            }
+        }
+        if (outputResolution.canonicalPath === receiptResolution.canonicalPath) {
+            throw new Error('execution witness and receipt outputs must be distinct');
+        }
+    };
+    assertSafeOutputTargets();
+    const inputState = (0, witness_1.executionWitnessInputState)(rootDir, binding);
     const started = Date.now();
     const result = (0, child_process_1.spawnSync)(executable, command.slice(1), {
         cwd: rootDir,
@@ -2862,6 +2888,7 @@ function runExecutionWitnessCommand(rootDir, input) {
             details: executionWitnessCommandDetails(result)
         };
     const witness = {
+        binding,
         version: '1',
         kind: 'execution-witness',
         invariantId: input.invariantId,
@@ -2872,6 +2899,7 @@ function runExecutionWitnessCommand(rootDir, input) {
         ...(input.observedAt ? { observedAt: input.observedAt } : {})
     };
     const receiptArtifact = {
+        binding,
         version: '1',
         kind: 'execution-witness-receipt',
         invariantId: input.invariantId,
@@ -2883,6 +2911,15 @@ function runExecutionWitnessCommand(rootDir, input) {
         ...(input.observedAt ? { observedAt: input.observedAt } : {}),
         receipt
     };
+    const bindingIssue = (0, witness_1.executionWitnessBindingIssue)(rootDir, witness)
+        ?? ((0, witness_1.executionWitnessInputState)(rootDir, binding) !== inputState ? 'bound input metadata changed (including rewrite/restore)' : undefined);
+    if (bindingIssue) {
+        witness.status = 'fail';
+        receipt.status = 'error';
+        receipt.details = `Bound inputs changed during witness execution: ${bindingIssue}`;
+    }
+    // Commands can retarget paths; renew containment before either publication.
+    assertSafeOutputTargets();
     (0, index_1.writeJson)(outputResolution.absolutePath, witness);
     (0, index_1.writeJson)(receiptResolution.absolutePath, receiptArtifact);
     return {

@@ -12,6 +12,8 @@ type: "reference"
 
 ### Breaking Changes
 
+- Execution witness records without additive content/execution `binding` no longer grant execution-backed support. Regenerate legacy witnesses with `witness test`/`witness refresh`; current failures veto matching passes regardless of timestamp. See `docs/releases/migrations/content-bound-witnesses.md`.
+
 - New checks no longer overwrite an occupied run id. IDs are reserved before commands execute, including concurrent attempts, and failed/interrupted reservations remain unavailable. Use a new run id for each check and bind later projections/approvals to that run; never recheck a signed/approved id to refresh it.
 - Runs now carry additive `changedFileDigests` for every declared changed path (including tests, config, excluded files and missing paths). Legacy packets still project source digests from `files`, but a changed path without a recorded digest is reported as `sha256:unrecorded` drift and cannot authorize silently. Regenerate such evidence with a new id. See `docs/decisions/2026-10-03-immutable-run-identity-and-complete-scope-drift.md`.
 
@@ -25,7 +27,7 @@ type: "reference"
 
 - Routine `handoff:sync` now checks/exports AK-native direction read-only; it no longer performs legacy markdown import. The product posture now distinguishes current source, public release records, scratch pilots and accepted adoption horizons.
 - CI integration guidance enforces projected verdict/governance/drift and exact-run authorization outcomes with executable artifact assertions. A zero CLI exit is command completion, not approval.
-- Documented the unresolved stale execution-witness support gap (AK #6547); refresh focused evidence before review, without claiming content freshness is enforced.
+- Witness records and receipt sidecars now bind declared source/test digests, package/lock/tsconfig inputs, command/timeout, selected execution environment and runtime. Evaluation rejects stale/malformed bindings and current contradictions; commands that alter bound inputs cannot mint a pass.
 - `doctor` reads repo-local shell wrappers that package scripts invoke (read-only, contained to the repository, bounded size) to find the real test runner, including Bun, and judges coverage scripts by whether they write LCOV: a script that demonstrably writes none is reported as `coverage-script-without-lcov` instead of being recommended. When the test script is a wrapper, the recommended coverage command invokes the runner directly.
 - `doctor` recommends an LCOV coverage command for the repository's own test runner (Jest or Vitest) and warns with `mutation-test-runner-mismatch` when `mutations.testCommand` runs a different runner than the repository test script.
 

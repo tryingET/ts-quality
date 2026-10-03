@@ -143,6 +143,9 @@ $ npm run smoke:packaging --silent
     "dist/packages/evidence-model/src/index.d.ts",
     "dist/packages/evidence-model/src/index.js",
     "dist/packages/evidence-model/src/index.js.map",
+    "dist/packages/evidence-model/src/witness.d.ts",
+    "dist/packages/evidence-model/src/witness.js",
+    "dist/packages/evidence-model/src/witness.js.map",
     "dist/packages/governance/src/import-collector.d.ts",
     "dist/packages/governance/src/import-collector.js",
     "dist/packages/governance/src/import-collector.js.map",
@@ -190,6 +193,9 @@ $ npm run smoke:packaging --silent
     "package/dist/packages/evidence-model/src/index.d.ts",
     "package/dist/packages/evidence-model/src/index.js",
     "package/dist/packages/evidence-model/src/index.js.map",
+    "package/dist/packages/evidence-model/src/witness.d.ts",
+    "package/dist/packages/evidence-model/src/witness.js",
+    "package/dist/packages/evidence-model/src/witness.js.map",
     "package/dist/packages/governance/src/import-collector.d.ts",
     "package/dist/packages/governance/src/import-collector.js",
     "package/dist/packages/governance/src/import-collector.js.map",
@@ -309,6 +315,8 @@ $ npm run smoke:packaging --silent
       "verifiedIssuer": "ci.generated"
     },
     "manualWitness": {
+      "contentBindingVerified": true,
+      "staleSourceSupportRejected": true,
       "fixture": "manual-witness-contract",
       "story": "doctor-machine -> manual witness -> check -> report/explain by run id",
       "runId": "public-manual-witness-contract",

@@ -109,10 +109,12 @@ A matching pass witness under `.ts-quality/witnesses/**/*.json` is first-class `
 - scenario id
 - `status: "pass"`
 - impacted source scope through repo-relative `sourceFiles`
+- valid current content/execution `binding` as defined in `docs/invariant-dsl.md`
+- no currently bound failure for that invariant/scenario/impacted source scope
 
 Sibling `.receipt.json` sidecars are execution receipts, not witness records to consume as scenario support.
 
-Known freshness limit (AK #6547): these matching rules do not bind a witness to current source/test bytes or reject an old pass contradicted by a new failure. `execution-backed` currently identifies a matching recorded execution, not enforced current-content proof. Refresh the focused witness before review; do not rely on witness age, status, or timestamps alone as freshness. A content-bound schema/legacy migration is required before this limitation is closed.
+Unreleased safety contract: both record and receipt carry the same additive binding; current declared bytes and execution context must match. Legacy unbound records downgrade explicitly with rerun guidance; a current failure vetoes passes regardless of timestamps. The installed packaging/protected manual witness proof checks bindings and rejection after source drift. See `docs/releases/migrations/content-bound-witnesses.md`. These explicit bindings do not establish exhaustive dependency closure, authenticity against manual edits, accepted adoption or an overall approving verdict.
 
 A successful manual witness upgrade must surface as:
 

@@ -257,6 +257,13 @@ export function verifyManualWitnessContract(runCli, options) {
       throw new Error(`Minimum adoption contract explain did not render reasons for the selected run:\n${explainText}`);
     }
     const run = JSON.parse(fs.readFileSync(path.join(projectRoot, '.ts-quality', 'runs', manualWitnessContractRunId, 'run.json'), 'utf8'));
+    const witness = JSON.parse(fs.readFileSync(path.join(projectRoot, manualWitnessContractPath), 'utf8'));
+    const receipt = JSON.parse(fs.readFileSync(path.join(projectRoot, manualWitnessContractPath.replace(/\.json$/u, '.receipt.json')), 'utf8'));
+    if (witness.binding?.version !== '1' || !witness.binding.sourceDigests?.['src/token.js']
+      || !witness.binding.testDigests?.['test/token.test.js']
+      || JSON.stringify(witness.binding) !== JSON.stringify(receipt.binding)) {
+      throw new Error('Manual witness contract requires matching content/execution bindings in record and receipt');
+    }
     const claim = /** @type {any[] | undefined} */ (run.behaviorClaims)?.find((item) => item.invariantId === 'auth.refresh.validity');
     const scenario = /** @type {any[] | undefined} */ (claim?.evidenceSummary?.scenarioResults)?.find((item) => item.scenarioId === 'expired-boundary');
     const witnessFiles = claim?.evidenceSummary?.executionWitnessFiles ?? [];
@@ -289,7 +296,19 @@ export function verifyManualWitnessContract(runCli, options) {
         throw new Error(`Manual witness contract did not write ${artifactName}`);
       }
     }
+    // Exercise current-content rejection through the exact same installed CLI.
+    fs.appendFileSync(path.join(projectRoot, 'src/token.js'), '// source drift\n');
+    const staleRunId = `${manualWitnessContractRunId}-stale`;
+    runCli(['check', '--root', projectRoot, '--run-id', staleRunId], projectRoot);
+    const staleRun = JSON.parse(fs.readFileSync(path.join(projectRoot, '.ts-quality', 'runs', staleRunId, 'run.json'), 'utf8'));
+    const staleClaim = /** @type {any[]} */ (staleRun.behaviorClaims).find((item) => item.invariantId === 'auth.refresh.validity');
+    if (staleClaim?.evidenceSummary?.evidenceSemantics === 'execution-backed'
+      || (staleClaim?.evidenceSummary?.executionWitnessFiles ?? []).length > 0) {
+      throw new Error('Installed manual witness contract retained stale source support');
+    }
     return {
+      contentBindingVerified: true,
+      staleSourceSupportRejected: true,
       fixture: 'manual-witness-contract',
       story: 'doctor-machine -> manual witness -> check -> report/explain by run id',
       runId: manualWitnessContractRunId,

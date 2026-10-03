@@ -86,7 +86,10 @@ export const stagedRuntimeFilesByPackage = Object.freeze({
   'evidence-model': Object.freeze([
     'src/index.d.ts',
     'src/index.js',
-    'src/index.js.map'
+    'src/index.js.map',
+    'src/witness.d.ts',
+    'src/witness.js',
+    'src/witness.js.map'
   ]),
   governance: Object.freeze([
     'src/import-collector.d.ts',

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { timingSafeEqual } from 'crypto';
+import { assertExecutionWitnessOutputPath, createExecutionWitnessBinding, executionWitnessBindingIssue, executionWitnessInputState } from '../../evidence-model/src/witness';
 import { spawnSync } from 'child_process';
 import {
   type Agent,
@@ -3259,12 +3260,37 @@ export function runExecutionWitnessCommand(rootDir: string, input: {
   const outputResolution = resolveCliRepoLocalPath(rootDir, input.outputPath, { allowMissing: true, kind: 'execution witness output' });
   const recordedReceiptPath = executionWitnessReceiptPath(outputResolution.relativePath);
   const receiptResolution = resolveCliRepoLocalPath(rootDir, recordedReceiptPath, { allowMissing: true, kind: 'execution witness receipt output' });
+  assertExecutionWitnessOutputPath(rootDir, outputResolution.absolutePath);
+  assertExecutionWitnessOutputPath(rootDir, receiptResolution.absolutePath);
   ensureDir(path.dirname(outputResolution.absolutePath));
   ensureDir(path.dirname(receiptResolution.absolutePath));
   const executable = command[0];
   if (!executable) {
     throw new Error('execution witness command requires an executable argument');
   }
+  const binding = createExecutionWitnessBinding(rootDir, sourceFiles, testFiles, command, input.timeoutMs);
+  const boundPaths = [...Object.keys(binding.sourceDigests), ...Object.keys(binding.testDigests), ...Object.keys(binding.contextDigests)];
+  const assertSafeOutputTargets = (): void => {
+    for (const output of [outputResolution, receiptResolution]) {
+      assertExecutionWitnessOutputPath(rootDir, output.absolutePath);
+      // Revalidate the original publication path, not only its old canonical label.
+      const current = resolveCliRepoLocalPath(rootDir, output.absolutePath, { allowMissing: true, kind: 'execution witness output' });
+      if (current.canonicalPath !== output.canonicalPath || boundPaths.includes(current.relativePath)) {
+        throw new Error('execution witness outputs cannot overwrite bound inputs or change containment');
+      }
+      if (fs.existsSync(current.absolutePath)) {
+        const stat = fs.statSync(current.absolutePath);
+        if (!stat.isFile() || stat.nlink > 1) {
+          throw new Error('execution witness outputs must be regular files without hardlink aliases');
+        }
+      }
+    }
+    if (outputResolution.canonicalPath === receiptResolution.canonicalPath) {
+      throw new Error('execution witness and receipt outputs must be distinct');
+    }
+  };
+  assertSafeOutputTargets();
+  const inputState = executionWitnessInputState(rootDir, binding);
   const started = Date.now();
   const result = spawnSync(executable, command.slice(1), {
     cwd: rootDir,
@@ -3288,6 +3314,7 @@ export function runExecutionWitnessCommand(rootDir: string, input: {
         details: executionWitnessCommandDetails(result)
       };
   const witness: ExecutionWitnessRecord = {
+    binding,
     version: '1',
     kind: 'execution-witness',
     invariantId: input.invariantId,
@@ -3298,6 +3325,7 @@ export function runExecutionWitnessCommand(rootDir: string, input: {
     ...(input.observedAt ? { observedAt: input.observedAt } : {})
   };
   const receiptArtifact: ExecutionWitnessReceiptArtifact = {
+    binding,
     version: '1',
     kind: 'execution-witness-receipt',
     invariantId: input.invariantId,
@@ -3309,6 +3337,15 @@ export function runExecutionWitnessCommand(rootDir: string, input: {
     ...(input.observedAt ? { observedAt: input.observedAt } : {}),
     receipt
   };
+  const bindingIssue = executionWitnessBindingIssue(rootDir, witness)
+    ?? (executionWitnessInputState(rootDir, binding) !== inputState ? 'bound input metadata changed (including rewrite/restore)' : undefined);
+  if (bindingIssue) {
+    witness.status = 'fail';
+    receipt.status = 'error';
+    receipt.details = `Bound inputs changed during witness execution: ${bindingIssue}`;
+  }
+  // Commands can retarget paths; renew containment before either publication.
+  assertSafeOutputTargets();
   writeJson(outputResolution.absolutePath, witness);
   writeJson(receiptResolution.absolutePath, receiptArtifact);
   return {
