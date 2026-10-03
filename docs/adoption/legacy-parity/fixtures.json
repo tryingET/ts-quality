@@ -1,0 +1,11 @@
+[
+  { "id": "multiply", "source": "function f(a,b) { return a * b; }", "equivalent": false },
+  { "id": "loose-equality", "source": "function f(a,b) { return a == b; }", "equivalent": false },
+  { "id": "increment", "source": "function f(a) { return a++; }", "equivalent": false },
+  { "id": "zero-one", "source": "function f() { return 0; }", "equivalent": false },
+  { "id": "condition", "source": "function f(a) { if (a) return a; return null; }", "equivalent": false },
+  { "id": "typed-boolean", "source": "type Enabled = true; function f() { return null; }", "equivalent": false },
+  { "id": "add", "source": "function f(a,b) { return a + b; }", "equivalent": true },
+  { "id": "strict-equality", "source": "function f(a,b) { return a === b; }", "equivalent": true },
+  { "id": "boolean", "source": "function f() { return true; }", "equivalent": true }
+]
