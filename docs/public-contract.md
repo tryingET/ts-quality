@@ -227,6 +227,9 @@ Installed-package smoke, checked-in parser fixtures under `fixtures/artifact-com
 - a current `0.2.0` packet whose `nextEvidenceAction` lacks recent optional sidecar fields such as `sidecarSufficiency`, `taskManifest.guidance`, and per-step behavior guidance still projects through those same surfaces
 - unsupported or malformed control-plane snapshots fail closed with a re-run instruction instead of being silently projected into authorization or governance decisions
 - older checked-in governed-app run captures that predate current additive fields remain readable through selected-run report, explain, plan, govern, and authorize projections
+- packaging smoke replays that historical capture and all four real target captures through the fresh installed tarball, preserving packet bytes; Jest missing-source drift still denies authorization, and real Bun-derived absent/future-field cases remain projectable while invalid snapshots reject every projection
+
+Captured-packet replay is compatibility proof, not current target execution, refreshed witness binding, accepted adoption, or scale proof. The Bun capture analyzes one source; the separately reported ~170-source historical result lacks a retained full-scale packet/environment receipt here. See `docs/adoption/bun-scale-reproducibility-assessment.json`.
 
 Protected compatibility principle:
 

@@ -504,6 +504,18 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
     passed: true,
     importStatement: "import { initProject, materializeProject } from 'ts-quality';"
   });
+  assert.deepEqual(summary.capturedArtifactCorpus, {
+    test: 'test/artifact-compatibility-fixtures.test.mjs',
+    cliOrigin: 'fresh tarball installation: node_modules/ts-quality',
+    passedTests: 8,
+    failedTests: 0,
+    projections: ['report --json', 'explain', 'plan', 'govern', 'authorize'],
+    captures: ['historical governed-app 5.0.0', 'Kinetic Vitest/ESM', 'TSX/pnpm/Vitest', 'Jest/Yarn 4 missing-source drift denial', 'Bun/ESM one-source capture'],
+    optionalFields: ['legacy absent additive', 'unknown future additive', 'minimal next-evidence'],
+    rejectedSnapshots: ['unsupported schema 999', 'malformed configPath'],
+    immutablePackets: true,
+    bunScaleRunExercised: false
+  });
   assert.deepEqual(summary.fixtureBreadth, expectedInstalledFixtureBreadth);
   assert.equal(summary.reviewFlow.fixture, 'governed-app');
   assert.equal(summary.reviewFlow.runId, 'packaging-installed-review-run');

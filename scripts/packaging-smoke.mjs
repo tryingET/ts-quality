@@ -533,6 +533,40 @@ export function runPackagingSmoke() {
       ensureFile(path.join(installedPackageDir, normalizePackageRelative(relativePath)), `Installed ${label} entrypoint`);
     }
 
+    // Reuse the precise captured-packet assertions against the installed tarball,
+    // independently of the synthetic compatibility runs generated below.
+    const corpusTest = 'test/artifact-compatibility-fixtures.test.mjs';
+    /** @type {NodeJS.ProcessEnv} */
+    const corpusEnv = { ...process.env, TS_QUALITY_COMPAT_CLI: installedCliBinPath };
+    // npm test also invokes packaging smoke: start an independent node:test harness.
+    delete corpusEnv['NODE_TEST_CONTEXT'];
+    const corpus = spawnSync(process.execPath, ['--test', '--test-reporter=tap', corpusTest], {
+      cwd: root,
+      encoding: 'utf8',
+      env: corpusEnv
+    });
+    // Require the entire expected corpus to execute: zero failures alone can
+    // describe an empty, skipped, or cancelled run and proves no coverage.
+    const corpusCounts = ['tests', 'pass', 'fail', 'cancelled', 'skipped'].map((label) =>
+      Number(corpus.stdout.match(new RegExp(`^# ${label} (\\d+)$`, 'mu'))?.[1])
+    );
+    const expectedCorpusCounts = [8, 8, 0, 0, 0];
+    if (corpus.status !== 0 || corpusCounts.some((count, index) => count !== expectedCorpusCounts[index])) {
+      throw new Error(`Installed captured-artifact corpus failed:\n${corpus.stdout}\n${corpus.stderr}`);
+    }
+    const capturedArtifactCorpus = {
+      test: corpusTest,
+      cliOrigin: 'fresh tarball installation: node_modules/ts-quality',
+      passedTests: corpusCounts[1],
+      failedTests: corpusCounts[2],
+      projections: ['report --json', 'explain', 'plan', 'govern', 'authorize'],
+      captures: ['historical governed-app 5.0.0', 'Kinetic Vitest/ESM', 'TSX/pnpm/Vitest', 'Jest/Yarn 4 missing-source drift denial', 'Bun/ESM one-source capture'],
+      optionalFields: ['legacy absent additive', 'unknown future additive', 'minimal next-evidence'],
+      rejectedSnapshots: ['unsupported schema 999', 'malformed configPath'],
+      immutablePackets: true,
+      bunScaleRunExercised: false
+    };
+
     const installedCliContract = verifyPublicCliContract((contractCase) => runRaw(installedCliBinPath, contractCase.args, installRoot));
     const installedCliContractSummary = summarizePublicCliContract(installedCliContract);
 
@@ -931,6 +965,7 @@ export function runPackagingSmoke() {
         passed: true,
         importStatement: "import { initProject, materializeProject } from 'ts-quality';"
       },
+      capturedArtifactCorpus,
       fixtureBreadth: {
         monorepoBoundary: {
           fixture: monorepoFixtureName,

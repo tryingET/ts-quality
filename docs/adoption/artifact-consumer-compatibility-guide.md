@@ -158,3 +158,9 @@ When a parser breaks after a `ts-quality` upgrade:
 2. Confirm whether the break is a documented breaking change or an additive field your parser should ignore.
 3. Re-run the selected target repo with an explicit run id if the issue is a malformed/unsupported control-plane snapshot or stale projection.
 4. Keep the old parser branch only for legacy artifacts; do not let old summary fields override current `primaryAction` / `evidenceBasis` semantics.
+
+## Installed captured-packet proof boundary
+
+`npm run smoke:packaging` runs `test/artifact-compatibility-fixtures.test.mjs` against the fresh tarball installation, not repo dist. It exercises all five selected-run projections on the historical governed-app capture and the real Kinetic, TSX/pnpm/Vitest, Jest/Yarn 4, and Bun/ESM captures. Optional-field variants remain readable; malformed and unsupported snapshots are rejected by every projection. Jest's absent third-party source continues to cause drift and authorization denial. Captured packets are copied byte-for-byte and must not be rewritten by projections.
+
+These checks replay persisted evidence; they do not execute target tests, regenerate witnesses, prove current witness binding, accept adoption, or reproduce scale. In particular, Bun's retained capture analyzes one source, whereas the historical scale report describes ~170. The durable reproducibility assessment is `docs/adoption/bun-scale-reproducibility-assessment.json`; the full-scale packet/environment proof is not retained here.

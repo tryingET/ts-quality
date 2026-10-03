@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "taskId": 6551,
+  "status": "durable-scale-reproducibility-gap",
+  "historicalScale": {
+    "authority": "Historical AK #6004 result and adoption document; not a new run",
+    "document": "docs/adoption/2026-09-26-semantic-code-intelligence-bun-scale-adoption.md",
+    "targetRepo": "softwareco/owned/semantic-code-intelligence",
+    "recordedTargetCommit": "bbeebdfd",
+    "exportCommand": "git archive HEAD",
+    "publishedPackage": "ts-quality@0.6.0",
+    "recordedNodeVersion": "22.23.3",
+    "witnessCommand": [
+      "ts-quality",
+      "witness",
+      "test",
+      "--invariant",
+      "runtime-config.path-containment",
+      "--scenario",
+      "escape-attempts-rejected",
+      "--source-files",
+      "src/core/runtime-config.ts",
+      "--test-files",
+      "tests/runtime-config.test.ts",
+      "--out",
+      ".ts-quality/witnesses/runtime-config-path-containment.json",
+      "--",
+      "bun",
+      "test",
+      "tests/runtime-config.test.ts",
+      "-t",
+      "cannot escape"
+    ],
+    "checkCommand": [
+      "ts-quality",
+      "check",
+      "--changed",
+      "src/core/runtime-config.ts",
+      "--run-id",
+      "bun-large-esm-adoption"
+    ],
+    "sourcePatterns": "repository-wide defaults (per historical document)",
+    "reportedSourceFiles": 170,
+    "reportedLcovRecords": 60,
+    "reportedMutationSites": 25,
+    "reportedOutcome": "fail",
+    "reportedMergeConfidence": 19,
+    "reportedKilled": 16,
+    "reportedSurvived": 9,
+    "reportedCheckSecondsApprox": 24,
+    "durableScaleRunPacket": null,
+    "durableScaleEnvironmentReceipt": null,
+    "ak6004AttachedEvidenceIds": []
+  },
+  "retainedCompatibility": {
+    "introducedByCommit": "3ebdc0ac482769da9668c7fbbea3a86fdd36e414",
+    "packetPath": "fixtures/artifact-compatibility/real-bun-esm/run.json.fixture",
+    "packetDigest": "sha256:9e87dfd2373713d56a76b4fb19c4d93d51f42358658bf6f2d34c16a8fab52359",
+    "runId": "bun-esm-adoption",
+    "createdAt": "2026-09-26T19:12:57.628Z",
+    "artifactVersion": "0.2.0",
+    "sourceFiles": [
+      "src/core/runtime-config.ts"
+    ],
+    "analyzedFileCount": 1,
+    "lcovRecords": 60,
+    "configPath": "fixtures/artifact-compatibility/real-bun-esm/ts-quality.config.ts",
+    "configDigest": "sha256:e789912d71677efbe8cb28fd0ae75d6fe91d04895f27115520b43a63c3631750",
+    "recordedBunVersion": "1.3.12 (700fc117)",
+    "bunVersionEvidence": "coverageGeneration.receipt.details and mutationBaseline.details in retained packet; not an independently recovered scale receipt",
+    "coverageCommand": [
+      "bun",
+      "test",
+      "tests/runtime-config.test.ts",
+      "--coverage",
+      "--coverage-reporter=lcov",
+      "--coverage-dir=.ts-quality/adoption/coverage"
+    ],
+    "mutationCommand": [
+      "bun",
+      "test",
+      "tests/runtime-config.test.ts"
+    ],
+    "executionFingerprint": "sha256:bde662d14d4593a0906d7ced8891ff96320d0088d16bbd5a4fa3c201f19041ab",
+    "outcome": "fail",
+    "mergeConfidence": 19,
+    "mutationSites": 25,
+    "killed": 16,
+    "survived": 9,
+    "meaning": "Projection compatibility only: one analyzed source; no test/witness execution or scale run performed by #6551"
+  },
+  "gaps": [
+    "No retained bun-large-esm-adoption run.json / full 170-source packet found in the task-relevant tracked corpus; the existing document explicitly says it was not vendored.",
+    "AK #6004 has no attached evidence records; its completion result preserves historical counts/timing, not a pinned full-run artifact.",
+    "Historical target commit is abbreviated; no durable full target/config/lockfile/runtime-environment digests or published-package integrity receipt for the scale run are retained here.",
+    "Bun version and exact coverage/mutation argv recovered from the narrowed compatibility packet cannot independently establish the full-scale execution environment.",
+    "Focused Bun test and witness files/dependencies are not vendored in the compatibility fixture; it is intentionally not a standalone check reproduction."
+  ],
+  "targetCheckoutMutations": false,
+  "newTargetRuns": false,
+  "newAdoptionClaim": false,
+  "outcome": "Installed corpus can verify compatibility; historical scale report remains historical, not durably reproduced. Owner-authorized recovery or a separately scoped pinned scale rerun is needed to close that outcome."
+}

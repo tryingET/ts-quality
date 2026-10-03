@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'assert/strict';
 import { spawnSync } from 'child_process';
 import { distModule, repoRoot, tempCopyOfFixture } from './helpers.mjs';
@@ -10,7 +10,20 @@ const fixtureRoot = path.join(repoRoot, 'fixtures', 'artifact-compatibility');
 const historicalGovernedAppRunId = '2026-03-17T12-36-47-952Z';
 const historicalGovernedAppRunPath = path.join(repoRoot, 'fixtures', 'governed-app', '.ts-quality', 'runs', historicalGovernedAppRunId, 'run.json');
 const manifest = readFixtureJson('manifest.json');
-const cli = distModule('packages', 'ts-quality', 'src', 'cli.js');
+// Only roots created by this invocation are registered. All child processes are
+// synchronous, so module teardown runs after their use, including test failures.
+const ownedFixtureRoots = new Set();
+after(() => {
+  for (const target of ownedFixtureRoots) {
+    fs.rmSync(target, { recursive: true, force: true });
+    assert.equal(fs.existsSync(target), false, 'owned fixture root must be removed');
+  }
+});
+// Packaging smoke supplies the fresh tarball's installed CLI; ordinary tests use repo dist.
+const cli = process.env.TS_QUALITY_COMPAT_CLI ?? distModule('packages', 'ts-quality', 'src', 'cli.js');
+if (process.env.TS_QUALITY_COMPAT_CLI) {
+  assert.ok(fs.realpathSync(cli).endsWith(path.join('node_modules', 'ts-quality', 'dist', 'packages', 'ts-quality', 'src', 'cli.js')));
+}
 
 function readFixtureJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(fixtureRoot, relativePath), 'utf8'));
@@ -99,7 +112,8 @@ function installRunFixture(targetRoot, fixture) {
   assert.equal(run.runId, fixture.runId);
   const runDir = path.join(targetRoot, '.ts-quality', 'runs', fixture.runId);
   fs.mkdirSync(runDir, { recursive: true });
-  fs.writeFileSync(path.join(runDir, 'run.json'), `${JSON.stringify(run, null, 2)}\n`, 'utf8');
+  // Preserve captured bytes: projections must consume the real packet, not a fresh check.
+  fs.copyFileSync(path.join(fixtureRoot, fixture.file), path.join(runDir, 'run.json'));
   fs.writeFileSync(path.join(targetRoot, '.ts-quality', 'latest.json'), `${JSON.stringify({ latestRunId: fixture.runId }, null, 2)}\n`, 'utf8');
   return run;
 }
@@ -107,12 +121,19 @@ function installRunFixture(targetRoot, fixture) {
 function tempCopyOfArtifactCompatibilityFixture(relativePath) {
   const source = path.join(fixtureRoot, relativePath);
   const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-artifact-compat-'));
+  ownedFixtureRoots.add(target);
   fs.cpSync(source, target, { recursive: true });
   return target;
 }
 
 function runCli(args, cwd = repoRoot) {
-  return spawnSync('node', [cli, ...args], { cwd, encoding: 'utf8' });
+  const root = args[args.indexOf('--root') + 1];
+  const runId = args[args.indexOf('--run-id') + 1];
+  const packet = path.join(root, '.ts-quality', 'runs', runId, 'run.json');
+  const before = fs.readFileSync(packet);
+  const result = spawnSync('node', [cli, ...args], { cwd, encoding: 'utf8' });
+  assert.deepEqual(fs.readFileSync(packet), before, 'projections must not rewrite captured run.json');
+  return result;
 }
 
 test('run-artifact compatibility fixtures encode parser policy for legacy, additive, and fail-closed packet shapes', () => {
@@ -177,6 +198,7 @@ test('run-artifact compatibility fixtures encode parser policy for legacy, addit
 
 test('checked-in historical governed-app run capture remains projectable through compatibility surfaces', () => {
   const target = tempCopyOfFixture('governed-app');
+  ownedFixtureRoots.add(target);
   const historicalRun = JSON.parse(fs.readFileSync(historicalGovernedAppRunPath, 'utf8'));
   assert.equal(historicalRun.runId, historicalGovernedAppRunId);
   assert.equal(historicalRun.version, '5.0.0');
@@ -242,6 +264,7 @@ test('real target-shape adoption capture remains projectable through compatibili
 
 test('CLI projections consume compatible run-artifact fixtures and reject malformed decision snapshots', () => {
   const target = tempCopyOfFixture('governed-app');
+  ownedFixtureRoots.add(target);
   const fixturesById = Object.fromEntries(manifest.fixtures.map((fixture) => [fixture.id, fixture]));
 
   for (const id of ['current020', 'legacy010', 'futureAdditive020', 'nextEvidenceMinimal020']) {
@@ -269,17 +292,23 @@ test('CLI projections consume compatible run-artifact fixtures and reject malfor
     assert.equal(JSON.parse(authorize.stdout).evidenceContext?.runId, fixture.runId);
   }
 
-  installRunFixture(target, fixturesById.unsupportedControlPlane);
-  const unsupported = runCli(['plan', '--root', target, '--run-id', fixturesById.unsupportedControlPlane.runId]);
-  assert.equal(unsupported.status, 1);
-  assert.match(unsupported.stderr, /unsupported control-plane snapshot schema 999/);
-  assert.match(unsupported.stderr, /Re-run ts-quality check/);
-
-  installRunFixture(target, fixturesById.malformedControlPlane);
-  const malformed = runCli(['authorize', '--root', target, '--agent', 'release-bot', '--run-id', fixturesById.malformedControlPlane.runId]);
-  assert.equal(malformed.status, 1);
-  assert.match(malformed.stderr, /malformed control-plane snapshot schema 1: field configPath must be a non-empty string/);
-  assert.match(malformed.stderr, /Re-run ts-quality check/);
+  for (const [id, reason] of [
+    ['unsupportedControlPlane', 'unsupported control-plane snapshot schema 999'],
+    ['malformedControlPlane', 'malformed control-plane snapshot schema 1: field configPath must be a non-empty string']
+  ]) {
+    const fixture = fixturesById[id];
+    installRunFixture(target, fixture);
+    for (const command of ['report', 'explain', 'plan', 'govern', 'authorize']) {
+      const args = [command, '--root', target, '--run-id', fixture.runId];
+      if (command === 'report') args.push('--json');
+      if (command === 'authorize') args.push('--agent', 'release-bot');
+      const rejected = runCli(args);
+      assert.equal(rejected.status, 1, rejected.stdout);
+      assert.ok(rejected.stderr.includes(reason), rejected.stderr);
+      assert.match(rejected.stderr, /Re-run ts-quality check/);
+      assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'runs', fixture.runId, 'authorize.release-bot.merge.json')), false);
+    }
+  }
 });
 
 test('real TSX/pnpm/Vitest adoption capture remains projectable through compatibility surfaces', () => {
@@ -339,7 +368,10 @@ test('real Jest/Yarn 4 capture without vendored source projects and fails closed
 
   const report = runCli(['report', '--root', target, '--json', '--run-id', fixture.runId]);
   assert.equal(report.status, 0, report.stderr);
-  assert.equal(JSON.parse(report.stdout).verdict.mergeConfidence, 15);
+  const projected = JSON.parse(report.stdout);
+  assert.equal(projected.verdict.mergeConfidence, 15);
+  assert.equal(projected.decisionContext.projection, 'projected');
+  assert.ok(projected.decisionContext.drift.some((item) => item.subject.includes('src/config.ts')));
 
   for (const command of ['explain', 'plan', 'govern']) {
     const projection = runCli([command, '--root', target, '--run-id', fixture.runId]);
@@ -361,6 +393,10 @@ test('real Bun/ESM adoption capture remains projectable through compatibility su
   const run = installRunFixture(target, fixture);
 
   assert.deepEqual(run.files.map((item) => item.filePath), ['src/core/runtime-config.ts']);
+  assert.equal(run.files.length, 1, 'compatibility capture is not the ~170-source scale run');
+  assert.equal(run.mutations.filter((item) => item.status === 'killed').length, 16);
+  assert.equal(run.mutations.filter((item) => item.status === 'survived').length, 9);
+  assert.match(run.mutationBaseline.details, /bun test v1\.3\.12 \(700fc117\)/);
   assert.deepEqual(run.coverageGeneration.command.slice(0, 2), ['bun', 'test']);
   assert.equal(run.nextEvidenceAction.evidenceBasis.coverage.fileCount, 1);
   assert.deepEqual(run.nextEvidenceAction.primaryAction.suggestedEditFiles, ['tests/runtime-config.test.ts']);
@@ -382,4 +418,58 @@ test('real Bun/ESM adoption capture remains projectable through compatibility su
   const authorization = JSON.parse(authorize.stdout);
   assert.equal(authorization.outcome, fixture.authorizationOutcome);
   assert.ok(authorization.reasons.includes(fixture.authorizationReason));
+});
+
+
+test('real Bun packet variants tolerate optional fields and reject invalid snapshots across every installed projection', () => {
+  const fixture = manifest.fixtures.find((item) => item.id === 'realBunEsm020');
+  for (const variant of ['absent-optional', 'future-optional', 'unsupported-snapshot', 'malformed-snapshot']) {
+    const target = tempCopyOfArtifactCompatibilityFixture('real-bun-esm');
+    const captured = installRunFixture(target, fixture);
+    const packet = structuredClone(captured);
+    // Deliberate derived negative/additive cases, not claims of additional captured runs.
+    if (variant === 'absent-optional') {
+      for (const key of ['coverageGeneration', 'analysisWarnings', 'mutationRemediation', 'nextEvidenceAction', 'executionWitnesses']) delete packet[key];
+      delete packet.verdict.confidenceBreakdown;
+    } else if (variant === 'future-optional') {
+      packet.futureOptionalEvidencePacket = { schemaVersion: 999, ignored: true };
+      packet.verdict.futureOptionalSignal = 'ignored';
+    } else if (variant === 'unsupported-snapshot') {
+      packet.controlPlane.schemaVersion = 999;
+    } else {
+      packet.controlPlane.configPath = '';
+    }
+    fs.writeFileSync(path.join(target, '.ts-quality', 'runs', fixture.runId, 'run.json'), JSON.stringify(packet));
+    for (const command of ['report', 'explain', 'plan', 'govern', 'authorize']) {
+      const args = [command, '--root', target, '--run-id', fixture.runId];
+      if (command === 'report') args.push('--json');
+      if (command === 'authorize') args.push('--agent', 'release-bot');
+      const result = runCli(args);
+      if (variant.endsWith('snapshot')) {
+        assert.equal(result.status, 1, result.stdout);
+        assert.match(result.stderr, /(?:unsupported|malformed) control-plane snapshot/);
+        assert.match(result.stderr, /Re-run ts-quality check/);
+        assert.equal(fs.existsSync(path.join(target, '.ts-quality', 'runs', fixture.runId, 'authorize.release-bot.merge.json')), false);
+      } else {
+        assert.equal(result.status, 0, result.stderr);
+        if (command === 'report') {
+          const projected = JSON.parse(result.stdout);
+          assert.equal(projected.runId, captured.runId);
+          assert.equal(projected.version, captured.version);
+          assert.equal(projected.verdict.mergeConfidence, captured.verdict.mergeConfidence);
+          assert.equal(projected.verdict.outcome, captured.verdict.outcome);
+          assert.deepEqual(projected.decisionContext.drift, []);
+          if (variant === 'absent-optional') assert.equal(projected.coverageGeneration, undefined);
+          if (variant === 'future-optional') assert.deepEqual(projected.futureOptionalEvidencePacket, packet.futureOptionalEvidencePacket);
+        } else if (command === 'authorize') {
+          const decision = JSON.parse(result.stdout);
+          assert.equal(decision.outcome, fixture.authorizationOutcome);
+          assert.ok(decision.reasons.includes(fixture.authorizationReason));
+          assert.equal(decision.evidenceContext.runId, captured.runId);
+        } else {
+          assert.doesNotMatch(result.stdout, /Run drift detected/);
+        }
+      }
+    }
+  }
 });

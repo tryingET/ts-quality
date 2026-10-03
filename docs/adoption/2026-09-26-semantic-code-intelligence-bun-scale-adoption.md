@@ -55,3 +55,11 @@ Follow-up fixes (same day): the observations first recorded here were fixed with
 ## Compatibility capture
 
 Vendoring all 170 analyzed source files and the 2.4 MB scale packet would add about 5 MB, so the fixture `fixtures/artifact-compatibility/real-bun-esm/` is a narrowed capture of the same target and slice (`sourcePatterns: ['src/core/runtime-config.ts']`, same verdict 19 / 16 killed / 9 survived). It includes the one source file, so projections run without drift and keep the real governance verdict. `src/core/runtime-config.ts` is Apache-2.0 code from semantic-code-intelligence; its license is in the fixture's `LICENSE`. Fixtures are not part of the published npm package.
+
+## Durable reproducibility assessment (AK #6551)
+
+The observations above are historical #6004 results, not new #6551 execution. The existing document retains target commit `bbeebdfd`, the published package version, Node 22.23.3, the focused commands, and the reported counts/timing. The narrowed packet additionally records Bun 1.3.12 (700fc117) in its coverage/baseline receipts and an execution fingerprint. Those receipts belong to `bun-esm-adoption` (one analyzed source), not `bun-large-esm-adoption` (~170 sources).
+
+Inspection of the task-relevant tracked corpus and `ak evidence task 6004` recovered no durable full-scale packet or attached AK evidence records. The complete scale config/environment/lockfile/package-integrity receipts are not retained here; the short target commit and reported command alone do not close reproducibility. The compatibility fixture also omits the focused test/dependency environment, so it is a projection fixture, not a standalone target rerun.
+
+`docs/adoption/bun-scale-reproducibility-assessment.json` records recovered commands, provenance, retained packet/config digests, and the unresolved gap. Installed-tarball projection tests preserve the one-source fail/19 verdict and 16 killed / 9 survived, but **do not reproduce the scale result**. Closing scale reproducibility needs owner-authorized recovery or a separately scoped pinned rerun; #6551 performs no target checkout mutation, new target execution, or adoption.

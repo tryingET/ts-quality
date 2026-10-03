@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "taskId": 6551,
+  "sourceBaseCommit": "7d3d712",
+  "claimant": "session-01a10137-e94f-7744-acc8-0e94d843b532",
+  "disposition": "uncommitted; claim released to pending after followup verification; task not completed; durable Bun scale outcome unresolved",
+  "nodeVersion": "v26.9.0",
+  "npmVersion": "12.0.2",
+  "installedPackage": {
+    "name": "ts-quality",
+    "version": "0.6.0",
+    "origin": "current-source staged tarball, NOT published npm 0.6.0",
+    "tarball": ".ts-quality/npm/ts-quality/tarballs/ts-quality-0.6.0.tgz",
+    "tarballDigest": "sha256:23203478f4c662ba9ebcc107632a0dc388b6cf2af14a838d2d4e32a54886fda1"
+  },
+  "corpus": {
+    "test": "test/artifact-compatibility-fixtures.test.mjs",
+    "cliOrigin": "fresh tarball installation: node_modules/ts-quality",
+    "passedTests": 8,
+    "failedTests": 0,
+    "projections": [
+      "report --json",
+      "explain",
+      "plan",
+      "govern",
+      "authorize"
+    ],
+    "captures": [
+      "historical governed-app 5.0.0",
+      "Kinetic Vitest/ESM",
+      "TSX/pnpm/Vitest",
+      "Jest/Yarn 4 missing-source drift denial",
+      "Bun/ESM one-source capture"
+    ],
+    "optionalFields": [
+      "legacy absent additive",
+      "unknown future additive",
+      "minimal next-evidence"
+    ],
+    "rejectedSnapshots": [
+      "unsupported schema 999",
+      "malformed configPath"
+    ],
+    "immutablePackets": true,
+    "bunScaleRunExercised": false
+  },
+  "finalChecks": [
+    {
+      "command": "node --test --test-reporter=tap test/artifact-compatibility-fixtures.test.mjs",
+      "exitStatus": 0,
+      "passedTests": 8,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "cancelledTests": 0,
+      "mode": "repo dist; owned isolated TMPDIR parent empty after teardown"
+    },
+    {
+      "command": "node --test test/packaging.test.mjs",
+      "exitStatus": 0,
+      "passedTests": 1,
+      "failedTests": 0,
+      "mode": "fresh installed tarball corpus and summary regression"
+    },
+    {
+      "command": "npm run smoke:packaging --silent",
+      "exitStatus": 0,
+      "mode": "fresh installed tarball; exact corpus counts enforced"
+    },
+    {
+      "command": "npm run verify",
+      "exitStatus": 0,
+      "log": "verification/verification.log",
+      "logDigest": "sha256:da4847ca45b5428a60482ead64d1f3421c86fe0b73a2e58141d2f97b83dbf858"
+    },
+    {
+      "command": "node /home/tryinget/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict",
+      "exitStatus": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitStatus": 0
+    }
+  ],
+  "evidenceIds": {
+    "installedCorpus": 12918,
+    "repoVerification": 12919,
+    "bunScaleGap": 12920,
+    "docsAndScope": 12921,
+    "followupHardening": 12935,
+    "followupValidationAndRelease": 12936
+  },
+  "unresolved": [
+    {
+      "outcome": "durable approx-170-source scale reproducibility",
+      "status": "not established",
+      "assessment": "docs/adoption/bun-scale-reproducibility-assessment.json"
+    }
+  ],
+  "boundaries": {
+    "rootVerificationMdChanged": false,
+    "manifestsChanged": false,
+    "runtimeSourceChanged": false,
+    "controllerSafetyCommitAltered": false,
+    "targetCheckoutMutations": false,
+    "newTargetRuns": false,
+    "newAdoptionClaims": false,
+    "refactoring": false,
+    "commit": false,
+    "push": false,
+    "release": false,
+    "nativeDirectionWrites": false
+  },
+  "developmentNote": "An initial nested node:test invocation was skipped by inherited NODE_TEST_CONTEXT; the corpus runner now strips it. Focused packaging and full verify passed after that repair.",
+  "changedPaths": [
+    "docs/adoption/2026-09-26-semantic-code-intelligence-bun-scale-adoption.md",
+    "docs/adoption/artifact-consumer-compatibility-guide.md",
+    "docs/adoption/bun-scale-reproducibility-assessment.json",
+    "docs/public-contract.md",
+    "fixtures/artifact-compatibility/README.md",
+    "scripts/packaging-smoke.mjs",
+    "test/artifact-compatibility-fixtures.test.mjs",
+    "test/packaging.test.mjs",
+    "verification/ak-6551.json",
+    "verification/verification.log"
+  ],
+  "previousVerification": {
+    "disposition": "uncommitted; task remains claimed for controller inspection/completion",
+    "installedPackage": {
+      "name": "ts-quality",
+      "version": "0.6.0",
+      "origin": "current-source staged tarball, NOT published npm 0.6.0",
+      "tarball": ".ts-quality/npm/ts-quality/tarballs/ts-quality-0.6.0.tgz",
+      "tarballDigest": "sha256:23203478f4c662ba9ebcc107632a0dc388b6cf2af14a838d2d4e32a54886fda1"
+    },
+    "finalChecks": [
+      {
+        "command": "node --test test/artifact-compatibility-fixtures.test.mjs",
+        "exitStatus": 0,
+        "passedTests": 8,
+        "failedTests": 0,
+        "mode": "repo dist; installed mode separately exercised by smoke"
+      },
+      {
+        "command": "node --test test/packaging.test.mjs",
+        "exitStatus": 0,
+        "passedTests": 1,
+        "failedTests": 0,
+        "mode": "installed smoke regression including nested corpus harness"
+      },
+      {
+        "command": "npm run typecheck:scripts --silent",
+        "exitStatus": 0
+      },
+      {
+        "command": "npm run smoke:packaging --silent",
+        "exitStatus": 0,
+        "mode": "fresh tarball installation"
+      },
+      {
+        "command": "npm run verify",
+        "exitStatus": 0,
+        "log": "verification/verification.log",
+        "logDigest": "sha256:da4847ca45b5428a60482ead64d1f3421c86fe0b73a2e58141d2f97b83dbf858"
+      },
+      {
+        "command": "node /home/tryinget/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict",
+        "exitStatus": 0
+      },
+      {
+        "command": "git diff --check",
+        "exitStatus": 0
+      }
+    ],
+    "evidenceIds": {
+      "installedCorpus": 12918,
+      "repoVerification": 12919,
+      "bunScaleGap": 12920,
+      "docsAndScope": 12921
+    }
+  },
+  "followupVerifiedAt": "2026-10-03T10:31:23.169Z",
+  "tarballFingerprintUnchanged": true,
+  "followup": {
+    "controllerDispatch": "dispatch-1791022773285",
+    "standaloneRequiredCounts": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "checkedAt": "2026-10-03T10:29:28.444Z",
+    "fixtureCleanup": {
+      "corpusExitStatus": 0,
+      "testsPassed": 8,
+      "isolatedTempParentEmpty": true,
+      "ownership": "only roots generated in this invocation; previous roots untouched"
+    },
+    "standaloneAdmission": {
+      "method": "real standalone smoke with only inner corpus runner TAP output injected through a scratch preload; no production implementation substitution",
+      "rejectedCases": [
+        "empty",
+        "skipped",
+        "cancelled",
+        "fewer-passes",
+        "extra-passes",
+        "failures",
+        "missing-counts"
+      ],
+      "rejectionExitStatus": 1,
+      "noCoverageSummaryOnRejection": true
+    },
+    "codeDigests": {
+      "scripts/packaging-smoke.mjs": "sha256:6221fe58f173d81e3e7bc863db5b855dfb3f9a4d92a0daf44fa21b92a1bdcf34",
+      "test/artifact-compatibility-fixtures.test.mjs": "sha256:3afb11208347c355014e1cae024a531fbac04cba3d21df1354ebaa2ba477ea39"
+    },
+    "validationNote": "The first followup verify failed lint on a redundant count label. Final full verify passed after removing that label; previous successful verification results are retained separately, not backdated."
+  },
+  "claimRelease": {
+    "command": "ak task unclaim 6551 --agent session-01a10137-e94f-7744-acc8-0e94d843b532",
+    "observedAt": "2026-10-03T10:31:45.259Z",
+    "readback": {
+      "taskId": 6551,
+      "status": "pending",
+      "claimedBy": null
+    },
+    "completed": false
+  }
+}
