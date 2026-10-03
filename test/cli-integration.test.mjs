@@ -1987,9 +1987,10 @@ test('check writes the same attestation verification framing used by the CLI ver
   assert.equal(result.status, 0, result.stderr);
   const verify = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation', '.ts-quality/attestations/ci.tests.passed.json', '--trusted-keys', '.ts-quality/keys'], { encoding: 'utf8' });
   assert.equal(verify.status, 0, verify.stderr);
-  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'attestation-parity-run'], { encoding: 'utf8' });
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'attestation-parity-follow-up'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  const verifyText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'attestation-parity-run', 'attestation-verify.txt'), 'utf8');
+  const verifyText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'attestation-parity-follow-up', 'attestation-verify.txt'), 'utf8');
+  assert.equal(readRun(target).attestations.length, 0, 'earlier-run verification framing must not confer standing on the new run');
   assert.equal(verifyText, verify.stdout);
 });
 
@@ -2450,9 +2451,9 @@ test('check escapes unsafe attestation source filenames in persisted verificatio
     }
   }, privateKeyPem);
   legitimacy.saveAttestation(path.join(target, '.ts-quality', 'attestations', 'evil\nSubject: injected.json'), attestation);
-  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'unsafe-source-check-run'], { encoding: 'utf8' });
+  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'unsafe-source-check-follow-up'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  const verifyText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'unsafe-source-check-run', 'attestation-verify.txt'), 'utf8');
+  const verifyText = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'unsafe-source-check-follow-up', 'attestation-verify.txt'), 'utf8');
   assert.match(verifyText, /^evil\\u000aSubject: injected\.json: failed \(attestation issuer missing\)$/m);
   assert.doesNotMatch(verifyText, /^Subject: injected\.json: failed/m);
   assert.match(verifyText, /^Subject: \.ts-quality\/runs\/unsafe-source-check-run\/verdict\.json$/m);

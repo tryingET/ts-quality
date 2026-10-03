@@ -14,6 +14,16 @@ const debtMarker = ['TO', 'DO'].join('');
 const fixMarker = ['FIX', 'ME'].join('');
 const debtPattern = `/${debtMarker}/i`;
 
+test('lint distinguishes standalone unfinished-work markers from ordinary words', (t) => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-lint-words-'));
+  t.after(() => fs.rmSync(tempRoot, { recursive: true, force: true }));
+  writeFile(path.join(tempRoot, 'guide.md'), 'A denying outcome is not approval.\n');
+  assert.deepEqual(collectLintIssues(tempRoot), []);
+  const unfinishedMarker = ['N', 'YI'].join('');
+  writeFile(path.join(tempRoot, 'guide.md'), `${unfinishedMarker}: incomplete work\n`);
+  assert.equal(collectLintIssues(tempRoot).length, 1);
+});
+
 test('lint ignores hidden and generated directories but still scans repo-authored files', (t) => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-lint-'));
   t.after(() => {

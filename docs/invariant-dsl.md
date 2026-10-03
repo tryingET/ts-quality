@@ -64,6 +64,9 @@ Today lexical matching is still **deterministic lexical evidence**, not executio
 
 Minimal execution witness artifact contract:
 
+**Freshness limitation (AK #6547):** the current contract below has no source/test content digests or execution-context binding. A historical matching pass can still be selected after source/test drift or alongside a newer failing witness. Thus `execution-backed` describes a matching recorded execution, not enforced current-content proof. Refresh focused witnesses before review as a temporary operator precaution; do not treat timestamps or receipts alone as a freshness check. Content-bound support and legacy/contradictory-record handling remain unresolved.
+
+
 ```json
 {
   "version": "1",

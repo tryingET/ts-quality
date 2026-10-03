@@ -3,7 +3,7 @@ import path from 'path';
 import { spawnSync } from 'child_process';
 import test from 'node:test';
 import assert from 'assert/strict';
-import { latestRunId, repoRoot, tempCopyOfFixture } from './helpers.mjs';
+import { latestRunId, readRun, repoRoot, tempCopyOfFixture } from './helpers.mjs';
 
 const cli = path.join(repoRoot, 'dist', 'packages', 'ts-quality', 'src', 'cli.js');
 
@@ -99,11 +99,13 @@ test('attestation verification sample keeps exact signed subject context', () =>
   assert.equal(result.status, 0, result.stderr);
   const verify = spawnSync('node', [cli, 'attest', 'verify', '--root', target, '--attestation', '.ts-quality/attestations/ci.tests.passed.json', '--trusted-keys', '.ts-quality/keys'], { encoding: 'utf8' });
   assert.equal(verify.status, 0, verify.stderr);
-  result = spawnSync('node', [cli, 'check', '--root', target, '--run-id', 'sample-governed-app-run'], { encoding: 'utf8' });
+  result = spawnSync('node', [cli, 'authorize', '--root', target, '--agent', 'maintainer', '--run-id', 'sample-governed-app-run'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  const runtimeVerify = fs.readFileSync(path.join(target, '.ts-quality', 'runs', 'sample-governed-app-run', 'attestation-verify.txt'), 'utf8');
+  const projectedVerification = JSON.parse(result.stdout).evidenceContext.attestationVerification;
+  assert.equal(projectedVerification.verifiedCount, 1);
+  const persisted = readRun(target);
   const expected = fs.readFileSync(path.join(repoRoot, 'examples', 'artifacts', 'governed-app', 'attestation.verify.txt'), 'utf8');
   const normalizedExpected = expected.endsWith('\n') ? expected : `${expected}\n`;
   assert.equal(verify.stdout, normalizedExpected);
-  assert.equal(runtimeVerify, normalizedExpected);
+  assert.equal(persisted.attestations.length, 0, 'post-check signing must not rewrite the immutable check-time run');
 });

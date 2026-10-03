@@ -636,6 +636,7 @@ export interface RunArtifact {
     repo: RepositoryEntity;
     changedFiles: string[];
     changedRegions: ChangedRegion[];
+    changedFileDigests?: Record<string, string> | undefined;
     analysis?: AnalysisContext | undefined;
     controlPlane?: ControlPlaneSnapshot | undefined;
     executionWitnesses?: ExecutionWitnessRunSummary | undefined;
@@ -717,6 +718,7 @@ export declare function loadOptionalJsonArray<T>(filePath: string): T[];
 export declare function isWaiverActive(waiver: Waiver, nowIso: string): boolean;
 export declare function isFindingWaived(finding: PolicyFinding, waivers: Waiver[], nowIso: string): Waiver | undefined;
 export declare function parseUnifiedDiff(diffText: string): ChangedRegion[];
+export declare function reserveRunId(rootDir: string, runId: string): void;
 export declare function writeRunArtifact(rootDir: string, run: RunArtifact): string;
 export declare function readLatestRun(rootDir: string): RunArtifact;
 export declare function listRunIds(rootDir: string): string[];

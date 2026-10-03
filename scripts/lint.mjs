@@ -12,7 +12,7 @@ const banned = [
   new RegExp(['place', 'holderfunction'].join(''), 'i'),
   new RegExp(['place', 'holder', '\\b'].join(''), 'i'),
   new RegExp(['Not ', 'implemented'].join(''), 'i'),
-  new RegExp(['N', 'YI'].join(''), 'i'),
+  new RegExp(['\\b', 'N', 'YI', '\\b'].join(''), 'i'),
   new RegExp(['fake ', 'success'].join(''), 'i')
 ];
 const includeExt = /\.(ts|js|mjs|md|json)$/;

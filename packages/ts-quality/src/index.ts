@@ -44,6 +44,7 @@ import {
   nowIso,
   readJson,
   readLatestRun,
+  reserveRunId,
   resolvePackageName,
   renderSafeText,
   resolveRepoLocalPath,
@@ -560,6 +561,14 @@ function selectedRun(rootDir: string, options?: RunSelectionOptions): RunArtifac
 }
 
 function expectedRunFileDigest(run: RunArtifact, filePath: string): string | undefined {
+  if (run.changedFileDigests !== undefined) {
+    const snapshot = run.changedFileDigests;
+    const digest = snapshot && Object.prototype.hasOwnProperty.call(snapshot, filePath) ? snapshot[filePath] : undefined;
+    if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) || typeof digest !== 'string' || !/^sha256:(?:[a-f0-9]{64}|missing)$/u.test(digest)) {
+      throw new Error(`Run ${run.runId} carries a malformed changed-file digest snapshot. Re-run ts-quality check with a new run id.`);
+    }
+    return digest;
+  }
   return run.files.find((item) => item.filePath === normalizePath(filePath))?.digest;
 }
 
@@ -588,11 +597,9 @@ function detectControlPlaneDrift(rootDir: string, snapshot: ControlPlaneSnapshot
 function detectRunDrift(rootDir: string, run: RunArtifact): RunDriftEntry[] {
   const drift: RunDriftEntry[] = [];
   for (const filePath of run.changedFiles.map((item) => normalizePath(item))) {
-    const expectedDigest = expectedRunFileDigest(run, filePath);
-    if (!expectedDigest) {
-      continue;
-    }
-    const entry = contentDrift(`changed file ${filePath}`, path.join(rootDir, filePath), expectedDigest);
+    const expectedDigest = expectedRunFileDigest(run, filePath) ?? 'sha256:unrecorded';
+    const absolutePath = resolveRepoLocalPath(rootDir, filePath, { allowMissing: true, kind: 'changed file' }).absolutePath;
+    const entry = contentDrift(`changed file ${filePath}`, absolutePath, expectedDigest);
     if (entry) {
       drift.push(entry);
     }
@@ -2192,11 +2199,16 @@ export function refreshExecutionWitnesses(rootDir: string, options?: { changedFi
 
 export function runCheck(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; runId?: string }): CheckResult {
   const runId = assertSafeRunId(options?.runId ?? createRunId());
+  reserveRunId(rootDir, runId);
   const createdAt = nowIso();
   const manifest = buildAnalysisManifest(rootDir, { ...options, generateCoverage: true, observedAt: createdAt });
   const loaded = manifest.loaded;
   const sourceFiles = manifest.sourceFiles;
   const changedFiles = manifest.changedFiles.map((item) => normalizePath(item));
+  const changedFileDigests = Object.fromEntries(changedFiles.map((filePath) => [
+    filePath,
+    digestOrMissing(resolveRepoLocalPath(rootDir, filePath, { allowMissing: true, kind: 'changed file' }).absolutePath)
+  ]));
   const changedRegions = manifest.changedRegions;
   const coverage = manifest.coverage;
   const waivers = loadWaivers(rootDir, loaded.config.waiversPath);
@@ -2323,6 +2335,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     createdAt,
     repo,
     changedFiles,
+    changedFileDigests,
     changedRegions,
     analysis,
     controlPlane,

@@ -13,7 +13,7 @@ This guide is for **target repositories** using the published `ts-quality` packa
 CI should keep three habits explicit:
 
 1. changed scope is supplied by one `--changed <a,b,c>` value or a configured diff file,
-2. every reviewed run has a stable `--run-id`, and
+2. every new check has a unique `--run-id` (stable only for its downstream projections), and
 3. downstream projections read that same run id instead of ambient `.ts-quality/latest.json`.
 
 ## Agent/CI command consumption matrix
@@ -53,7 +53,7 @@ Example CI step:
 set -euo pipefail
 
 CHANGED_SCOPE="${TSQ_CHANGED_SCOPE:-src/auth/token.ts}"
-RUN_ID="${TSQ_RUN_ID:-ci-${GITHUB_SHA:-local}}"
+RUN_ID="${TSQ_RUN_ID:-ci-${GITHUB_SHA:-local}-${GITHUB_RUN_ID:-$(date +%s%N)}-${GITHUB_RUN_ATTEMPT:-1}}"
 
 npm ci
 npm run quality --silent
@@ -64,6 +64,20 @@ npx ts-quality check --config ts-quality.config.json --changed "$CHANGED_SCOPE" 
 npx ts-quality report --run-id "$RUN_ID" --json > ".ts-quality/runs/$RUN_ID/report.projected.json"
 npx ts-quality explain --run-id "$RUN_ID"
 npx ts-quality govern --run-id "$RUN_ID"
+
+# Commands can succeed while the quality decision fails. Enforce the artifact explicitly.
+node --input-type=module - "$RUN_ID" <<'TSQ_CHECK_ASSERT'
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const runId = process.argv[2];
+const report = JSON.parse(fs.readFileSync(`.ts-quality/runs/${runId}/report.projected.json`, 'utf8'));
+assert.equal(report.runId, runId, 'wrong reviewed run');
+assert.equal(report.decisionContext?.projection, 'projected', 'expected a current projection');
+assert.deepEqual(report.decisionContext?.drift, [], 'reviewed inputs drifted');
+assert.equal(report.verdict?.outcome, 'pass', 'quality verdict blocks CI');
+assert.ok(Array.isArray(report.governance), 'missing governance evidence');
+assert.equal(report.governance.filter((finding) => finding.level === 'error').length, 0, 'governance blocks CI');
+TSQ_CHECK_ASSERT
 ```
 
 Use a comma-separated changed scope for multiple files:
@@ -81,6 +95,8 @@ Upload the run directory as the CI artifact:
 ```
 
 The immutable source of truth is `run.json`. Markdown, stdout, `report --json`, authorization files, and next-evidence-action sidecars are projections or run-bound decision records.
+
+A zero process exit from `check`, `govern`, or `authorize` means the command completed, **not** that the decision approved the change. The assertion above deliberately requires a passing verdict and no blocking governance or drift. Repos may adopt a different explicit decision policy, but must not replace it with `set -e` alone. Use a new run id on every retry or follow-up check; never overwrite the evidence behind earlier approvals. Reserved ids remain unavailable after an interrupted/failed check.
 
 ## Coverage and TypeScript runtime parity
 
@@ -129,7 +145,7 @@ Turn `nextEvidenceAction` into bounded work rather than broad cleanup:
 1. read `.ts-quality/runs/$RUN_ID/next-evidence-action.json`,
 2. keep the follow-up inside `primaryAction.suggestedEditFiles` and any named witness/governance/coverage targets,
 3. use `next-evidence-action.prompt.md` for LLM handoff or `next-evidence-action.ak-task.json` when the target repo uses task tooling,
-4. rerun the target repo quality command plus the same `check --changed "$CHANGED_SCOPE" --run-id "$RUN_ID"` shape or a new explicit run id for the follow-up review.
+4. rerun the target repo quality command plus `check --changed "$CHANGED_SCOPE" --run-id "$NEW_RUN_ID"` for the follow-up review, then bind every projection and new approval to that new run.
 
 Do not widen changed scope, lower thresholds, or switch to ambient latest-pointer projections to make a failed run green. For examples where high coverage still fails because mutation pressure is weak, see `docs/adoption/negative-path-examples.md`.
 
@@ -154,6 +170,17 @@ npx ts-quality attest verify \
   --json
 
 npx ts-quality authorize --root . --agent release-bot --run-id "$RUN_ID"
+
+# If authorization is required by CI, enforce its exact-run decision too.
+node --input-type=module - "$RUN_ID" <<'TSQ_AUTHORIZE_ASSERT'
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const runId = process.argv[2];
+const decision = JSON.parse(fs.readFileSync(`.ts-quality/runs/${runId}/authorize.release-bot.merge.json`, 'utf8'));
+assert.equal(decision.id, `${runId}:release-bot:merge`, 'wrong authorization target');
+assert.equal(decision.evidenceContext?.runId, runId, 'wrong reviewed run');
+assert.equal(decision.outcome, 'approve', 'authorization blocks CI');
+TSQ_AUTHORIZE_ASSERT
 ```
 
 `authorize` writes run-bound decision and bundle artifacts under `.ts-quality/runs/<run-id>/`. If the grant, confidence floor, governance state, or attestation binding is insufficient, keep the non-approval result and route human review.

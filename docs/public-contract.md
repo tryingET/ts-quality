@@ -112,6 +112,8 @@ A matching pass witness under `.ts-quality/witnesses/**/*.json` is first-class `
 
 Sibling `.receipt.json` sidecars are execution receipts, not witness records to consume as scenario support.
 
+Known freshness limit (AK #6547): these matching rules do not bind a witness to current source/test bytes or reject an old pass contradicted by a new failure. `execution-backed` currently identifies a matching recorded execution, not enforced current-content proof. Refresh the focused witness before review; do not rely on witness age, status, or timestamps alone as freshness. A content-bound schema/legacy migration is required before this limitation is closed.
+
 A successful manual witness upgrade must surface as:
 
 - `evidenceSemantics: "execution-backed"`
@@ -155,6 +157,12 @@ The compact `check` stdout and generated `check-summary.txt` must surface the sa
 ## Artifact contract summary
 
 `run.json` is the immutable check-time audit packet. Other generated JSON/text surfaces are projections or decision records that point back to the selected run rather than replacing it.
+
+Current source (Unreleased) enforces that identity: `check` reserves an unused id before commands execute and refuses occupied/reserved ids. Reservations persist after failure/interruption; retry with a new id. Storage writes `run.json` exclusively rather than replacing bytes. Post-check signing/approvals are consumed by projections/authorization, not by rechecking the same id.
+
+The additive `changedFileDigests` map snapshots **every declared changed path**, independently of the source analysis inventory. Values are `sha256:<64 lowercase hex digits>` or `sha256:missing` for paths absent at check time. Creation/deletion/content changes are drift. If this map exists, each changed path must have a valid entry; malformed maps fail closed. Legacy packets without it use existing `files[].digest` where available; an unrecorded changed path surfaces drift with `expected: "sha256:unrecorded"`, requiring a new check before authorization. Source-analysis `files` remains source-only.
+
+Command completion and decisions are separate contracts: `check`, `govern`, and `authorize` may exit zero with failing/denying outcomes. CI must assert a matching projected verdict, no drift/blocking governance, and an approving exact-run authorization if its policy requires it; see `ci-integration.md`.
 
 For adoption-facing parser habits across legacy packets, additive fields, authorization records, and next-evidence sidecars, see `docs/adoption/artifact-consumer-compatibility-guide.md`.
 

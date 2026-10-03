@@ -426,6 +426,14 @@ function selectedRun(rootDir, options) {
     return options?.runId ? (0, index_1.loadRun)(rootDir, options.runId) : (0, index_1.readLatestRun)(rootDir);
 }
 function expectedRunFileDigest(run, filePath) {
+    if (run.changedFileDigests !== undefined) {
+        const snapshot = run.changedFileDigests;
+        const digest = snapshot && Object.prototype.hasOwnProperty.call(snapshot, filePath) ? snapshot[filePath] : undefined;
+        if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) || typeof digest !== 'string' || !/^sha256:(?:[a-f0-9]{64}|missing)$/u.test(digest)) {
+            throw new Error(`Run ${run.runId} carries a malformed changed-file digest snapshot. Re-run ts-quality check with a new run id.`);
+        }
+        return digest;
+    }
     return run.files.find((item) => item.filePath === (0, index_1.normalizePath)(filePath))?.digest;
 }
 function digestOrMissing(absolutePath) {
@@ -450,11 +458,9 @@ function detectControlPlaneDrift(rootDir, snapshot) {
 function detectRunDrift(rootDir, run) {
     const drift = [];
     for (const filePath of run.changedFiles.map((item) => (0, index_1.normalizePath)(item))) {
-        const expectedDigest = expectedRunFileDigest(run, filePath);
-        if (!expectedDigest) {
-            continue;
-        }
-        const entry = contentDrift(`changed file ${filePath}`, path_1.default.join(rootDir, filePath), expectedDigest);
+        const expectedDigest = expectedRunFileDigest(run, filePath) ?? 'sha256:unrecorded';
+        const absolutePath = (0, index_1.resolveRepoLocalPath)(rootDir, filePath, { allowMissing: true, kind: 'changed file' }).absolutePath;
+        const entry = contentDrift(`changed file ${filePath}`, absolutePath, expectedDigest);
         if (entry) {
             drift.push(entry);
         }
@@ -1888,11 +1894,16 @@ function refreshExecutionWitnesses(rootDir, options) {
 }
 function runCheck(rootDir, options) {
     const runId = (0, index_1.assertSafeRunId)(options?.runId ?? (0, index_1.createRunId)());
+    (0, index_1.reserveRunId)(rootDir, runId);
     const createdAt = (0, index_1.nowIso)();
     const manifest = buildAnalysisManifest(rootDir, { ...options, generateCoverage: true, observedAt: createdAt });
     const loaded = manifest.loaded;
     const sourceFiles = manifest.sourceFiles;
     const changedFiles = manifest.changedFiles.map((item) => (0, index_1.normalizePath)(item));
+    const changedFileDigests = Object.fromEntries(changedFiles.map((filePath) => [
+        filePath,
+        digestOrMissing((0, index_1.resolveRepoLocalPath)(rootDir, filePath, { allowMissing: true, kind: 'changed file' }).absolutePath)
+    ]));
     const changedRegions = manifest.changedRegions;
     const coverage = manifest.coverage;
     const waivers = (0, config_1.loadWaivers)(rootDir, loaded.config.waiversPath);
@@ -2010,6 +2021,7 @@ function runCheck(rootDir, options) {
         createdAt,
         repo,
         changedFiles,
+        changedFileDigests,
         changedRegions,
         analysis,
         controlPlane,

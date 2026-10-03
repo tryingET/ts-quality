@@ -703,10 +703,10 @@ export function runPackagingSmoke() {
       throw new Error(`Unexpected ts-quality attest verify output from installed package:\n${verifyText}`);
     }
 
-    run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewRunId], installRoot);
-    const runtimeAttestationVerify = fs.readFileSync(path.join(reviewProjectRoot, '.ts-quality', 'runs', reviewRunId, 'attestation-verify.txt'), 'utf8').trim();
-    if (runtimeAttestationVerify !== verifyText) {
-      throw new Error(`Run-bound attestation verification drifted from CLI verify output.\nexpected:\n${verifyText}\nactual:\n${runtimeAttestationVerify}`);
+    // Signing is post-check evidence: authorize reprojects it without replacing run.json.
+    const persistedReviewRun = JSON.parse(fs.readFileSync(path.join(reviewProjectRoot, '.ts-quality', 'runs', reviewRunId, 'run.json'), 'utf8'));
+    if (persistedReviewRun.attestations.length !== 0) {
+      throw new Error('Post-check signing must not rewrite the immutable check-time attestation snapshot.');
     }
 
     const releaseBotDeniedDecision = JSON.parse(run(installedCliBinPath, ['authorize', '--root', reviewProjectRoot, '--agent', 'release-bot'], installRoot));

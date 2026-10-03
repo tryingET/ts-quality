@@ -72,6 +72,8 @@ It progresses through five layers:
 
 Invariant scenario support is therefore a deterministic lexical witness, not execution-backed behavioral proof. Current lexical-only matches are reported as `lexically-supported`. The plain `supported` label is now reserved for scenarios backed by explicit execution witness artifacts, so the tool is no longer silently upgrading deterministic lexical alignment into proof-like status.
 
+**Current witness limitation:** matching execution witnesses are not yet bound to current source/test content digests. An old pass can remain selected after source changes or alongside a new failure. Refresh the focused witness immediately before review; this is an operator precaution, not an enforced freshness guarantee. Content-bound witness support is tracked as AK #6547.
+
 That makes the system explainable and debuggable. It also means shallow tests produce shallow evidence.
 
 ### Governance that follows real import flow
@@ -99,14 +101,16 @@ When a boundary-scoped file uses a non-literal `import(...)` or `require(...)` t
 
 Downstream decisions are anchored to the exact reviewed run:
 
-- `check` snapshots the immutable evidence/control-plane bundle into `run.json`
+- `check` snapshots the immutable evidence/control-plane bundle into `run.json`; current source requires an unused run id for every new check, reserved before commands execute (failed/interrupted reservations also require a new id)
 - `report.json` and `report --json` keep the same run fields but add `decisionContext` metadata so operators can tell whether they are looking at the persisted check-time report or a later projected decision view
 - `explain`, `report`, `plan`, `govern`, and `authorize` can all target that exact persisted run via `--run-id <id>`
 - when `--run-id` is omitted, those read/projection commands fall back to `.ts-quality/latest.json`
 - approvals, waivers, and attestations are re-evaluated only when they target that run correctly; authorization also re-applies overrides against the exact scoped run
-- drift in changed files or control-plane inputs is surfaced on projected review surfaces and causes authorization to fail closed
+- drift in changed files or control-plane inputs is surfaced on projected review surfaces and causes authorization to fail closed; current source adds independent digests for every explicitly changed path, including tests/config/excluded files and missing paths, and refuses silent freshness for legacy paths without a digest
 
 That matters a lot in agent-heavy workflows, where generated artifacts and support files can change quickly.
+
+The new run-id and complete changed-path safeguards are **Unreleased**, not a claim about npm `0.6.0`. Also, `check`, `govern`, and `authorize` can exit zero while their decision blocks the change. Use the explicit artifact assertions in `docs/ci-integration.md` when enforcing CI policy.
 
 ## Try it now
 
@@ -142,7 +146,7 @@ npx ts-quality witness test \
   --test-files test/auth/token.test.ts \
   --out .ts-quality/witnesses/auth-refresh-expired-boundary.json \
   -- npm run test:auth-refresh --silent
-npx ts-quality check --changed src/auth/token.ts --run-id review-001
+npx ts-quality check --changed src/auth/token.ts --run-id review-002
 ```
 
 Use `docs/adoption/first-invariant-witness-authoring.md` when writing the first useful invariant and choosing a focused witness without repo-global proof theater; use `docs/adoption/minimal-external-walkthrough.md` for a tiny one-slice rollout example built around `doctor --machine`, one manual witness, one `check`, and run-bound `report`/`explain`; use `docs/adoption/agent-integration-how-to.md` for brownfield adoption, `docs/adoption/accepted-repo-local-adoption.md` to decide when temp-copy or candidate dogfood evidence has become accepted repo-local/live adoption, `docs/adoption/negative-path-examples.md` for truthful fail-closed examples, `docs/adoption/artifact-consumer-compatibility-guide.md` for parser compatibility habits, and `docs/public-contract.md` for the current protected public CLI/artifact/witness/evidence-closure contract.
@@ -381,7 +385,7 @@ Use `ak` as the canonical entrypoint for readiness, claims, dependencies, and co
 ak --doctor
 ak task ready --format json | jq '.[] | select(.repo == env.PWD)'
 ak task list --format json --verbose | jq '.[] | select(.repo == env.PWD and (.id == 181 or .id == 182))'
-ak task claim 182 --agent pi
+ak task claim 182 --agent "session-$PI_SESSION_ID"
 ```
 
 ## Repo-local handoff sync
@@ -394,7 +398,7 @@ npm run handoff:sync
 npm run handoff:check
 ```
 
-`npm run handoff:sync` runs the direction reconciliation flow (`ak direction import`, `ak direction check`, `ak direction export`).
+`npm run handoff:sync` checks and exports AK-native direction state read-only (`ak direction check`, then `ak direction export`). It does not import retired markdown direction files or repair canonical state automatically; failed direction reconciliation requires an owner-authorized AK change.
 `npm run handoff:check` fails closed when the direction state drifts from AK, but it is only a repo-local drift check: it does **not** replace `ak task *` for live queue truth or CI/job status for live automation truth.
 
 ## Verification artifacts and guardrails

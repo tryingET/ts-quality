@@ -160,6 +160,9 @@
       "status": "at-risk"
     }
   ],
+  "changedFileDigests": {
+    "src/auth/token.js": "sha256:426470c01cf4f5dc02bacfc1eccf57ec0a2be3c6cf2c7a998017c8c67f801206"
+  },
   "changedFiles": [
     "src/auth/token.js"
   ],

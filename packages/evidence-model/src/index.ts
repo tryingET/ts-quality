@@ -728,6 +728,7 @@ export interface RunArtifact {
   repo: RepositoryEntity;
   changedFiles: string[];
   changedRegions: ChangedRegion[];
+  changedFileDigests?: Record<string, string> | undefined;
   analysis?: AnalysisContext | undefined;
   controlPlane?: ControlPlaneSnapshot | undefined;
   executionWitnesses?: ExecutionWitnessRunSummary | undefined;
@@ -1252,11 +1253,31 @@ export function parseUnifiedDiff(diffText: string): ChangedRegion[] {
   return regions;
 }
 
+// Reservations are retained even after failure: retry with a new id, never rebind approvals.
+export function reserveRunId(rootDir: string, runId: string): void {
+  const safeRunId = assertSafeRunId(runId);
+  const runsRoot = resolveRepoLocalPath(rootDir, '.ts-quality/runs', { allowMissing: true, kind: 'run storage' }).absolutePath;
+  ensureDir(runsRoot);
+  const artifactRoot = path.join(runsRoot, safeRunId);
+  const occupied = () => new Error(`Run ${safeRunId} already exists or is reserved. Use a new run id for a new check.`);
+  if (fs.existsSync(artifactRoot)) {
+    throw occupied();
+  }
+  try {
+    fs.writeFileSync(path.join(runsRoot, `.${safeRunId}.reserved`), '', { flag: 'wx' });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+      throw occupied();
+    }
+    throw error;
+  }
+}
+
 export function writeRunArtifact(rootDir: string, run: RunArtifact): string {
   const safeRunId = assertSafeRunId(run.runId);
   const artifactRoot = path.join(rootDir, '.ts-quality', 'runs', safeRunId);
   ensureDir(artifactRoot);
-  writeJson(path.join(artifactRoot, 'run.json'), run);
+  fs.writeFileSync(path.join(artifactRoot, 'run.json'), `${stableStringify(run)}\n`, { flag: 'wx' });
   writeJson(path.join(artifactRoot, 'verdict.json'), run.verdict);
   writeJson(path.join(rootDir, '.ts-quality', 'latest.json'), { latestRunId: safeRunId } satisfies LatestPointer);
   return artifactRoot;

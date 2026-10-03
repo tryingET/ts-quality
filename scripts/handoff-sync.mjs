@@ -13,7 +13,7 @@ if (args.has('--help') || args.has('-h')) {
     'Usage: node scripts/handoff-sync.mjs [--check]',
     '',
     'Modes:',
-    '  default  Reconcile repo-local AK direction state.',
+    '  default  Check and export AK-native direction state (read-only).',
     '  --check  Fail closed when direction state drifts.',
     ''
   ].join('\n'));
@@ -45,6 +45,6 @@ if (args.has('--check')) {
   process.exit(0);
 }
 
-run('ak', ['direction', 'import']);
+// Import is legacy migration, not routine sync: AK owns live direction state.
 run('ak', ['direction', 'check']);
 run('ak', ['direction', 'export']);

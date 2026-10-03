@@ -10,6 +10,11 @@ type: "reference"
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- New checks no longer overwrite an occupied run id. IDs are reserved before commands execute, including concurrent attempts, and failed/interrupted reservations remain unavailable. Use a new run id for each check and bind later projections/approvals to that run; never recheck a signed/approved id to refresh it.
+- Runs now carry additive `changedFileDigests` for every declared changed path (including tests, config, excluded files and missing paths). Legacy packets still project source digests from `files`, but a changed path without a recorded digest is reported as `sha256:unrecorded` drift and cannot authorize silently. Regenerate such evidence with a new id. See `docs/decisions/2026-10-03-immutable-run-identity-and-complete-scope-drift.md`.
+
 ### Added
 
 - Added `init --preset jest`, which writes Jest coverage (LCOV) and in-band mutation commands through the repository's package manager.
@@ -18,11 +23,15 @@ type: "reference"
 
 ### Changed
 
+- Routine `handoff:sync` now checks/exports AK-native direction read-only; it no longer performs legacy markdown import. The product posture now distinguishes current source, public release records, scratch pilots and accepted adoption horizons.
+- CI integration guidance enforces projected verdict/governance/drift and exact-run authorization outcomes with executable artifact assertions. A zero CLI exit is command completion, not approval.
+- Documented the unresolved stale execution-witness support gap (AK #6547); refresh focused evidence before review, without claiming content freshness is enforced.
 - `doctor` reads repo-local shell wrappers that package scripts invoke (read-only, contained to the repository, bounded size) to find the real test runner, including Bun, and judges coverage scripts by whether they write LCOV: a script that demonstrably writes none is reported as `coverage-script-without-lcov` instead of being recommended. When the test script is a wrapper, the recommended coverage command invokes the runner directly.
 - `doctor` recommends an LCOV coverage command for the repository's own test runner (Jest or Vitest) and warns with `mutation-test-runner-mismatch` when `mutations.testCommand` runs a different runner than the repository test script.
 
 ### Fixed
 
+- Prevented approvals transferring to replacement evidence through reused run ids, and prevented changed config/test/excluded paths from escaping downstream drift denial. Added concurrency, byte-preservation, legacy and malformed-snapshot regressions; updated signing/packaging proof to reproject post-check attestations rather than overwrite a run.
 - Mutation testing runs the unmutated test command once inside the mutation workspace before scoring. If it fails there (missing install state, excluded files, absolute paths), the run fails closed as a baseline failure instead of counting every mutant as killed. This also covers repositories whose `node_modules` is a symlink, which now resolves inside mutant workspaces; previously such a repository could receive a false `pass`.
 - Source discovery excludes files matching `testPatterns`, so tests colocated under a source root (for example `src/__tests__/`) are no longer treated as source code.
 - Source and test discovery skip hidden directories such as `.next`, `.cache`, or generated `.ontology/snapshots` copies unless a pattern names that directory explicitly, so snapshot copies are no longer treated as the repository's tests or suggested as files to edit.
