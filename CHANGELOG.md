@@ -10,7 +10,11 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-03
+
 ### Breaking Changes
+
+Migration map for agents and operators: [`docs/releases/migrations/v0.7.0.md`](docs/releases/migrations/v0.7.0.md). Local preparation is authorized; public publication is not yet authorized or proved.
 
 - Execution witness records without additive content/execution `binding` no longer grant execution-backed support. Regenerate legacy witnesses with `witness test`/`witness refresh`; current failures veto matching passes regardless of timestamp. See `docs/releases/migrations/content-bound-witnesses.md`.
 
@@ -19,9 +23,11 @@ type: "reference"
 
 ### Added
 
+- Installed-tarball compatibility proof now replays historical and real Kinetic/TSX/Jest/Bun packets across report/explain/plan/govern/authorize, preserving bytes, optional/future fields and schema/drift denials. Standalone smoke rejects skipped/empty corpora; this is compatibility proof, not target acceptance or scale reproduction.
+
 - Added `init --preset jest`, which writes Jest coverage (LCOV) and in-band mutation commands through the repository's package manager.
 - Added a real third-party Jest + @swc/jest + Yarn 4 target-shape adoption capture from `appmap-node`, with run-artifact compatibility coverage.
-- Added a real Bun-runner ESM service capture from `semantic-code-intelligence`, and scale evidence for `check` across about 170 source files.
+- Added a real Bun-runner ESM service capture from `semantic-code-intelligence` and a historical report of roughly 170-source scale execution. The retained compatibility packet analyzes one source; durable full-scale packet/environment proof remains unresolved (AK #6551).
 
 ### Changed
 

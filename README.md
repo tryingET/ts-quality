@@ -114,6 +114,8 @@ The new run-id and complete changed-path safeguards are **Unreleased**, not a cl
 
 ## Try it now
 
+**Release state:** manifests currently name locally prepared `0.7.0`; the operator authorized preparation only, not a tag, push or publication. The safety and installed-compatibility changes below are not a claim of public npm `0.7.0` availability. See `docs/releases/migrations/v0.7.0.md` before upgrading once an exact public release is independently verified.
+
 Start with the published package when you are evaluating a target repo. Use the repo-from-source and release-maintainer paths only when you are developing or releasing `ts-quality` itself.
 
 ### 1) Use the published package in a target repo
