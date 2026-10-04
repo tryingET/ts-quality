@@ -8,7 +8,9 @@ type: "reference"
 
 # Useful-first legacy supersession wave — AK6584
 
-**Status: proposal only. Runtime execution, owner acceptance, release and retirement remain unperformed.**
+**Status: proposal with 2026-10-04 owner input recorded; canonical design settlement
+is blocked on AK authorization storage. Runtime execution, accepted supersession,
+release and retirement remain unperformed. See the AK6585 readback below.**
 
 ## Intent and governing evidence
 
@@ -316,8 +318,10 @@ Reuse, do not duplicate or quietly finish:
 
 - 6548: safety release/public migration. Local0.7 prep is not public release.
 - 6550: accepted normal-checkout adoption.
-- 6551: installed captured artifacts and reproducible Bun scale proof; partial
-  local captures do not close scale obligations.
+- 6551: now **done** at `ce57c0c`, with installed captured-artifact matrix and
+  reproducible pinned Bun full-scope proof; its quality-fail/authorization-deny
+  result is not accepted live adoption or public0.7 availability. Do not reopen
+  completed scale work from the earlier partial-capture account.
 - 6552: behavior-preserving oversized module/test refactor if required.
 - 6553: standardized Justfile rather than invented second root command surface.
 - 6557: crash-safe immutable packet publication; optional nav sidecars cannot
@@ -398,8 +402,33 @@ retirement and recovery acceptance makes removal lawful.
 close AK6584, but the original operator goal remains open until implementation,
 receiver/discontinuation acceptance, preservation and formal retirement are proven.
 
-The next bounded work is tracked in **AK6585**: actual caller/utility adjudication,
-explicit owner design/discontinuation choices, and exact source-owner execution
-contracts. It remains pending and unclaimed; this proposal creates no runtime
-execution authority. All unresolved U/C rows and preservation/retirement duties
-are carried there, while existing release/adoption/direction tasks remain intact.
+## AK6585 readback — 2026-10-04
+
+The caller inventory and explicit G1-G11 owner selections are recorded in
+`../adoption/legacy-parity/caller-inventory-2026-10-04.md` and
+`../adoption/legacy-parity/owner-selection-2026-10-04.json`. Owner selected native
+correctness/selection/navigation/package summaries, runtime loose-equality probes,
+explicit coverage-path convenience and independent read-only release diagnostics.
+Parallelism, relative timeouts, automatic declaration-level selection, aggregate
+LCOV and unknown old-interface/private/public losses are held, not discontinued.
+
+Prospective S1-S8 tasks are **6700-6707**, with exact source-owner scopes, done
+contracts, guardrails, dependencies and active deferrals. All are unclaimed and
+unexecuted. S6-S8 are explicitly **admission planning only**, not archive,
+retirement or deletion execution tasks. Native decision180 links only tasks in
+its own repo; foreign receiver/legacy tasks require separate owner admission.
+Canonical transcription proof: `../adoption/legacy-parity/task-transcription-proof-2026-10-04.md`.
+
+**Canonical settlement is blocked.** Decision180 remains `decision_pending`,
+outcome null. Typed authorization refused `AK_DECISION_RECORDS_NEED_SCHEMA_47`
+on live schema46. Completed questionnaire input is not a recorded grant; no
+accepted-outcome fallback or migration was attempted. Existing AK6367 owns the
+operator-run amended47 apply and AK6471 prerequisites. This wave does not migrate
+AK, broaden decision scope, borrow another claim or reopen completed5991.
+
+AK6585 therefore remains open for canonical adjudication after that owner-surface
+blocker resolves. Draft owner-choice projection:
+`../decisions/2026-10-04-legacy-useful-native-supersession.md`; it is not a recorded
+accepted ADR. Existing release/adoption/direction task ownership remains intact.
+No task-authoring or planning completion proves useful supersession, receiver
+acceptance, public release, recoverable preservation, retirement or removal.

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "task": 6585,
+  "decision": 180,
+  "authority": "AK decision and authorization readback; this file is an evidence projection, not lifecycle authority",
+  "input": "Completed interactive owner questionnaire in the current Pi session on 2026-10-04",
+  "questionnaire": "docs/adoption/legacy-parity/owner-questionnaire.json",
+  "answers": {
+    "G1": "Adopt the native wave; retain separately listed holds",
+    "G2": "Retain valid runtime probes with AST/type-safety tests",
+    "G3": "Serial first; hold parallelism pending measured need/isolation proof",
+    "G4": "Fixed budgets first; hold factor policy pending measured need",
+    "G5": "Generate/discover target-owned coverage and record an explicit path",
+    "G6": "Native interfaces/exact caller adapters; hold unknown old-interface losses",
+    "G7": "One native staged package; hold legacy package/tag/receiver discontinuation",
+    "G8": "Retain read-only diagnostics outside quality-core authority",
+    "G9": "Create held admission obligations only; preserve checkout/unknown receivers",
+    "G10": "Hold pending a real job and fresh-binding specification",
+    "G11": "Hold pending a multi-package job/provenance specification",
+    "finish": "Yes—commit/close only AK6585 after checks; no implementation/release"
+  },
+  "unanswered": ["notes"],
+  "scope": "Approve native design/utility and exact bounded task authoring; authorize verified adjudication commit and AK6585 completion only",
+  "notAuthorized": [
+    "Runtime implementation or execution of the authored tasks",
+    "Package publication, tags, push, remote archive or legacy deprecation",
+    "Accepted live receiver adoption or closure of 6550/publication dependency 6548",
+    "Unknown old-interface/private-receiver loss",
+    "Parallelism, relative timeout policy, declaration-differential selection or aggregate LCOV implementation",
+    "Archival effects, durable destination selection or custody freeze",
+    "Formal retirement, old task/registration/routing changes or deletion"
+  ]
+}
