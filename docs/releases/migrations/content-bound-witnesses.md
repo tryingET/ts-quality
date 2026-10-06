@@ -1,13 +1,13 @@
 ---
-summary: "Unreleased migration from unbound witness records to current-content execution evidence."
+summary: "0.7.0 migration from unbound witness records to current-content execution evidence."
 read_when:
   - "When upgrading witness records or investigating stale/contradictory support"
 type: "guide"
 ---
 
-# Content-bound witnesses — Unreleased migration
+# Content-bound witnesses — migration (since 0.7.0)
 
-This describes current source, not an already published package release. Release authorization and public provenance remain separate obligations (AK #6548).
+This behavior ships in `ts-quality@0.7.0` (published 2026-10-06, AK #6548). Version 0.6.0 and earlier accept unbound witnesses.
 
 ## Changed behavior
 

@@ -114,7 +114,7 @@ A matching pass witness under `.ts-quality/witnesses/**/*.json` is first-class `
 
 Sibling `.receipt.json` sidecars are execution receipts, not witness records to consume as scenario support.
 
-Unreleased safety contract: both record and receipt carry the same additive binding; current declared bytes and execution context must match. Legacy unbound records downgrade explicitly with rerun guidance; a current failure vetoes passes regardless of timestamps. The installed packaging/protected manual witness proof checks bindings and rejection after source drift. See `docs/releases/migrations/content-bound-witnesses.md`. These explicit bindings do not establish exhaustive dependency closure, authenticity against manual edits, accepted adoption or an overall approving verdict.
+Safety contract (since 0.7.0): both record and receipt carry the same additive binding; current declared bytes and execution context must match. Legacy unbound records downgrade explicitly with rerun guidance; a current failure vetoes passes regardless of timestamps. The installed packaging/protected manual witness proof checks bindings and rejection after source drift. See `docs/releases/migrations/content-bound-witnesses.md`. These explicit bindings do not establish exhaustive dependency closure, authenticity against manual edits, accepted adoption or an overall approving verdict.
 
 A successful manual witness upgrade must surface as:
 
@@ -160,7 +160,7 @@ The compact `check` stdout and generated `check-summary.txt` must surface the sa
 
 `run.json` is the immutable check-time audit packet. Other generated JSON/text surfaces are projections or decision records that point back to the selected run rather than replacing it.
 
-Current source (Unreleased) enforces that identity: `check` reserves an unused id before commands execute and refuses occupied/reserved ids. Reservations persist after failure/interruption; retry with a new id. Storage writes `run.json` exclusively rather than replacing bytes. Post-check signing/approvals are consumed by projections/authorization, not by rechecking the same id.
+Since 0.7.0, `check` enforces that identity: it reserves an unused id before commands execute and refuses occupied/reserved ids. Reservations persist after failure/interruption; retry with a new id. Storage writes `run.json` exclusively rather than replacing bytes. Post-check signing/approvals are consumed by projections/authorization, not by rechecking the same id.
 
 The additive `changedFileDigests` map snapshots **every declared changed path**, independently of the source analysis inventory. Values are `sha256:<64 lowercase hex digits>` or `sha256:missing` for paths absent at check time. Creation/deletion/content changes are drift. If this map exists, each changed path must have a valid entry; malformed maps fail closed. Legacy packets without it use existing `files[].digest` where available; an unrecorded changed path surfaces drift with `expected: "sha256:unrecorded"`, requiring a new check before authorization. Source-analysis `files` remains source-only.
 

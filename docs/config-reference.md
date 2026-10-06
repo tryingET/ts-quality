@@ -89,7 +89,7 @@ Invariant scenarios live in the separate invariants file, but `check` can now au
 - optional `executionWitnessTimeoutMs: number`
 - optional `executionWitnessPatterns: string[]` (defaults to `[executionWitnessOutput]` when auto-generation is configured; otherwise `check` discovers manual witnesses under `.ts-quality/witnesses/**/*.json`)
 
-`sourceFiles` are intentionally **not** configured here; they are inferred from the impacted invariant scope at runtime so the witness command stays downstream of the same changed-scope truth used by invariant evaluation. In current Unreleased source, generated witnesses include content/execution bindings and evaluation checks current digests plus configured command/tests/timeout. Legacy unbound witnesses require regeneration; see `docs/invariant-dsl.md`.
+`sourceFiles` are intentionally **not** configured here; they are inferred from the impacted invariant scope at runtime so the witness command stays downstream of the same changed-scope truth used by invariant evaluation. Since 0.7.0, generated witnesses include content/execution bindings and evaluation checks current digests plus configured command/tests/timeout. Legacy unbound witnesses require regeneration; see `docs/invariant-dsl.md`.
 
 Example inside `.ts-quality/invariants.ts`:
 

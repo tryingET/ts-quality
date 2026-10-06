@@ -62,7 +62,7 @@ A scenario also needs a **single assertion-bearing focused test-case witness**: 
 
 Today lexical matching is still **deterministic lexical evidence**, not execution-backed behavioral proof. Current lexical-only matches are reported as `lexically-supported`. The plain `supported` label is now reserved for scenarios backed by explicit execution witness artifacts. That means the engine does not silently upgrade deterministic lexical alignment into proof-like status.
 
-## Content-bound execution witnesses (Unreleased)
+## Content-bound execution witnesses (since 0.7.0)
 
 Generated records retain `version: "1"`, `kind: "execution-witness"`, invariant/scenario ids, status, source/test lists and optional `observedAt`. Both the record and receipt now contain an additive `binding`:
 
