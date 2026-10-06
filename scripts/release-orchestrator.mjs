@@ -488,6 +488,32 @@ function commandPlan(options) {
   console.log(JSON.stringify(plan, null, 2));
 }
 
+/**
+ * Paths from `git status --porcelain` output; a rename reports its destination.
+ * @param {string} porcelain
+ * @returns {string[]}
+ */
+export function dirtyPathsFromPorcelain(porcelain) {
+  return porcelain.split('\n').filter((line) => line.trim().length > 0).map((line) => {
+    const entry = line.slice(3);
+    const arrow = entry.indexOf(' -> ');
+    return arrow >= 0 ? entry.slice(arrow + ' -> '.length) : entry;
+  });
+}
+
+/**
+ * The prepare follow-up stages what prepare wrote plus the version's migration map.
+ * Every other dirty path is reported for explicit review, never staged or dropped silently.
+ * @param {{ preparedFiles: string[], migrationMap: string | null, dirtyPaths: string[] }} input
+ * @returns {{ stage: string[], reviewDirty: string[] }}
+ */
+export function releaseStagingPlan({ preparedFiles, migrationMap, dirtyPaths }) {
+  const stage = [...new Set([...preparedFiles, ...(migrationMap ? [migrationMap] : [])])].sort((left, right) => left.localeCompare(right));
+  const staged = new Set(stage);
+  const reviewDirty = [...new Set(dirtyPaths.filter((entry) => !staged.has(entry)))].sort((left, right) => left.localeCompare(right));
+  return { stage, reviewDirty };
+}
+
 /** @param {CliOptions} options */
 function commandPrepare(options) {
   const version = stringOption(options['version']);
@@ -511,14 +537,21 @@ function commandPrepare(options) {
     runRequired('npm', ['run', 'verify', '--silent']);
     runRequired('npm', ['run', 'release:intent:check', '--silent'], { RELEASE_TAG: `v${version}`, GITHUB_REF_TYPE: 'tag' });
   }
+  const staging = releaseStagingPlan({
+    preparedFiles: changedFiles,
+    migrationMap: fs.existsSync(migrationMapPath(version)) ? migrationMapRelativePath(version) : null,
+    dirtyPaths: dirtyPathsFromPorcelain(run('git', ['status', '--porcelain'], {}, true).stdout)
+  });
   console.log(JSON.stringify({
     action: 'prepare',
     applied: apply,
     version,
     tag: `v${version}`,
-    changedFiles: [...new Set(changedFiles)].sort((left, right) => left.localeCompare(right)),
+    changedFiles: staging.stage,
+    reviewDirty: staging.reviewDirty,
+    reviewDirtyNote: 'Not in the git add follow-up. Stage each path explicitly if it belongs to the release (for example a hand-edited README release line); leave unrelated work out.',
     followUp: apply ? [
-      `git add ${[...new Set(changedFiles)].join(' ')}`,
+      `git add ${staging.stage.join(' ')}`,
       `git commit -m "chore(release): v${version}"`,
       `npm run verify:ci --silent`,
       `git tag -a v${version} -m "ts-quality v${version}"`,

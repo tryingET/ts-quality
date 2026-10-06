@@ -72,7 +72,7 @@ It progresses through five layers:
 
 Invariant scenario support is therefore a deterministic lexical witness, not execution-backed behavioral proof. Current lexical-only matches are reported as `lexically-supported`. The plain `supported` label is now reserved for scenarios backed by explicit execution witness artifacts, so the tool is no longer silently upgrading deterministic lexical alignment into proof-like status.
 
-**Unreleased witness safety:** generated witnesses and receipts now bind declared source/test bytes, command, runtime and relevant execution context. `check` rejects stale/unbound support; any current scoped failure vetoes matching passes without timestamp-based selection. Regenerate legacy witnesses rather than hand-editing digests; see `docs/releases/migrations/content-bound-witnesses.md`. This is current-source behavior, not a claim about npm `0.6.0`, exhaustive dependency discovery, or an overall passing verdict.
+**Witness safety (since 0.7.0):** generated witnesses and receipts now bind declared source/test bytes, command, runtime and relevant execution context. `check` rejects stale/unbound support; any current scoped failure vetoes matching passes without timestamp-based selection. Regenerate legacy witnesses rather than hand-editing digests; see `docs/releases/migrations/content-bound-witnesses.md`. npm `0.6.0` and earlier do not have this safeguard. It is not exhaustive dependency discovery and not an overall passing verdict.
 
 That makes the system explainable and debuggable. It also means shallow tests produce shallow evidence.
 
@@ -106,15 +106,15 @@ Downstream decisions are anchored to the exact reviewed run:
 - `explain`, `report`, `plan`, `govern`, and `authorize` can all target that exact persisted run via `--run-id <id>`
 - when `--run-id` is omitted, those read/projection commands fall back to `.ts-quality/latest.json`
 - approvals, waivers, and attestations are re-evaluated only when they target that run correctly; authorization also re-applies overrides against the exact scoped run
-- drift in changed files or control-plane inputs is surfaced on projected review surfaces and causes authorization to fail closed; current source adds independent digests for every explicitly changed path, including tests/config/excluded files and missing paths, and refuses silent freshness for legacy paths without a digest
+- drift in changed files or control-plane inputs is surfaced on projected review surfaces and causes authorization to fail closed; since 0.7.0, independent digests cover every explicitly changed path, including tests/config/excluded files and missing paths, and refuses silent freshness for legacy paths without a digest
 
 That matters a lot in agent-heavy workflows, where generated artifacts and support files can change quickly.
 
-The new run-id and complete changed-path safeguards are **Unreleased**, not a claim about npm `0.6.0`. Also, `check`, `govern`, and `authorize` can exit zero while their decision blocks the change. Use the explicit artifact assertions in `docs/ci-integration.md` when enforcing CI policy.
+The run-id and complete changed-path safeguards ship in `0.7.0`; npm `0.6.0` and earlier do not have them. Also, `check`, `govern`, and `authorize` can exit zero while their decision blocks the change. Use the explicit artifact assertions in `docs/ci-integration.md` when enforcing CI policy.
 
 ## Try it now
 
-**Release state:** manifests currently name locally prepared `0.7.0`; the operator authorized preparation only, not a tag, push or publication. The safety and installed-compatibility changes below are not a claim of public npm `0.7.0` availability. See `docs/releases/migrations/v0.7.0.md` before upgrading once an exact public release is independently verified.
+**Upgrading to `0.7.0`:** this is a safety release with breaking changes. Read `docs/releases/migrations/v0.7.0.md` before upgrading from `0.6.0` or earlier.
 
 Start with the published package when you are evaluating a target repo. Use the repo-from-source and release-maintainer paths only when you are developing or releasing `ts-quality` itself.
 
