@@ -605,6 +605,7 @@
       "kind": "mutation-result",
       "mutated": ">",
       "operator": ">=",
+      "origin": "executed",
       "original": ">=",
       "replacement": ">",
       "siteId": "sha256:386f3c89e4d0ab340adde90f9e0628e8fa2988ac6877661d9db7aa0ba1f5bb15",
@@ -629,6 +630,7 @@
       "kind": "mutation-result",
       "mutated": "||",
       "operator": "&&",
+      "origin": "executed",
       "original": "&&",
       "replacement": "||",
       "siteId": "sha256:eb06d3279d4a7dd1c71e740d66cb0d3a39842478a019f312f4fe57cfd73d7e20",
@@ -653,6 +655,7 @@
       "kind": "mutation-result",
       "mutated": "||",
       "operator": "&&",
+      "origin": "executed",
       "original": "&&",
       "replacement": "||",
       "siteId": "sha256:1dfca70ec304cd7d2e119c9a06b2fea09f848e2d74a92d8aedac81f4df7fb1b8",
@@ -677,6 +680,7 @@
       "kind": "mutation-result",
       "mutated": "!==",
       "operator": "===",
+      "origin": "executed",
       "original": "===",
       "replacement": "!==",
       "siteId": "sha256:487f38e332d7dba3ce182d5e19378721fe317f956ba1da67310040b207e1fd5d",
@@ -701,6 +705,7 @@
       "kind": "mutation-result",
       "mutated": "token",
       "operator": "condition",
+      "origin": "executed",
       "original": "!token",
       "replacement": "token",
       "siteId": "sha256:46f8dbea6c0d455cd3f36562a3027f5bbc7f344faeae171dea147fb9f6ff6086",
@@ -725,6 +730,7 @@
       "kind": "mutation-result",
       "mutated": "!(canUseRefreshToken(token, nowMs))",
       "operator": "condition",
+      "origin": "executed",
       "original": "canUseRefreshToken(token, nowMs)",
       "replacement": "!(canUseRefreshToken(token, nowMs))",
       "siteId": "sha256:a945a6e34a159e6d7f0d79455e2a48f633358d93eb90bbc53228300390f12e5f",
@@ -741,6 +747,27 @@
       ]
     }
   ],
+  "mutationSelection": {
+    "complete": true,
+    "counts": {
+      "cached": 0,
+      "discovered": 6,
+      "eligible": 6,
+      "excluded": 0,
+      "executed": 6,
+      "selected": 6,
+      "unobserved": 0
+    },
+    "excluded": [],
+    "policy": {
+      "coveredOnly": true,
+      "maxDurationMs": null,
+      "maxSites": 8,
+      "targets": []
+    },
+    "targets": [],
+    "version": "1"
+  },
   "mutationSites": [
     {
       "description": "greater-than tightening",

@@ -14,6 +14,10 @@ export interface TsQualityConfig {
         coveredOnly?: boolean;
         timeoutMs?: number;
         maxSites?: number;
+        /** Stop launching new mutants after this many milliseconds of mutant execution; unrun sites stay unobserved. */
+        maxDurationMs?: number;
+        /** Explicit target specs: file:<path>, span:<path>:<a>-<b>, symbol:<path>#<kind:name>[@<a>-<b>], site:<id>. */
+        targets?: string[];
         runtimeMirrorRoots?: string[];
     };
     policy?: {

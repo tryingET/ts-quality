@@ -52,6 +52,7 @@ const OPTION_KINDS = new Map([
     ['--test-files', 'value'],
     ['--timeout-ms', 'value'],
     ['--observed-at', 'value'],
+    ['--mutation-targets', 'value'],
     ['--json', 'flag'],
     ['--machine', 'flag'],
     ['--help', 'flag'],
@@ -64,7 +65,7 @@ const COMMAND_CONTRACTS = new Map([
     ['materialize', { allowedValues: ['--root', '--config', '--out-dir'], allowedFlags: [], maxPositionals: 1 }],
     ['adopt', { allowedValues: ['--root', '--from-run'], allowedFlags: [], maxPositionals: 1 }],
     ['retention', { allowedValues: ['--root', '--config'], allowedFlags: ['--machine'], maxPositionals: 1 }],
-    ['check', { allowedValues: ['--root', '--config', '--changed', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
+    ['check', { allowedValues: ['--root', '--config', '--changed', '--run-id', '--mutation-targets'], allowedFlags: [], maxPositionals: 1 }],
     ['explain', { allowedValues: ['--root', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
     ['report', { allowedValues: ['--root', '--run-id'], allowedFlags: ['--json'], maxPositionals: 1 }],
     ['trend', { allowedValues: ['--root'], allowedFlags: [], maxPositionals: 1 }],
@@ -76,6 +77,7 @@ const COMMAND_CONTRACTS = new Map([
     ['attest keygen', { allowedValues: ['--root', '--out-dir', '--key-id'], allowedFlags: [], maxPositionals: 2 }],
     ['witness test', { allowedValues: ['--root', '--invariant', '--scenario', '--source-files', '--test-files', '--out', '--timeout-ms', '--observed-at'], allowedFlags: [], maxPositionals: 64 }],
     ['witness refresh', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: [], maxPositionals: 2 }],
+    ['mutations preview', { allowedValues: ['--root', '--config', '--changed', '--mutation-targets'], allowedFlags: ['--json'], maxPositionals: 2 }],
     ['amend', { allowedValues: ['--root', '--proposal', '--config'], allowedFlags: ['--apply'], maxPositionals: 1 }]
 ]);
 function rememberValueOption(values, valueCounts, name, value) {
@@ -137,7 +139,7 @@ function commandContractKey(command, subcommand) {
     if (!command) {
         return undefined;
     }
-    if (command === 'attest' || command === 'witness') {
+    if (command === 'attest' || command === 'witness' || command === 'mutations') {
         return subcommand ? `${command} ${subcommand}` : command;
     }
     return command;
@@ -146,7 +148,7 @@ function commandLabel(command, subcommand) {
     if (!command) {
         return 'ts-quality';
     }
-    return (command === 'attest' || command === 'witness') && subcommand ? `${command} ${subcommand}` : command;
+    return (command === 'attest' || command === 'witness' || command === 'mutations') && subcommand ? `${command} ${subcommand}` : command;
 }
 function validateParsedArgs(parsed) {
     const [command, subcommand] = parsed.positionals;
@@ -196,6 +198,17 @@ function changedFiles(parsed) {
 }
 function runId(parsed) {
     return takeOption(parsed, '--run-id');
+}
+function mutationTargets(parsed) {
+    if (!parsed.values.has('--mutation-targets')) {
+        return undefined;
+    }
+    const targets = (takeOption(parsed, '--mutation-targets') ?? '').split(';').map((item) => item.trim()).filter(Boolean);
+    if (targets.length === 0) {
+        // An empty list must not silently replace configured targets and widen mutation back to the whole scope.
+        throw new Error('--mutation-targets requires at least one target spec (file:, span:, symbol: or site:), separated by ;');
+    }
+    return targets;
 }
 function configPath(parsed) {
     return takeOption(parsed, '--config');
@@ -262,6 +275,7 @@ Core commands:
 - explain|report|plan|govern --run-id <id> project a persisted run without re-checking
 - authorize --agent <id> [--action merge] --run-id <id>
 - witness test|refresh                     create or refresh execution witnesses
+- mutations preview [--json]               inert preview of the sites check would mutate
 - attest sign|verify|keygen                bind or verify run artifacts
 - trend                                    compare the nearest comparable prior run
 - amend --proposal <file> [--apply]        evaluate a governance amendment
@@ -322,13 +336,23 @@ Use --machine for the compact TSQ_RETENTION_PLAN_V1 line protocol.
 `;
     }
     if (command === 'check') {
-        return `Usage: ts-quality check [--root <dir>] [--config <file>] [--changed <a,b,c>] [--run-id <id>]
+        return `Usage: ts-quality check [--root <dir>] [--config <file>] [--changed <a,b,c>] [--run-id <id>] [--mutation-targets <spec;spec>]
 
 Runs the evidence, mutation, invariant, governance, and verdict pipeline.
 Required trust precondition: explicit changed scope from --changed, config changeSet.files, or a configured diff file.
 Recommended precondition: run the target repo's tests/coverage first, or configure coverage.generateCommand so check can create missing LCOV before analysis.
 Writes: .ts-quality/runs/<run-id>/{run.json,verdict.json,report.json,report.md,pr-summary.md,check-summary.txt,explain.txt,plan.txt,govern.txt} and .ts-quality/latest.json.
 Automation: pass --run-id so explain/report/plan/govern/authorize stay bound to this exact run.
+Mutation targets (--mutation-targets or config mutations.targets) narrow mutation to file:<path>, span:<path>:<a>-<b>, symbol:<path>#<kind:name>[@<a>-<b>] or site:<id>; separate several with ';'. check refuses unresolved targets.
+`;
+    }
+    if (command === 'mutations') {
+        return `Usage: ts-quality mutations preview [--root <dir>] [--config <file>] [--changed <a,b,c>] [--mutation-targets <spec;spec>] [--json]
+
+Inert preview of the mutation sites check would run for this changed scope, targets and budget.
+Lists discovered, eligible, selected and excluded sites with reasons and resolves every target against current source.
+Runs no command (not even coverage generation) and writes nothing.
+Target specs: file:<path>, span:<path>:<a>-<b>, symbol:<path>#<kind:name>[@<a>-<b>], site:<id>; separate several with ';'.
 `;
     }
     if (command === 'explain') {
@@ -513,6 +537,10 @@ function main() {
         if (explicitConfigPath) {
             checkOptions.configPath = explicitConfigPath;
         }
+        const targets = mutationTargets(parsed);
+        if (targets) {
+            checkOptions.mutationTargets = targets;
+        }
         const result = (0, index_2.runCheck)(cwd, checkOptions);
         const coverageSummary = result.run.coverageGeneration
             ? `Coverage generation: ${result.run.coverageGeneration.receipt.status} -> ${result.run.coverageGeneration.lcovPath}\n`
@@ -524,6 +552,23 @@ function main() {
             ? `Evidence closure: ${result.run.nextEvidenceAction.primaryAction.title}\n${typeof result.run.nextEvidenceAction.primaryAction.expectedConfidenceLift === 'number' ? `Expected confidence lift: +${result.run.nextEvidenceAction.primaryAction.expectedConfidenceLift}\n` : ''}${result.run.nextEvidenceAction.primaryAction.suggestedEditFiles.length > 0 ? `Suggested edit files: ${result.run.nextEvidenceAction.primaryAction.suggestedEditFiles.join(', ')}\n` : ''}Coverage basis: ${result.run.nextEvidenceAction.evidenceBasis.coverage.fileCount} file(s)${typeof result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? `, changed-function min ${result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct}%` : typeof result.run.nextEvidenceAction.evidenceBasis.coverage.minPct === 'number' ? `, min ${result.run.nextEvidenceAction.evidenceBasis.coverage.minPct}%` : ''}, changed functions under80 ${result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionsUnder80}\nMutation basis: ${result.run.nextEvidenceAction.evidenceBasis.mutation.killed} killed / ${result.run.nextEvidenceAction.evidenceBasis.mutation.sites} site(s), ${result.run.nextEvidenceAction.evidenceBasis.mutation.survived} survived, ${result.run.nextEvidenceAction.evidenceBasis.mutation.errors} error(s)\n`
             : '';
         process.stdout.write(`Merge confidence: ${result.run.verdict.mergeConfidence}/100\nOutcome: ${result.run.verdict.outcome}\n${coverageSummary}${witnessSummary}${closureSummary}Artifacts: ${result.artifactDir}\n`);
+        return;
+    }
+    if (command === 'mutations' && subcommand === 'preview') {
+        const previewOptions = { json: hasFlag(parsed, '--json') };
+        const changed = changedFiles(parsed);
+        if (changed) {
+            previewOptions.changedFiles = changed;
+        }
+        const explicitConfigPath = configPath(parsed);
+        if (explicitConfigPath) {
+            previewOptions.configPath = explicitConfigPath;
+        }
+        const targets = mutationTargets(parsed);
+        if (targets) {
+            previewOptions.mutationTargets = targets;
+        }
+        process.stdout.write((0, index_2.renderMutationPreview)(cwd, previewOptions));
         return;
     }
     if (command === 'explain') {

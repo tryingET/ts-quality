@@ -16,7 +16,8 @@ exports.loadChangedRegions = loadChangedRegions;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const typescript_1 = __importDefault(require("typescript"));
-const index_1 = require("../../evidence-model/src/index");
+const index_1 = require("../../ts-mutate/src/index");
+const index_2 = require("../../evidence-model/src/index");
 function parsePropertyName(name, sourceFile, bindings) {
     if (typescript_1.default.isIdentifier(name) || typescript_1.default.isStringLiteral(name) || typescript_1.default.isNumericLiteral(name)) {
         return name.text;
@@ -172,7 +173,7 @@ function loadModuleFile(filePath) {
         throw new Error(`Required file not found: ${filePath}`);
     }
     if (filePath.endsWith('.json')) {
-        return (0, index_1.readJson)(filePath);
+        return (0, index_2.readJson)(filePath);
     }
     if (filePath.endsWith('.ts') || filePath.endsWith('.js') || filePath.endsWith('.mjs') || filePath.endsWith('.cjs')) {
         return parseDataModule(filePath);
@@ -225,14 +226,19 @@ function validateBoolean(name, value) {
     return value;
 }
 function validateConfig(raw) {
-    const sourcePatterns = validateStringArray('sourcePatterns', raw.sourcePatterns) ?? [...index_1.DEFAULT_SOURCE_PATTERNS];
-    const testPatterns = validateStringArray('testPatterns', raw.testPatterns) ?? [...index_1.DEFAULT_TEST_PATTERNS];
+    const sourcePatterns = validateStringArray('sourcePatterns', raw.sourcePatterns) ?? [...index_2.DEFAULT_SOURCE_PATTERNS];
+    const testPatterns = validateStringArray('testPatterns', raw.testPatterns) ?? [...index_2.DEFAULT_TEST_PATTERNS];
     const changeFiles = validateStringArray('changeSet.files', raw.changeSet?.files) ?? [];
     const mutationCommand = validateStringArray('mutations.testCommand', raw.mutations?.testCommand) ?? ['node', '--test'];
     if (mutationCommand.length === 0) {
         throw new Error('mutations.testCommand must contain at least one executable argument');
     }
     const runtimeMirrorRoots = validateStringArray('mutations.runtimeMirrorRoots', raw.mutations?.runtimeMirrorRoots) ?? ['dist'];
+    const mutationTargets = validateStringArray('mutations.targets', raw.mutations?.targets);
+    for (const spec of mutationTargets ?? []) {
+        (0, index_1.parseMutationTarget)(spec);
+    }
+    const maxDurationMs = validateFiniteNumber('mutations.maxDurationMs', raw.mutations?.maxDurationMs, { min: 1 });
     const maxChangedCrap = validateFiniteNumber('policy.maxChangedCrap', raw.policy?.maxChangedCrap, { min: 0 }) ?? 30;
     const minMutationScore = validateFiniteNumber('policy.minMutationScore', raw.policy?.minMutationScore, { min: 0, max: 1 }) ?? 0.8;
     const minMergeConfidence = validateFiniteNumber('policy.minMergeConfidence', raw.policy?.minMergeConfidence, { min: 0, max: 100 }) ?? 70;
@@ -251,6 +257,8 @@ function validateConfig(raw) {
             coveredOnly: raw.mutations?.coveredOnly ?? false,
             timeoutMs: raw.mutations?.timeoutMs ?? 15_000,
             maxSites: raw.mutations?.maxSites ?? 25,
+            ...(maxDurationMs !== undefined ? { maxDurationMs } : {}),
+            ...(mutationTargets !== undefined ? { targets: mutationTargets } : {}),
             runtimeMirrorRoots
         },
         policy: {
@@ -273,7 +281,7 @@ function validateConfig(raw) {
     };
 }
 function canonicalRepoPath(rootDir, candidate, kind) {
-    return (0, index_1.resolveRepoLocalPath)(rootDir, candidate, { allowMissing: true, kind }).relativePath;
+    return (0, index_2.resolveRepoLocalPath)(rootDir, candidate, { allowMissing: true, kind }).relativePath;
 }
 function canonicalRepoPathArray(rootDir, values, kind) {
     return values.map((value) => canonicalRepoPath(rootDir, value, kind));
@@ -339,13 +347,13 @@ function findConfigPath(rootDir) {
 }
 function loadContext(rootDir, explicitConfigPath) {
     const configPath = explicitConfigPath
-        ? (0, index_1.resolveRepoLocalPath)(rootDir, explicitConfigPath, { kind: 'config path' }).absolutePath
+        ? (0, index_2.resolveRepoLocalPath)(rootDir, explicitConfigPath, { kind: 'config path' }).absolutePath
         : findConfigPath(rootDir);
     const config = canonicalizeConfigPaths(rootDir, validateConfig(loadModuleFile(configPath)));
     return { rootDir, configPath, config };
 }
 function loadOptionalRepoModule(rootDir, repoPath, kind) {
-    const filePath = (0, index_1.resolveRepoLocalPath)(rootDir, repoPath, { allowMissing: true, kind }).absolutePath;
+    const filePath = (0, index_2.resolveRepoLocalPath)(rootDir, repoPath, { allowMissing: true, kind }).absolutePath;
     return fs_1.default.existsSync(filePath) ? loadModuleFile(filePath) : [];
 }
 function canonicalizeInvariantScenario(rootDir, invariantId, scenario, index) {
@@ -404,10 +412,10 @@ function loadChangedRegions(rootDir, diffFileRelative) {
     if (!diffFileRelative) {
         return [];
     }
-    const filePath = (0, index_1.resolveRepoLocalPath)(rootDir, diffFileRelative, { allowMissing: true, kind: 'diff file' }).absolutePath;
+    const filePath = (0, index_2.resolveRepoLocalPath)(rootDir, diffFileRelative, { allowMissing: true, kind: 'diff file' }).absolutePath;
     if (!fs_1.default.existsSync(filePath)) {
         return [];
     }
-    return (0, index_1.parseUnifiedDiff)(fs_1.default.readFileSync(filePath, 'utf8'));
+    return (0, index_2.parseUnifiedDiff)(fs_1.default.readFileSync(filePath, 'utf8'));
 }
 //# sourceMappingURL=config.js.map
