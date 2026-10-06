@@ -7,9 +7,9 @@ type: "reference"
 
 # Useful-native supersession adjudication — RFC
 
-**Status: owner G1-G11 choices recorded; canonical decision180 remains pending.
-Typed authorization refused on live schema46; AK6367/6471 owns the migration.
-No accepted-outcome fallback, runtime implementation or task activation occurred.**
+**Status: accepted by the owner on 2026-10-06 (AK evidence 13977); see the ADR
+`2026-10-04-legacy-useful-native-supersession.md`. This RFC is kept as written
+for the decision record. The typed schema47 grant record is still unavailable.**
 
 ## Problem brief
 

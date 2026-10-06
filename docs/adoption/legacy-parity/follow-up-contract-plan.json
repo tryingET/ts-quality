@@ -3,7 +3,7 @@
   "originTask": 6585,
   "decision": 180,
   "decisionLinkPolicy": "Direct decision180 links only for tasks in its native owning repo. Receiver/legacy tasks use explicit event holds and upstream dependency references; native decision180 cannot authorize foreign-owner execution or link their tasks. Each requires a separate owning-surface admission.",
-  "status": "Owner-selected prospective contracts; canonical AK task/scope/contract readback is authority; decision authorization recording is blocked on live schema46",
+  "status": "Owner-accepted 2026-10-06 (AK evidence 13977, decision180 outcome accepted); canonical AK task/scope/contract readback is authority; the typed schema47 grant record is still unavailable on live schema46. Per-task holdReason fields record the authoring-time state.",
   "taskIds": {"S1":6700,"S2":6701,"S3":6702,"S4":6703,"S5":6704,"S6":6705,"S7":6706,"S8":6707},
   "commonNativeGuardrails": [
     "This task is authored only; claim/execution needs exact-task operator authorization and accepted/unblocked decision180. No automatic execution from task creation.",

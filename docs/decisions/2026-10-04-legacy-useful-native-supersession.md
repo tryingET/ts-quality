@@ -1,28 +1,31 @@
 ---
-summary: "Decision180 owner-selected native utility wave and explicit holds; adjudication/task authoring only, not runtime supersession."
+summary: "Decision180 accepted 2026-10-06: native utility wave with explicit holds; S1 first, held S2-S8; not runtime supersession or retirement."
 read_when:
   - "Implementing an exact task in the native useful-quality wave."
   - "Checking whether a legacy interface or settlement effect is actually accepted."
 type: "reference"
 ---
 
-# Useful-native quality wave — decision180 owner selection
+# Useful-native quality wave — decision180 accepted
 
-**Status: owner choices recorded; canonical decision180 remains `decision_pending`.
-This is a draft ADR projection, not an accepted/recorded ADR.**
+**Status: accepted by the Holding Owner on the 2026-10-06 owner docket
+(`d180-ts-quality-wave = A`, AK evidence 13977). AK decision180 records the
+accepted outcome. This ADR projects that decision; it is not a state store.**
 
 ## Status and authoritative record
 
-The owner explicitly selected every G1-G11 choice in the completed 2026-10-04
-questionnaire and authorized a verified adjudication commit/AK6585 closeout only.
-AK decision180 and its authorization readback own the decision state. The grant
-write refused with `AK_DECISION_RECORDS_NEED_SCHEMA_47`: live schema46 cannot
-record the selected authorization. No accepted-outcome transition was attempted
-as a fallback. Existing AK6367 owns live migration with AK6471 amended-pin and
-operator-run authority; this repo does not migrate the DB or reopen AK5991.
-This draft projects owner input, not a recorded grant or accepted ADR. Unknown
-receiver/interface losses and every authored task remain held. AK6585 cannot be
-completed as fully adjudicated while this authority blocker remains.
+The owner selected every G1-G11 choice in the completed 2026-10-04
+questionnaire. On 2026-10-06 the owner accepted decision180 on the owner docket
+(AK evidence 13977 on AK6585: "Accept (owner docket 2026-10-06,
+d180-ts-quality-wave = A)"). AK decision180 moved `decision_pending ->
+adr_required` with outcome `accepted`, citing that evidence as its authority.
+
+The typed consent/authorization record still needs AK schema47. The live DB is
+at schema46, so `ak decision authorize` cannot write a grant record. The owner's
+acceptance is carried by evidence 13977 and the decision's transition receipt,
+not by a typed grant. AK6367/AK6471 still own the schema migration; this repo
+does not migrate the DB. Unknown receiver/interface losses stay held. The
+authored S1-S8 tasks keep their own guardrails and deferrals.
 
 RFC: `2026-10-04-legacy-useful-native-supersession-rfc.md`.
 Evidence: `../adoption/legacy-parity/caller-inventory-2026-10-04.md`;
@@ -32,7 +35,7 @@ The independent bootstrap architecture track returned `ready_for_adr` after the
 G1/G10/G11 completeness and receiver-admission sequencing defects were corrected.
 That inspection establishes design readiness, not owner or runtime acceptance.
 
-## Owner-selected design (canonical settlement blocked)
+## Accepted design
 
 Adopt the native correctness -> bounded experiment -> affirmative outcome ->
 package/CI navigation design. Preserve useful legacy operator jobs through native
@@ -103,9 +106,46 @@ not merely spelling/compatibility holds. No blanket family-label waiver exists.
   negative fixtures and independent inspection; generated dist/samples intentional.
   Broad behavior-preserving refactoring stays with6552, not hidden in this wave.
 
+## Implementation plan
+
+The exact plan is `../adoption/legacy-parity/follow-up-contract-plan.json`. Its
+canonical form is the AK tasks, scopes and contracts below. Read them back from
+AK before you execute one.
+
+| Slice | AK task | State after acceptance |
+|---|---|---|
+| S1 | 6700 | Executable next: correctness/catalog only (U1-U4, G2, G5) |
+| S2 | 6701 | Deferred until decision180 and completed S1 |
+| S3 | 6702 | Deferred; also needs S2 and existing6557 |
+| S4 | 6703 | Deferred; also needs S3 and existing6553 |
+| S5 | 6704 | Needs receiver-owner screening permission |
+| S6 | 6705 | Admission planning only |
+| S7 | 6706 | Admission only; deferred until settlement evidence |
+| S8 | 6707 | Removal admission checklist only |
+
+Acceptance releases the decision hold. It does not release the other
+dependencies and deferrals. Each slice still needs its exact-task claim and its
+own proof. G3/G4/G10/G11 stay held, and no slice may implement them.
+
+## Validation, rollout and rollback
+
+- **Validation per source slice:** focused positive and negative fixtures for
+  the slice, root `npm run verify`, installed public-contract tests,
+  intentionally rebuilt dist/samples, strict docs, `git diff --check` and an
+  independent work-product inspection.
+- **Rollout:** one slice at a time, in order S1 -> S2 -> S3 -> S4, on main.
+  Each slice lands as bounded commits. No slice publishes, pushes, tags or
+  repins packages. A slice reaches users only through a later release task
+  (existing6548 owns the 0.7.0 safety release, which does not contain S1-S4).
+- **Rollback:** revert the slice's bounded commits and rebuild dist/samples.
+  Immutable evidence and run ids are never rewritten. If a confirmed caller
+  needs an untested old interface, stop and reframe the slice; do not clone the
+  old interface to get parity.
+
 ## Execution and settlement boundaries
 
-S1-S4 native contracts are prospective and held, not executed. S5 local receiver evidence needs
+S1-S4 native contracts are accepted designs, executed one exact task at a time.
+S5 local receiver evidence needs
 receiver-owner permission before screening; acceptance of results/rollback is an
 output. Preserve6550->6548: local source evidence cannot satisfy public adoption.
 S6-S8 are held **admission-planning** tasks, not archival/retirement/deletion
@@ -125,7 +165,6 @@ interface, ordering cannot be explained, comparison identity is guessed, safety
 is weakened, or archive/restore cannot preserve unique state. Revert bounded
 implementation commits/configuration; never rewrite immutable evidence/run ids.
 
-Owner authorized commit and closeout of AK6585 after scoped task-authoring
-readback and checks, **without implementation or release**. The product wave,
+AK6585 closes as adjudication and task authoring only. The product wave,
 accepted receiver migration, published availability, preservation, formal
 retirement and physical removal all remain open until their own proof/authority.
