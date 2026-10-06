@@ -12,7 +12,9 @@ type: "reference"
 
 The deterministic trust layers and actionable evidence surfaces exist, but release-grade trust is **not closed**: current source fixes exceed the recorded `0.6.0` release, witness support still lacks content-freshness binding, and scratch/compatibility pilots do not establish owner-accepted normal-checkout adoption.
 
-This is a product-level evidence snapshot assessed on **2026-10-03**, not the live queue. AK owns execution, direction, decisions, and acceptance authority. Durable ambition stays in `vision.md`; runtime truth stays in source, tests, README, and public contracts.
+This is a product-level evidence snapshot assessed on **2026-10-03**, not the live queue.
+
+**Update 2026-10-06:** `ts-quality@0.7.0` is public (owner-run GitHub Release and Trusted Publishing; provenance and npm-installed scenario reruns recorded on AK #6548), carrying content-bound witnesses, immutable run ids and complete changed-path drift. `test-capabilities` is owner-accepted repo-local adoption on npm 0.7.0 for four slices, rerun from its normal checkout (`../adoption/2026-10-06-test-capabilities-accepted-npm-070-adoption.md`). Rows below that say otherwise describe the 2026-10-03 state. AK owns execution, direction, decisions, and acceptance authority. Durable ambition stays in `vision.md`; runtime truth stays in source, tests, README, and public contracts.
 
 ## Evidence stages — do not collapse them
 
@@ -22,7 +24,7 @@ This is a product-level evidence snapshot assessed on **2026-10-03**, not the li
 | Local verification / packaging | The root `npm run verify` contract builds, typechecks, tests, regenerates samples twice, and exercises the installed tarball. | Fixture-backed package proof is not fresh public-registry proof or exhaustive real-target compatibility. |
 | Recorded public package use | September Jest/Yarn4 and Bun pilot records identify npm `ts-quality@0.6.0`; the release and migration records describe the Node 22 floor and license rider. | Registry state/provenance was not independently refreshed in this assessment. Do not claim Unreleased safeguards are public. |
 | Real-shape scratch pilots | JS, TypeScript/dist, monorepo, ESM/Vitest, TSX/pnpm/jsdom, Jest/SWC/Yarn4, and Bun targets have captures. | Archived/copied targets are not accepted live adoption. Some captures intentionally demonstrate denial or drift. |
-| Repo-local live setup | The central test-capabilities proof records five live slices. | Acceptance fields remain pending in that proof; no fresh target-checkout rerun or acceptance date is asserted here. |
+| Repo-local live setup | test-capabilities: owner-accepted on 2026-10-06 for four live slices on npm 0.7.0, rerun from its normal checkout. | One accepted repo; every slice still carries coverage pressure. Other targets remain scratch pilots. |
 
 Evidence links: `../../CHANGELOG.md`, `../adoption/2026-09-26-appmap-node-jest-yarn4-adoption.md`, `../adoption/2026-09-26-semantic-code-intelligence-bun-scale-adoption.md`, `../adoption/2026-05-06-test-capabilities-accepted-repo-local-proof.md`.
 

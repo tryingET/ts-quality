@@ -26,8 +26,12 @@ node scripts/register-screening-catalog.mjs --entry docs/adoption/entries/<repo>
 
 - repo path: `/home/tryinget/ai-society/softwareco/owned/test-capabilities`
 - source of truth: `docs/dev/ts-quality-current-vs-target.md`
-- adoption stage: `repo-local-live-five-slices-accepted-fields-pending`
-- live slices: 5
+- adoption stage: `accepted-repo-local-four-slices`
+- accepted by: Holding Owner (owner decision 2026-10-06, ts-quality AK6550 evidence 14172)
+- accepted at: 2026-10-06
+- latest evidence: `target commit db984a08174978ae1fb00fc0286845b5e2eeb831 (npm ts-quality@0.7.0 exact devDependency, mutations.timeoutMs 60000)`, `tc-collect-files-accept-20261006: pass 90/100, 10/10 mutants killed, execution-backed witness`, `tc-config-overrides-accept-20261006: pass 90/100, 16/16 mutants killed, execution-backed witness`, `tc-operation-kernel-accept-20261006: pass 90/100, 6/6 mutants killed, execution-backed witness`, `tc-quantum-operation-accept-20261006: pass 90/100, 3/3 mutants killed, execution-backed witness`
+- rollback: npm uninstall ts-quality, revert mutations.timeoutMs and set adoptionStatus to paused in docs/dev/ts-quality-current-vs-target.md; keep the doc and witness README as history.
+- live slices: 4
 - ready-next slices: 0
 
 ### Current live slices
@@ -38,12 +42,6 @@ node scripts/register-screening-catalog.mjs --entry docs/adoption/entries/<repo>
   - witness tests: `tests/collect_files_contract.test.mjs`
   - status: `supported`
   - notes: Facade and runtime aliases normalize onto the behavior-bearing collect-files implementation file so mutation pressure lands on real logic instead of a re-export barrel.
-- `operation.command-runner.error-surface`
-  - screened paths: `src/core/operations/command-runner-core.ts`
-  - facade/runtime aliases: `dist/core/operations/command-runner.js`, `src/core/operations/command-runner.ts`
-  - witness tests: `tests/command_runner_contract.test.mjs`
-  - status: `supported`
-  - notes: Facade and runtime aliases normalize onto the behavior-bearing command-runner implementation file so mutation pressure lands on real logic instead of a re-export barrel.
 - `operation.kernel.fail-closed`
   - screened paths: `src/core/operations/dispatch-execution.ts`
   - facade/runtime aliases: `dist/core/operations.js`, `src/core/operations.ts`

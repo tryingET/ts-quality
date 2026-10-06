@@ -5,7 +5,7 @@
       "repoId": "softwareco/owned/test-capabilities",
       "repoPath": "/home/tryinget/ai-society/softwareco/owned/test-capabilities",
       "sourceOfTruth": "docs/dev/ts-quality-current-vs-target.md",
-      "adoptionStage": "repo-local-live-five-slices-accepted-fields-pending",
+      "adoptionStage": "accepted-repo-local-four-slices",
       "currentSlices": [
         {
           "id": "healing.collect-files.boundary",
@@ -21,21 +21,6 @@
             "src/healing/collect-files.ts"
           ],
           "notes": "Facade and runtime aliases normalize onto the behavior-bearing collect-files implementation file so mutation pressure lands on real logic instead of a re-export barrel."
-        },
-        {
-          "id": "operation.command-runner.error-surface",
-          "screenedPaths": [
-            "src/core/operations/command-runner-core.ts"
-          ],
-          "witnessTests": [
-            "tests/command_runner_contract.test.mjs"
-          ],
-          "status": "supported",
-          "facadeAliases": [
-            "dist/core/operations/command-runner.js",
-            "src/core/operations/command-runner.ts"
-          ],
-          "notes": "Facade and runtime aliases normalize onto the behavior-bearing command-runner implementation file so mutation pressure lands on real logic instead of a re-export barrel."
         },
         {
           "id": "operation.kernel.fail-closed",
@@ -130,7 +115,26 @@
         "Cover the highest-risk behavior-bearing paths under src/core/operations/** rather than facade barrels.",
         "Keep witness commands focused and deterministic rather than repo-global.",
         "Widen the net one reviewable slice at a time instead of flipping the whole repo at once."
-      ]
+      ],
+      "acceptedEvidence": {
+        "acceptedBy": "Holding Owner (owner decision 2026-10-06, ts-quality AK6550 evidence 14172)",
+        "acceptedAt": "2026-10-06",
+        "artifactRetentionPolicy": "Target .gitignore keeps .ts-quality/runs, latest.json, mutation-manifest.json, materialized, locks, tmp-mutants, attestations, keys, witnesses/*.json and coverage local; config, control-plane files and the witness README are committed.",
+        "latestEvidence": [
+          "target commit db984a08174978ae1fb00fc0286845b5e2eeb831 (npm ts-quality@0.7.0 exact devDependency, mutations.timeoutMs 60000)",
+          "tc-collect-files-accept-20261006: pass 90/100, 10/10 mutants killed, execution-backed witness",
+          "tc-config-overrides-accept-20261006: pass 90/100, 16/16 mutants killed, execution-backed witness",
+          "tc-operation-kernel-accept-20261006: pass 90/100, 6/6 mutants killed, execution-backed witness",
+          "tc-quantum-operation-accept-20261006: pass 90/100, 3/3 mutants killed, execution-backed witness"
+        ],
+        "commands": [
+          "npm ci",
+          "npm run screening:check -- --changed <slice files> --run-id <new-run-id>",
+          "npm run screening:witness-refresh -- --changed \"src/core/operations/dispatch-execution.ts,src/healing/collect-files-core.ts,src/core/operations/quantum-operation.ts,src/core/operations/config-targets-core.ts,src/core/operations/config-quick-mode-core.ts,src/core/operations/config-load-core.ts\"",
+          "npx ts-quality explain --run-id <new-run-id>"
+        ],
+        "rollback": "npm uninstall ts-quality, revert mutations.timeoutMs and set adoptionStatus to paused in docs/dev/ts-quality-current-vs-target.md; keep the doc and witness README as history."
+      }
     }
   ]
 }

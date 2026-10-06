@@ -8,6 +8,8 @@ type: "evidence"
 
 # test-capabilities repo-local live adoption evidence
 
+> Superseded on 2026-10-06 by `2026-10-06-test-capabilities-accepted-npm-070-adoption.md`: the owner accepted the four remaining slices on npm `ts-quality@0.7.0`. This May note is kept as history.
+
 ## Status
 
 - targetRepo: `softwareco/owned/test-capabilities`
