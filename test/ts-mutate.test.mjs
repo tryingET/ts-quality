@@ -3,6 +3,8 @@ import os from 'os';
 import path from 'path';
 import test from 'node:test';
 import assert from 'assert/strict';
+import ts from 'typescript';
+import vm from 'node:vm';
 import { fixturePath, importDist, tempCopyOfFixture } from './helpers.mjs';
 
 const mutate = await importDist('packages', 'ts-mutate', 'src', 'index.js');
@@ -548,4 +550,111 @@ test('runMutations invalidates cached results when arbitrary execution environme
       process.env.CUSTOM_MUTATION_FLAG = previous;
     }
   }
+});
+
+function sitesOf(source, filePath = 'src/sample.ts') {
+  return mutate.discoverMutationSites(source, filePath, [], [], [], false);
+}
+
+function runFunction(source, args) {
+  // Fixture sources are tiny pure functions named `f`; evaluate original and mutant in an isolated context.
+  const transpiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
+  const context = vm.createContext({ exports: {} });
+  vm.runInContext(transpiled, context);
+  return vm.runInContext('f', context)(...args);
+}
+
+const runtimeProbes = [
+  { name: 'multiplication', source: 'function f(a, b) { return a * b; }', original: '*', replacement: '/', args: [6, 3] },
+  { name: 'loose equality', source: 'function f(a, b) { return a == b; }', original: '==', replacement: '!=', args: [1, '1'] },
+  { name: 'loose inequality', source: 'function f(a, b) { return a != b; }', original: '!=', replacement: '==', args: [1, '1'] },
+  { name: 'postfix increment', source: 'function f(a) { let b = a; b++; return b; }', original: '++', replacement: '--', args: [1] },
+  { name: 'prefix decrement', source: 'function f(a) { let b = a; --b; return b; }', original: '--', replacement: '++', args: [1] },
+  { name: 'numeric zero', source: 'function f() { return 0; }', original: '0', replacement: '1', args: [] },
+  { name: 'numeric one', source: 'function f(a) { return a + 1; }', original: '1', replacement: '0', args: [1] },
+  { name: 'if condition', source: 'function f(a) { if (a) return a; return null; }', original: 'a', replacement: '!(a)', args: [5] },
+  { name: 'negated condition', source: 'function f(a) { if (!a) return null; return a; }', original: '!a', replacement: 'a', args: [5] },
+  { name: 'ternary condition', source: 'function f(a) { return a > 2 ? "big" : "small"; }', original: 'a > 2', replacement: '!(a > 2)', args: [5] },
+  { name: 'while condition', source: 'function f(a) { let n = 0; while (n < a) n += 2; return n; }', original: 'n < a', replacement: '!(n < a)', args: [3] },
+  { name: 'do-while condition', source: 'function f(a) { let n = 0; do { n += 2; } while (n < a); return n; }', original: 'n < a', replacement: '!(n < a)', args: [5] },
+  { name: 'for condition', source: 'function f(a) { let n = 0; for (let i = 3; i < a; i += 3) n += i; return n; }', original: 'i < a', replacement: '!(i < a)', args: [9] }
+];
+
+for (const probe of runtimeProbes) {
+  test(`Scenario: ${probe.name} produces a valid splice that changes runtime behavior`, () => {
+    const site = sitesOf(probe.source).find((item) => item.original === probe.original && item.replacement === probe.replacement);
+    assert.ok(site, `expected ${probe.original} -> ${probe.replacement}`);
+    assert.equal(probe.source.slice(site.startOffset, site.endOffset), probe.original);
+    const mutated = mutate.applyMutation(probe.source, site);
+    const diagnostics = ts.transpileModule(mutated, { reportDiagnostics: true, compilerOptions: { target: ts.ScriptTarget.ES2022 } }).diagnostics ?? [];
+    assert.deepEqual(diagnostics.map((item) => item.messageText), []);
+    assert.notDeepEqual(runFunction(mutated, probe.args), runFunction(probe.source, probe.args));
+  });
+}
+
+test('Scenario: type-only and ambient syntax never emits mutation sites', () => {
+  const source = [
+    'type Enabled = true;',
+    'type Count = 0 | 1;',
+    'interface Options { strict: true; retries: 1; check(value: number): boolean; }',
+    'type Pick<T extends 1 = 1> = T extends 0 ? false : true;',
+    "let lazy: import('./x').Y;",
+    "import type { Z } from './z';",
+    'declare const flag: true;',
+    'declare function h(a: number): 0;',
+    'declare enum Mode { A = 1 }',
+    "declare module 'm' { const z = 1 + 1; }",
+    'declare global { interface Window { ready: true } }',
+    'function g(value: 1): value is 1;',
+    'abstract class Base { abstract run(flag: true): 0; }',
+    'const narrowed = lazy as unknown as 0 | 1;',
+    ''
+  ].join('\n');
+  assert.deepEqual(sitesOf(source).map((site) => `${site.original}->${site.replacement}`), []);
+  assert.deepEqual(sitesOf('export declare const ready: true;\nexport declare function n(): 1;\n', 'src/types.d.ts'), []);
+});
+
+test('Scenario: runtime code beside type syntax keeps exactly its runtime sites', () => {
+  const source = [
+    'function keep<T extends 1 = 1>(value: T): value is T { return value === 1; }',
+    'enum Level { Low = 0 }',
+    "const table = { 0: 'zero', 1: 'one' };",
+    'const first = table[0];',
+    ''
+  ].join('\n');
+  assert.deepEqual(sitesOf(source).map((site) => `${site.span.startLine}:${site.original}->${site.replacement}`), [
+    '1:===->!==',
+    '1:1->0',
+    '2:0->1',
+    '4:0->1'
+  ]);
+});
+
+test('Scenario: TSX components expose loose-equality, condition and numeric probes', () => {
+  const source = 'export const View = ({ a, b }: { a: number; b: number }) => <p>{a == b ? 1 : 0}</p>;\n';
+  assert.deepEqual(sitesOf(source, 'src/View.tsx').map((site) => `${site.original}->${site.replacement}`), [
+    'a == b->!(a == b)',
+    '==->!=',
+    '1->0',
+    '0->1'
+  ]);
+});
+
+test('Scenario: a multi-line condition stays in scope when only a later line of it changed', () => {
+  const source = 'function f(a, b) {\n  if (\n    a &&\n    b\n  ) return 1;\n  return 2;\n}\n';
+  const sites = mutate.discoverMutationSites(source, 'src/sample.js', [], ['src/sample.js'], [{ filePath: 'src/sample.js', hunkId: 'h1', span: { startLine: 4, endLine: 4 } }], false);
+  assert.deepEqual(sites.map((site) => `${site.original.replace(/\s+/g, ' ')}->${site.replacement.replace(/\s+/g, ' ')}`), ['a && b->!(a && b)']);
+});
+
+test('Scenario: class extends expressions run at runtime and keep their mutation sites', () => {
+  assert.deepEqual(sitesOf('class A extends mixin(Base, x === 2) {}\n').map((site) => `${site.original}->${site.replacement}`), ['===->!==']);
+});
+
+test('Scenario: numeric destructuring keys are property names and are not mutated', () => {
+  assert.deepEqual(sitesOf('const { 0: first } = list;\nfunction g({ 1: one }) { return one; }\n'), []);
+});
+
+test('Scenario: a replacement that would merge with a neighboring token is skipped, not run as a different mutant', () => {
+  assert.deepEqual(sitesOf('const q = a */* c */ b;\n').map((site) => site.original), []);
+  assert.deepEqual(sitesOf('const r = a-++b;\n').map((site) => site.original), []);
 });

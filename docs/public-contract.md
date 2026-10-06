@@ -177,6 +177,14 @@ Consumer-safe parsing rules:
 - use `report --json` when a projected machine view is desired; it includes additive `decisionContext` metadata instead of pretending to be raw `run.json`
 - use authorization, bundle, amendment, witness receipt, and next-evidence-action sidecars as run-bound records/projections, not independent authority over the reviewed run
 
+Complexity, coverage and mutation evidence semantics (Unreleased; see `docs/releases/migrations/legacy-quality-native-correctness.md`):
+
+- `complexity[]` has one entry per function-like node with an executable body: functions, methods, constructors, `get`/`set` accessors, arrows and function expressions. Abstract and overload-only signatures and everything inside a `declare` declaration have no entry. `symbol` is `<kind>:<name>` with whitespace collapsed; kinds are `function`, `method`, `constructor`, `get`, `set`, `arrow`, `function-expression`. Arrows and function expressions take the name they are bound to (variable, property, class field, parameter or destructuring default, assignment target, `default`); callbacks stay `<anonymous@line>`.
+- `complexity` counts decision points in the function's own body; nested functions are separate entries.
+- `coveragePct` is the percent (0-100) of the function's LCOV-instrumented `DA` lines that executed; a function without `DA` lines is measured by its `FN`/`FNDA` entry record (100 or 0). The additive `coverageStatus` is `measured`, or names why coverage is unknown: `missing`, `ambiguous` (several LCOV records match by suffix), `malformed` (unreadable DA records), `mismatched` (LCOV lines past the end of the source) or `not-instrumented`. Unknown coverage has `coveragePct: 0` and a fully-uncovered CRAP score; for changed functions the verdict carries a warning. Treat an absent `coverageStatus` (older packets) as not provided.
+- `coverage[]` holds one entry per LCOV file: repeated records merge and their hits add up. The additive `malformedLines` counts DA records that could not be read (the file's `pct` is then 0); the additive `functionHits` maps `FN` start lines to `FNDA` hits.
+- Mutation sites cover `+`/`-`/`*`, strict and loose equality, relational boundaries, `&&`/`||`, `true`/`false`, `++`/`--`, numeric `0`/`1` (not property or destructuring keys) and condition inversion in `if`, `?:`, `while`, `do` and `for`. Type nodes, interfaces, type aliases, type parameters, ambient (`declare`) declarations and `.d.ts` files never yield a site; a class `extends` expression does, because it runs. A replacement that would lex together with a neighboring character (forming `//`, `/*`, `*/`, `++` or `--`) is skipped. New `operator` values are `*`, `==`, `!=`, `++`, `--`, `0`, `1` and `condition`.
+
 Protected top-level artifact expectations:
 
 | Artifact | Authority role | Required consumer habit |

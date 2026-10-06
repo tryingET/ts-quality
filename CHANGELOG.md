@@ -10,6 +10,23 @@ type: "reference"
 
 ## [Unreleased]
 
+### Breaking Changes
+
+Migration map: [`docs/releases/migrations/legacy-quality-native-correctness.md`](docs/releases/migrations/legacy-quality-native-correctness.md). Decision: [`docs/decisions/2026-10-06-legacy-quality-native-correctness.md`](docs/decisions/2026-10-06-legacy-quality-native-correctness.md).
+
+- CRAP symbols, complexity, coverage percentages and mutation site sets can change for unchanged code. Constructors and accessors gain entries, ambient/abstract/overload signatures lose them, assigned arrows and function expressions are named after their binding instead of `<anonymous@line>`, complexity counts only a function's own body, and coverage is measured over LCOV-instrumented lines. Re-run `check` with a new run id before comparing scores.
+
+### Added
+
+- Mutation testing adds the remaining valid legacy probes: `*`→`/`, loose `==`↔`!=`, `++`↔`--`, numeric `0`↔`1` and condition inversion in `if`, `?:`, `while`, `do` and `for`. Every operator fixture of the legacy parity corpus now yields the legacy spans and replacements (`test/legacy-quality-catalog.test.mjs`).
+- `complexity[].coverageStatus` names why a function's coverage is unknown (`missing`, `ambiguous`, `malformed`, `mismatched`, `not-instrumented`) or `measured`; `coverage[].malformedLines` counts unreadable LCOV `DA:` records (the file's `pct` is then 0), and `coverage[].functionHits` keeps `FN`/`FNDA` entry hits so an empty-bodied function under istanbul LCOV is measured rather than unknown. A changed function with unknown coverage adds a verdict warning, and the CRAP report, budget finding and PR summary label it as unknown instead of 0%.
+
+### Fixed
+
+- Type aliases, interfaces, type parameters, `declare` declarations and `.d.ts` files no longer yield mutation sites, and a replacement that would lex together with a neighboring character (`a */* c */ b`) is skipped instead of running a different mutant.
+- Repeated LCOV records for one file merge instead of producing separate coverage entries, and a function whose lines have no LCOV entries is reported as `not-instrumented` instead of a measured 0%.
+- Equal-CRAP hotspots are ordered by file and line instead of input order.
+
 ## [0.7.0] - 2026-10-06
 
 ### Breaking Changes

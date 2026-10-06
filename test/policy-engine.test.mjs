@@ -196,3 +196,66 @@ test('renderPrSummary projects concise invariant evidence provenance for the ris
   assert.match(summary, /scenario-support \[missing; mode=missing\]: 0\/1 scenario\(s\) have deterministic lexical support/);
   assert.match(summary, /mutation-pressure \[warning; mode=explicit\]: 3 surviving mutants across 4 mutation sites/);
 });
+
+test('Scenario: changed functions with unknown coverage produce an explicit warning instead of a silent pass', () => {
+  const killed = [{ kind: 'mutation-result', siteId: '1', filePath: 'src/auth/token.js', status: 'killed', durationMs: 10 }];
+  const fn = (coverageStatus, coveragePct) => ({ crap: 2, changed: true, filePath: 'src/auth/token.js', symbol: 'function:x', span: { startLine: 1, endLine: 2 }, complexity: 1, coveragePct, kind: 'complexity', coverageStatus });
+  const evaluate = (changedComplexity) => policy.evaluatePolicy({
+    nowIso: new Date().toISOString(),
+    policy: { maxChangedCrap: 10, minMutationScore: 0.8, minMergeConfidence: 70 },
+    changedComplexity,
+    mutations: killed,
+    behaviorClaims: [],
+    governance: [],
+    waivers: []
+  }).verdict;
+
+  // Given a changed function whose LCOV evidence is missing
+  const unknown = evaluate([fn('missing', 0)]);
+  // Then the verdict warns and names the unknown coverage rather than passing
+  assert.equal(unknown.outcome, 'warn');
+  assert.deepEqual(unknown.warnings, ['Coverage is unknown for 1 changed function(s) (missing: function:x in src/auth/token.js); CRAP counts them as uncovered.']);
+
+  // Given measured coverage, or evidence from before coverageStatus existed, no coverage warning is added
+  assert.deepEqual(evaluate([fn('measured', 100)]).warnings, []);
+  assert.deepEqual(evaluate([fn(undefined, 100)]).warnings, []);
+});
+
+test('Scenario: the CRAP budget finding says when the hotspot coverage is unknown', () => {
+  const result = policy.evaluatePolicy({
+    nowIso: new Date().toISOString(),
+    policy: { maxChangedCrap: 5, minMutationScore: 0.8, minMergeConfidence: 70 },
+    changedComplexity: [{ crap: 12, changed: true, filePath: 'src/a.js', symbol: 'function:big', span: { startLine: 1, endLine: 9 }, complexity: 3, coveragePct: 0, kind: 'complexity', coverageStatus: 'ambiguous' }],
+    mutations: [{ kind: 'mutation-result', siteId: '1', filePath: 'src/a.js', status: 'killed', durationMs: 10 }],
+    behaviorClaims: [],
+    governance: [],
+    waivers: []
+  });
+  const crapFinding = result.verdict.findings.find((item) => item.code === 'changed-crap-budget');
+  assert.deepEqual(crapFinding.evidence, ['function:big CRAP=12 (coverage unknown: ambiguous)']);
+});
+
+test('Scenario: the unknown-coverage warning lists at most five functions', () => {
+  const changedComplexity = Array.from({ length: 7 }, (_, index) => ({ crap: 2, changed: true, filePath: 'src/many.js', symbol: `function:f${index}`, span: { startLine: index + 1, endLine: index + 1 }, complexity: 1, coveragePct: 0, kind: 'complexity', coverageStatus: 'missing' }));
+  const verdict = policy.evaluatePolicy({
+    nowIso: new Date().toISOString(),
+    policy: { maxChangedCrap: 10, minMutationScore: 0.8, minMergeConfidence: 70 },
+    changedComplexity,
+    mutations: [{ kind: 'mutation-result', siteId: '1', filePath: 'src/many.js', status: 'killed', durationMs: 10 }],
+    behaviorClaims: [],
+    governance: [],
+    waivers: []
+  }).verdict;
+  assert.match(verdict.warnings[0], /^Coverage is unknown for 7 changed function\(s\) \(missing: function:f0 in src\/many\.js, .*missing: function:f4 in src\/many\.js, and 2 more\)/);
+});
+
+test('Scenario: the PR summary labels a changed hotspot with unknown coverage', () => {
+  const summary = policy.renderPrSummary({
+    changedFiles: ['src/a.js'],
+    behaviorClaims: [],
+    mutations: [],
+    complexity: [{ crap: 6, changed: true, filePath: 'src/a.js', symbol: 'function:a', span: { startLine: 1, endLine: 3 }, complexity: 2, coveragePct: 0, kind: 'complexity', coverageStatus: 'missing' }],
+    verdict: { mergeConfidence: 50, outcome: 'warn', reasons: [], warnings: [], blockedBy: [], findings: [] }
+  });
+  assert.match(summary, /`src\/a\.js` function:a with CRAP 6 \(coverage unknown: missing\)/);
+});

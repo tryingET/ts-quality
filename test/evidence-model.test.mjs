@@ -91,3 +91,17 @@ test('collectSourceFiles skips hidden tool-state directories unless a pattern ta
   assert.deepEqual(evidence.collectSourceFiles(rootDir, ['**/*.test.ts']), ['tests/a.test.ts']);
   assert.deepEqual(evidence.collectSourceFiles(rootDir, ['.storybook/**/*.ts']), ['.storybook/preview.ts']);
 });
+
+test('Scenario: coverage evidence resolution names exact, unique-suffix, missing and ambiguous matches', () => {
+  const entry = (filePath) => ({ kind: 'coverage', filePath, lines: {}, coveredLines: 0, totalLines: 0, pct: 0 });
+  const coverage = [entry('src/exact.js'), entry('pkg/src/unique.js'), entry('a/src/dup.js'), entry('b/src/dup.js')];
+  assert.equal(evidence.resolveCoverageEvidence('src/exact.js', coverage).match, 'exact');
+  assert.equal(evidence.resolveCoverageEvidence('src/unique.js', coverage).match, 'suffix');
+  assert.equal(evidence.resolveCoverageEvidence('src/unique.js', coverage).evidence.filePath, 'pkg/src/unique.js');
+  assert.equal(evidence.resolveCoverageEvidence('src/none.js', coverage).match, 'missing');
+  const ambiguous = evidence.resolveCoverageEvidence('src/dup.js', coverage);
+  assert.equal(ambiguous.match, 'ambiguous');
+  assert.equal(ambiguous.evidence, undefined);
+  assert.deepEqual(ambiguous.candidates, ['a/src/dup.js', 'b/src/dup.js']);
+  assert.equal(evidence.findCoverageEvidence('src/dup.js', coverage), undefined);
+});

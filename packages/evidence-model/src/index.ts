@@ -50,7 +50,17 @@ export interface CoverageEvidence {
   totalLines: number;
   pct: number;
   source?: string | undefined;
+  /** DA records that could not be read; any malformed record makes the file's evidence unusable and its pct 0. */
+  malformedLines?: number | undefined;
+  /** FN/FNDA function-entry hits keyed by the FN start line; used only for functions without instrumented DA lines. */
+  functionHits?: Record<string, number> | undefined;
 }
+
+/**
+ * Why a function's coverage is or is not measured. Anything other than `measured` is unknown coverage:
+ * `coveragePct` is then 0 and CRAP is scored as fully uncovered, never as covered.
+ */
+export type FunctionCoverageStatus = 'measured' | 'missing' | 'ambiguous' | 'malformed' | 'mismatched' | 'not-instrumented';
 
 export interface ComplexityEvidence {
   kind: 'complexity';
@@ -58,9 +68,11 @@ export interface ComplexityEvidence {
   symbol: string;
   span: LineSpan;
   complexity: number;
+  /** Percent (0-100) of the function's LCOV-instrumented lines that executed. */
   coveragePct: number;
   crap: number;
   changed: boolean;
+  coverageStatus?: FunctionCoverageStatus | undefined;
 }
 
 export interface MutationSite {
@@ -1178,14 +1190,30 @@ export function matchesAny(patterns: string[], value: string): boolean {
   return patterns.some((pattern) => matchPattern(pattern, value));
 }
 
-export function findCoverageEvidence(filePath: string, coverage: CoverageEvidence[]): CoverageEvidence | undefined {
+export interface CoverageResolution {
+  match: 'exact' | 'suffix' | 'missing' | 'ambiguous';
+  evidence?: CoverageEvidence | undefined;
+  candidates?: string[] | undefined;
+}
+
+export function resolveCoverageEvidence(filePath: string, coverage: CoverageEvidence[]): CoverageResolution {
   const normalized = normalizePath(filePath);
   const exact = coverage.find((item) => normalizePath(item.filePath) === normalized);
   if (exact) {
-    return exact;
+    return { match: 'exact', evidence: exact };
   }
   const suffixMatches = coverage.filter((item) => normalizePath(item.filePath).endsWith(`/${normalized}`));
-  return suffixMatches.length === 1 ? suffixMatches[0] : undefined;
+  if (suffixMatches.length === 1) {
+    return { match: 'suffix', evidence: suffixMatches[0] };
+  }
+  if (suffixMatches.length > 1) {
+    return { match: 'ambiguous', candidates: suffixMatches.map((item) => normalizePath(item.filePath)).sort((left, right) => left.localeCompare(right)) };
+  }
+  return { match: 'missing' };
+}
+
+export function findCoverageEvidence(filePath: string, coverage: CoverageEvidence[]): CoverageEvidence | undefined {
+  return resolveCoverageEvidence(filePath, coverage).evidence;
 }
 
 export function repoDigest(rootDir: string, filePaths: string[]): string {

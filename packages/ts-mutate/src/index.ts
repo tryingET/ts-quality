@@ -20,7 +20,6 @@ import {
   normalizePath,
   readJson,
   runtimeMirrorCandidates,
-  spanOverlaps,
   writeJson
 } from '../../evidence-model/src/index';
 
@@ -63,13 +62,6 @@ interface MutationWorkspace {
   snapshot: Map<string, string>;
 }
 
-interface MutationSourceSpan {
-  startLine: number;
-  endLine: number;
-  startOffset: number;
-  endOffset: number;
-}
-
 // Bumped when mutant-workspace semantics change so cached results from older workspaces are not reused.
 const MUTATION_RUNTIME_VERSION = '8';
 const SANITIZED_MUTATION_ENV_KEYS = ['NODE_TEST_CONTEXT'];
@@ -92,16 +84,6 @@ function mutationEnvFingerprint(env: Record<string, string | undefined>): Record
   ) as Record<string, string>;
 }
 
-function lineOf(node: ts.Node, sourceFile: ts.SourceFile): number {
-  return sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
-}
-
-function spanFor(node: ts.Node, sourceFile: ts.SourceFile): MutationSourceSpan {
-  const startLine = lineOf(node, sourceFile);
-  const endLine = sourceFile.getLineAndCharacterOfPosition(node.end).line + 1;
-  return { startLine, endLine, startOffset: node.getStart(sourceFile), endOffset: node.end };
-}
-
 function coverageForLine(filePath: string, line: number, coverage: CoverageEvidence[]): boolean {
   const entry = findCoverageEvidence(filePath, coverage);
   if (!entry) {
@@ -114,32 +96,108 @@ function mutationId(filePath: string, span: { startLine: number; endLine: number
   return digestObject({ filePath: normalizePath(filePath), span, original, replacement });
 }
 
+const BINARY_OPERATOR_MUTATIONS = new Map<ts.SyntaxKind, { replacement: string; description: string }>([
+  [ts.SyntaxKind.EqualsEqualsEqualsToken, { replacement: '!==', description: 'strict equality inversion' }],
+  [ts.SyntaxKind.ExclamationEqualsEqualsToken, { replacement: '===', description: 'strict inequality inversion' }],
+  [ts.SyntaxKind.EqualsEqualsToken, { replacement: '!=', description: 'loose equality inversion' }],
+  [ts.SyntaxKind.ExclamationEqualsToken, { replacement: '==', description: 'loose inequality inversion' }],
+  [ts.SyntaxKind.GreaterThanToken, { replacement: '>=', description: 'greater-than relaxation' }],
+  [ts.SyntaxKind.GreaterThanEqualsToken, { replacement: '>', description: 'greater-than tightening' }],
+  [ts.SyntaxKind.LessThanToken, { replacement: '<=', description: 'less-than relaxation' }],
+  [ts.SyntaxKind.LessThanEqualsToken, { replacement: '<', description: 'less-than tightening' }],
+  [ts.SyntaxKind.PlusToken, { replacement: '-', description: 'addition to subtraction' }],
+  [ts.SyntaxKind.MinusToken, { replacement: '+', description: 'subtraction to addition' }],
+  [ts.SyntaxKind.AsteriskToken, { replacement: '/', description: 'multiplication to division' }],
+  [ts.SyntaxKind.AmpersandAmpersandToken, { replacement: '||', description: 'and to or' }],
+  [ts.SyntaxKind.BarBarToken, { replacement: '&&', description: 'or to and' }]
+]);
+
+function isAmbientDeclaration(node: ts.Node): boolean {
+  return ts.canHaveModifiers(node) && (ts.getModifiers(node) ?? []).some((modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword);
+}
+
+function isClassExtendsExpression(node: ts.Node): boolean {
+  return ts.isExpressionWithTypeArguments(node)
+    && ts.isHeritageClause(node.parent)
+    && node.parent.token === ts.SyntaxKind.ExtendsKeyword
+    && ts.isClassLike(node.parent.parent);
+}
+
+/** Syntax erased at compile time; mutating it cannot change runtime behavior. A class `extends` expression runs. */
+function isTypeOnlySyntax(node: ts.Node): boolean {
+  return (ts.isTypeNode(node) && !isClassExtendsExpression(node))
+    || ts.isInterfaceDeclaration(node)
+    || ts.isTypeAliasDeclaration(node)
+    || ts.isTypeParameterDeclaration(node)
+    || isAmbientDeclaration(node);
+}
+
+function isPropertyName(node: ts.Node): boolean {
+  const parent = node.parent as (ts.Node & { name?: ts.Node; propertyName?: ts.Node }) | undefined;
+  return parent?.name === node || parent?.propertyName === node;
+}
+
+// Pairs that would lex as a different token (a comment, `++`, `--`) if a replacement touched its neighbor.
+const MERGING_TOKEN_PAIRS = new Set(['//', '/*', '*/', '++', '--']);
+
+function mergesWithNeighbors(sourceText: string, startOffset: number, endOffset: number, replacement: string): boolean {
+  const before = sourceText[startOffset - 1] ?? '';
+  const after = sourceText[endOffset] ?? '';
+  return MERGING_TOKEN_PAIRS.has(`${before}${replacement.slice(0, 1)}`) || MERGING_TOKEN_PAIRS.has(`${replacement.slice(-1)}${after}`);
+}
+
+function conditionOf(node: ts.Node): { expression: ts.Expression; description: string } | undefined {
+  if (ts.isIfStatement(node)) {
+    return { expression: node.expression, description: 'if condition inversion' };
+  }
+  if (ts.isConditionalExpression(node)) {
+    return { expression: node.condition, description: 'conditional expression inversion' };
+  }
+  if (ts.isWhileStatement(node)) {
+    return { expression: node.expression, description: 'while condition inversion' };
+  }
+  if (ts.isDoStatement(node)) {
+    return { expression: node.expression, description: 'do-while condition inversion' };
+  }
+  if (ts.isForStatement(node) && node.condition) {
+    return { expression: node.condition, description: 'for condition inversion' };
+  }
+  return undefined;
+}
+
 export function discoverMutationSites(sourceText: string, filePath: string, coverage: CoverageEvidence[] = [], changedFiles: string[] = [], changedRegions: ChangedRegion[] = [], coveredOnly = false): MutationSite[] {
   const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true);
   const sites: MutationSite[] = [];
+  if (sourceFile.isDeclarationFile) {
+    return sites;
+  }
   const changed = changedFileSet(changedFiles, changedRegions);
   const fileRegions = changedRegions.filter((item) => normalizePath(item.filePath) === normalizePath(filePath));
 
-  function consider(node: ts.Node, replacement: string, operator: string, description: string): void {
-    const span = spanFor(node, sourceFile);
-    const line = span.startLine;
-    const inChangedRegion = fileRegions.some((region) => spanOverlaps(line, region.span));
+  function considerRange(startOffset: number, endOffset: number, replacement: string, operator: string, description: string): void {
+    if (mergesWithNeighbors(sourceText, startOffset, endOffset, replacement)) {
+      return;
+    }
+    const startLine = sourceFile.getLineAndCharacterOfPosition(startOffset).line + 1;
+    const endLine = sourceFile.getLineAndCharacterOfPosition(endOffset).line + 1;
+    const span = { startLine, endLine, startOffset, endOffset };
+    const inChangedRegion = fileRegions.some((region) => region.span.startLine <= endLine && region.span.endLine >= startLine);
     if (changed.size > 0) {
       const inChangeScope = fileRegions.length > 0 ? inChangedRegion : changed.has(normalizePath(filePath));
       if (!inChangeScope) {
         return;
       }
     }
-    if (coveredOnly && !coverageForLine(filePath, line, coverage)) {
+    if (coveredOnly && !coverageForLine(filePath, startLine, coverage)) {
       return;
     }
-    const original = node.getText(sourceFile);
+    const original = sourceText.slice(startOffset, endOffset);
     sites.push({
       id: mutationId(filePath, span, original, replacement),
       filePath: normalizePath(filePath),
       span: { startLine: span.startLine, endLine: span.endLine },
-      startOffset: span.startOffset,
-      endOffset: span.endOffset,
+      startOffset,
+      endOffset,
       operator,
       original,
       replacement,
@@ -147,37 +205,39 @@ export function discoverMutationSites(sourceText: string, filePath: string, cove
     });
   }
 
+  function consider(node: ts.Node, replacement: string, operator: string, description: string): void {
+    considerRange(node.getStart(sourceFile), node.end, replacement, operator, description);
+  }
+
   function visit(node: ts.Node): void {
+    if (isTypeOnlySyntax(node)) {
+      return;
+    }
     if (ts.isBinaryExpression(node)) {
-      const token = node.operatorToken.kind;
-      const text = node.operatorToken.getText(sourceFile);
-      if (token === ts.SyntaxKind.EqualsEqualsEqualsToken) {
-        consider(node.operatorToken, '!==', text, 'strict equality inversion');
-      } else if (token === ts.SyntaxKind.ExclamationEqualsEqualsToken) {
-        consider(node.operatorToken, '===', text, 'strict inequality inversion');
-      } else if (token === ts.SyntaxKind.GreaterThanToken) {
-        consider(node.operatorToken, '>=', text, 'greater-than relaxation');
-      } else if (token === ts.SyntaxKind.GreaterThanEqualsToken) {
-        consider(node.operatorToken, '>', text, 'greater-than tightening');
-      } else if (token === ts.SyntaxKind.LessThanToken) {
-        consider(node.operatorToken, '<=', text, 'less-than relaxation');
-      } else if (token === ts.SyntaxKind.LessThanEqualsToken) {
-        consider(node.operatorToken, '<', text, 'less-than tightening');
-      } else if (token === ts.SyntaxKind.PlusToken) {
-        consider(node.operatorToken, '-', text, 'addition to subtraction');
-      } else if (token === ts.SyntaxKind.MinusToken) {
-        consider(node.operatorToken, '+', text, 'subtraction to addition');
-      } else if (token === ts.SyntaxKind.AmpersandAmpersandToken) {
-        consider(node.operatorToken, '||', text, 'and to or');
-      } else if (token === ts.SyntaxKind.BarBarToken) {
-        consider(node.operatorToken, '&&', text, 'or to and');
+      const mutation = BINARY_OPERATOR_MUTATIONS.get(node.operatorToken.kind);
+      if (mutation) {
+        consider(node.operatorToken, mutation.replacement, node.operatorToken.getText(sourceFile), mutation.description);
       }
-    }
-    if (node.kind === ts.SyntaxKind.TrueKeyword) {
+    } else if ((ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) && (node.operator === ts.SyntaxKind.PlusPlusToken || node.operator === ts.SyntaxKind.MinusMinusToken)) {
+      const operator = node.operator === ts.SyntaxKind.PlusPlusToken ? '++' : '--';
+      const replacement = operator === '++' ? '--' : '++';
+      const startOffset = ts.isPrefixUnaryExpression(node) ? node.getStart(sourceFile) : node.end - 2;
+      considerRange(startOffset, startOffset + 2, replacement, operator, operator === '++' ? 'increment to decrement' : 'decrement to increment');
+    } else if (node.kind === ts.SyntaxKind.TrueKeyword) {
       consider(node, 'false', 'true', 'boolean flip true->false');
-    }
-    if (node.kind === ts.SyntaxKind.FalseKeyword) {
+    } else if (node.kind === ts.SyntaxKind.FalseKeyword) {
       consider(node, 'true', 'false', 'boolean flip false->true');
+    } else if (ts.isNumericLiteral(node) && (node.text === '0' || node.text === '1') && /^[01]$/.test(node.getText(sourceFile)) && !isPropertyName(node)) {
+      const original = node.getText(sourceFile);
+      consider(node, original === '0' ? '1' : '0', original, original === '0' ? 'numeric constant 0->1' : 'numeric constant 1->0');
+    }
+    const condition = conditionOf(node);
+    if (condition) {
+      const expression = condition.expression;
+      const replacement = ts.isPrefixUnaryExpression(expression) && expression.operator === ts.SyntaxKind.ExclamationToken
+        ? expression.operand.getText(sourceFile)
+        : `!(${expression.getText(sourceFile)})`;
+      consider(expression, replacement, 'condition', condition.description);
     }
     ts.forEachChild(node, visit);
   }

@@ -643,13 +643,15 @@ test('masked survivor fixture covers behavior-delta and masking guidance across 
   assert.equal(run.nextEvidenceAction.primaryAction.sidecarSufficiency.level, 'actionable');
   assert.equal(survivors.length >= 4, true);
   assert.equal(survivors.every((item) => item.observableBehavior && item.assertionStrategy && item.maskingRisk), true);
-  assert.equal(steps.some((step) => step.observableBehavior.includes('Boundary behavior changed')), true);
-  assert.equal(steps.some((step) => step.observableBehavior.includes('Equality behavior changed')), true);
-  assert.equal(steps.some((step) => step.observableBehavior.includes('Combined-condition behavior changed')), true);
-  assert.equal(steps.some((step) => step.observableBehavior.includes('Boolean behavior changed')), true);
+  // primaryAction steps stop at 8 survivor groups; the remediation sidecar keeps every survivor's guidance.
+  assert.equal(steps.length <= 8, true);
+  assert.equal(survivors.some((item) => item.observableBehavior.includes('Boundary behavior changed')), true);
+  assert.equal(survivors.some((item) => item.observableBehavior.includes('Equality behavior changed')), true);
+  assert.equal(survivors.some((item) => item.observableBehavior.includes('Combined-condition behavior changed')), true);
+  assert.equal(survivors.some((item) => item.observableBehavior.includes('Boolean behavior changed') && item.span.startLine === 27), true);
   assert.equal(steps.every((step) => step.maskingRisk.includes('Prefer a call path where the mutated value changes')), true);
   assert.equal(steps.some((step) => step.enclosingSymbol === 'function:asOptionalString'), true);
-  assert.equal(steps.some((step) => step.enclosingSymbol === 'function:stableFlag'), true);
+  assert.equal(steps.some((step) => step.enclosingSymbol === 'function:statusGate'), true);
   assert.equal(run.nextEvidenceAction.primaryAction.suggestedEditFiles.includes('test/masked.test.js'), true);
 });
 
