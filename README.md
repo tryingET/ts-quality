@@ -106,7 +106,7 @@ Downstream decisions are anchored to the exact reviewed run:
 - `explain`, `report`, `plan`, `govern`, and `authorize` can all target that exact persisted run via `--run-id <id>`
 - when `--run-id` is omitted, those read/projection commands fall back to `.ts-quality/latest.json`
 - approvals, waivers, and attestations are re-evaluated only when they target that run correctly; authorization also re-applies overrides against the exact scoped run
-- drift in changed files or control-plane inputs is surfaced on projected review surfaces and causes authorization to fail closed; since 0.7.0, independent digests cover every explicitly changed path, including tests/config/excluded files and missing paths, and refuses silent freshness for legacy paths without a digest
+- drift in changed files or control-plane inputs is surfaced on projected review surfaces and causes authorization to fail closed; since 0.7.0, independent digests cover every explicitly changed path, including tests/config/excluded files and missing paths, and a legacy path without a digest never counts as fresh
 
 That matters a lot in agent-heavy workflows, where generated artifacts and support files can change quickly.
 
