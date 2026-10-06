@@ -59,9 +59,9 @@
           "src/auth/token.js"
         ],
         "invariantId": "auth.refresh.validity",
-        "killedMutantsInScope": 1,
+        "killedMutantsInScope": 3,
         "maxChangedCrap": 3,
-        "mutationSitesInScope": 4,
+        "mutationSitesInScope": 6,
         "scenarioResults": [
           {
             "assertionMatched": true,
@@ -115,8 +115,8 @@
           {
             "facts": [
               "mode reason: mutation evidence came from selected mutation sites in invariant scope",
-              "mutation sites in scope: 4",
-              "killed mutants in scope: 1",
+              "mutation sites in scope: 6",
+              "killed mutants in scope: 3",
               "surviving mutants in scope: 3"
             ],
             "label": "Mutation pressure",
@@ -124,7 +124,7 @@
             "mode": "explicit",
             "modeReason": "mutation evidence came from selected mutation sites in invariant scope",
             "signalId": "mutation-pressure",
-            "summary": "3 surviving mutants across 4 mutation sites"
+            "summary": "3 surviving mutants across 6 mutation sites"
           },
           {
             "facts": [
@@ -172,6 +172,7 @@
       "changed": false,
       "complexity": 2,
       "coveragePct": 0,
+      "coverageStatus": "measured",
       "crap": 6,
       "filePath": "src/payments/ledger.js",
       "kind": "complexity",
@@ -185,6 +186,7 @@
       "changed": true,
       "complexity": 3,
       "coveragePct": 100,
+      "coverageStatus": "measured",
       "crap": 3,
       "filePath": "src/auth/token.js",
       "kind": "complexity",
@@ -198,6 +200,7 @@
       "changed": true,
       "complexity": 3,
       "coveragePct": 100,
+      "coverageStatus": "measured",
       "crap": 3,
       "filePath": "src/auth/token.js",
       "kind": "complexity",
@@ -211,6 +214,7 @@
       "changed": false,
       "complexity": 1,
       "coveragePct": 0,
+      "coverageStatus": "missing",
       "crap": 2,
       "filePath": "src/identity/store.js",
       "kind": "complexity",
@@ -224,6 +228,7 @@
       "changed": false,
       "complexity": 1,
       "coveragePct": 0,
+      "coverageStatus": "measured",
       "crap": 2,
       "filePath": "src/payments/ledger.js",
       "kind": "complexity",
@@ -237,6 +242,7 @@
       "changed": false,
       "complexity": 1,
       "coveragePct": 0,
+      "coverageStatus": "missing",
       "crap": 2,
       "filePath": "src/shared/audit.js",
       "kind": "complexity",
@@ -250,6 +256,7 @@
       "changed": true,
       "complexity": 1,
       "coveragePct": 100,
+      "coverageStatus": "measured",
       "crap": 1,
       "filePath": "src/auth/token.js",
       "kind": "complexity",
@@ -448,7 +455,7 @@
   "governance": [
     {
       "evidence": [
-        "Mutation score 0.25 below budget 0.75"
+        "Mutation score 0.50 below budget 0.75"
       ],
       "id": "auth-risk-budget:mutation",
       "level": "error",
@@ -460,7 +467,7 @@
     },
     {
       "evidence": [
-        "Merge confidence 46 below minimum 65"
+        "Merge confidence 56 below minimum 65"
       ],
       "id": "auth-risk-budget:confidence",
       "level": "error",
@@ -684,6 +691,54 @@
         "--test",
         "--test-reporter=spec"
       ]
+    },
+    {
+      "assertionHint": "Add or tighten a focused assertion around src/auth/token.js:14; this mutant changed !token to token.",
+      "details": "Mutation killed for src/auth/token.js (sha256:46f8dbea6c0d455cd3f36562a3027f5bbc7f344faeae171dea147fb9f6ff6086).",
+      "durationMs": 0,
+      "endOffset": 342,
+      "filePath": "src/auth/token.js",
+      "kind": "mutation-result",
+      "mutated": "token",
+      "operator": "condition",
+      "original": "!token",
+      "replacement": "token",
+      "siteId": "sha256:46f8dbea6c0d455cd3f36562a3027f5bbc7f344faeae171dea147fb9f6ff6086",
+      "span": {
+        "endLine": 14,
+        "startLine": 14
+      },
+      "startOffset": 336,
+      "status": "killed",
+      "testCommand": [
+        "node",
+        "--test",
+        "--test-reporter=spec"
+      ]
+    },
+    {
+      "assertionHint": "Add or tighten a focused assertion around src/auth/token.js:17; this mutant changed canUseRefreshToken(token, nowMs) to !(canUseRefreshToken(token, nowMs)).",
+      "details": "Mutation killed for src/auth/token.js (sha256:a945a6e34a159e6d7f0d79455e2a48f633358d93eb90bbc53228300390f12e5f).",
+      "durationMs": 0,
+      "endOffset": 410,
+      "filePath": "src/auth/token.js",
+      "kind": "mutation-result",
+      "mutated": "!(canUseRefreshToken(token, nowMs))",
+      "operator": "condition",
+      "original": "canUseRefreshToken(token, nowMs)",
+      "replacement": "!(canUseRefreshToken(token, nowMs))",
+      "siteId": "sha256:a945a6e34a159e6d7f0d79455e2a48f633358d93eb90bbc53228300390f12e5f",
+      "span": {
+        "endLine": 17,
+        "startLine": 17
+      },
+      "startOffset": 378,
+      "status": "killed",
+      "testCommand": [
+        "node",
+        "--test",
+        "--test-reporter=spec"
+      ]
     }
   ],
   "mutationSites": [
@@ -742,6 +797,34 @@
         "startLine": 8
       },
       "startOffset": 200
+    },
+    {
+      "description": "if condition inversion",
+      "endOffset": 342,
+      "filePath": "src/auth/token.js",
+      "id": "sha256:46f8dbea6c0d455cd3f36562a3027f5bbc7f344faeae171dea147fb9f6ff6086",
+      "operator": "condition",
+      "original": "!token",
+      "replacement": "token",
+      "span": {
+        "endLine": 14,
+        "startLine": 14
+      },
+      "startOffset": 336
+    },
+    {
+      "description": "conditional expression inversion",
+      "endOffset": 410,
+      "filePath": "src/auth/token.js",
+      "id": "sha256:a945a6e34a159e6d7f0d79455e2a48f633358d93eb90bbc53228300390f12e5f",
+      "operator": "condition",
+      "original": "canUseRefreshToken(token, nowMs)",
+      "replacement": "!(canUseRefreshToken(token, nowMs))",
+      "span": {
+        "endLine": 17,
+        "startLine": 17
+      },
+      "startOffset": 378
     }
   ],
   "nextEvidenceAction": {
@@ -749,14 +832,14 @@
       "confidence": {
         "base": 100,
         "credits": [],
-        "final": 6,
+        "final": 16,
         "penalties": [
           {
-            "amount": 20,
+            "amount": 10,
             "details": [
-              "score=0.25",
+              "score=0.50",
               "budget=0.75",
-              "killed=1",
+              "killed=3",
               "survived=3"
             ],
             "id": "mutation-score",
@@ -812,8 +895,8 @@
       },
       "mutation": {
         "errors": 0,
-        "killed": 1,
-        "sites": 4,
+        "killed": 3,
+        "sites": 6,
         "status": "survivors",
         "survived": 3
       },
@@ -851,7 +934,7 @@
       "evidenceTargets": [
         "src/auth/token.js"
       ],
-      "expectedConfidenceLift": 54,
+      "expectedConfidenceLift": 44,
       "groups": [
         {
           "evidenceTargets": [
@@ -1143,8 +1226,8 @@
   "verdict": {
     "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
     "blockedBy": [
-      "Merge confidence 6 below minimum 65",
-      "Mutation score 0.25 is below budget 0.75",
+      "Merge confidence 16 below minimum 65",
+      "Mutation score 0.50 is below budget 0.75",
       "Surviving mutant in src/auth/token.js",
       "Surviving mutant in src/auth/token.js",
       "Surviving mutant in src/auth/token.js",
@@ -1155,14 +1238,14 @@
     "confidenceBreakdown": {
       "base": 100,
       "credits": [],
-      "final": 6,
+      "final": 16,
       "penalties": [
         {
-          "amount": 20,
+          "amount": 10,
           "details": [
-            "score=0.25",
+            "score=0.50",
             "budget=0.75",
-            "killed=1",
+            "killed=3",
             "survived=3"
           ],
           "id": "mutation-score",
@@ -1208,12 +1291,14 @@
       {
         "code": "mutation-score-budget",
         "evidence": [
-          "Killed 1, survived 3"
+          "Killed 3, survived 3"
         ],
         "id": "policy:mutation-score",
         "level": "error",
-        "message": "Mutation score 0.25 is below budget 0.75",
+        "message": "Mutation score 0.50 is below budget 0.75",
         "scope": [
+          "src/auth/token.js",
+          "src/auth/token.js",
           "src/auth/token.js",
           "src/auth/token.js",
           "src/auth/token.js",
@@ -1274,7 +1359,7 @@
       {
         "code": "governance",
         "evidence": [
-          "Mutation score 0.25 below budget 0.75"
+          "Mutation score 0.50 below budget 0.75"
         ],
         "id": "policy:governance:auth-risk-budget:mutation",
         "level": "error",
@@ -1287,7 +1372,7 @@
       {
         "code": "governance",
         "evidence": [
-          "Merge confidence 46 below minimum 65"
+          "Merge confidence 56 below minimum 65"
         ],
         "id": "policy:governance:auth-risk-budget:confidence",
         "level": "error",
@@ -1298,10 +1383,10 @@
         ]
       }
     ],
-    "mergeConfidence": 6,
+    "mergeConfidence": 16,
     "outcome": "fail",
     "reasons": [
-      "Mutation score is 25/100 with 3 surviving mutants.",
+      "Mutation score is 50/100 with 3 surviving mutants.",
       "3 surviving mutant(s) remain in changed or covered logic.",
       "1 invariant(s) need stronger test evidence or failure-path coverage.",
       "Auth code requires stronger evidence because it decides authorization.",

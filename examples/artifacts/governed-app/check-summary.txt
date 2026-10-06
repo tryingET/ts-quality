@@ -1,24 +1,24 @@
-Merge confidence: 6/100
+Merge confidence: 16/100
 Outcome: fail
 Best next action: Add or tighten an assertion covering src/auth/token.js around the surviving mutant.
 Evidence closure: Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s).
 Evidence closure kind: mutation-survivors
-Expected confidence lift: +54
+Expected confidence lift: +44
 Suggested edit files: test/token.test.js
 Coverage basis: 2 file(s), changed-function min 100%, changed functions under80 0
-Mutation basis: 1 killed / 4 site(s), 3 survived, 0 error(s)
+Mutation basis: 3 killed / 6 site(s), 3 survived, 0 error(s)
 
 Confidence breakdown: base 100
--20 Mutation score penalty
+-10 Mutation score penalty
 -24 Surviving mutants penalty
 -10 Risky invariant/residual pressure penalty
 -20 Governance penalty
 -20 Governance penalty
-final 6
+final 16
 
 Invariant evidence at risk: auth.refresh.validity
 Evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof
 Evidence provenance: explicit 3, inferred 1, missing 1
 focused-test-alignment [clear; mode=inferred]: 1 focused test file aligned to invariant scope
 scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic lexical support
-mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 4 mutation sites
+mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 6 mutation sites

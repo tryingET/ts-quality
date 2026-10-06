@@ -6,12 +6,12 @@ sidecarSufficiencyReason: Likely focused test edit files are identified.
 sidecarSufficiencyReason: A focused rerun command is present.
 sidecarSufficiencyReason: Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance.
 primaryActionRationale: Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.
-expectedConfidenceLift: 54
+expectedConfidenceLift: 44
 coverageBasis: status=present files=2 changedFunctionMinPct=100 changedFunctionsUnder80=0
 witnessBasis: status=missing-or-not-required files=0
-mutationBasis: status=survivors killed=1 sites=4 survived=3 errors=0
+mutationBasis: status=survivors killed=3 sites=6 survived=3 errors=0
 governanceBasis: status=errors errors=2 warnings=0
-confidenceBasis: final=6 penalties=5 credits=0
+confidenceBasis: final=16 penalties=5 credits=0
 targetFiles:
 - src/auth/token.js
 suggestedEditFiles:

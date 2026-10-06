@@ -1,21 +1,21 @@
 Run sample-governed-app-run
 Changed files: src/auth/token.js
-Merge confidence: 6/100 (fail)
+Merge confidence: 16/100 (fail)
 
 Confidence breakdown: base 100
-- -20 Mutation score penalty (score=0.25; budget=0.75; killed=1; survived=3)
+- -10 Mutation score penalty (score=0.50; budget=0.75; killed=3; survived=3)
 - -24 Surviving mutants penalty (src/auth/token.js:2 >=; src/auth/token.js:8 &&; src/auth/token.js:7 &&)
 - -10 Risky invariant/residual pressure penalty (auth.refresh.validity:at-risk)
 - -20 Governance penalty (Auth code requires stronger evidence because it decides authorization.)
 - -20 Governance penalty (Auth code requires stronger evidence because it decides authorization.)
-- final 6
+- final 16
 
 Evidence closure: Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s).
 Evidence closure kind: mutation-survivors
-Expected confidence lift: +54
+Expected confidence lift: +44
 Suggested edit files: test/token.test.js
 Coverage basis: 2 file(s), changed-function min 100%, changed functions under80 0
-Mutation basis: 1 killed / 4 site(s), 3 survived
+Mutation basis: 3 killed / 6 site(s), 3 survived
 
 Actionable surviving mutants:
 - src/auth/token.js:2 >= -> >
@@ -29,7 +29,7 @@ Actionable surviving mutants:
   next assertion: Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.
 
 Reasons:
-- Mutation score is 25/100 with 3 surviving mutants.
+- Mutation score is 50/100 with 3 surviving mutants.
 - 3 surviving mutant(s) remain in changed or covered logic.
 - 1 invariant(s) need stronger test evidence or failure-path coverage.
 - Auth code requires stronger evidence because it decides authorization.
@@ -42,7 +42,7 @@ Invariant impact:
   - focused tests: test/token.test.js
   - changed functions: function:canUseRefreshToken (src/auth/token.js, coverage 100%, CRAP 3); function:isRefreshExpired (src/auth/token.js, coverage 100%, CRAP 1); function:issueAccessDecision (src/auth/token.js, coverage 100%, CRAP 3)
   - changed functions under 80% coverage: 0; max changed CRAP: 3
-  - mutation scope: 4 site(s), 1 killed, 3 survived
+  - mutation scope: 6 site(s), 3 killed, 3 survived
   - scenario results: expired-boundary=missing failure-path evidence
   - sub-signals:
     - focused-test-alignment [clear; mode=inferred]: 1 focused test file aligned to invariant scope
@@ -55,10 +55,10 @@ Invariant impact:
     - coverage-pressure [clear; mode=explicit]: All changed functions in invariant scope are at or above 80% coverage
       - mode reason: coverage evidence came from LCOV for changed functions in invariant scope
       - changed functions under 80% coverage: 0
-    - mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 4 mutation sites
+    - mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 6 mutation sites
       - mode reason: mutation evidence came from selected mutation sites in invariant scope
-      - mutation sites in scope: 4
-      - killed mutants in scope: 1
+      - mutation sites in scope: 6
+      - killed mutants in scope: 3
       - surviving mutants in scope: 3
     - changed-function-pressure [info; mode=explicit]: 3 changed functions in invariant scope; max changed CRAP 3
       - mode reason: changed-function evidence came from CRAP/changed-function mapping in invariant scope
@@ -71,6 +71,6 @@ Invariant impact:
 
 Governance findings:
 - auth-risk-budget: Auth code requires stronger evidence because it decides authorization.
-  - Mutation score 0.25 below budget 0.75
+  - Mutation score 0.50 below budget 0.75
 - auth-risk-budget: Auth code requires stronger evidence because it decides authorization.
-  - Merge confidence 46 below minimum 65
+  - Merge confidence 56 below minimum 65

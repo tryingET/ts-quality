@@ -1,8 +1,8 @@
 {
   "bestNextAction": "Add or tighten an assertion covering src/auth/token.js around the surviving mutant.",
   "blockedBy": [
-    "Merge confidence 6 below minimum 65",
-    "Mutation score 0.25 is below budget 0.75",
+    "Merge confidence 16 below minimum 65",
+    "Mutation score 0.50 is below budget 0.75",
     "Surviving mutant in src/auth/token.js",
     "Surviving mutant in src/auth/token.js",
     "Surviving mutant in src/auth/token.js",
@@ -13,14 +13,14 @@
   "confidenceBreakdown": {
     "base": 100,
     "credits": [],
-    "final": 6,
+    "final": 16,
     "penalties": [
       {
-        "amount": 20,
+        "amount": 10,
         "details": [
-          "score=0.25",
+          "score=0.50",
           "budget=0.75",
-          "killed=1",
+          "killed=3",
           "survived=3"
         ],
         "id": "mutation-score",
@@ -66,12 +66,14 @@
     {
       "code": "mutation-score-budget",
       "evidence": [
-        "Killed 1, survived 3"
+        "Killed 3, survived 3"
       ],
       "id": "policy:mutation-score",
       "level": "error",
-      "message": "Mutation score 0.25 is below budget 0.75",
+      "message": "Mutation score 0.50 is below budget 0.75",
       "scope": [
+        "src/auth/token.js",
+        "src/auth/token.js",
         "src/auth/token.js",
         "src/auth/token.js",
         "src/auth/token.js",
@@ -132,7 +134,7 @@
     {
       "code": "governance",
       "evidence": [
-        "Mutation score 0.25 below budget 0.75"
+        "Mutation score 0.50 below budget 0.75"
       ],
       "id": "policy:governance:auth-risk-budget:mutation",
       "level": "error",
@@ -145,7 +147,7 @@
     {
       "code": "governance",
       "evidence": [
-        "Merge confidence 46 below minimum 65"
+        "Merge confidence 56 below minimum 65"
       ],
       "id": "policy:governance:auth-risk-budget:confidence",
       "level": "error",
@@ -156,10 +158,10 @@
       ]
     }
   ],
-  "mergeConfidence": 6,
+  "mergeConfidence": 16,
   "outcome": "fail",
   "reasons": [
-    "Mutation score is 25/100 with 3 surviving mutants.",
+    "Mutation score is 50/100 with 3 surviving mutants.",
     "3 surviving mutant(s) remain in changed or covered logic.",
     "1 invariant(s) need stronger test evidence or failure-path coverage.",
     "Auth code requires stronger evidence because it decides authorization.",

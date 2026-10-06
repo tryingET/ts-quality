@@ -8,7 +8,7 @@ type: "reference"
 
 # ts-quality summary
 
-- Merge confidence: **6/100**
+- Merge confidence: **16/100**
 - Outcome: **fail**
 - Highest-risk changed hotspot: `src/auth/token.js` function:canUseRefreshToken with CRAP 3
 - Surviving mutants: **3**
@@ -17,12 +17,12 @@ type: "reference"
   - Evidence provenance: explicit 3, inferred 1, missing 1
   - focused-test-alignment [clear; mode=inferred]: 1 focused test file aligned to invariant scope
   - scenario-support [missing; mode=missing]: 0/1 scenario(s) have deterministic lexical support
-  - mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 4 mutation sites
+  - mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 6 mutation sites
 - Best next action: Add or tighten an assertion covering src/auth/token.js around the surviving mutant.
 
 ## Blocking findings
-- Merge confidence 6 below minimum 65
-- Mutation score 0.25 is below budget 0.75
+- Merge confidence 16 below minimum 65
+- Mutation score 0.50 is below budget 0.75
 - Surviving mutant in src/auth/token.js
 - Surviving mutant in src/auth/token.js
 - Surviving mutant in src/auth/token.js

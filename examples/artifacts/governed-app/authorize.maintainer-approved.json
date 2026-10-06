@@ -36,14 +36,14 @@
         "report": ".ts-quality/runs/sample-governed-app-run/report.md",
         "taskManifest": ".ts-quality/runs/sample-governed-app-run/next-evidence-action.ak-task.json"
       },
-      "expectedConfidenceLift": 54,
+      "expectedConfidenceLift": 44,
       "kind": "mutation-survivors",
       "title": "Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s)."
     },
     "governanceErrors": [
       {
         "evidence": [
-          "Mutation score 0.25 below budget 0.75"
+          "Mutation score 0.50 below budget 0.75"
         ],
         "message": "Auth code requires stronger evidence because it decides authorization.",
         "ruleId": "auth-risk-budget",
@@ -53,7 +53,7 @@
       },
       {
         "evidence": [
-          "Merge confidence 46 below minimum 65"
+          "Merge confidence 56 below minimum 65"
         ],
         "message": "Auth code requires stronger evidence because it decides authorization.",
         "ruleId": "auth-risk-budget",
@@ -62,7 +62,7 @@
         ]
       }
     ],
-    "mergeConfidence": 6,
+    "mergeConfidence": 16,
     "riskyInvariant": {
       "description": "Refresh token validity applies to src/auth/token.js",
       "evidenceProvenance": {
@@ -94,7 +94,7 @@
           "level": "warning",
           "mode": "explicit",
           "signalId": "mutation-pressure",
-          "summary": "3 surviving mutants across 4 mutation sites"
+          "summary": "3 surviving mutants across 6 mutation sites"
         }
       ]
     },

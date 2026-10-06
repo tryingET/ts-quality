@@ -15,14 +15,14 @@ Sidecar sufficiency: actionable
 - sufficiency reason: A focused rerun command is present.
 - sufficiency reason: Each survivor group includes observable-behavior, assertion-strategy, and masking-risk guidance.
 Why: Surviving mutants mean existing tests executed but did not distinguish changed behavior from a mutated implementation.
-Expected confidence lift if closed: +54
+Expected confidence lift if closed: +44
 
 ## Evidence basis
 - Coverage: present; files 2; changed-function min 100%; changed functions under80 0
-- Mutation: 1/4 killed; 3 survived; 0 errors
+- Mutation: 3/6 killed; 3 survived; 0 errors
 - Witness: missing-or-not-required
 - Governance: errors; errors 2; warnings 0
-- Confidence: 6/100
+- Confidence: 16/100
 
 ## Edit targets
 - test/token.test.js

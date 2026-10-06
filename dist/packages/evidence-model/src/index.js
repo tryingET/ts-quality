@@ -30,6 +30,7 @@ exports.collectSourceFiles = collectSourceFiles;
 exports.globToRegExp = globToRegExp;
 exports.matchPattern = matchPattern;
 exports.matchesAny = matchesAny;
+exports.resolveCoverageEvidence = resolveCoverageEvidence;
 exports.findCoverageEvidence = findCoverageEvidence;
 exports.repoDigest = repoDigest;
 exports.inferPackages = inferPackages;
@@ -411,14 +412,23 @@ function matchPattern(pattern, value) {
 function matchesAny(patterns, value) {
     return patterns.some((pattern) => matchPattern(pattern, value));
 }
-function findCoverageEvidence(filePath, coverage) {
+function resolveCoverageEvidence(filePath, coverage) {
     const normalized = normalizePath(filePath);
     const exact = coverage.find((item) => normalizePath(item.filePath) === normalized);
     if (exact) {
-        return exact;
+        return { match: 'exact', evidence: exact };
     }
     const suffixMatches = coverage.filter((item) => normalizePath(item.filePath).endsWith(`/${normalized}`));
-    return suffixMatches.length === 1 ? suffixMatches[0] : undefined;
+    if (suffixMatches.length === 1) {
+        return { match: 'suffix', evidence: suffixMatches[0] };
+    }
+    if (suffixMatches.length > 1) {
+        return { match: 'ambiguous', candidates: suffixMatches.map((item) => normalizePath(item.filePath)).sort((left, right) => left.localeCompare(right)) };
+    }
+    return { match: 'missing' };
+}
+function findCoverageEvidence(filePath, coverage) {
+    return resolveCoverageEvidence(filePath, coverage).evidence;
 }
 function repoDigest(rootDir, filePaths) {
     const entries = filePaths.map((filePath) => ({ filePath, digest: fileDigest(path_1.default.join(rootDir, filePath)) }));

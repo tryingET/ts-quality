@@ -57,8 +57,15 @@ function evaluatePolicy(input) {
     if (maxChangedCrap > input.policy.maxChangedCrap) {
         const delta = Math.ceil((maxChangedCrap - input.policy.maxChangedCrap) * 1.2);
         applyPenalty('crap', 'CRAP hotspot penalty', Math.min(delta, 25), [`${hotspot?.symbol ?? 'unknown'} CRAP=${maxChangedCrap.toFixed(2)}`, `budget=${input.policy.maxChangedCrap}`]);
-        findings.push(finding('policy:crap', 'changed-crap-budget', 'error', `Changed code exceeds CRAP budget ${input.policy.maxChangedCrap}`, hotspot ? [hotspot.filePath] : [], hotspot ? [`${hotspot.symbol} CRAP=${hotspot.crap}`] : []));
+        const hotspotCoverage = hotspot?.coverageStatus && hotspot.coverageStatus !== 'measured' ? ` (coverage unknown: ${hotspot.coverageStatus})` : '';
+        findings.push(finding('policy:crap', 'changed-crap-budget', 'error', `Changed code exceeds CRAP budget ${input.policy.maxChangedCrap}`, hotspot ? [hotspot.filePath] : [], hotspot ? [`${hotspot.symbol} CRAP=${hotspot.crap}${hotspotCoverage}`] : []));
         reasons.push(`CRAP hotspot ${hotspot?.symbol ?? 'unknown'} is ${maxChangedCrap.toFixed(2)} in changed code.`);
+    }
+    const unknownCoverage = input.changedComplexity.filter((item) => item.coverageStatus !== undefined && item.coverageStatus !== 'measured');
+    if (unknownCoverage.length > 0) {
+        const shown = unknownCoverage.slice(0, 5).map((item) => `${item.coverageStatus}: ${item.symbol} in ${item.filePath}`);
+        const listed = unknownCoverage.length > shown.length ? `${shown.join(', ')}, and ${unknownCoverage.length - shown.length} more` : shown.join(', ');
+        warnings.push(`Coverage is unknown for ${unknownCoverage.length} changed function(s) (${listed}); CRAP counts them as uncovered.`);
     }
     const mutationSummary = (0, index_1.summarizeMutationScore)(input.mutations);
     if (!mutationSummary.measured) {
@@ -339,7 +346,7 @@ function renderPrSummary(run) {
     lines.push(`- Outcome: **${run.verdict.outcome}**`);
     if (changedHotspot) {
         lines.push(`- Highest-risk changed hotspot: \
-\`${changedHotspot.filePath}\` ${changedHotspot.symbol} with CRAP ${changedHotspot.crap}`);
+\`${changedHotspot.filePath}\` ${changedHotspot.symbol} with CRAP ${changedHotspot.crap}${changedHotspot.coverageStatus && changedHotspot.coverageStatus !== 'measured' ? ` (coverage unknown: ${changedHotspot.coverageStatus})` : ''}`);
     }
     lines.push(`- Surviving mutants: **${survivingMutants}**`);
     const riskyInvariant = findFirstRiskyInvariantClaim(run);

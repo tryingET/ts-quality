@@ -3,14 +3,14 @@
     "confidence": {
       "base": 100,
       "credits": [],
-      "final": 6,
+      "final": 16,
       "penalties": [
         {
-          "amount": 20,
+          "amount": 10,
           "details": [
-            "score=0.25",
+            "score=0.50",
             "budget=0.75",
-            "killed=1",
+            "killed=3",
             "survived=3"
           ],
           "id": "mutation-score",
@@ -66,8 +66,8 @@
     },
     "mutation": {
       "errors": 0,
-      "killed": 1,
-      "sites": 4,
+      "killed": 3,
+      "sites": 6,
       "status": "survivors",
       "survived": 3
     },
@@ -105,7 +105,7 @@
     "evidenceTargets": [
       "src/auth/token.js"
     ],
-    "expectedConfidenceLift": 54,
+    "expectedConfidenceLift": 44,
     "groups": [
       {
         "evidenceTargets": [

@@ -9,23 +9,23 @@ type: "reference"
 # ts-quality report
 
 - Run: `sample-governed-app-run`
-- Merge confidence: **6/100**
+- Merge confidence: **16/100**
 - Outcome: **fail**
 - Changed files: src/auth/token.js
 - Evidence closure: Tighten focused assertions for 3 surviving mutant(s) across 3 mutation group(s).
 - Evidence closure kind: mutation-survivors
-- Expected confidence lift: +54
+- Expected confidence lift: +44
 - Suggested edit files: test/token.test.js
-- Evidence basis: coverage 2 file(s), changed-function min 100%; mutation 1/4 killed, 3 survived
+- Evidence basis: coverage 2 file(s), changed-function min 100%; mutation 3/6 killed, 3 survived
 
 ## Confidence breakdown
 Confidence breakdown: base 100
-- -20 Mutation score penalty (score=0.25; budget=0.75; killed=1; survived=3)
+- -10 Mutation score penalty (score=0.50; budget=0.75; killed=3; survived=3)
 - -24 Surviving mutants penalty (src/auth/token.js:2 >=; src/auth/token.js:8 &&; src/auth/token.js:7 &&)
 - -10 Risky invariant/residual pressure penalty (auth.refresh.validity:at-risk)
 - -20 Governance penalty (Auth code requires stronger evidence because it decides authorization.)
 - -20 Governance penalty (Auth code requires stronger evidence because it decides authorization.)
-- final 6
+- final 16
 
 ## Actionable surviving mutants
 - src/auth/token.js:2 >= -> >
@@ -39,8 +39,8 @@ Confidence breakdown: base 100
   next assertion: Assert the combined-condition case around src/auth/token.js:7; this mutant changed && to ||.
 
 ## Findings
-- [error] Mutation score 0.25 is below budget 0.75
-  - Killed 1, survived 3
+- [error] Mutation score 0.50 is below budget 0.75
+  - Killed 3, survived 3
 - [error] Surviving mutant in src/auth/token.js
   - ✔ active token before expiry allows access (0ms)
 ✔ missing token denies access (0ms)
@@ -80,9 +80,9 @@ Confidence breakdown: base 100
   - Invariant evidence semantics: deterministic lexical alignment over focused tests; not execution-backed behavioral proof; Invariant evidence modes: focused-test-alignment=inferred; scenario-support=missing; coverage-pressure=explicit; mutation-pressure=explicit; changed-function-pressure=explicit
   - Add execution-backed witness artifacts or tighten an assertion-bearing focused test case for scenario 'exact expiry boundary denies access' to preserve invariant 'Refresh token validity'.
 - [error] Auth code requires stronger evidence because it decides authorization.
-  - Mutation score 0.25 below budget 0.75
+  - Mutation score 0.50 below budget 0.75
 - [error] Auth code requires stronger evidence because it decides authorization.
-  - Merge confidence 46 below minimum 65
+  - Merge confidence 56 below minimum 65
 
 ## Invariants
 - auth.refresh.validity: at-risk
@@ -91,7 +91,7 @@ Confidence breakdown: base 100
   - focused tests: test/token.test.js
   - changed functions: function:canUseRefreshToken (src/auth/token.js, coverage 100%, CRAP 3); function:isRefreshExpired (src/auth/token.js, coverage 100%, CRAP 1); function:issueAccessDecision (src/auth/token.js, coverage 100%, CRAP 3)
   - changed functions under 80% coverage: 0; max changed CRAP: 3
-  - mutation scope: 4 site(s), 1 killed, 3 survived
+  - mutation scope: 6 site(s), 3 killed, 3 survived
   - scenario results: expired-boundary=missing failure-path evidence
   - sub-signals:
     - focused-test-alignment [clear; mode=inferred]: 1 focused test file aligned to invariant scope
@@ -104,10 +104,10 @@ Confidence breakdown: base 100
     - coverage-pressure [clear; mode=explicit]: All changed functions in invariant scope are at or above 80% coverage
       - mode reason: coverage evidence came from LCOV for changed functions in invariant scope
       - changed functions under 80% coverage: 0
-    - mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 4 mutation sites
+    - mutation-pressure [warning; mode=explicit]: 3 surviving mutants across 6 mutation sites
       - mode reason: mutation evidence came from selected mutation sites in invariant scope
-      - mutation sites in scope: 4
-      - killed mutants in scope: 1
+      - mutation sites in scope: 6
+      - killed mutants in scope: 3
       - surviving mutants in scope: 3
     - changed-function-pressure [info; mode=explicit]: 3 changed functions in invariant scope; max changed CRAP 3
       - mode reason: changed-function evidence came from CRAP/changed-function mapping in invariant scope

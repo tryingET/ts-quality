@@ -13,9 +13,9 @@
   "signature": {
     "algorithm": "ed25519",
     "keyId": "sample",
-    "value": "O9R/ezjSc8xIIerdiwFOroqSBpTIQNYk7HhgOzOUzo03Tfm/OdKjmjobEoMuQ1qfBjkkBCx5SH7gQlqER7+lBQ=="
+    "value": "muJVIxwPa+l62ax7hRmj5HYl1U/7iG/kxrUU43+uIG0FonUAzhkI3tFRRg3HoQEbkegApyr6yI+9ECrD7+IeAA=="
   },
-  "subjectDigest": "sha256:02d93996c3295977354b515407a4f106162664aeba927726723219baba560d0c",
+  "subjectDigest": "sha256:9a97bed88a044a02d1201215bc3af3fbc69d0823cf841224523909fe75e465eb",
   "subjectType": "json-artifact",
   "version": "1"
 }
