@@ -61,7 +61,8 @@ test('CLI command manifest exposes the protected agent machine-readable surfaces
     'doctor --machine',
     'retention --machine',
     'report --json',
-    'attest verify --json'
+    'attest verify --json',
+    'mutations preview --json'
   ]);
   assert.equal(manifest.agentConsumption.runSelection.automationRule.includes('explicit --run-id'), true);
   assert.equal(manifest.agentConsumption.changedScope.acceptedCliShape, '--changed "src/a.ts,src/b.ts"');

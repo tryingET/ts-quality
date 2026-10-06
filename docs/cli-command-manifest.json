@@ -30,7 +30,8 @@
       { "command": "doctor", "mode": "--machine", "kind": "compact line protocol", "stablePrefix": "TSQ_DOCTOR_MACHINE_V1" },
       { "command": "retention", "mode": "--machine", "kind": "compact line protocol", "stablePrefix": "TSQ_RETENTION_PLAN_V1" },
       { "command": "report", "mode": "--json", "kind": "structured JSON projection" },
-      { "command": "attest verify", "mode": "--json", "kind": "structured JSON verification record" }
+      { "command": "attest verify", "mode": "--json", "kind": "structured JSON verification record" },
+      { "command": "mutations preview", "mode": "--json", "kind": "inert mutation selection ledger" }
     ],
     "evidenceClosure": {
       "sourceField": "run.nextEvidenceAction",
@@ -98,12 +99,12 @@
       "name": "check",
       "purpose": "Run the evidence, mutation, invariant, governance, and verdict pipeline for an explicit changed scope.",
       "category": "evaluation",
-      "allowedValueOptions": ["--root", "--config", "--changed", "--run-id"],
+      "allowedValueOptions": ["--root", "--config", "--changed", "--run-id", "--mutation-targets"],
       "allowedFlagOptions": [],
       "reads": ["ts-quality.config.*", "coverage/lcov.info or configured coverage", "changed source files", "configured support files", "configured attestations/keys when present"],
       "writes": [".ts-quality/runs/<run-id>/run.json", ".ts-quality/runs/<run-id>/verdict.json", ".ts-quality/runs/<run-id>/report.json", ".ts-quality/runs/<run-id>/report.md", ".ts-quality/runs/<run-id>/pr-summary.md", ".ts-quality/runs/<run-id>/check-summary.txt", ".ts-quality/runs/<run-id>/explain.txt", ".ts-quality/runs/<run-id>/plan.txt", ".ts-quality/runs/<run-id>/govern.txt", ".ts-quality/runs/<run-id>/next-evidence-action.json", ".ts-quality/runs/<run-id>/next-evidence-action.txt", ".ts-quality/runs/<run-id>/next-evidence-action.prompt.md", ".ts-quality/runs/<run-id>/next-evidence-action.ak-task.json", ".ts-quality/latest.json", "optional coverage-generation sidecars", "optional mutation-remediation payload", "optional execution witness artifacts/receipts"],
       "artifacts": ["immutable run bundle", "verdict", "report views", "operator text summaries", "next evidence action", "optional coverage generation sidecars", "optional mutation remediation", "optional execution witness summary"],
-      "automationNotes": ["Provide --changed, config changeSet.files, or config changeSet.diffFile; check fails closed without changed scope.", "Prefer --run-id in harnessed automation.", "Run coverage and the target repo's normal quality gate before check when meaningful evidence is required.", "Accepts one --changed value; comma-separate multiple files instead of repeating --changed.", "Use next-evidence-action.* outputs to open bounded evidence work when verdicts fail or warn."]
+      "automationNotes": ["Provide --changed, config changeSet.files, or config changeSet.diffFile; check fails closed without changed scope.", "Prefer --run-id in harnessed automation.", "Run coverage and the target repo's normal quality gate before check when meaningful evidence is required.", "Accepts one --changed value; comma-separate multiple files instead of repeating --changed.", "Use next-evidence-action.* outputs to open bounded evidence work when verdicts fail or warn.", "Optional --mutation-targets narrows mutation to explicit file:, span:, symbol: or site: targets separated by ';'; check refuses unresolved ones before reserving the run id or running any command, rejects an empty list, and records run.json mutationSelection."]
     },
     {
       "name": "explain",
@@ -200,6 +201,17 @@
       "writes": ["configured witness output JSON files", "configured witness receipt sidecars"],
       "artifacts": ["execution witnesses", "execution receipts", "stdout summary"],
       "automationNotes": ["Pass --changed in harnessed automation unless changeSet.files or changeSet.diffFile supplies scope.", "Accepts one --changed value; comma-separate multiple files instead of repeating --changed."]
+    },
+    {
+      "name": "mutations preview",
+      "purpose": "Inert preview of the mutation sites check would run for an explicit changed scope, targets and budget.",
+      "category": "evaluation",
+      "allowedValueOptions": ["--root", "--config", "--changed", "--mutation-targets"],
+      "allowedFlagOptions": ["--json"],
+      "reads": ["ts-quality.config.*", "changed source files", "existing coverage LCOV (never generated)"],
+      "writes": [],
+      "artifacts": ["stdout selection ledger (text or --json)"],
+      "automationNotes": ["Runs no command and writes nothing, not even coverage generation; missing LCOV is reported, not created.", "Resolve --mutation-targets here before check: unresolved targets are listed here and refused by check.", "--json emits version, kind mutation-preview, executed false, selection ledger, selected sites and an inert testCommand {cwd, argv}."]
     },
     {
       "name": "attest keygen",

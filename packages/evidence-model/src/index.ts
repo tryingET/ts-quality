@@ -87,6 +87,41 @@ export interface MutationSite {
   description: string;
 }
 
+export type MutationTarget =
+  | { kind: 'file'; filePath: string }
+  | { kind: 'span'; filePath: string; startLine: number; endLine: number }
+  | { kind: 'symbol'; filePath: string; symbol: string; startLine?: number; endLine?: number }
+  | { kind: 'site'; siteId: string };
+
+/** Current function identities (for example CRAP complexity entries) used to resolve symbol targets. */
+export interface FunctionSpan {
+  filePath: string;
+  symbol: string;
+  span: LineSpan;
+}
+
+export type MutationExclusionReason = 'outside-changed-hunks' | 'uncovered' | 'not-targeted' | 'nested-function' | 'budget-sites';
+
+export interface MutationTargetResolution {
+  target: MutationTarget;
+  status: 'resolved' | 'unresolved';
+  reason?: 'not-found' | 'ambiguous' | 'stale-span' | 'stale-site' | 'not-a-source-file' | 'outside-changed-scope' | 'no-eligible-sites';
+  /** Eligible sites the target matched, before the site budget. */
+  matchedSites: number;
+  /** Matched sites that survived the site budget and were selected. */
+  selectedSites: number;
+}
+
+export interface MutationSelectionLedger {
+  version: '1';
+  policy: { coveredOnly: boolean; maxSites: number | null; maxDurationMs: number | null; targets: MutationTarget[] };
+  counts: { discovered: number; eligible: number; selected: number; excluded: number; executed: number; cached: number; unobserved: number };
+  targets: MutationTargetResolution[];
+  excluded: Array<{ siteId: string; filePath: string; line: number; reason: MutationExclusionReason }>;
+  /** True only when every selected site has an observed outcome (executed or cached) behind a passing baseline. */
+  complete: boolean;
+}
+
 export type MutationStatus = 'killed' | 'survived' | 'skipped' | 'invalid' | 'error';
 
 export interface MutationResult {
@@ -105,6 +140,10 @@ export interface MutationResult {
   mutated?: string | undefined;
   testCommand?: string[] | undefined;
   assertionHint?: string | undefined;
+  /** `executed` this run, reused from the fingerprinted `cached` manifest, or `not-executed` (no outcome observed). */
+  origin?: 'executed' | 'cached' | 'not-executed' | undefined;
+  /** Why an `error` result has no assertion verdict. */
+  errorKind?: 'timeout' | 'command-missing' | 'signal' | 'spawn' | 'baseline' | 'budget' | undefined;
 }
 
 export interface InvariantSpec {
@@ -769,6 +808,8 @@ export interface RunArtifact {
   mutationSites: MutationSite[];
   mutations: MutationResult[];
   mutationBaseline?: ExecutionReceipt | undefined;
+  /** Per-site selection ledger: discovered, eligible, selected, excluded and observed sites for this run. */
+  mutationSelection?: MutationSelectionLedger | undefined;
   invariants: InvariantSpec[];
   behaviorClaims: BehaviorClaim[];
   governance: GovernanceFinding[];

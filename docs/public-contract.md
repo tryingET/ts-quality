@@ -185,6 +185,13 @@ Complexity, coverage and mutation evidence semantics (Unreleased; see `docs/rele
 - `coverage[]` holds one entry per LCOV file: repeated records merge and their hits add up. The additive `malformedLines` counts DA records that could not be read (the file's `pct` is then 0); the additive `functionHits` maps `FN` start lines to `FNDA` hits.
 - Mutation sites cover `+`/`-`/`*`, strict and loose equality, relational boundaries, `&&`/`||`, `true`/`false`, `++`/`--`, numeric `0`/`1` (not property or destructuring keys) and condition inversion in `if`, `?:`, `while`, `do` and `for`. Type nodes, interfaces, type aliases, type parameters, ambient (`declare`) declarations and `.d.ts` files never yield a site; a class `extends` expression does, because it runs. A replacement that would lex together with a neighboring character (forming `//`, `/*`, `*/`, `++` or `--`) is skipped. New `operator` values are `*`, `==`, `!=`, `++`, `--`, `0`, `1` and `condition`.
 
+Mutation selection and execution provenance (Unreleased; see `docs/releases/migrations/native-selection.md`):
+
+- `run.json` carries additive `mutationSelection` (version `1`): the policy (`coveredOnly`, `maxSites`, `maxDurationMs`, `targets`), counts (`discovered`, `eligible`, `selected`, `excluded`, `executed`, `cached`, `unobserved`), every target's resolution, every excluded site with its reason, and `complete`. Only sites in changed-scope files are discovered. Each target reports `matchedSites` (eligible) and `selectedSites` (after the site budget). `complete` is true only when every selected site has an assertion verdict (killed or survived) or is invalid code, behind a passing baseline; an execution error or an unrun site makes it false.
+- Each mutation result carries additive `origin`: `executed` this run, `cached` from the fingerprinted manifest, or `not-executed`. `error` results carry `errorKind`: `timeout`, `command-missing`, `signal` (the test process was killed, so no assertion verdict exists), `spawn`, `baseline` or `budget`. Only killed, survived and invalid outcomes are cached; errors are always re-run.
+- `ts-quality mutations preview [--json]` prints the same ledger and the sites `check` would mutate, and runs no command and writes nothing.
+- Explicit targets (`check --mutation-targets` or config `mutations.targets`) narrow, never widen, the changed scope. `check` refuses unresolved command-line targets before reserving the run id or running any command, and unresolved configured targets after coverage generation but before any witness or mutant command. Runs with different mutation selections (targets or time budget) are not trend-comparable.
+
 Protected top-level artifact expectations:
 
 | Artifact | Authority role | Required consumer habit |

@@ -57,7 +57,7 @@ import {
   matchesDiscoveryPattern
 } from '../../evidence-model/src/index';
 import { analyzeCrap, parseLcov } from '../../crap4ts/src/index';
-import { runMutations } from '../../ts-mutate/src/index';
+import { type MutationSelection, type MutationTarget, parseMutationTarget, runMutations, selectMutationSites } from '../../ts-mutate/src/index';
 import { collectExecutionWitnessPlanSummary, evaluateInvariants } from '../../invariants/src/index';
 import {
   type PolicyInput,
@@ -123,6 +123,7 @@ interface TrendComparableRun {
   runId: string;
   changedFiles: string[];
   changedRegions: RunArtifact['changedRegions'];
+  mutationSelection?: { policy: NonNullable<RunArtifact['mutationSelection']>['policy'] } | undefined;
   controlPlane?: ControlPlaneSnapshot | undefined;
   invariants: RunArtifact['invariants'];
 }
@@ -529,6 +530,14 @@ function assessTrendComparability(current: TrendComparableRun, previous: TrendCo
   }
   if (stableStringify(current.invariants) !== stableStringify(previous.invariants)) {
     reasons.push('invariant baseline differs');
+  }
+  const currentSelection = current.mutationSelection?.policy;
+  const previousSelection = previous.mutationSelection?.policy;
+  if (currentSelection && previousSelection
+    ? stableStringify(currentSelection) !== stableStringify(previousSelection)
+    : [currentSelection, previousSelection].some((policy) => policy !== undefined && (policy.targets.length > 0 || policy.maxDurationMs !== null))) {
+    // Scores from different mutation selections (targets, budgets) measure different experiments.
+    reasons.push('mutation selection differs');
   }
   if (current.controlPlane && previous.controlPlane) {
     if (stableStringify(current.controlPlane.policy) !== stableStringify(previous.controlPlane.policy)) {
@@ -2198,8 +2207,113 @@ export function refreshExecutionWitnesses(rootDir: string, options?: { changedFi
   });
 }
 
-export function runCheck(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; runId?: string }): CheckResult {
+function mutationTargetsFor(loaded: AnalysisManifest['loaded'], overrides: string[] | undefined): MutationTarget[] {
+  return (overrides ?? loaded.config.mutations.targets ?? []).map((spec) => parseMutationTarget(spec));
+}
+
+function mutationTargetSpec(target: MutationTarget): string {
+  if (target.kind === 'site') {
+    return `site:${target.siteId}`;
+  }
+  if (target.kind === 'file') {
+    return `file:${target.filePath}`;
+  }
+  if (target.kind === 'span') {
+    return `span:${target.filePath}:${target.startLine}-${target.endLine}`;
+  }
+  return `symbol:${target.filePath}#${target.symbol}${target.startLine !== undefined ? `@${target.startLine}-${target.endLine}` : ''}`;
+}
+
+function refuseUnresolvedMutationTargets(rootDir: string, manifest: AnalysisManifest, overrides: string[] | undefined, functions?: RunArtifact['complexity']): void {
+  const targets = mutationTargetsFor(manifest.loaded, overrides);
+  if (targets.length === 0) {
+    return;
+  }
+  const inventory = functions ?? analyzeCrap({ rootDir, sourceFiles: manifest.sourceFiles, coverage: [], changedFiles: manifest.changedFiles, changedRegions: manifest.changedRegions }).hotspots;
+  const unresolved = previewMutationSelection(rootDir, manifest, inventory, targets).ledger.targets.filter((item) => item.status === 'unresolved');
+  if (unresolved.length > 0) {
+    throw new Error(`Mutation target(s) unresolved: ${unresolved.map((item) => `${mutationTargetSpec(item.target)} (${item.reason})`).join(', ')}. Run 'ts-quality mutations preview' to inspect current targets; no mutation evidence was produced.`);
+  }
+}
+
+function previewMutationSelection(rootDir: string, manifest: AnalysisManifest, functions: RunArtifact['complexity'], targets: MutationTarget[]): MutationSelection {
+  const mutations = manifest.loaded.config.mutations;
+  return selectMutationSites({
+    repoRoot: rootDir,
+    sourceFiles: manifest.sourceFiles,
+    changedFiles: manifest.changedFiles,
+    changedRegions: manifest.changedRegions,
+    coverage: manifest.coverage,
+    coveredOnly: mutations.coveredOnly ?? false,
+    targets,
+    functions,
+    maxSites: mutations.maxSites ?? 25,
+    ...(mutations.maxDurationMs !== undefined ? { maxDurationMs: mutations.maxDurationMs } : {})
+  });
+}
+
+/**
+ * Inert mutation selection preview: the sites `check` would mutate for this scope, targets and budget, with every
+ * exclusion reason. Runs no command (not even coverage generation) and writes nothing.
+ */
+export function renderMutationPreview(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; mutationTargets?: string[]; json?: boolean }): string {
+  const manifest = buildAnalysisManifest(rootDir, { ...options, generateCoverage: false });
+  const crapReport = analyzeCrap({ rootDir, sourceFiles: manifest.sourceFiles, coverage: manifest.coverage, changedFiles: manifest.changedFiles, changedRegions: manifest.changedRegions });
+  const targets = mutationTargetsFor(manifest.loaded, options?.mutationTargets);
+  const selection = previewMutationSelection(rootDir, manifest, crapReport.hotspots, targets);
+  const testCommand = manifest.loaded.config.mutations.testCommand;
+  if (options?.json) {
+    return `${stableStringify({
+      version: '1',
+      kind: 'mutation-preview',
+      executed: false,
+      changedFiles: manifest.changedFiles,
+      coverageLcovPath: manifest.coveragePath,
+      coverageRecords: manifest.coverage.length,
+      // Inert suggestion: check runs this argv once per selected site in an isolated copy of the repository root.
+      testCommand: { cwd: '.', argv: testCommand },
+      selection: selection.ledger,
+      sites: selection.sites.map((site) => ({ id: site.id, filePath: site.filePath, span: site.span, operator: site.operator, original: site.original, replacement: site.replacement, description: site.description }))
+    })}\n`;
+  }
+  const { counts, policy } = selection.ledger;
+  const reasonCounts = new Map<string, number>();
+  for (const item of selection.ledger.excluded) {
+    reasonCounts.set(item.reason, (reasonCounts.get(item.reason) ?? 0) + 1);
+  }
+  const lines = [
+    'Mutation preview (inert: no command ran and nothing was written)',
+    `Changed scope: ${manifest.changedFiles.length} file(s)`,
+    `Coverage: ${manifest.coverage.length > 0 ? `${manifest.coverage.length} LCOV record(s) from ${manifest.coveragePath}` : `no LCOV at ${manifest.coveragePath} (preview never generates coverage)`}`,
+    `Sites: discovered ${counts.discovered}, eligible ${counts.eligible}, selected ${counts.selected}, excluded ${counts.excluded}`,
+    `Budget: maxSites ${policy.maxSites ?? 'none'}, maxDurationMs ${policy.maxDurationMs ?? 'none'}; coveredOnly ${policy.coveredOnly}`
+  ];
+  if (selection.ledger.targets.length > 0) {
+    lines.push('Targets:');
+    for (const item of selection.ledger.targets) {
+      lines.push(`- ${mutationTargetSpec(item.target)}: ${item.status === 'resolved' ? `resolved, ${item.matchedSites} eligible, ${item.selectedSites} selected` : `unresolved (${item.reason}); check refuses to run`}`);
+    }
+  }
+  if (reasonCounts.size > 0) {
+    lines.push(`Excluded: ${[...reasonCounts.entries()].map(([reason, count]) => `${reason} ${count}`).join(', ')}`);
+  }
+  lines.push('Selected sites:');
+  for (const site of selection.sites) {
+    lines.push(`- ${site.filePath}:${site.span.startLine} ${JSON.stringify(site.original)} -> ${JSON.stringify(site.replacement)} (${site.description}) site:${site.id}`);
+  }
+  if (selection.sites.length === 0) {
+    lines.push('- none');
+  }
+  lines.push(`Mutation command per selected site (not run): ${JSON.stringify(testCommand)} in an isolated copy of the repository root`);
+  return `${lines.join('\n')}\n`;
+}
+
+export function runCheck(rootDir: string, options?: { changedFiles?: string[]; configPath?: string; runId?: string; mutationTargets?: string[] }): CheckResult {
   const runId = assertSafeRunId(options?.runId ?? createRunId());
+  if (options?.mutationTargets && options.mutationTargets.length > 0) {
+    // Resolve command-line targets inertly before the run id is reserved and before any command runs.
+    refuseUnresolvedMutationTargets(rootDir, buildAnalysisManifest(rootDir, { ...options, generateCoverage: false }), options.mutationTargets);
+  }
   reserveRunId(rootDir, runId);
   const createdAt = nowIso();
   const manifest = buildAnalysisManifest(rootDir, { ...options, generateCoverage: true, observedAt: createdAt });
@@ -2219,12 +2333,21 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
   const constitution = loadConstitution(rootDir, loaded.config.constitutionPath);
   const agents = loadAgents(rootDir, loaded.config.agentsPath);
   const controlPlane = buildControlPlaneSnapshot(rootDir, loaded, constitution, agents);
+  const plannedMutationTargets = mutationTargetsFor(loaded, options?.mutationTargets);
   const previousRun = latestComparableRunOrUndefined(rootDir, {
     runId,
     changedFiles,
     changedRegions,
     controlPlane,
-    invariants
+    invariants,
+    mutationSelection: {
+      policy: {
+        coveredOnly: loaded.config.mutations.coveredOnly ?? false,
+        maxSites: loaded.config.mutations.maxSites ?? 25,
+        maxDurationMs: loaded.config.mutations.maxDurationMs ?? null,
+        targets: plannedMutationTargets
+      }
+    }
   });
 
   const crapReport = analyzeCrap({
@@ -2234,6 +2357,10 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     changedFiles,
     changedRegions
   });
+
+  // Configured targets resolve here, after coverage generation but before any witness or mutant command runs.
+  const mutationTargets = plannedMutationTargets;
+  refuseUnresolvedMutationTargets(rootDir, manifest, options?.mutationTargets, crapReport.hotspots);
 
   const refreshObservedAt = createdAt;
   const executionWitnessSummary = refreshExecutionWitnessPlans(rootDir, {
@@ -2256,6 +2383,9 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     manifestPath: path.join(rootDir, '.ts-quality', 'mutation-manifest.json'),
     timeoutMs: loaded.config.mutations.timeoutMs ?? 15_000,
     maxSites: loaded.config.mutations.maxSites ?? 25,
+    ...(loaded.config.mutations.maxDurationMs !== undefined ? { maxDurationMs: loaded.config.mutations.maxDurationMs } : {}),
+    targets: mutationTargets,
+    functions: crapReport.hotspots,
     runtimeMirrorRoots: manifest.runtimeMirrorRoots
   });
 
@@ -2351,6 +2481,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     mutationSites: mutationRun.sites,
     mutations: mutationRun.results,
     mutationBaseline: mutationRun.baseline,
+    mutationSelection: mutationRun.selection,
     invariants,
     behaviorClaims: claims,
     governance,

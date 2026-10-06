@@ -5,6 +5,12 @@ import ts from 'typescript';
 import {
   type ChangedRegion,
   type CoverageEvidence,
+  type FunctionSpan,
+  type LineSpan,
+  type MutationExclusionReason,
+  type MutationSelectionLedger,
+  type MutationTarget,
+  type MutationTargetResolution,
   type ExecutionReceipt,
   type MutationResult,
   type MutationSite,
@@ -40,6 +46,10 @@ export interface MutationOptions {
   manifestPath?: string;
   timeoutMs?: number;
   maxSites?: number;
+  /** Stop launching new mutants once the mutant phase has run this long; the first mutant always runs. */
+  maxDurationMs?: number;
+  targets?: MutationTarget[];
+  functions?: FunctionSpan[];
 }
 
 export interface MutationRun {
@@ -50,6 +60,14 @@ export interface MutationRun {
   survived: number;
   baseline: ExecutionReceipt;
   executionFingerprint: string;
+  selection: MutationSelectionLedger;
+}
+
+type MutationErrorKind = NonNullable<MutationResult['errorKind']>;
+
+interface CommandOutcome {
+  receipt: ExecutionReceipt;
+  errorKind?: MutationErrorKind | undefined;
 }
 
 interface RepoFileDigest {
@@ -62,8 +80,9 @@ interface MutationWorkspace {
   snapshot: Map<string, string>;
 }
 
-// Bumped when mutant-workspace semantics change so cached results from older workspaces are not reused.
-const MUTATION_RUNTIME_VERSION = '8';
+// Bumped when mutant-workspace or outcome semantics change so cached results from older versions are not reused
+// (9: a signal-killed test process is an error, not a kill).
+const MUTATION_RUNTIME_VERSION = '9';
 const SANITIZED_MUTATION_ENV_KEYS = ['NODE_TEST_CONTEXT'];
 const MUTATION_WORKSPACE_EXCLUDES = ['.git', 'node_modules', '.ts-quality'];
 const MUTATION_WORKSPACE_EXCLUDE_SET = new Set(MUTATION_WORKSPACE_EXCLUDES);
@@ -165,14 +184,13 @@ function conditionOf(node: ts.Node): { expression: ts.Expression; description: s
   return undefined;
 }
 
-export function discoverMutationSites(sourceText: string, filePath: string, coverage: CoverageEvidence[] = [], changedFiles: string[] = [], changedRegions: ChangedRegion[] = [], coveredOnly = false): MutationSite[] {
+/** Every valid mutation site in the file, before change-scope, coverage, target or budget selection. */
+function candidateMutationSites(sourceText: string, filePath: string): MutationSite[] {
   const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true);
   const sites: MutationSite[] = [];
   if (sourceFile.isDeclarationFile) {
     return sites;
   }
-  const changed = changedFileSet(changedFiles, changedRegions);
-  const fileRegions = changedRegions.filter((item) => normalizePath(item.filePath) === normalizePath(filePath));
 
   function considerRange(startOffset: number, endOffset: number, replacement: string, operator: string, description: string): void {
     if (mergesWithNeighbors(sourceText, startOffset, endOffset, replacement)) {
@@ -181,16 +199,6 @@ export function discoverMutationSites(sourceText: string, filePath: string, cove
     const startLine = sourceFile.getLineAndCharacterOfPosition(startOffset).line + 1;
     const endLine = sourceFile.getLineAndCharacterOfPosition(endOffset).line + 1;
     const span = { startLine, endLine, startOffset, endOffset };
-    const inChangedRegion = fileRegions.some((region) => region.span.startLine <= endLine && region.span.endLine >= startLine);
-    if (changed.size > 0) {
-      const inChangeScope = fileRegions.length > 0 ? inChangedRegion : changed.has(normalizePath(filePath));
-      if (!inChangeScope) {
-        return;
-      }
-    }
-    if (coveredOnly && !coverageForLine(filePath, startLine, coverage)) {
-      return;
-    }
     const original = sourceText.slice(startOffset, endOffset);
     sites.push({
       id: mutationId(filePath, span, original, replacement),
@@ -246,6 +254,321 @@ export function discoverMutationSites(sourceText: string, filePath: string, cove
   return sites;
 }
 
+interface ScopeContext {
+  changed: Set<string>;
+  changedRegions: ChangedRegion[];
+  coverage: CoverageEvidence[];
+  coveredOnly: boolean;
+}
+
+/** Why an in-scope file's site is not eligible: outside the changed hunks or, with coveredOnly, without covered LCOV evidence. */
+function eligibilityExclusion(site: MutationSite, context: ScopeContext): 'outside-changed-hunks' | 'uncovered' | undefined {
+  const fileRegions = context.changedRegions.filter((item) => normalizePath(item.filePath) === site.filePath);
+  if (fileRegions.length > 0 && !fileRegions.some((region) => region.span.startLine <= site.span.endLine && region.span.endLine >= site.span.startLine)) {
+    return 'outside-changed-hunks';
+  }
+  if (context.coveredOnly && !coverageForLine(site.filePath, site.span.startLine, context.coverage)) {
+    return 'uncovered';
+  }
+  return undefined;
+}
+
+function inChangedScope(filePath: string, changed: Set<string>): boolean {
+  return changed.size === 0 || changed.has(normalizePath(filePath));
+}
+
+export function discoverMutationSites(sourceText: string, filePath: string, coverage: CoverageEvidence[] = [], changedFiles: string[] = [], changedRegions: ChangedRegion[] = [], coveredOnly = false): MutationSite[] {
+  const context: ScopeContext = { changed: changedFileSet(changedFiles, changedRegions), changedRegions, coverage, coveredOnly };
+  if (!inChangedScope(filePath, context.changed)) {
+    return [];
+  }
+  return candidateMutationSites(sourceText, filePath).filter((site) => eligibilityExclusion(site, context) === undefined);
+}
+
+export type { FunctionSpan, MutationExclusionReason, MutationSelectionLedger, MutationTarget, MutationTargetResolution };
+
+export interface MutationSelection {
+  sites: MutationSite[];
+  ledger: MutationSelectionLedger;
+}
+
+export interface MutationSelectionOptions {
+  repoRoot: string;
+  sourceFiles?: string[];
+  changedFiles?: string[];
+  changedRegions?: ChangedRegion[];
+  coverage?: CoverageEvidence[];
+  coveredOnly?: boolean;
+  targets?: MutationTarget[];
+  functions?: FunctionSpan[];
+  maxSites?: number;
+  maxDurationMs?: number;
+}
+
+const DEFAULT_MUTATION_SOURCE_PATTERNS = ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx', 'src/**/*.mjs', 'src/**/*.cjs'];
+
+function targetError(spec: string, why: string): Error {
+  return new Error(`Invalid mutation target "${spec}": ${why}. Use file:<path>, span:<path>:<start>-<end>, symbol:<path>#<kind:name>[@<start>-<end>] or site:<id>.`);
+}
+
+function lineRange(spec: string, text: string): { startLine: number; endLine: number } {
+  const match = /^([1-9]\d*)-([1-9]\d*)$/.exec(text);
+  if (!match || Number(match[1]) > Number(match[2])) {
+    throw targetError(spec, 'expected a line range <start>-<end> with start <= end');
+  }
+  return { startLine: Number(match[1]), endLine: Number(match[2]) };
+}
+
+export function parseMutationTarget(spec: string): MutationTarget {
+  const colon = spec.indexOf(':');
+  const kind = colon > 0 ? spec.slice(0, colon) : '';
+  const rest = colon > 0 ? spec.slice(colon + 1) : '';
+  if (!rest) {
+    throw targetError(spec, 'missing kind or value');
+  }
+  if (kind === 'file') {
+    return { kind, filePath: normalizePath(rest) };
+  }
+  if (kind === 'site') {
+    return { kind, siteId: rest };
+  }
+  if (kind === 'span') {
+    const separator = rest.lastIndexOf(':');
+    if (separator <= 0) {
+      throw targetError(spec, 'expected span:<path>:<start>-<end>');
+    }
+    return { kind, filePath: normalizePath(rest.slice(0, separator)), ...lineRange(spec, rest.slice(separator + 1)) };
+  }
+  if (kind === 'symbol') {
+    const hash = rest.indexOf('#');
+    if (hash <= 0 || hash === rest.length - 1) {
+      throw targetError(spec, 'expected symbol:<path>#<kind:name>');
+    }
+    const filePath = normalizePath(rest.slice(0, hash));
+    const symbolText = rest.slice(hash + 1);
+    // Only a trailing @<start>-<end> is a span; names such as arrow:<anonymous@6> keep their @.
+    const at = /@(\d+-\d+)$/.exec(symbolText);
+    return at && at.index > 0
+      ? { kind, filePath, symbol: symbolText.slice(0, at.index), ...lineRange(spec, at[1] as string) }
+      : { kind, filePath, symbol: symbolText };
+  }
+  throw targetError(spec, `unknown kind "${kind}"`);
+}
+
+function spanContains(outer: LineSpan, inner: LineSpan): boolean {
+  return outer.startLine <= inner.startLine && inner.endLine <= outer.endLine;
+}
+
+interface FunctionNodeRange {
+  kind: string;
+  span: LineSpan;
+  start: number;
+  end: number;
+}
+
+function functionKind(node: ts.Node): string | undefined {
+  if (ts.isFunctionDeclaration(node)) return 'function';
+  if (ts.isMethodDeclaration(node)) return 'method';
+  if (ts.isConstructorDeclaration(node)) return 'constructor';
+  if (ts.isGetAccessorDeclaration(node)) return 'get';
+  if (ts.isSetAccessorDeclaration(node)) return 'set';
+  if (ts.isArrowFunction(node)) return 'arrow';
+  if (ts.isFunctionExpression(node)) return 'function-expression';
+  return undefined;
+}
+
+/** Executable function bodies with their character ranges, so ownership is decided by offsets, not shared lines. */
+function functionNodeRanges(sourceText: string, filePath: string): FunctionNodeRange[] {
+  const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true);
+  const ranges: FunctionNodeRange[] = [];
+  const visit = (node: ts.Node): void => {
+    if (isAmbientDeclaration(node)) {
+      return;
+    }
+    const kind = functionKind(node);
+    if (kind && (node as ts.FunctionLikeDeclaration).body) {
+      const start = node.getStart(sourceFile);
+      ranges.push({
+        kind,
+        start,
+        end: node.end,
+        span: { startLine: sourceFile.getLineAndCharacterOfPosition(start).line + 1, endLine: sourceFile.getLineAndCharacterOfPosition(node.end).line + 1 }
+      });
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return ranges;
+}
+
+function innermostFunction(ranges: FunctionNodeRange[], offset: number): FunctionNodeRange | undefined {
+  return ranges
+    .filter((range) => range.start <= offset && offset < range.end)
+    .sort((left, right) => (left.end - left.start) - (right.end - right.start))[0];
+}
+
+interface ResolvedTarget {
+  resolution: MutationTargetResolution;
+  matches: (site: MutationSite) => boolean;
+  nested: (site: MutationSite) => boolean;
+}
+
+interface TargetContext {
+  repoRoot: string;
+  sourceFiles: Set<string>;
+  changed: Set<string>;
+  functions: FunctionSpan[];
+  discovered: MutationSite[];
+  sourceTexts: Map<string, string>;
+}
+
+function siteExistsOutsideScope(target: { siteId: string }, context: TargetContext): boolean {
+  for (const filePath of context.sourceFiles) {
+    if (inChangedScope(filePath, context.changed)) {
+      continue;
+    }
+    const text = fs.readFileSync(path.join(context.repoRoot, filePath), 'utf8');
+    if (candidateMutationSites(text, filePath).some((site) => site.id === target.siteId)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function resolveTarget(target: MutationTarget, context: TargetContext): ResolvedTarget {
+  const none = { matches: () => false, nested: () => false };
+  const unresolved = (reason: NonNullable<MutationTargetResolution['reason']>): ResolvedTarget => ({ resolution: { target, status: 'unresolved', reason, matchedSites: 0, selectedSites: 0 }, ...none });
+  const resolved = (matches: ResolvedTarget['matches'], nested: ResolvedTarget['nested'] = () => false): ResolvedTarget => ({ resolution: { target, status: 'resolved', matchedSites: 0, selectedSites: 0 }, matches, nested });
+  if (target.kind === 'site') {
+    if (context.discovered.some((site) => site.id === target.siteId)) {
+      return resolved((site) => site.id === target.siteId);
+    }
+    return unresolved(siteExistsOutsideScope(target, context) ? 'outside-changed-scope' : 'stale-site');
+  }
+  const filePath = normalizePath(target.filePath);
+  if (!context.sourceFiles.has(filePath)) {
+    return unresolved('not-a-source-file');
+  }
+  if (!inChangedScope(filePath, context.changed)) {
+    return unresolved('outside-changed-scope');
+  }
+  if (target.kind === 'file') {
+    return resolved((site) => site.filePath === filePath);
+  }
+  if (target.kind === 'span') {
+    return resolved((site) => site.filePath === filePath && spanContains(target, site.span));
+  }
+  const candidates = context.functions.filter((item) => normalizePath(item.filePath) === filePath && item.symbol === target.symbol);
+  if (candidates.length === 0) {
+    return unresolved('not-found');
+  }
+  const startLine = target.startLine;
+  const endLine = target.endLine;
+  const exact = startLine !== undefined && endLine !== undefined
+    ? candidates.filter((item) => item.span.startLine === startLine && item.span.endLine === endLine)
+    : candidates;
+  if (exact.length === 0) {
+    return unresolved('stale-span');
+  }
+  if (exact.length > 1) {
+    return unresolved('ambiguous');
+  }
+  const owner = exact[0] as FunctionSpan;
+  const kind = target.symbol.slice(0, target.symbol.indexOf(':'));
+  const ranges = functionNodeRanges(context.sourceTexts.get(filePath) ?? '', filePath);
+  const ownerRanges = ranges.filter((range) => range.kind === kind && range.span.startLine === owner.span.startLine && range.span.endLine === owner.span.endLine);
+  if (ownerRanges.length !== 1) {
+    // Two functions of the same kind on identical lines cannot be told apart by the inventory.
+    return unresolved(ownerRanges.length === 0 ? 'not-found' : 'ambiguous');
+  }
+  const ownerRange = ownerRanges[0] as FunctionNodeRange;
+  // A site belongs to the function whose body most tightly encloses it; nested and sibling functions own their own sites.
+  const ownedBy = (site: MutationSite): FunctionNodeRange | undefined => (site.filePath === filePath ? innermostFunction(ranges, site.startOffset) : undefined);
+  return resolved(
+    (site) => ownedBy(site) === ownerRange,
+    (site) => site.filePath === filePath && ownerRange.start <= site.startOffset && site.startOffset < ownerRange.end && ownedBy(site) !== ownerRange
+  );
+}
+
+/**
+ * Inert mutation selection: discovers, filters and budgets sites and records why each was or was not selected.
+ * Runs no command and writes nothing.
+ */
+export function selectMutationSites(options: MutationSelectionOptions): MutationSelection {
+  const sourceFiles = (options.sourceFiles ?? collectSourceFiles(options.repoRoot, DEFAULT_MUTATION_SOURCE_PATTERNS))
+    .filter((filePath) => !matchPattern('**/*.d.ts', filePath))
+    .map((filePath) => normalizePath(filePath));
+  const changedRegions = options.changedRegions ?? [];
+  const context: ScopeContext = {
+    changed: changedFileSet(options.changedFiles ?? [], changedRegions),
+    changedRegions,
+    coverage: options.coverage ?? [],
+    coveredOnly: options.coveredOnly ?? false
+  };
+  const sourceTexts = new Map<string, string>();
+  const discovered = sourceFiles
+    .filter((filePath) => inChangedScope(filePath, context.changed))
+    .flatMap((filePath) => {
+      const text = fs.readFileSync(path.join(options.repoRoot, filePath), 'utf8');
+      sourceTexts.set(filePath, text);
+      return candidateMutationSites(text, filePath);
+    });
+  const excluded: MutationSelectionLedger['excluded'] = [];
+  const exclude = (site: MutationSite, reason: MutationExclusionReason): void => {
+    excluded.push({ siteId: site.id, filePath: site.filePath, line: site.span.startLine, reason });
+  };
+  const eligible = discovered.filter((site) => {
+    const reason = eligibilityExclusion(site, context);
+    if (reason) {
+      exclude(site, reason);
+    }
+    return reason === undefined;
+  });
+
+  const targets = options.targets ?? [];
+  const resolvedTargets = targets.map((target) => resolveTarget(target, { repoRoot: options.repoRoot, sourceFiles: new Set(sourceFiles), changed: context.changed, functions: options.functions ?? [], discovered, sourceTexts }));
+  let matched = eligible;
+  if (targets.length > 0) {
+    matched = eligible.filter((site) => {
+      if (resolvedTargets.some((item) => item.matches(site))) {
+        return true;
+      }
+      exclude(site, resolvedTargets.some((item) => item.nested(site)) ? 'nested-function' : 'not-targeted');
+      return false;
+    });
+  }
+  const maxSites = typeof options.maxSites === 'number' ? options.maxSites : undefined;
+  const sites = maxSites === undefined ? matched : matched.slice(0, maxSites);
+  for (const site of matched.slice(sites.length)) {
+    exclude(site, 'budget-sites');
+  }
+  for (const item of resolvedTargets) {
+    if (item.resolution.status !== 'resolved') {
+      continue;
+    }
+    item.resolution.matchedSites = matched.filter((site) => item.matches(site)).length;
+    item.resolution.selectedSites = sites.filter((site) => item.matches(site)).length;
+    if (item.resolution.matchedSites === 0) {
+      // The identity exists, but nothing in it is eligible (outside the changed hunks, uncovered or nested only).
+      item.resolution.status = 'unresolved';
+      item.resolution.reason = 'no-eligible-sites';
+    }
+  }
+  const order = new Map(discovered.map((site, index) => [site.id, index]));
+  excluded.sort((left, right) => (order.get(left.siteId) ?? 0) - (order.get(right.siteId) ?? 0));
+  return {
+    sites,
+    ledger: {
+      version: '1',
+      policy: { coveredOnly: context.coveredOnly, maxSites: maxSites ?? null, maxDurationMs: options.maxDurationMs ?? null, targets },
+      counts: { discovered: discovered.length, eligible: eligible.length, selected: sites.length, excluded: excluded.length, executed: 0, cached: 0, unobserved: 0 },
+      targets: resolvedTargets.map((item) => item.resolution),
+      excluded,
+      complete: false
+    }
+  };
+}
+
 export function applyMutation(sourceText: string, site: MutationSite): string {
   return `${sourceText.slice(0, site.startOffset)}${site.replacement}${sourceText.slice(site.endOffset)}`;
 }
@@ -296,7 +619,7 @@ function requiredExecutable(command: string[]): string {
   return executable;
 }
 
-function runCommandReceipt(cwd: string, testCommand: string[], timeoutMs: number): ExecutionReceipt {
+function runCommand(cwd: string, testCommand: string[], timeoutMs: number): CommandOutcome {
   const started = Date.now();
   const result = spawnSync(requiredExecutable(testCommand), testCommand.slice(1), {
     cwd,
@@ -306,22 +629,27 @@ function runCommandReceipt(cwd: string, testCommand: string[], timeoutMs: number
     env: mutationCommandEnv()
   });
   const durationMs = Date.now() - started;
+  const exitCode = typeof result.status === 'number' ? result.status : undefined;
   if (result.error) {
     const error = result.error as { code?: string; message?: string };
-    const status = error.code === 'ETIMEDOUT' ? 'timeout' : 'error';
+    const timedOut = error.code === 'ETIMEDOUT';
     return {
-      status,
-      exitCode: typeof result.status === 'number' ? result.status : undefined,
-      durationMs,
-      details: error.message ?? 'unknown test command error'
+      receipt: { status: timedOut ? 'timeout' : 'error', exitCode, durationMs, details: error.message ?? 'unknown test command error' },
+      errorKind: timedOut ? 'timeout' : error.code === 'ENOENT' ? 'command-missing' : 'spawn'
     };
   }
-  return {
-    status: result.status === 0 ? 'pass' : 'fail',
-    exitCode: typeof result.status === 'number' ? result.status : undefined,
-    durationMs,
-    details: commandDetails(result)
-  };
+  if (result.status === null && result.signal) {
+    // A process killed by a signal (OOM killer, external kill) never reached an assertion verdict.
+    return {
+      receipt: { status: 'error', durationMs, details: `test command terminated by signal ${result.signal}. ${commandDetails(result)}`.trim().slice(0, 280) },
+      errorKind: 'signal'
+    };
+  }
+  return { receipt: { status: result.status === 0 ? 'pass' : 'fail', exitCode, durationMs, details: commandDetails(result) } };
+}
+
+function runCommandReceipt(cwd: string, testCommand: string[], timeoutMs: number): ExecutionReceipt {
+  return runCommand(cwd, testCommand, timeoutMs).receipt;
 }
 
 function canonicalRuntimeMirrorRoots(runtimeMirrorRoots: string[] | undefined): string[] {
@@ -632,7 +960,7 @@ function assertionHintForMutation(site: MutationSite): string {
   return `Add or tighten a focused assertion around ${location}; this mutant changed ${site.original} to ${site.replacement}.`;
 }
 
-function mutationResultForSite(site: MutationSite, input: { status: MutationResult['status']; durationMs: number; details?: string; mutatedSource?: string; testCommand: string[] }): MutationResult {
+function mutationResultForSite(site: MutationSite, input: { status: MutationResult['status']; durationMs: number; details?: string; mutatedSource?: string; testCommand: string[]; origin?: MutationResult['origin']; errorKind?: MutationErrorKind | undefined }): MutationResult {
   const result: MutationResult = {
     kind: 'mutation-result',
     siteId: site.id,
@@ -654,6 +982,12 @@ function mutationResultForSite(site: MutationSite, input: { status: MutationResu
   if (input.mutatedSource) {
     result.mutated = input.mutatedSource.slice(site.startOffset, site.startOffset + site.replacement.length);
   }
+  if (input.origin) {
+    result.origin = input.origin;
+  }
+  if (input.errorKind) {
+    result.errorKind = input.errorKind;
+  }
   return result;
 }
 
@@ -664,7 +998,8 @@ function runSingleMutation(repoRoot: string, workspace: MutationWorkspace, site:
       durationMs: 0,
       details: 'Mutation produced syntax errors',
       mutatedSource,
-      testCommand
+      testCommand,
+      origin: 'executed'
     });
   }
 
@@ -673,49 +1008,87 @@ function runSingleMutation(repoRoot: string, workspace: MutationWorkspace, site:
     ensureDir(path.dirname(targetPath));
     fs.writeFileSync(targetPath, mutatedSource, 'utf8');
     writeRuntimeMirrors(repoRoot, workspace.tempDir, site, mutatedSource, runtimeMirrorRoots);
-    const receipt = runCommandReceipt(workspace.tempDir, testCommand, timeoutMs);
+    const { receipt, errorKind } = runCommand(workspace.tempDir, testCommand, timeoutMs);
     return mutationResultForSite(site, {
       status: receipt.status === 'pass' ? 'survived' : receipt.status === 'fail' ? 'killed' : 'error',
       durationMs: receipt.durationMs,
       details: receipt.status === 'timeout' ? `test command timed out: ${receipt.details}` : receipt.details,
       mutatedSource,
-      testCommand
+      testCommand,
+      origin: 'executed',
+      errorKind
     });
   } finally {
     resetMutationWorkspace(repoRoot, workspace);
   }
 }
 
+/** Killed, survived and invalid outcomes are reusable for the same fingerprint; infrastructure errors are retried, never cached. */
+function cacheableResult(result: MutationResult): boolean {
+  return result.status === 'killed' || result.status === 'survived' || result.status === 'invalid';
+}
+
 export function runMutations(options: MutationOptions): MutationRun {
-  const sourceFiles = (options.sourceFiles ?? collectSourceFiles(options.repoRoot, ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx', 'src/**/*.mjs', 'src/**/*.cjs']))
-    .filter((filePath) => !matchPattern('**/*.d.ts', filePath));
   const coverage = options.coverage ?? [];
-  const changedFiles = options.changedFiles ?? [];
-  const changedRegions = options.changedRegions ?? [];
-  const sites = sourceFiles.flatMap((relativePath) => {
-    const sourceText = fs.readFileSync(path.join(options.repoRoot, relativePath), 'utf8');
-    return discoverMutationSites(sourceText, relativePath, coverage, changedFiles, changedRegions, options.coveredOnly ?? false);
-  });
-  const limitedSites = typeof options.maxSites === 'number' ? sites.slice(0, options.maxSites) : sites;
+  const selectionOptions: MutationSelectionOptions = {
+    repoRoot: options.repoRoot,
+    changedFiles: options.changedFiles ?? [],
+    changedRegions: options.changedRegions ?? [],
+    coverage,
+    coveredOnly: options.coveredOnly ?? false
+  };
+  if (options.sourceFiles) {
+    selectionOptions.sourceFiles = options.sourceFiles;
+  }
+  if (options.targets) {
+    selectionOptions.targets = options.targets;
+  }
+  if (options.functions) {
+    selectionOptions.functions = options.functions;
+  }
+  if (typeof options.maxSites === 'number') {
+    selectionOptions.maxSites = options.maxSites;
+  }
+  if (typeof options.maxDurationMs === 'number') {
+    selectionOptions.maxDurationMs = options.maxDurationMs;
+  }
+  const { sites: limitedSites, ledger } = selectMutationSites(selectionOptions);
   const timeoutMs = options.timeoutMs ?? 15_000;
   const runtimeMirrorRoots = canonicalRuntimeMirrorRoots(options.runtimeMirrorRoots);
   const baseline = runCommandReceipt(options.repoRoot, options.testCommand, timeoutMs);
   const repoFiles = repoFileDigests(options.repoRoot);
   const executionFingerprint = buildExecutionFingerprint(options.testCommand, runtimeMirrorRoots, repoFiles);
-  const untrustedRun = (failedBaseline: ExecutionReceipt): MutationRun => ({
-    sites: limitedSites,
-    results: limitedSites.map((site) => mutationResultForSite(site, {
-      status: 'error',
-      durationMs: failedBaseline.durationMs,
-      details: `Baseline test command must pass before mutation scoring is trusted. ${failedBaseline.details ?? ''}`.trim().slice(0, 280),
-      testCommand: options.testCommand
-    })),
-    score: 0,
-    killed: 0,
-    survived: 0,
-    baseline: failedBaseline,
-    executionFingerprint
-  });
+  const finish = (results: MutationResult[], runBaseline: ExecutionReceipt): MutationRun => {
+    const killed = results.filter((result) => result.status === 'killed').length;
+    const survived = results.filter((result) => result.status === 'survived').length;
+    const total = killed + survived;
+    const counts = {
+      ...ledger.counts,
+      executed: results.filter((result) => result.origin === 'executed').length,
+      cached: results.filter((result) => result.origin === 'cached').length,
+      unobserved: results.filter((result) => result.origin === 'not-executed').length
+    };
+    return {
+      sites: limitedSites,
+      results,
+      // An untrusted baseline scores 0, never a vacuous 1.
+      score: runBaseline.status !== 'pass' ? 0 : total === 0 ? 1 : killed / total,
+      killed,
+      survived,
+      baseline: runBaseline,
+      executionFingerprint,
+      // Complete only when every selected site has an assertion verdict (killed, survived) or is invalid code.
+      selection: { ...ledger, counts, complete: runBaseline.status === 'pass' && results.length === limitedSites.length && results.every((result) => cacheableResult(result)) }
+    };
+  };
+  const untrustedRun = (failedBaseline: ExecutionReceipt): MutationRun => finish(limitedSites.map((site) => mutationResultForSite(site, {
+    status: 'error',
+    durationMs: failedBaseline.durationMs,
+    details: `Baseline test command must pass before mutation scoring is trusted. ${failedBaseline.details ?? ''}`.trim().slice(0, 280),
+    testCommand: options.testCommand,
+    origin: 'not-executed',
+    errorKind: 'baseline'
+  })), failedBaseline);
   if (baseline.status !== 'pass') {
     return untrustedRun(baseline);
   }
@@ -723,12 +1096,14 @@ export function runMutations(options: MutationOptions): MutationRun {
   const manifest = loadManifest(options.manifestPath);
   const results: MutationResult[] = [];
   let workspace: MutationWorkspace | undefined;
+  let phaseStartedAt: number | undefined;
+  let executedCount = 0;
 
   try {
     for (const site of limitedSites) {
       const key = manifestKey(options.repoRoot, site, executionFingerprint);
       const cached = manifest.entries[key];
-      if (cached) {
+      if (cached && cacheableResult(cached)) {
         const cachedInput: { status: MutationResult['status']; durationMs: number; details?: string; testCommand: string[] } = {
           status: cached.status,
           durationMs: cached.durationMs,
@@ -739,8 +1114,21 @@ export function runMutations(options: MutationOptions): MutationRun {
         }
         results.push({
           ...mutationResultForSite(site, cachedInput),
-          ...cached
+          ...cached,
+          origin: 'cached'
         });
+        continue;
+      }
+      if (typeof options.maxDurationMs === 'number' && executedCount > 0 && phaseStartedAt !== undefined && Date.now() - phaseStartedAt >= options.maxDurationMs) {
+        // Budget exhaustion is incomplete evidence: the site has no outcome and is never cached as clean.
+        results.push(mutationResultForSite(site, {
+          status: 'error',
+          durationMs: 0,
+          details: `not executed: mutation time budget maxDurationMs=${options.maxDurationMs} exhausted; this site has no observed outcome`,
+          testCommand: options.testCommand,
+          origin: 'not-executed',
+          errorKind: 'budget'
+        }));
         continue;
       }
       if (!workspace) {
@@ -759,25 +1147,23 @@ export function runMutations(options: MutationOptions): MutationRun {
       }
       const sourceText = fs.readFileSync(path.join(options.repoRoot, site.filePath), 'utf8');
       const mutatedSource = applyMutation(sourceText, site);
+      if (!hasSyntaxErrors(site.filePath, mutatedSource)) {
+        // The budget clock starts with the first mutant that actually runs the test command.
+        phaseStartedAt ??= Date.now();
+      }
       const result = runSingleMutation(options.repoRoot, workspace, site, mutatedSource, options.testCommand, timeoutMs, runtimeMirrorRoots);
+      if (result.status !== 'invalid') {
+        executedCount += 1;
+      }
       results.push(result);
-      manifest.entries[key] = result;
+      if (cacheableResult(result)) {
+        manifest.entries[key] = result;
+      }
     }
   } finally {
     disposeMutationWorkspace(workspace);
   }
 
   saveManifest(options.manifestPath, manifest);
-  const killed = results.filter((result) => result.status === 'killed').length;
-  const survived = results.filter((result) => result.status === 'survived').length;
-  const total = killed + survived;
-  return {
-    sites: limitedSites,
-    results,
-    score: total === 0 ? 1 : killed / total,
-    killed,
-    survived,
-    baseline,
-    executionFingerprint
-  };
+  return finish(results, baseline);
 }

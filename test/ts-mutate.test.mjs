@@ -658,3 +658,71 @@ test('Scenario: a replacement that would merge with a neighboring token is skipp
   assert.deepEqual(sitesOf('const q = a */* c */ b;\n').map((site) => site.original), []);
   assert.deepEqual(sitesOf('const r = a-++b;\n').map((site) => site.original), []);
 });
+
+function runnerRepo(files) {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-runner-truth-'));
+  for (const [file, text] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(rootDir, file)), { recursive: true });
+    fs.writeFileSync(path.join(rootDir, file), text, 'utf8');
+  }
+  return rootDir;
+}
+
+test('Scenario: a test process killed by a signal is an execution error, not an assertion kill', () => {
+  // Given a test command that kills itself when it observes the mutant, without failing an assertion
+  const rootDir = runnerRepo({
+    'src/flag.js': 'function flag() { return true; }\nmodule.exports = { flag };\n',
+    'check.js': "if (require('./src/flag.js').flag() === false) process.kill(process.pid, 'SIGKILL');\n"
+  });
+  const run = mutate.runMutations({ repoRoot: rootDir, sourceFiles: ['src/flag.js'], changedFiles: ['src/flag.js'], testCommand: ['node', 'check.js'], maxSites: 5, timeoutMs: 10_000 });
+  const flip = run.results.find((result) => result.original === 'true');
+  assert.equal(flip.status, 'error');
+  assert.equal(flip.errorKind, 'signal');
+  assert.equal(run.killed, 0);
+});
+
+test('Scenario: a timed-out mutant is a timeout error that is never cached, so a larger budget re-executes it', () => {
+  const rootDir = runnerRepo({
+    'src/flag.js': 'function flag() { return true; }\nmodule.exports = { flag };\n',
+    'check.js': "if (require('./src/flag.js').flag() === false) { const end = Date.now() + 1500; while (Date.now() < end) {} process.exit(1); }\n"
+  });
+  const manifestPath = path.join(rootDir, '.ts-quality', 'mutation-manifest.json');
+  const options = { repoRoot: rootDir, sourceFiles: ['src/flag.js'], changedFiles: ['src/flag.js'], testCommand: ['node', 'check.js'], maxSites: 5, manifestPath };
+  const short = mutate.runMutations({ ...options, timeoutMs: 700 });
+  const flipShort = short.results.find((result) => result.original === 'true');
+  assert.deepEqual([flipShort.status, flipShort.errorKind, flipShort.origin], ['error', 'timeout', 'executed']);
+  // An executed site without an assertion verdict leaves the evidence incomplete.
+  assert.equal(short.selection.complete, false);
+  const long = mutate.runMutations({ ...options, timeoutMs: 10_000 });
+  const flipLong = long.results.find((result) => result.original === 'true');
+  assert.deepEqual([flipLong.status, flipLong.origin], ['killed', 'executed']);
+  const again = mutate.runMutations({ ...options, timeoutMs: 10_000 });
+  assert.equal(again.results.find((result) => result.original === 'true').origin, 'cached');
+  assert.equal(again.selection.counts.cached, again.results.filter((result) => result.origin === 'cached').length);
+});
+
+test('Scenario: a missing test executable fails the baseline closed and labels every site', () => {
+  const rootDir = runnerRepo({ 'src/flag.js': 'function flag() { return true; }\nmodule.exports = { flag };\n' });
+  const run = mutate.runMutations({ repoRoot: rootDir, sourceFiles: ['src/flag.js'], changedFiles: ['src/flag.js'], testCommand: ['definitely-not-a-real-test-runner-7f3a'], maxSites: 5, timeoutMs: 5_000 });
+  assert.equal(run.baseline.status, 'error');
+  assert.equal(run.results.every((result) => result.status === 'error' && result.errorKind === 'baseline'), true);
+  assert.equal(run.selection.complete, false);
+});
+
+test('Scenario: an exhausted time budget leaves later sites unobserved errors, never clean, and never cached', () => {
+  const rootDir = runnerRepo({
+    'src/flag.js': 'function flag(a, b) { return a === b && true; }\nmodule.exports = { flag };\n',
+    'check.js': "const end = Date.now() + 300; while (Date.now() < end) {}\nrequire('./src/flag.js');\n"
+  });
+  const manifestPath = path.join(rootDir, '.ts-quality', 'mutation-manifest.json');
+  const run = mutate.runMutations({ repoRoot: rootDir, sourceFiles: ['src/flag.js'], changedFiles: ['src/flag.js'], testCommand: ['node', 'check.js'], maxSites: 10, timeoutMs: 10_000, maxDurationMs: 1, manifestPath });
+  const executed = run.results.filter((result) => result.origin === 'executed');
+  const unobserved = run.results.filter((result) => result.errorKind === 'budget');
+  assert.equal(executed.length, 1);
+  assert.equal(unobserved.length, run.sites.length - 1);
+  assert.equal(unobserved.every((result) => result.status === 'error' && result.origin === 'not-executed'), true);
+  assert.equal(run.selection.counts.unobserved, unobserved.length);
+  assert.equal(run.selection.complete, false);
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  assert.equal(Object.keys(manifest.entries).length, 1);
+});

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import ts from 'typescript';
+import { parseMutationTarget } from '../../ts-mutate/src/index';
 import { type Agent, type ConstitutionRule, type InvariantSpec, type OverrideRecord, type Waiver, type Approval, DEFAULT_SOURCE_PATTERNS, DEFAULT_TEST_PATTERNS, parseUnifiedDiff, readJson, resolveRepoLocalPath } from '../../evidence-model/src/index';
 
 export interface TsQualityConfig {
@@ -18,6 +19,10 @@ export interface TsQualityConfig {
     coveredOnly?: boolean;
     timeoutMs?: number;
     maxSites?: number;
+    /** Stop launching new mutants after this many milliseconds of mutant execution; unrun sites stay unobserved. */
+    maxDurationMs?: number;
+    /** Explicit target specs: file:<path>, span:<path>:<a>-<b>, symbol:<path>#<kind:name>[@<a>-<b>], site:<id>. */
+    targets?: string[];
     runtimeMirrorRoots?: string[];
   };
   policy?: {
@@ -275,6 +280,11 @@ function validateConfig(raw: TsQualityConfig): Required<TsQualityConfig> {
     throw new Error('mutations.testCommand must contain at least one executable argument');
   }
   const runtimeMirrorRoots = validateStringArray('mutations.runtimeMirrorRoots', raw.mutations?.runtimeMirrorRoots) ?? ['dist'];
+  const mutationTargets = validateStringArray('mutations.targets', raw.mutations?.targets);
+  for (const spec of mutationTargets ?? []) {
+    parseMutationTarget(spec);
+  }
+  const maxDurationMs = validateFiniteNumber('mutations.maxDurationMs', raw.mutations?.maxDurationMs, { min: 1 });
   const maxChangedCrap = validateFiniteNumber('policy.maxChangedCrap', raw.policy?.maxChangedCrap, { min: 0 }) ?? 30;
   const minMutationScore = validateFiniteNumber('policy.minMutationScore', raw.policy?.minMutationScore, { min: 0, max: 1 }) ?? 0.8;
   const minMergeConfidence = validateFiniteNumber('policy.minMergeConfidence', raw.policy?.minMergeConfidence, { min: 0, max: 100 }) ?? 70;
@@ -293,6 +303,8 @@ function validateConfig(raw: TsQualityConfig): Required<TsQualityConfig> {
       coveredOnly: raw.mutations?.coveredOnly ?? false,
       timeoutMs: raw.mutations?.timeoutMs ?? 15_000,
       maxSites: raw.mutations?.maxSites ?? 25,
+      ...(maxDurationMs !== undefined ? { maxDurationMs } : {}),
+      ...(mutationTargets !== undefined ? { targets: mutationTargets } : {}),
       runtimeMirrorRoots
     },
     policy: {

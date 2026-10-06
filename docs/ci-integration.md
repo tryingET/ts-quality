@@ -147,6 +147,15 @@ Turn `nextEvidenceAction` into bounded work rather than broad cleanup:
 3. use `next-evidence-action.prompt.md` for LLM handoff or `next-evidence-action.ak-task.json` when the target repo uses task tooling,
 4. rerun the target repo quality command plus `check --changed "$CHANGED_SCOPE" --run-id "$NEW_RUN_ID"` for the follow-up review, then bind every projection and new approval to that new run.
 
+Check that mutation evidence is complete for the selected sites, not just that a score exists (Unreleased runs carry `mutationSelection`):
+
+```bash
+jq -e '.mutationSelection.complete == true and .mutationSelection.counts.unobserved == 0' ".ts-quality/runs/$RUN_ID/run.json"
+jq -r '.mutationSelection.excluded | group_by(.reason) | map("\(.[0].reason) \(length)") | .[]' ".ts-quality/runs/$RUN_ID/run.json"
+```
+
+`complete` is false when the baseline failed, a time budget left selected sites unrun, or any selected site ended in an execution error (timeout, signal, spawn) without an assertion verdict. Excluded sites (`outside-changed-hunks`, `uncovered`, `not-targeted`, `nested-function`, `budget-sites`) were never mutation-tested; their absence from `mutations` is not evidence. Before `check`, `ts-quality mutations preview --json` shows the same selection without running anything; it never generates coverage, so with `coveredOnly` and missing LCOV it excludes every site that `check` would first make eligible by generating coverage.
+
 Do not widen changed scope, lower thresholds, or switch to ambient latest-pointer projections to make a failed run green. For examples where high coverage still fails because mutation pressure is weak, see `docs/adoption/negative-path-examples.md`.
 
 ## Attestation and authorization
