@@ -378,6 +378,8 @@ npm run smoke
 npm run verify
 ```
 
+The root `Justfile` is a thin standard surface over the same npm scripts: `just help`, `just test`, `just check` (script typecheck, lint, then tests), `just build`, `just lint`, `just ci` (exactly `npm run verify`), `just doctor` (the non-failing `loop-doctor` diagnostic), `just run <args>` (the built CLI, for example `just run --version`) and `just loop-<phase>` for the loop phases. There is no `just fmt` (no formatter is configured) and no `just dev` (no watch or server mode). The npm scripts stay the validation owners, and `npm run verify` stays the root gate.
+
 `npm test` now runs the full `test/*.test.mjs` surface before exiting so one early failure does not hide later regressions. Failing runs also write a compact deterministic summary to `.ts-quality/test-runner/failure-summary.json`, which is cleared before a clean passing run so stale failure state does not linger. For local debugging when you explicitly want the old stop-on-first-failure behavior, set `TS_QUALITY_TEST_RUNNER_FAIL_FAST=1`.
 
 ## Repo task workflow (AK)

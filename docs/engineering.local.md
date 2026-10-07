@@ -64,6 +64,24 @@ uv tool -n run --from 'git+https://github.com/tryingET/core_engineering-core.git
 - Sample artifacts: `npm run sample-artifacts`
 - Docs strictness when docs/handoff change: `node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs . --strict`
 
+### Standard Justfile surface
+
+The root `Justfile` follows the softwareco/owned standardized Justfile contract and only delegates to the npm scripts above (pinned by `test/justfile-surface.test.mjs`):
+
+| Target | Runs | Meaning |
+|---|---|---|
+| `just help` | `just --list` | list targets |
+| `just test` | `npm test` | full node:test suite (builds first) |
+| `just check` | `npm run typecheck:scripts`, `npm run lint`, `npm test` | fast local gate; the test runner builds and typechecks the packages, so no separate build or typecheck step |
+| `just build` | `npm run build` | compile packages into `dist/` |
+| `just lint` | `npm run lint` | repository lint rules |
+| `just ci` | `npm run verify` | the root gate, unchanged and not recomposed |
+| `just doctor` | `npm run loop-doctor` | diagnostic only, never a validation pass |
+| `just run <args>` | `node dist/packages/ts-quality/src/cli.js <args>` | one-shot built CLI |
+| `just loop-<phase>` | `npm run loop-<phase>` | repo-loop-validation-v1 phases |
+
+Omitted on purpose: `fmt` (no formatter is configured; formatting is not part of the validation contract) and `dev` (no watch or server mode). `just ci` inherits whatever `scripts/verify.mjs` runs; that script owns any overlap between its own build/typecheck steps and the test runner's build.
+
 ## Repo loop validation
 
 ts-quality adopts `repo-loop-validation-v1` for deterministic TypeScript quality, artifact, and report loop work. The machine-readable declaration lives in `policy/engineering-lane.json`.
