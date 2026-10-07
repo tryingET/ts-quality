@@ -6,6 +6,7 @@ import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { assertPackedTarballFileSetContract, assertStagedPackageFileBoundaryContract, assertStagedPackageManifestContract } from './pack-ts-quality.mjs';
 import { summarizePublicCliContract, verifyManualWitnessContract, verifyPublicCliContract } from './public-cli-contract.mjs';
+import { produce as producePackageIndexUpload, read as readPackageIndexUpload } from './native-package-index-ci.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(scriptPath), '..');
@@ -500,6 +501,31 @@ function verifyInstalledNavigation(installedCliBinPath, installRoot) {
 }
 
 /**
+ * Installed proof for the package artifact-reference index: the installed CLI writes the index, the upload paths are
+ * staged as CI uploads them, the installed CLI inspects a separate copy, and the installed API types compile.
+ * @param {string} installedCliBinPath
+ * @param {string} installedTscBinPath
+ * @param {string} installRoot
+ */
+function verifyInstalledPackageIndex(installedCliBinPath, installedTscBinPath, installRoot) {
+  const uploadDir = path.join(installRoot, 'package-index-upload');
+  const produced = producePackageIndexUpload({ cli: installedCliBinPath, outDir: uploadDir });
+  const downloadDir = path.join(installRoot, 'package-index-download');
+  fs.cpSync(uploadDir, downloadDir, { recursive: true });
+  const readBack = readPackageIndexUpload({ cli: installedCliBinPath, artifactDir: downloadDir });
+  const typeCheckPath = path.join(installRoot, 'package-index-api.ts');
+  fs.writeFileSync(typeCheckPath, [
+    "import { inspectPackageIndexFile, parsePackageIndex, writePackageIndexFile, type PackageIndex, type PackageIndexInspection } from 'ts-quality';",
+    'const write: typeof writePackageIndexFile = writePackageIndexFile;',
+    "const inspect = (root: string): PackageIndexInspection => inspectPackageIndexFile(root, {});",
+    "const parse = (text: string): PackageIndex => parsePackageIndex(text, 'index.json');",
+    'console.log(typeof write, typeof inspect, typeof parse);'
+  ].join('\n'), 'utf8');
+  run(installedTscBinPath, ['--module', 'commonjs', '--moduleResolution', 'node', '--target', 'ES2022', '--esModuleInterop', '--noEmit', path.basename(typeCheckPath)], installRoot);
+  return { runs: produced.runs, references: readBack.references.state, packages: readBack.packages, apiTypesCompile: true };
+}
+
+/**
  * @param {string} installedCliBinPath
  * @param {string} installRoot
  * @param {string} projectRoot
@@ -722,6 +748,7 @@ export function runPackagingSmoke() {
     const manualWitness = verifyManualWitnessContract((args, cwd) => run(installedCliBinPath, args, cwd), { baseDir: installRoot });
     const mutationSelection = verifyInstalledMutationSelection(installedCliBinPath, installRoot);
     const navigation = verifyInstalledNavigation(installedCliBinPath, installRoot);
+    const packageIndex = verifyInstalledPackageIndex(installedCliBinPath, installedTscBinPath, installRoot);
 
     const reviewProjectRoot = prepareInstalledReviewProject(installRoot);
     run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewRunId], installRoot);
@@ -1023,7 +1050,8 @@ export function runPackagingSmoke() {
         },
         manualWitness,
         mutationSelection,
-        navigation
+        navigation,
+        packageIndex
       },
       api: {
         exportTypes: apiSummary.exportTypes,

@@ -21,6 +21,10 @@
     "scripts/register-screening-catalog.mjs",
     "scripts/validate-release-intent.mjs",
     "scripts/release-orchestrator.mjs",
-    "scripts/loop-phase.mjs"
+    "scripts/loop-phase.mjs",
+    "scripts/release-diagnostics.mjs",
+    "scripts/release-diagnostics-workflow.mjs",
+    "scripts/release-diagnostics-summary.mjs",
+    "scripts/native-package-index-ci.mjs"
   ]
 }

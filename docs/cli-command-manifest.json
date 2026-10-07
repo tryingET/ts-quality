@@ -32,7 +32,8 @@
       { "command": "report", "mode": "--json", "kind": "structured JSON projection" },
       { "command": "attest verify", "mode": "--json", "kind": "structured JSON verification record" },
       { "command": "mutations preview", "mode": "--json", "kind": "inert mutation selection ledger" },
-      { "command": "navigate", "mode": "--json", "kind": "derived navigation projection" }
+      { "command": "navigate", "mode": "--json", "kind": "derived navigation projection" },
+      { "command": "index inspect", "mode": "--json", "kind": "package index inspection facts" }
     ],
     "evidenceClosure": {
       "sourceField": "run.nextEvidenceAction",
@@ -152,6 +153,28 @@
       "writes": [],
       "artifacts": ["stdout navigation (text or --json)"],
       "automationNotes": ["Writes nothing and runs no test command; experiments are inert argv suggestions with cwd '.'.", "The protected nextEvidenceAction.primaryAction is reported unchanged; the navigation headline is separately labeled.", "--intervention-from requires --intervention-tests (comma-separated test files you edited); lineage clears a site only for a fresh green kill under an otherwise unchanged context.", "--git-horizon must name a commit; Git facts are not evidence."]
+    },
+    {
+      "name": "index write",
+      "purpose": "Write the package artifact-reference index: discovered packages, the runs holding evidence for them and digests of their canonical run packet files.",
+      "category": "projection",
+      "allowedValueOptions": ["--root", "--package", "--run-id", "--out"],
+      "allowedFlagOptions": ["--all", "--json"],
+      "reads": ["directories containing a package.json, outside node_modules, dist, .git and .ts-quality", ".ts-quality/runs/<run-id>/publication.json and the packet files it lists", ".ts-quality/latest.json when --run-id is omitted"],
+      "writes": [".ts-quality/package-index.json or --out (inside the root, never inside .ts-quality/runs)"],
+      "artifacts": ["ts-quality-package-index schemaVersion 1", "stdout summary (text or --json index)"],
+      "automationNotes": ["Exactly one of --package <dir[,dir]> or --all; --run-id takes a comma-separated list, otherwise the latest pointer is used and labeled latest-pointer.", "References only: no verdict is copied and executedCoverageClaim is always none; packages without a changed file in the runs are listed as no-run-evidence.", "Upload the index with every path in upload.paths, keeping their layout; symbolic links in the run packet are refused."]
+    },
+    {
+      "name": "index inspect",
+      "purpose": "Read-only inspection of a package index: reference freshness, source drift, package enumeration and per-package findings.",
+      "category": "projection",
+      "allowedValueOptions": ["--root", "--index", "--package"],
+      "allowedFlagOptions": ["--json"],
+      "reads": [".ts-quality/package-index.json or --index", "every referenced run packet file and package manifest", "current changed-file and control-plane bytes for drift"],
+      "writes": [],
+      "artifacts": ["stdout inspection (text or --json ts-quality-package-index-inspection version 1)"],
+      "automationNotes": ["Facts only, exit 0: references fresh/changed/missing, packages current/source-unavailable/stale/no-run-evidence; not a verdict, approval or release permission.", "Refuses (exit 1) an unknown kind or schemaVersion, paths outside the root, symbolic links (also for changed and control-plane files), inconsistent completeness and evidence that does not partition each run's changed files.", "--package filters the reported packages and their runs; an uploaded copy without sources reports source-unavailable, never current."]
     },
     {
       "name": "plan",

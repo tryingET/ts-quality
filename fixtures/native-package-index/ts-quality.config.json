@@ -1,0 +1,13 @@
+{
+  "sourcePatterns": ["packages/*/src/**/*.js"],
+  "testPatterns": ["test/**/*.js"],
+  "coverage": {
+    "lcovPath": "coverage/lcov.info",
+    "generateCommand": ["node", "--test", "--experimental-test-coverage", "--test-reporter=lcov", "--test-reporter-destination=coverage/lcov.info", "test/"]
+  },
+  "mutations": { "testCommand": ["node", "--test", "test/"], "coveredOnly": false, "timeoutMs": 10000, "maxSites": 3 },
+  "policy": { "minMutationScore": 0, "minMergeConfidence": 0, "maxChangedCrap": 30 },
+  "invariantsPath": ".ts-quality/invariants.json",
+  "constitutionPath": ".ts-quality/constitution.json",
+  "agentsPath": ".ts-quality/agents.json"
+}

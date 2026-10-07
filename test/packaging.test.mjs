@@ -102,7 +102,13 @@ const expectedStageRuntimeFilesByPackage = {
     'src/index.js.map',
     'src/navigation.d.ts',
     'src/navigation.js',
-    'src/navigation.js.map'
+    'src/navigation.js.map',
+    'src/package-index-schema.d.ts',
+    'src/package-index-schema.js',
+    'src/package-index-schema.js.map',
+    'src/package-index.d.ts',
+    'src/package-index.js',
+    'src/package-index.js.map'
   ]
 };
 
@@ -513,6 +519,13 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
     primaryActionUnchanged: true,
     queueHasBlockingItem: true,
     projectUnchanged: true
+  });
+  // The installed CLI writes the package index, reads an uploaded copy back, and the installed API types compile.
+  assert.deepEqual(summary.cli.packageIndex, {
+    runs: ['ci-api-run', 'ci-web-run'],
+    references: 'fresh',
+    packages: ['.: no-run-evidence', 'packages/api: source-unavailable', 'packages/web: source-unavailable'],
+    apiTypesCompile: true
   });
   assert.deepEqual(summary.api.exportTypes, {
     initProject: 'function',

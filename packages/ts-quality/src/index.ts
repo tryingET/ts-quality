@@ -62,6 +62,7 @@ import {
 import { analyzeCrap, parseLcov } from '../../crap4ts/src/index';
 import { type MutationSelection, type MutationTarget, parseMutationTarget, runMutations, selectMutationSites } from '../../ts-mutate/src/index';
 import { type AuthorizationFact, type InterventionLineage, buildNavigation, collectGitContext, compareInterventionLineage, renderNavigationText } from './navigation';
+import { type PackageIndex, type PackageIndexDeps, type PackageIndexInspection, inspectPackageIndex, parsePackageIndex, renderPackageIndexInspection, renderPackageIndexWrite, writePackageIndex } from './package-index';
 import { collectExecutionWitnessPlanSummary, evaluateInvariants } from '../../invariants/src/index';
 import {
   type PolicyInput,
@@ -3409,6 +3410,55 @@ export function renderNavigation(rootDir: string, options: { runId?: string; int
   const git = options.gitHorizon !== undefined ? collectGitContext(rootDir, options.gitHorizon, run.changedFiles) : undefined;
   const navigation = buildNavigation({ run: context.projectedRun, drift: context.drift, authorizations: authorizationFacts(rootDir, run.runId), lineage, git });
   return options.json ? `${stableStringify(navigation)}\n` : renderNavigationText(navigation);
+}
+
+export type { PackageIndex, PackageIndexInspection } from './package-index';
+export { parsePackageIndex };
+
+/** The files a run's verdict depends on with their check-time digests; the package index reads them contained. */
+function runDriftSubjects(run: RunArtifact): Array<{ subject: string; path: unknown; expected: string }> {
+  const changed = run.changedFiles.map((item) => normalizePath(item)).map((filePath) => ({
+    subject: `changed file ${filePath}`,
+    path: filePath,
+    expected: expectedRunFileDigest(run, filePath) ?? 'sha256:unrecorded'
+  }));
+  const plane = run.controlPlane;
+  return plane
+    ? [
+      ...changed,
+      { subject: 'control plane config', path: plane.configPath, expected: plane.configDigest },
+      { subject: 'control plane constitution', path: plane.constitutionPath, expected: plane.constitutionDigest },
+      { subject: 'control plane agents', path: plane.agentsPath, expected: plane.agentsDigest }
+    ]
+    : changed;
+}
+
+function packageIndexDeps(): PackageIndexDeps {
+  return {
+    loadRun: loadContainedRun,
+    latestRunId: (rootDir) => readLatestRun(rootDir).runId,
+    driftSubjects: runDriftSubjects,
+    toolVersion: tsQualityPackageVersion()
+  };
+}
+
+/**
+ * Writes the package artifact-reference index: discovered packages, the runs holding evidence for them and digests
+ * of their canonical run packet files. References only; it copies no verdict and claims no coverage.
+ */
+export function writePackageIndexFile(rootDir: string, options: { packages?: string[]; all?: boolean; runIds?: string[]; out?: string }): { index: PackageIndex; indexPath: string; output: string } {
+  const { index, indexPath } = writePackageIndex(rootDir, options, packageIndexDeps());
+  return { index, indexPath, output: renderPackageIndexWrite(index, indexPath) };
+}
+
+/** Re-reads every reference of a package index and reports facts (fresh/changed/missing, source drift, findings). */
+export function inspectPackageIndexFile(rootDir: string, options: { index?: string; packages?: string[] }): PackageIndexInspection {
+  return inspectPackageIndex(rootDir, options, packageIndexDeps());
+}
+
+export function renderPackageIndexInspectionFile(rootDir: string, options: { index?: string; packages?: string[]; json?: boolean }): string {
+  const inspection = inspectPackageIndexFile(rootDir, options);
+  return options.json ? `${stableStringify(inspection)}\n` : renderPackageIndexInspection(inspection);
 }
 
 export function renderTrend(rootDir: string): string {

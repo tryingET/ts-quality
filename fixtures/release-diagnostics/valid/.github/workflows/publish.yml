@@ -1,0 +1,34 @@
+name: publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    environment:
+      name: npm-publish
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Verify Trusted Publishing runtime prerequisites
+        run: |
+          node - <<'NODE'
+          console.log(JSON.stringify({
+            expectedTrustedPublisher: {
+              owner: 'tryingET',
+              repository: 'ts-quality',
+              workflowFilename: 'publish.yml',
+              environmentName: 'npm-publish'
+            }
+          }));
+          NODE
+      - name: Validate GitHub Release intent
+        run: npm run release:intent:check --silent
+      - name: Prove release package
+        run: npm run verify:ci --silent
+      - name: Publish to npm with Trusted Publishing/OIDC
+        working-directory: .ts-quality/npm/ts-quality/package
+        run: npm publish --provenance --access public --tag "$NPM_DIST_TAG"

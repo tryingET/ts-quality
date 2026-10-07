@@ -1,0 +1,11 @@
+{
+  "name": "ts-quality",
+  "version": "1.2.3",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tryingET/ts-quality.git"
+  },
+  "bin": {
+    "ts-quality": "dist/packages/ts-quality/src/cli.js"
+  }
+}

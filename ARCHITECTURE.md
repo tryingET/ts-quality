@@ -28,6 +28,12 @@ Deterministic mutation testing. It discovers mutation sites from the TypeScript 
 
 `src/navigation.ts` derives a read-only, versioned navigation from one run: a blocking queue with explained ordering and inert argv experiments, intervention lineage against an earlier run (using the run's `mutationContext`), and optional Git facts pinned to a horizon. It never writes, never runs tests and never changes `nextEvidenceAction.primaryAction`.
 
+### `packages/ts-quality` package index
+
+`src/package-index.ts` writes and inspects the package artifact-reference index (`ts-quality index write|inspect`); `src/package-index-schema.ts` holds its versioned shapes and the strict reader for untrusted indexes. It enumerates the directories that contain a `package.json` (skipping the directories `check` skips) and attributes each changed file of the selected runs to its deepest enclosing package. For each run it records digests of the canonical packet files listed in `publication.json`. It copies no verdict, recomputes no plan and claims no executed coverage. Inspection re-reads every reference without following symbolic links and reports fresh, changed or missing references, source drift (also read without following links), enumeration changes and findings per package. It refuses unknown schemas, paths outside the root and evidence that does not partition each run's changed files.
+
+Repo-only, outside the product: `scripts/release-diagnostics.mjs` (offline release-prerequisite checks, never release permission), `scripts/release-diagnostics-summary.mjs` (separate quality, verification and release facts plus a comparable-only compare) and `scripts/native-package-index-ci.mjs` (the CI producer/reader roundtrip of an uploaded index).
+
 ### `packages/invariants`
 
 Behavioral understanding layer. Invariants bind expected behavior to paths, symbols, and domains. The engine maps changed code, mutation survivors, and test corpus evidence back to invariants, emits missing-test obligations, and records compact invariant-scoped evidence summaries plus named deterministic sub-signals for reports and run artifacts. Lexical-only matches remain explicitly weaker (`lexically-supported`), while execution-backed support is earned through scoped witness artifacts plus sidecar receipts. The canonical operator/config contract for that witness lane lives in `docs/invariant-dsl.md` and `docs/config-reference.md`.

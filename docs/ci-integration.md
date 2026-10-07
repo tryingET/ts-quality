@@ -158,6 +158,16 @@ jq -r '.mutationSelection.excluded | group_by(.reason) | map("\(.[0].reason) \(l
 
 For an ordered view of every open fact, run `ts-quality navigate --run-id "$RUN_ID" --json` (read-only). Keep gating on the exact-run assertions above; the navigation queue explains, it does not decide. After adding an assertion for a survivor, check with a new run id and compare with `navigate --run-id "$NEW_RUN_ID" --intervention-from "$RUN_ID" --intervention-tests <edited test files> --json`; only `observed-kill-after-declared-intervention` sites are cleared.
 
+To hand a run's evidence to a later job or another repository, write a package index and upload exactly the paths it lists:
+
+```bash
+npx ts-quality index write --all --run-id "$RUN_ID"
+jq -r '.upload.paths[]' .ts-quality/package-index.json   # upload these, keeping their layout (include hidden files)
+npx ts-quality index inspect --root "$DOWNLOAD_DIR" --json
+```
+
+In the downloaded copy, `references.state` must be `fresh`. Packages with evidence are `source-unavailable`, because the sources were not uploaded. `no-run-evidence` packages carry no evidence at all; package enumeration is not coverage. This repository's `ci.yml` runs that roundtrip with the installed tarball: the `package-index-reader` job reads the uploaded artifact (`scripts/native-package-index-ci.mjs`).
+
 Do not widen changed scope, lower thresholds, or switch to ambient latest-pointer projections to make a failed run green. For examples where high coverage still fails because mutation pressure is weak, see `docs/adoption/negative-path-examples.md`.
 
 ## Attestation and authorization

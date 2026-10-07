@@ -137,7 +137,13 @@ export const stagedRuntimeFilesByPackage = Object.freeze({
     'src/index.js.map',
     'src/navigation.d.ts',
     'src/navigation.js',
-    'src/navigation.js.map'
+    'src/navigation.js.map',
+    'src/package-index-schema.d.ts',
+    'src/package-index-schema.js',
+    'src/package-index-schema.js.map',
+    'src/package-index.d.ts',
+    'src/package-index.js',
+    'src/package-index.js.map'
   ])
 });
 

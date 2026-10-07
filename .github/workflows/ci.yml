@@ -29,3 +29,53 @@ jobs:
             sleep $((attempt * 15))
           done
       - run: npm run verify:ci --silent
+      # Package index roundtrip (decision180 U12): the proven tarball's installed CLI writes an index for
+      # fixtures/native-package-index and exactly its upload.paths are uploaded; a separate job reads them back.
+      - name: Install the proven tarball for the package index roundtrip
+        if: matrix.node-version == '24'
+        run: |
+          mkdir -p "$RUNNER_TEMP/tsq-installed"
+          echo '{"name":"tsq-installed","private":true}' > "$RUNNER_TEMP/tsq-installed/package.json"
+          npm install --prefix "$RUNNER_TEMP/tsq-installed" --ignore-scripts --no-audit --no-fund --package-lock=false .ts-quality/npm/ts-quality/tarballs/*.tgz
+      - name: Produce the package index upload with the installed CLI
+        if: matrix.node-version == '24'
+        run: node scripts/native-package-index-ci.mjs produce --cli "$RUNNER_TEMP/tsq-installed/node_modules/.bin/ts-quality" --out-dir "$RUNNER_TEMP/package-index-upload"
+      - name: Upload the package index and its referenced files
+        if: matrix.node-version == '24'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-quality-package-index
+          path: ${{ runner.temp }}/package-index-upload
+          include-hidden-files: true
+          if-no-files-found: error
+      - name: Upload the proven tarball for the package index reader
+        if: matrix.node-version == '24'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-quality-ci-tarball
+          path: .ts-quality/npm/ts-quality/tarballs/*.tgz
+          if-no-files-found: error
+
+  package-index-reader:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ts-quality-package-index
+          path: ${{ runner.temp }}/package-index-download
+      - uses: actions/download-artifact@v4
+        with:
+          name: ts-quality-ci-tarball
+          path: ${{ runner.temp }}/tarball
+      - name: Install the proven tarball
+        run: |
+          mkdir -p "$RUNNER_TEMP/tsq-reader"
+          echo '{"name":"tsq-reader","private":true}' > "$RUNNER_TEMP/tsq-reader/package.json"
+          npm install --prefix "$RUNNER_TEMP/tsq-reader" --ignore-scripts --no-audit --no-fund --package-lock=false "$RUNNER_TEMP"/tarball/*.tgz
+      - name: Inspect the downloaded package index with the installed CLI
+        run: node scripts/native-package-index-ci.mjs read --cli "$RUNNER_TEMP/tsq-reader/node_modules/.bin/ts-quality" --artifact-dir "$RUNNER_TEMP/package-index-download"

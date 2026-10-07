@@ -198,6 +198,24 @@ Derived navigation and lineage (Unreleased; see `docs/releases/migrations/native
 - `ts-quality navigate [--json]` is read-only: version `1`, kind `ts-quality-navigation`, `derived: true`. It reports `nextEvidenceAction.primaryAction` unchanged, a separately labeled `headline`, an ordered `queue` (each item with `class`, `severity`, `scope`, `identity`, `why`, optional inert `experiment`, and `orderKey`), and the three comparison types (cache reuse, aggregate trend, intervention lineage) as separate claims. It never writes, never runs a test, and its Git facts (`--git-horizon`) are not evidence.
 - Intervention lineage clears a single mutation site only for a fresh green kill of the same site identity when nothing but the declared test files changed (no source, support file, config, policy, command, timeout, runtime, environment, dependency or tool change); everything else is labeled or unknown, and invariant obligations are never cleared by it. Queue severities follow the verdict's own findings, including waivers, and a blocked verdict always has a blocking headline.
 
+Package artifact-reference index (Unreleased; see `docs/releases/migrations/native-package-index.md`):
+
+- `ts-quality index write` writes kind `ts-quality-package-index`, `schemaVersion` 1, to `.ts-quality/package-index.json` (or `--out`, inside the root and never inside `.ts-quality/runs`). It holds:
+  - `scope` (`all` or `selected`, `package-json` discovery);
+  - `runs` (each with `selection` `explicit` or `latest-pointer` and `artifacts` with `path`, `sha256` and `bytes`);
+  - `packages` (`path`, `name`, `manifest`, `status` `evidence-present` or `no-run-evidence`, and `evidence`);
+  - `outsideIndexedPackages`;
+  - `completeness` (`executedCoverageClaim` is always `none`);
+  - `upload.paths`.
+  Output is byte-identical for identical inputs.
+- `ts-quality index inspect --json` is read-only and returns kind `ts-quality-package-index-inspection`, version `1`:
+  - references are `fresh`, `changed` or `missing`, and `references.state` is `fresh` or `stale`;
+  - `enumeration` is `current`, `changed` or `not-applicable`;
+  - per package, `state` is `current`, `source-unavailable`, `stale` or `no-run-evidence`, and `quality` gives the run outcome, merge confidence, `findingsInPackage` and source `current`, `drifted` or `unavailable`.
+
+  It exits 0 for facts. It exits 1 for an unknown kind or schema version, paths outside the root, symbolic links (including symlinked changed files or control-plane files), inconsistent completeness, or evidence that does not partition each run's changed files exactly once. It is not a verdict, approval or release permission. Index bytes do not depend on the locale.
+- The public API adds `writePackageIndexFile`, `inspectPackageIndexFile`, `renderPackageIndexInspectionFile`, `parsePackageIndex` and the types `PackageIndex` and `PackageIndexInspection`.
+
 Protected top-level artifact expectations:
 
 | Artifact | Authority role | Required consumer habit |
