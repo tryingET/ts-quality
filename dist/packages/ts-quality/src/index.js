@@ -17,6 +17,7 @@ exports.renderDoctor = renderDoctor;
 exports.renderDoctorMachine = renderDoctorMachine;
 exports.renderLatestReport = renderLatestReport;
 exports.renderLatestExplain = renderLatestExplain;
+exports.renderNavigation = renderNavigation;
 exports.renderTrend = renderTrend;
 exports.renderGovernance = renderGovernance;
 exports.renderPlan = renderPlan;
@@ -34,6 +35,7 @@ const child_process_1 = require("child_process");
 const index_1 = require("../../evidence-model/src/index");
 const index_2 = require("../../crap4ts/src/index");
 const index_3 = require("../../ts-mutate/src/index");
+const navigation_1 = require("./navigation");
 const index_4 = require("../../invariants/src/index");
 const index_5 = require("../../policy-engine/src/index");
 const index_6 = require("../../governance/src/index");
@@ -1928,6 +1930,60 @@ function mutationTargetSpec(target) {
     }
     return `symbol:${target.filePath}#${target.symbol}${target.startLine !== undefined ? `@${target.startLine}-${target.endLine}` : ''}`;
 }
+const DEPENDENCY_MANIFESTS = ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lock', 'bun.lockb'];
+/** Mirrors the mutation runner's sanitized environment (inherited nested test-runner context removed). */
+function mutationEnvironmentDigest() {
+    const env = Object.entries(process.env)
+        .filter(([key, value]) => key !== 'NODE_TEST_CONTEXT' && typeof value === 'string' && value.length > 0)
+        .sort(([left], [right]) => left.localeCompare(right));
+    return (0, index_1.digestObject)(Object.fromEntries(env));
+}
+function tsQualityPackageVersion() {
+    for (const candidate of [path_1.default.resolve(__dirname, '../../../../packages/ts-quality/package.json'), path_1.default.resolve(__dirname, '../../../../package.json')]) {
+        try {
+            const version = (0, index_1.readJson)(candidate).version;
+            if (typeof version === 'string') {
+                return version;
+            }
+        }
+        catch {
+            // try the next location
+        }
+    }
+    return '0.0.0';
+}
+function buildMutationExecutionContext(rootDir, loaded) {
+    const testPatterns = loaded.config.testPatterns ?? [...index_1.DEFAULT_TEST_PATTERNS];
+    // Regular files only, like the mutation fingerprint: symlinks (for example a symlinked node_modules) are not read.
+    const repoFiles = (0, index_1.listFiles)(rootDir)
+        .filter((filePath) => {
+        try {
+            return fs_1.default.lstatSync(path_1.default.join(rootDir, filePath)).isFile();
+        }
+        catch {
+            return false;
+        }
+    })
+        .sort((left, right) => left.localeCompare(right));
+    // Same discovery rules as test selection: hidden directories only when a pattern names them.
+    const isTest = (filePath) => testPatterns.some((pattern) => (0, index_1.matchesDiscoveryPattern)(pattern, filePath));
+    const testFiles = repoFiles.filter(isTest);
+    const nonTestFiles = repoFiles.filter((filePath) => !isTest(filePath) && !filePath.split('/').some((segment) => segment.startsWith('.')));
+    const dependencyDigests = Object.fromEntries(DEPENDENCY_MANIFESTS
+        .filter((name) => fs_1.default.existsSync(path_1.default.join(rootDir, name)))
+        .map((name) => [name, (0, index_1.fileDigest)(path_1.default.join(rootDir, name))]));
+    return {
+        version: '1',
+        testCommand: [...loaded.config.mutations.testCommand],
+        timeoutMs: loaded.config.mutations.timeoutMs ?? 15_000,
+        runtime: { node: process.version, platform: process.platform, arch: process.arch },
+        environmentDigest: mutationEnvironmentDigest(),
+        testFileDigests: Object.fromEntries(testFiles.map((filePath) => [filePath, (0, index_1.fileDigest)(path_1.default.join(rootDir, filePath))])),
+        dependencyDigests,
+        nonTestFilesDigest: (0, index_1.digestObject)(nonTestFiles.map((filePath) => ({ filePath, digest: (0, index_1.fileDigest)(path_1.default.join(rootDir, filePath)) }))),
+        tool: { tsQuality: tsQualityPackageVersion() }
+    };
+}
 function refuseUnresolvedMutationTargets(rootDir, manifest, overrides, functions) {
     const targets = mutationTargetsFor(manifest.loaded, overrides);
     if (targets.length === 0) {
@@ -2173,6 +2229,7 @@ function runCheck(rootDir, options) {
         mutations: mutationRun.results,
         mutationBaseline: mutationRun.baseline,
         mutationSelection: mutationRun.selection,
+        mutationContext: buildMutationExecutionContext(rootDir, loaded),
         invariants,
         behaviorClaims: claims,
         governance,
@@ -2857,6 +2914,74 @@ function renderLatestExplain(rootDir, options) {
         return `${body}\n`;
     }
     return `${renderRunDriftNotice(context.run, context.drift)}\n${body}\n`;
+}
+const SUPPORTED_RUN_VERSIONS = new Set(['0.1.0', '0.2.0']);
+/** Loads another run for comparison with repo containment (symlink escapes refused) and a supported schema version. */
+function assertSupportedRun(run) {
+    if (!SUPPORTED_RUN_VERSIONS.has(String(run.version))) {
+        throw new Error(`Run ${run.runId} has an unsupported run version ${String(run.version)}; navigation reads ${[...SUPPORTED_RUN_VERSIONS].join(', ')}.`);
+    }
+    return run;
+}
+function assertContainedRunFiles(rootDir, runId) {
+    const safeRunId = (0, index_1.assertSafeRunId)(runId);
+    // Both the directory and run.json itself must resolve inside the repository (symlink escapes refused).
+    (0, index_1.resolveRepoLocalPath)(rootDir, `.ts-quality/runs/${safeRunId}`, { kind: 'run directory' });
+    (0, index_1.resolveRepoLocalPath)(rootDir, `.ts-quality/runs/${safeRunId}/run.json`, { kind: 'run packet' });
+}
+function loadContainedRun(rootDir, runId) {
+    assertContainedRunFiles(rootDir, runId);
+    return assertSupportedRun((0, index_1.loadRun)(rootDir, (0, index_1.assertSafeRunId)(runId)));
+}
+function authorizationFacts(rootDir, runId) {
+    const runDir = path_1.default.join(rootDir, '.ts-quality', 'runs', (0, index_1.assertSafeRunId)(runId));
+    if (!fs_1.default.existsSync(runDir)) {
+        return [];
+    }
+    return fs_1.default.readdirSync(runDir)
+        .filter((name) => name.startsWith('authorize.') && name.endsWith('.json') && name.length > 'authorize..json'.length)
+        .sort((left, right) => left.localeCompare(right))
+        .flatMap((name) => {
+        const record = (0, index_1.readJson)(path_1.default.join(runDir, name));
+        return typeof record.outcome === 'string'
+            ? [{ identity: name.replace(/\.json$/, ''), outcome: record.outcome, reasons: Array.isArray(record.reasons) ? record.reasons.filter((item) => typeof item === 'string') : [] }]
+            : [];
+    });
+}
+/**
+ * Derived navigation for one run: a versioned blocking summary and action queue, optional intervention lineage
+ * against an earlier run and optional Git facts pinned to a horizon. Read-only: it writes nothing and runs no test.
+ */
+function renderNavigation(rootDir, options) {
+    const run = assertSupportedRun(selectedRun(rootDir, options.runId ? { runId: options.runId } : undefined));
+    assertContainedRunFiles(rootDir, run.runId);
+    const context = projectedRunForDecision(rootDir, run);
+    let lineage;
+    if (options.interventionTests !== undefined && options.interventionFrom === undefined) {
+        throw new Error('--intervention-tests requires --intervention-from: name the earlier run to compare with.');
+    }
+    if (options.interventionFrom !== undefined) {
+        if (!options.interventionTests || options.interventionTests.length === 0) {
+            throw new Error('--intervention-tests is required with --intervention-from: declare the test files you edited.');
+        }
+        const before = loadContainedRun(rootDir, options.interventionFrom);
+        if (before.runId === run.runId || before.createdAt >= run.createdAt) {
+            throw new Error(`--intervention-from must name a different earlier run than ${run.runId}.`);
+        }
+        const knownTests = new Set([...Object.keys(before.mutationContext?.testFileDigests ?? {}), ...Object.keys(run.mutationContext?.testFileDigests ?? {})]);
+        const declared = options.interventionTests.map((entry) => {
+            const relative = (0, index_1.resolveRepoLocalPath)(rootDir, entry, { allowMissing: true, kind: 'intervention test' }).relativePath;
+            // Without recorded test digests in either run (older packets), lineage reports no-execution-context instead.
+            if (knownTests.size > 0 && !knownTests.has(relative)) {
+                throw new Error(`${entry} is not a test file in either run; declare only test files you edited.`);
+            }
+            return relative;
+        });
+        lineage = (0, navigation_1.compareInterventionLineage)(before, run, declared);
+    }
+    const git = options.gitHorizon !== undefined ? (0, navigation_1.collectGitContext)(rootDir, options.gitHorizon, run.changedFiles) : undefined;
+    const navigation = (0, navigation_1.buildNavigation)({ run: context.projectedRun, drift: context.drift, authorizations: authorizationFacts(rootDir, run.runId), lineage, git });
+    return options.json ? `${(0, index_1.stableStringify)(navigation)}\n` : (0, navigation_1.renderNavigationText)(navigation);
 }
 function renderTrend(rootDir) {
     const runs = orderedRuns(rootDir);

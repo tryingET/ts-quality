@@ -103,6 +103,17 @@ export declare function renderDoctorMachine(rootDir: string, options?: {
 }): string;
 export declare function renderLatestReport(rootDir: string, format: 'markdown' | 'json', options?: RunDecisionOptions): string;
 export declare function renderLatestExplain(rootDir: string, options?: RunDecisionOptions): string;
+/**
+ * Derived navigation for one run: a versioned blocking summary and action queue, optional intervention lineage
+ * against an earlier run and optional Git facts pinned to a horizon. Read-only: it writes nothing and runs no test.
+ */
+export declare function renderNavigation(rootDir: string, options: {
+    runId?: string;
+    interventionFrom?: string;
+    interventionTests?: string[];
+    gitHorizon?: string;
+    json?: boolean;
+}): string;
 export declare function renderTrend(rootDir: string): string;
 export declare function renderGovernance(rootDir: string, options?: RunDecisionOptions): string;
 export declare function renderPlan(rootDir: string, options?: RunDecisionOptions): string;

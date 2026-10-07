@@ -746,6 +746,8 @@ export interface RunArtifact {
     mutationBaseline?: ExecutionReceipt | undefined;
     /** Per-site selection ledger: discovered, eligible, selected, excluded and observed sites for this run. */
     mutationSelection?: MutationSelectionLedger | undefined;
+    /** The fixed context mutation outcomes were observed in; intervention lineage compares it between runs. */
+    mutationContext?: MutationExecutionContext | undefined;
     invariants: InvariantSpec[];
     behaviorClaims: BehaviorClaim[];
     governance: GovernanceFinding[];
@@ -754,6 +756,27 @@ export interface RunArtifact {
     overrides: OverrideRecord[];
     verdict: Verdict;
     trend?: TrendDelta | undefined;
+}
+export interface MutationExecutionContext {
+    version: '1';
+    testCommand: string[];
+    timeoutMs: number;
+    runtime: {
+        node: string;
+        platform: string;
+        arch: string;
+    };
+    /** Digest of the sanitized environment mutation commands ran with. */
+    environmentDigest: string;
+    /** Digests of every file matching testPatterns at check time. */
+    testFileDigests: Record<string, string>;
+    /** Digests of the root package manifest and lockfiles that exist. */
+    dependencyDigests: Record<string, string>;
+    /** One digest over every non-test repository file outside hidden directories (sources, fixtures, config). */
+    nonTestFilesDigest: string;
+    tool: {
+        tsQuality: string;
+    };
 }
 export interface LatestPointer {
     latestRunId: string;

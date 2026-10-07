@@ -53,6 +53,9 @@ const OPTION_KINDS = new Map([
     ['--timeout-ms', 'value'],
     ['--observed-at', 'value'],
     ['--mutation-targets', 'value'],
+    ['--intervention-from', 'value'],
+    ['--intervention-tests', 'value'],
+    ['--git-horizon', 'value'],
     ['--json', 'flag'],
     ['--machine', 'flag'],
     ['--help', 'flag'],
@@ -69,6 +72,7 @@ const COMMAND_CONTRACTS = new Map([
     ['explain', { allowedValues: ['--root', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
     ['report', { allowedValues: ['--root', '--run-id'], allowedFlags: ['--json'], maxPositionals: 1 }],
     ['trend', { allowedValues: ['--root'], allowedFlags: [], maxPositionals: 1 }],
+    ['navigate', { allowedValues: ['--root', '--run-id', '--intervention-from', '--intervention-tests', '--git-horizon'], allowedFlags: ['--json'], maxPositionals: 1 }],
     ['plan', { allowedValues: ['--root', '--config', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
     ['govern', { allowedValues: ['--root', '--config', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
     ['authorize', { allowedValues: ['--root', '--config', '--agent', '--action', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
@@ -278,6 +282,7 @@ Core commands:
 - mutations preview [--json]               inert preview of the sites check would mutate
 - attest sign|verify|keygen                bind or verify run artifacts
 - trend                                    compare the nearest comparable prior run
+- navigate --run-id <id> [--json]         read-only blocking queue, intervention lineage and Git facts
 - amend --proposal <file> [--apply]        evaluate a governance amendment
 
 Trust contract:
@@ -344,6 +349,16 @@ Recommended precondition: run the target repo's tests/coverage first, or configu
 Writes: .ts-quality/runs/<run-id>/{run.json,verdict.json,report.json,report.md,pr-summary.md,check-summary.txt,explain.txt,plan.txt,govern.txt} and .ts-quality/latest.json.
 Automation: pass --run-id so explain/report/plan/govern/authorize stay bound to this exact run.
 Mutation targets (--mutation-targets or config mutations.targets) narrow mutation to file:<path>, span:<path>:<a>-<b>, symbol:<path>#<kind:name>[@<a>-<b>] or site:<id>; separate several with ';'. check refuses unresolved targets.
+`;
+    }
+    if (command === 'navigate') {
+        return `Usage: ts-quality navigate [--root <dir>] [--run-id <id>] [--intervention-from <earlier-run-id> --intervention-tests <a,b>] [--git-horizon <commit>] [--json]
+
+Derived, read-only navigation for one run: a versioned blocking summary and action queue ordered by class, severity, scope and identity, with inert argv experiments.
+The protected nextEvidenceAction.primaryAction is reported unchanged; the navigation headline is separate.
+--intervention-from/--intervention-tests: per-site lineage "observed survivor before; observed kill after declared test edit", reported only for the same site identity, a fresh green execution and an otherwise unchanged context; anything else stays unknown or is labeled with the context that changed.
+--git-horizon: optional Git facts (churn, recency, authors, uncommitted, renames) since a pinned commit; facts, not evidence.
+Writes nothing and runs no test command.
 `;
     }
     if (command === 'mutations') {
@@ -552,6 +567,27 @@ function main() {
             ? `Evidence closure: ${result.run.nextEvidenceAction.primaryAction.title}\n${typeof result.run.nextEvidenceAction.primaryAction.expectedConfidenceLift === 'number' ? `Expected confidence lift: +${result.run.nextEvidenceAction.primaryAction.expectedConfidenceLift}\n` : ''}${result.run.nextEvidenceAction.primaryAction.suggestedEditFiles.length > 0 ? `Suggested edit files: ${result.run.nextEvidenceAction.primaryAction.suggestedEditFiles.join(', ')}\n` : ''}Coverage basis: ${result.run.nextEvidenceAction.evidenceBasis.coverage.fileCount} file(s)${typeof result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct === 'number' ? `, changed-function min ${result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionMinPct}%` : typeof result.run.nextEvidenceAction.evidenceBasis.coverage.minPct === 'number' ? `, min ${result.run.nextEvidenceAction.evidenceBasis.coverage.minPct}%` : ''}, changed functions under80 ${result.run.nextEvidenceAction.evidenceBasis.coverage.changedFunctionsUnder80}\nMutation basis: ${result.run.nextEvidenceAction.evidenceBasis.mutation.killed} killed / ${result.run.nextEvidenceAction.evidenceBasis.mutation.sites} site(s), ${result.run.nextEvidenceAction.evidenceBasis.mutation.survived} survived, ${result.run.nextEvidenceAction.evidenceBasis.mutation.errors} error(s)\n`
             : '';
         process.stdout.write(`Merge confidence: ${result.run.verdict.mergeConfidence}/100\nOutcome: ${result.run.verdict.outcome}\n${coverageSummary}${witnessSummary}${closureSummary}Artifacts: ${result.artifactDir}\n`);
+        return;
+    }
+    if (command === 'navigate') {
+        const navigateOptions = { json: hasFlag(parsed, '--json') };
+        const requestedRunId = runId(parsed);
+        if (requestedRunId) {
+            navigateOptions.runId = requestedRunId;
+        }
+        const interventionFrom = takeOption(parsed, '--intervention-from');
+        if (interventionFrom !== undefined) {
+            navigateOptions.interventionFrom = interventionFrom;
+        }
+        const interventionTests = takeOption(parsed, '--intervention-tests');
+        if (interventionTests !== undefined) {
+            navigateOptions.interventionTests = interventionTests.split(',').map((item) => item.trim()).filter(Boolean);
+        }
+        const gitHorizon = takeOption(parsed, '--git-horizon');
+        if (gitHorizon !== undefined) {
+            navigateOptions.gitHorizon = gitHorizon;
+        }
+        process.stdout.write((0, index_2.renderNavigation)(cwd, navigateOptions));
         return;
     }
     if (command === 'mutations' && subcommand === 'preview') {

@@ -528,6 +528,31 @@
     "exitCode": 0,
     "status": "pass"
   },
+  "mutationContext": {
+    "dependencyDigests": {
+      "package.json": "sha256:6fe721cbaa884f6ddec283548bc8751d9903d1ebabfc317cf41a57c3d7709cc3"
+    },
+    "environmentDigest": "sha256:sample-environment",
+    "nonTestFilesDigest": "sha256:6b173ff567954b19366ebe76892760126d7a3b55220e2a1e8001b0198f9b31f3",
+    "runtime": {
+      "arch": "sample",
+      "node": "sample",
+      "platform": "sample"
+    },
+    "testCommand": [
+      "node",
+      "--test",
+      "--test-reporter=spec"
+    ],
+    "testFileDigests": {
+      "test/token.test.js": "sha256:2b9dd75ca412a1af77196cf3e75d39c1993993a04c79063057831b5ce64b6b32"
+    },
+    "timeoutMs": 10000,
+    "tool": {
+      "tsQuality": "0.7.0"
+    },
+    "version": "1"
+  },
   "mutationRemediation": {
     "survivors": [
       {
