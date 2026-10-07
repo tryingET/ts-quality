@@ -447,7 +447,8 @@ $ npm run smoke:packaging --silent
       ".ts-quality/runs/packaging-installed-review-run/explain.txt",
       ".ts-quality/runs/packaging-installed-review-run/plan.txt",
       ".ts-quality/runs/packaging-installed-review-run/govern.txt",
-      ".ts-quality/runs/packaging-installed-review-run/attestation-verify.txt"
+      ".ts-quality/runs/packaging-installed-review-run/attestation-verify.txt",
+      ".ts-quality/runs/packaging-installed-review-run/publication.json"
     ],
     "report": {
       "artifact": ".ts-quality/runs/packaging-installed-review-run/report.md",

@@ -38,8 +38,11 @@ import {
   ensureDir,
   fileDigest,
   listFiles,
+  IncompleteRunPacketError,
   listRunIds,
   loadRun,
+  publishRunArtifact,
+  stageRunArtifact,
   matchPattern,
   normalizePath,
   nowIso,
@@ -51,7 +54,6 @@ import {
   resolveRepoLocalPath,
   stableStringify,
   writeJson,
-  writeRunArtifact,
   runtimeMirrorCandidates,
   findCoverageEvidence,
   matchesDiscoveryPattern
@@ -501,7 +503,17 @@ function buildAuthorizationEvidenceContext(
 
 function orderedRuns(rootDir: string): RunArtifact[] {
   return listRunIds(rootDir)
-    .map((runId) => loadRun(rootDir, runId))
+    .flatMap((runId) => {
+      try {
+        return [loadRun(rootDir, runId)];
+      } catch (error) {
+        // An incomplete packet is never a comparison candidate; explicit projections of it still fail closed.
+        if (error instanceof IncompleteRunPacketError) {
+          return [];
+        }
+        throw error;
+      }
+    })
     .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.runId.localeCompare(right.runId));
 }
 
@@ -2495,7 +2507,10 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
     run.trend = evaluated.trend;
   }
 
-  const artifactDir = writeRunArtifact(rootDir, run);
+  // Every check-time file is written into a hidden staging directory and published with one rename at the end,
+  // so an interrupted check never leaves a visible partial packet or a torn latest pointer.
+  const staged = stageRunArtifact(rootDir, run);
+  const artifactDir = staged.stagingDir;
   writeJson(path.join(artifactDir, 'report.json'), buildReportJsonArtifact(run, { projection: 'persisted', drift: [] }));
   fs.writeFileSync(path.join(artifactDir, 'report.md'), `${renderMarkdownReport(run)}\n`, 'utf8');
   fs.writeFileSync(path.join(artifactDir, 'pr-summary.md'), `${renderPrSummary(run)}\n`, 'utf8');
@@ -2522,7 +2537,7 @@ export function runCheck(rootDir: string, options?: { changedFiles?: string[]; c
   const plan = generateGovernancePlan(run, constitution, agents);
   fs.writeFileSync(path.join(artifactDir, 'plan.txt'), renderPlanArtifactText(run, plan), 'utf8');
   fs.writeFileSync(path.join(artifactDir, 'govern.txt'), renderGovernanceArtifactText(run, plan), 'utf8');
-  return { run, artifactDir };
+  return { run, artifactDir: publishRunArtifact(rootDir, staged) };
 }
 
 export type InitPreset = 'default' | 'node-test' | 'node-test-ts-dist' | 'vitest' | 'jest';

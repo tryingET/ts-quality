@@ -154,7 +154,8 @@ const expectedInstalledReviewRunArtifacts = [
   '.ts-quality/runs/packaging-installed-review-run/explain.txt',
   '.ts-quality/runs/packaging-installed-review-run/plan.txt',
   '.ts-quality/runs/packaging-installed-review-run/govern.txt',
-  '.ts-quality/runs/packaging-installed-review-run/attestation-verify.txt'
+  '.ts-quality/runs/packaging-installed-review-run/attestation-verify.txt',
+  '.ts-quality/runs/packaging-installed-review-run/publication.json'
 ];
 
 const expectedInstalledCliProofs = {

@@ -14,7 +14,7 @@ type: "reference"
 
 ### `packages/evidence-model`
 
-Shared types and storage primitives. It defines the canonical JSON artifact model, path normalization, repo-local path containment checks (including symlink escapes), stable serialization, hashing, diff-hunk parsing, run storage, waiver matching, additive execution receipts, and exact/unique coverage-path resolution helpers.
+Shared types and storage primitives. It defines the canonical JSON artifact model, crash-safe run packet publication (staged directory, publication record, single rename, atomic latest pointer), path normalization, repo-local path containment checks (including symlink escapes), stable serialization, hashing, diff-hunk parsing, run storage, waiver matching, additive execution receipts, and exact/unique coverage-path resolution helpers.
 
 ### `packages/crap4ts`
 

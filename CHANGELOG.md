@@ -27,6 +27,7 @@ Migration map: [`docs/releases/migrations/legacy-quality-native-correctness.md`]
 
 ### Fixed
 
+- An interrupted `check` no longer leaves a visible partial run packet or a torn `latest.json`: the packet is staged hidden, recorded in `publication.json` and published with one rename, and readers refuse published packets with missing files. Earlier packets without a publication record stay readable.
 - Type aliases, interfaces, type parameters, `declare` declarations and `.d.ts` files no longer yield mutation sites, and a replacement that would lex together with a neighboring character (`a */* c */ b`) is skipped instead of running a different mutant.
 - Repeated LCOV records for one file merge instead of producing separate coverage entries, and a function whose lines have no LCOV entries is reported as `not-instrumented` instead of a measured 0%.
 - Equal-CRAP hotspots are ordered by file and line instead of input order.
