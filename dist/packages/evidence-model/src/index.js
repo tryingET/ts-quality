@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_TEST_PATTERNS = exports.DEFAULT_SOURCE_PATTERNS = exports.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION = void 0;
+exports.IncompleteRunPacketError = exports.DEFAULT_TEST_PATTERNS = exports.DEFAULT_SOURCE_PATTERNS = exports.CONTROL_PLANE_SNAPSHOT_SCHEMA_VERSION = void 0;
 exports.resolveRepoLocalPath = resolveRepoLocalPath;
 exports.compilerOptionsForRepoFile = compilerOptionsForRepoFile;
 exports.resolveRepoImport = resolveRepoImport;
@@ -41,6 +41,9 @@ exports.isWaiverActive = isWaiverActive;
 exports.isFindingWaived = isFindingWaived;
 exports.parseUnifiedDiff = parseUnifiedDiff;
 exports.reserveRunId = reserveRunId;
+exports.injectTestFault = injectTestFault;
+exports.stageRunArtifact = stageRunArtifact;
+exports.publishRunArtifact = publishRunArtifact;
 exports.writeRunArtifact = writeRunArtifact;
 exports.readLatestRun = readLatestRun;
 exports.listRunIds = listRunIds;
@@ -521,14 +524,65 @@ function reserveRunId(rootDir, runId) {
         throw error;
     }
 }
-function writeRunArtifact(rootDir, run) {
+const RUN_PUBLICATION_FILE = 'publication.json';
+class IncompleteRunPacketError extends Error {
+}
+exports.IncompleteRunPacketError = IncompleteRunPacketError;
+/** Test-only fault injection for crash-recovery proofs: TS_QUALITY_TEST_FAULT=<point> aborts at that point. */
+function injectTestFault(point) {
+    if (process.env['TS_QUALITY_TEST_FAULT'] === point) {
+        throw new Error(`injected fault at ${point}`);
+    }
+}
+function runsRootFor(rootDir) {
+    const runsRoot = resolveRepoLocalPath(rootDir, '.ts-quality/runs', { allowMissing: true, kind: 'run storage' }).absolutePath;
+    ensureDir(runsRoot);
+    return runsRoot;
+}
+/** Builds a run packet in a hidden staging directory; nothing under the run id is visible until it is published. */
+function stageRunArtifact(rootDir, run) {
     const safeRunId = assertSafeRunId(run.runId);
-    const artifactRoot = path_1.default.join(rootDir, '.ts-quality', 'runs', safeRunId);
-    ensureDir(artifactRoot);
-    fs_1.default.writeFileSync(path_1.default.join(artifactRoot, 'run.json'), `${stableStringify(run)}\n`, { flag: 'wx' });
-    writeJson(path_1.default.join(artifactRoot, 'verdict.json'), run.verdict);
-    writeJson(path_1.default.join(rootDir, '.ts-quality', 'latest.json'), { latestRunId: safeRunId });
-    return artifactRoot;
+    const stagingDir = fs_1.default.mkdtempSync(path_1.default.join(runsRootFor(rootDir), `.${safeRunId}.staging-`));
+    fs_1.default.writeFileSync(path_1.default.join(stagingDir, 'run.json'), `${stableStringify(run)}\n`, { flag: 'wx' });
+    injectTestFault('after-run-json');
+    writeJson(path_1.default.join(stagingDir, 'verdict.json'), run.verdict);
+    return { runId: safeRunId, stagingDir };
+}
+function writeLatestPointer(rootDir, runId) {
+    const pointerPath = path_1.default.join(rootDir, '.ts-quality', 'latest.json');
+    const temporaryPath = `${pointerPath}.${process.pid}.${Date.now()}.tmp`;
+    fs_1.default.writeFileSync(temporaryPath, `${stableStringify({ latestRunId: runId })}\n`, 'utf8');
+    // rename replaces the pointer atomically, so readers never see a torn latest.json.
+    fs_1.default.renameSync(temporaryPath, pointerPath);
+}
+/**
+ * Publishes a staged packet with one directory rename. An existing run is never replaced; on failure the staging
+ * directory is removed. The latest pointer moves only after the complete packet is visible.
+ */
+function publishRunArtifact(rootDir, staged) {
+    const target = path_1.default.join(runsRootFor(rootDir), staged.runId);
+    try {
+        const files = fs_1.default.readdirSync(staged.stagingDir, { withFileTypes: true }).filter((entry) => entry.isFile()).map((entry) => entry.name);
+        const publication = { version: '1', kind: 'run-packet-publication', runId: staged.runId, files: [...files, RUN_PUBLICATION_FILE].sort((left, right) => left.localeCompare(right)) };
+        writeJson(path_1.default.join(staged.stagingDir, RUN_PUBLICATION_FILE), publication);
+        injectTestFault('before-publish');
+        if (fs_1.default.existsSync(target)) {
+            throw new Error(`Run ${staged.runId} already exists; published packets are never replaced. Use a new run id for a new check.`);
+        }
+        fs_1.default.renameSync(staged.stagingDir, target);
+    }
+    catch (error) {
+        if (!(error instanceof Error && error.message.startsWith('injected fault'))) {
+            fs_1.default.rmSync(staged.stagingDir, { recursive: true, force: true });
+        }
+        throw error;
+    }
+    injectTestFault('before-latest');
+    writeLatestPointer(rootDir, staged.runId);
+    return target;
+}
+function writeRunArtifact(rootDir, run) {
+    return publishRunArtifact(rootDir, stageRunArtifact(rootDir, run));
 }
 function readLatestRun(rootDir) {
     const latestPointerPath = path_1.default.join(rootDir, '.ts-quality', 'latest.json');
@@ -538,16 +592,33 @@ function readLatestRun(rootDir) {
     const pointer = readJson(latestPointerPath);
     return loadRun(rootDir, pointer.latestRunId);
 }
+/** Published run ids; hidden staging directories left by an interrupted check are never listed. */
 function listRunIds(rootDir) {
     const runsDir = path_1.default.join(rootDir, '.ts-quality', 'runs');
     if (!fs_1.default.existsSync(runsDir)) {
         return [];
     }
-    return fs_1.default.readdirSync(runsDir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+    return fs_1.default.readdirSync(runsDir, { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.name.startsWith('.')).map((entry) => entry.name).sort();
 }
+/**
+ * Loads a run packet. A packet with a publication record must still contain every listed file; packets from
+ * versions before publication records (run.json only) stay readable for compatibility.
+ */
 function loadRun(rootDir, runId) {
     const safeRunId = assertSafeRunId(runId);
-    return readJson(path_1.default.join(rootDir, '.ts-quality', 'runs', safeRunId, 'run.json'));
+    const runDir = path_1.default.join(rootDir, '.ts-quality', 'runs', safeRunId);
+    const publicationPath = path_1.default.join(runDir, RUN_PUBLICATION_FILE);
+    if (fs_1.default.existsSync(publicationPath)) {
+        const publication = readJson(publicationPath);
+        if (publication.version !== '1' || publication.kind !== 'run-packet-publication' || publication.runId !== safeRunId || !Array.isArray(publication.files) || !publication.files.every((file) => typeof file === 'string' && file.length > 0 && !file.includes('..'))) {
+            throw new IncompleteRunPacketError(`Run ${safeRunId} has a malformed or mismatched publication record; it cannot be projected. Re-check with a new run id.`);
+        }
+        const missing = publication.files.filter((file) => !fs_1.default.existsSync(path_1.default.join(runDir, file)));
+        if (missing.length > 0) {
+            throw new IncompleteRunPacketError(`Run ${safeRunId} packet is incomplete: missing ${missing.join(', ')}; it cannot be projected. Re-check with a new run id.`);
+        }
+    }
+    return readJson(path_1.default.join(runDir, 'run.json'));
 }
 function readMaybe(filePath) {
     if (!fs_1.default.existsSync(filePath)) {

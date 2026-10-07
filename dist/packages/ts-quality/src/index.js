@@ -372,7 +372,18 @@ function buildAuthorizationEvidenceContext(run, agentId, action, attestationVeri
 }
 function orderedRuns(rootDir) {
     return (0, index_1.listRunIds)(rootDir)
-        .map((runId) => (0, index_1.loadRun)(rootDir, runId))
+        .flatMap((runId) => {
+        try {
+            return [(0, index_1.loadRun)(rootDir, runId)];
+        }
+        catch (error) {
+            // An incomplete packet is never a comparison candidate; explicit projections of it still fail closed.
+            if (error instanceof index_1.IncompleteRunPacketError) {
+                return [];
+            }
+            throw error;
+        }
+    })
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.runId.localeCompare(right.runId));
 }
 function sortedUniqueNormalized(values) {
@@ -2174,7 +2185,10 @@ function runCheck(rootDir, options) {
     if (evaluated.trend) {
         run.trend = evaluated.trend;
     }
-    const artifactDir = (0, index_1.writeRunArtifact)(rootDir, run);
+    // Every check-time file is written into a hidden staging directory and published with one rename at the end,
+    // so an interrupted check never leaves a visible partial packet or a torn latest pointer.
+    const staged = (0, index_1.stageRunArtifact)(rootDir, run);
+    const artifactDir = staged.stagingDir;
     (0, index_1.writeJson)(path_1.default.join(artifactDir, 'report.json'), buildReportJsonArtifact(run, { projection: 'persisted', drift: [] }));
     fs_1.default.writeFileSync(path_1.default.join(artifactDir, 'report.md'), `${(0, index_5.renderMarkdownReport)(run)}\n`, 'utf8');
     fs_1.default.writeFileSync(path_1.default.join(artifactDir, 'pr-summary.md'), `${(0, index_5.renderPrSummary)(run)}\n`, 'utf8');
@@ -2201,7 +2215,7 @@ function runCheck(rootDir, options) {
     const plan = (0, index_6.generateGovernancePlan)(run, constitution, agents);
     fs_1.default.writeFileSync(path_1.default.join(artifactDir, 'plan.txt'), renderPlanArtifactText(run, plan), 'utf8');
     fs_1.default.writeFileSync(path_1.default.join(artifactDir, 'govern.txt'), renderGovernanceArtifactText(run, plan), 'utf8');
-    return { run, artifactDir };
+    return { run, artifactDir: (0, index_1.publishRunArtifact)(rootDir, staged) };
 }
 function configArrayText(values) {
     return `[${values.map((value) => `'${value}'`).join(', ')}]`;
