@@ -179,6 +179,9 @@ $ npm run smoke:packaging --silent
     "dist/packages/ts-quality/src/index.d.ts",
     "dist/packages/ts-quality/src/index.js",
     "dist/packages/ts-quality/src/index.js.map",
+    "dist/packages/ts-quality/src/navigation.d.ts",
+    "dist/packages/ts-quality/src/navigation.js",
+    "dist/packages/ts-quality/src/navigation.js.map",
     "LICENSE",
     "package.json",
     "README.md"
@@ -229,6 +232,9 @@ $ npm run smoke:packaging --silent
     "package/dist/packages/ts-quality/src/index.d.ts",
     "package/dist/packages/ts-quality/src/index.js",
     "package/dist/packages/ts-quality/src/index.js.map",
+    "package/dist/packages/ts-quality/src/navigation.d.ts",
+    "package/dist/packages/ts-quality/src/navigation.js",
+    "package/dist/packages/ts-quality/src/navigation.js.map",
     "package/LICENSE",
     "package/package.json",
     "package/README.md"
@@ -364,6 +370,16 @@ $ npm run smoke:packaging --silent
         "complete": true,
         "allExecuted": true
       }
+    },
+    "navigation": {
+      "runId": "packaging-installed-navigation-run",
+      "mutationContextRecorded": true,
+      "version": "1",
+      "kind": "ts-quality-navigation",
+      "derived": true,
+      "primaryActionUnchanged": true,
+      "queueHasBlockingItem": true,
+      "projectUnchanged": true
     }
   },
   "api": {

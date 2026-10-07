@@ -192,6 +192,12 @@ Mutation selection and execution provenance (Unreleased; see `docs/releases/migr
 - `ts-quality mutations preview [--json]` prints the same ledger and the sites `check` would mutate, and runs no command and writes nothing.
 - Explicit targets (`check --mutation-targets` or config `mutations.targets`) narrow, never widen, the changed scope. `check` refuses unresolved command-line targets before reserving the run id or running any command, and unresolved configured targets after coverage generation but before any witness or mutant command. Runs with different mutation selections (targets or time budget) are not trend-comparable.
 
+Derived navigation and lineage (Unreleased; see `docs/releases/migrations/native-navigation.md`):
+
+- `run.json` carries additive `mutationContext` (version `1`: test command, timeout, runtime, ts-quality version, sanitized environment digest, test-file digests, one digest over all other non-hidden repository files, and dependency digests).
+- `ts-quality navigate [--json]` is read-only: version `1`, kind `ts-quality-navigation`, `derived: true`. It reports `nextEvidenceAction.primaryAction` unchanged, a separately labeled `headline`, an ordered `queue` (each item with `class`, `severity`, `scope`, `identity`, `why`, optional inert `experiment`, and `orderKey`), and the three comparison types (cache reuse, aggregate trend, intervention lineage) as separate claims. It never writes, never runs a test, and its Git facts (`--git-horizon`) are not evidence.
+- Intervention lineage clears a single mutation site only for a fresh green kill of the same site identity when nothing but the declared test files changed (no source, support file, config, policy, command, timeout, runtime, environment, dependency or tool change); everything else is labeled or unknown, and invariant obligations are never cleared by it. Queue severities follow the verdict's own findings, including waivers, and a blocked verdict always has a blocking headline.
+
 Protected top-level artifact expectations:
 
 | Artifact | Authority role | Required consumer habit |

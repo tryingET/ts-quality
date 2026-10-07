@@ -474,6 +474,32 @@ function verifyInstalledMutationSelection(installedCliBinPath, installRoot) {
 }
 
 /**
+ * Installed proof for the derived navigation: check records the mutation execution context, and navigate --json
+ * reads the run without writing anything and reports the protected primaryAction unchanged.
+ * @param {string} installedCliBinPath
+ * @param {string} installRoot
+ */
+function verifyInstalledNavigation(installedCliBinPath, installRoot) {
+  const projectRoot = prepareInstalledReviewProject(installRoot, 'navigation-project');
+  const runId = 'packaging-installed-navigation-run';
+  run(installedCliBinPath, ['check', '--root', projectRoot, '--run-id', runId], installRoot);
+  const packet = readJson(path.join(projectRoot, '.ts-quality', 'runs', runId, 'run.json'));
+  const before = listProjectFiles(projectRoot);
+  const navigation = JSON.parse(run(installedCliBinPath, ['navigate', '--root', projectRoot, '--run-id', runId, '--json'], installRoot));
+  const persisted = readJson(path.join(projectRoot, '.ts-quality', 'runs', runId, 'next-evidence-action.json'));
+  return {
+    runId,
+    mutationContextRecorded: packet.mutationContext?.version === '1',
+    version: navigation.version,
+    kind: navigation.kind,
+    derived: navigation.derived,
+    primaryActionUnchanged: navigation.primaryAction?.kind === persisted.primaryAction.kind && navigation.primaryAction?.title === persisted.primaryAction.title,
+    queueHasBlockingItem: navigation.queue.some((/** @type {{ severity: string }} */ entry) => entry.severity === 'blocking'),
+    projectUnchanged: JSON.stringify(listProjectFiles(projectRoot)) === JSON.stringify(before)
+  };
+}
+
+/**
  * @param {string} installedCliBinPath
  * @param {string} installRoot
  * @param {string} projectRoot
@@ -695,6 +721,7 @@ export function runPackagingSmoke() {
 
     const manualWitness = verifyManualWitnessContract((args, cwd) => run(installedCliBinPath, args, cwd), { baseDir: installRoot });
     const mutationSelection = verifyInstalledMutationSelection(installedCliBinPath, installRoot);
+    const navigation = verifyInstalledNavigation(installedCliBinPath, installRoot);
 
     const reviewProjectRoot = prepareInstalledReviewProject(installRoot);
     run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewRunId], installRoot);
@@ -995,7 +1022,8 @@ export function runPackagingSmoke() {
           verifiedIssuer: 'ci.generated'
         },
         manualWitness,
-        mutationSelection
+        mutationSelection,
+        navigation
       },
       api: {
         exportTypes: apiSummary.exportTypes,

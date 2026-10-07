@@ -180,6 +180,10 @@ function normalizeRunArtifact(run, target) {
       name: path.basename(target),
       rootDir: SAMPLE_REPO_ROOT
     },
+    // Runtime and environment are machine-specific; normalize them like the execution fingerprint.
+    ...(run.mutationContext
+      ? { mutationContext: { ...run.mutationContext, runtime: { node: 'sample', platform: 'sample', arch: 'sample' }, environmentDigest: 'sha256:sample-environment' } }
+      : {}),
     mutationBaseline: run.mutationBaseline
       ? {
           ...run.mutationBaseline,

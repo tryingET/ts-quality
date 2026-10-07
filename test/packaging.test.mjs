@@ -99,7 +99,10 @@ const expectedStageRuntimeFilesByPackage = {
     'src/config.js.map',
     'src/index.d.ts',
     'src/index.js',
-    'src/index.js.map'
+    'src/index.js.map',
+    'src/navigation.d.ts',
+    'src/navigation.js',
+    'src/navigation.js.map'
   ]
 };
 
@@ -499,6 +502,17 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
     preview: { executed: false, targetStatus: 'resolved', selectedSites: 3, projectUnchanged: true },
     staleTarget: { refused: true, includes: 'Mutation target(s) unresolved', runWritten: false },
     targetedRun: { runId: 'packaging-installed-targeted-run', selected: 3, complete: true, allExecuted: true }
+  });
+  // The installed package records the mutation execution context and serves the read-only navigation.
+  assert.deepEqual(summary.cli.navigation, {
+    runId: 'packaging-installed-navigation-run',
+    mutationContextRecorded: true,
+    version: '1',
+    kind: 'ts-quality-navigation',
+    derived: true,
+    primaryActionUnchanged: true,
+    queueHasBlockingItem: true,
+    projectUnchanged: true
   });
   assert.deepEqual(summary.api.exportTypes, {
     initProject: 'function',

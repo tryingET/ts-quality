@@ -156,6 +156,8 @@ jq -r '.mutationSelection.excluded | group_by(.reason) | map("\(.[0].reason) \(l
 
 `complete` is false when the baseline failed, a time budget left selected sites unrun, or any selected site ended in an execution error (timeout, signal, spawn) without an assertion verdict. Excluded sites (`outside-changed-hunks`, `uncovered`, `not-targeted`, `nested-function`, `budget-sites`) were never mutation-tested; their absence from `mutations` is not evidence. Before `check`, `ts-quality mutations preview --json` shows the same selection without running anything; it never generates coverage, so with `coveredOnly` and missing LCOV it excludes every site that `check` would first make eligible by generating coverage.
 
+For an ordered view of every open fact, run `ts-quality navigate --run-id "$RUN_ID" --json` (read-only). Keep gating on the exact-run assertions above; the navigation queue explains, it does not decide. After adding an assertion for a survivor, check with a new run id and compare with `navigate --run-id "$NEW_RUN_ID" --intervention-from "$RUN_ID" --intervention-tests <edited test files> --json`; only `observed-kill-after-declared-intervention` sites are cleared.
+
 Do not widen changed scope, lower thresholds, or switch to ambient latest-pointer projections to make a failed run green. For examples where high coverage still fails because mutation pressure is weak, see `docs/adoption/negative-path-examples.md`.
 
 ## Attestation and authorization

@@ -31,7 +31,8 @@
       { "command": "retention", "mode": "--machine", "kind": "compact line protocol", "stablePrefix": "TSQ_RETENTION_PLAN_V1" },
       { "command": "report", "mode": "--json", "kind": "structured JSON projection" },
       { "command": "attest verify", "mode": "--json", "kind": "structured JSON verification record" },
-      { "command": "mutations preview", "mode": "--json", "kind": "inert mutation selection ledger" }
+      { "command": "mutations preview", "mode": "--json", "kind": "inert mutation selection ledger" },
+      { "command": "navigate", "mode": "--json", "kind": "derived navigation projection" }
     ],
     "evidenceClosure": {
       "sourceField": "run.nextEvidenceAction",
@@ -140,6 +141,17 @@
       "writes": [],
       "artifacts": ["trend text on stdout"],
       "automationNotes": ["Comparable trends require matching changed scope and evidence baselines."]
+    },
+    {
+      "name": "navigate",
+      "purpose": "Derived, read-only navigation for one run: versioned blocking summary and action queue, optional intervention lineage and optional Git facts.",
+      "category": "projection",
+      "allowedValueOptions": ["--root", "--run-id", "--intervention-from", "--intervention-tests", "--git-horizon"],
+      "allowedFlagOptions": ["--json"],
+      "reads": [".ts-quality/runs/<run-id>/run.json", "authorize.*.json decision records of the run", "current changed-file and control-plane bytes for drift", "optional earlier run for lineage", "optional read-only git history since --git-horizon"],
+      "writes": [],
+      "artifacts": ["stdout navigation (text or --json)"],
+      "automationNotes": ["Writes nothing and runs no test command; experiments are inert argv suggestions with cwd '.'.", "The protected nextEvidenceAction.primaryAction is reported unchanged; the navigation headline is separately labeled.", "--intervention-from requires --intervention-tests (comma-separated test files you edited); lineage clears a site only for a fresh green kill under an otherwise unchanged context.", "--git-horizon must name a commit; Git facts are not evidence."]
     },
     {
       "name": "plan",
