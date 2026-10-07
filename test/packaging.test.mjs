@@ -492,6 +492,13 @@ test('staged tarball smoke hardens staged manifest and file-boundary contract pl
   assert.deepEqual(summary.cli.checkRequiresScope, expectedInstalledCliProofs.checkRequiresScope);
   assert.deepEqual(summary.cli.manualWitness, expectedInstalledCliProofs.manualWitness);
   assert.deepEqual(summary.cli.keygen, expectedInstalledCliProofs.keygen);
+  // The installed package exposes the inert preview and refuses stale targets before writing a run.
+  assert.deepEqual(summary.cli.mutationSelection, {
+    target: 'symbol:src/auth/token.js#function:canUseRefreshToken',
+    preview: { executed: false, targetStatus: 'resolved', selectedSites: 3, projectUnchanged: true },
+    staleTarget: { refused: true, includes: 'Mutation target(s) unresolved', runWritten: false },
+    targetedRun: { runId: 'packaging-installed-targeted-run', selected: 3, complete: true, allExecuted: true }
+  });
   assert.deepEqual(summary.api.exportTypes, {
     initProject: 'function',
     materializeProject: 'function'

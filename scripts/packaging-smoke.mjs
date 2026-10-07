@@ -432,6 +432,46 @@ ${result.stderr}`;
   };
 }
 
+/** @param {string} rootDir */
+function listProjectFiles(rootDir) {
+  return fs.readdirSync(rootDir, { recursive: true }).map(String).sort();
+}
+
+/**
+ * Installed proof for explicit mutation targets: the preview is inert, a stale target is refused before any run is
+ * written, and a targeted check records a complete selection ledger.
+ * @param {string} installedCliBinPath
+ * @param {string} installRoot
+ */
+function verifyInstalledMutationSelection(installedCliBinPath, installRoot) {
+  const projectRoot = prepareInstalledReviewProject(installRoot, 'mutation-selection-project');
+  const target = 'symbol:src/auth/token.js#function:canUseRefreshToken';
+  const before = listProjectFiles(projectRoot);
+  const preview = JSON.parse(run(installedCliBinPath, ['mutations', 'preview', '--root', projectRoot, '--changed', 'src/auth/token.js', '--mutation-targets', target, '--json'], installRoot));
+  const projectUnchanged = JSON.stringify(listProjectFiles(projectRoot)) === JSON.stringify(before);
+  if (preview.executed !== false || !projectUnchanged) {
+    throw new Error('Installed mutations preview must not execute commands or write files.');
+  }
+  const staleRunId = 'packaging-installed-stale-target-run';
+  expectCommandFailure(installedCliBinPath, ['check', '--root', projectRoot, '--changed', 'src/auth/token.js', '--run-id', staleRunId, '--mutation-targets', 'symbol:src/auth/token.js#function:renamedAway'], installRoot, 'Installed check with a stale mutation target', ['Mutation target(s) unresolved']);
+  const staleRunWritten = fs.existsSync(path.join(projectRoot, '.ts-quality', 'runs', staleRunId));
+  const targetedRunId = 'packaging-installed-targeted-run';
+  run(installedCliBinPath, ['check', '--root', projectRoot, '--changed', 'src/auth/token.js', '--run-id', targetedRunId, '--mutation-targets', target], installRoot);
+  const targetedRun = readJson(path.join(projectRoot, '.ts-quality', 'runs', targetedRunId, 'run.json'));
+  const ledger = targetedRun.mutationSelection;
+  return {
+    target,
+    preview: { executed: preview.executed, targetStatus: preview.selection.targets[0]?.status, selectedSites: preview.selection.counts.selected, projectUnchanged },
+    staleTarget: { refused: true, includes: 'Mutation target(s) unresolved', runWritten: staleRunWritten },
+    targetedRun: {
+      runId: targetedRunId,
+      selected: ledger?.counts.selected,
+      complete: ledger?.complete,
+      allExecuted: targetedRun.mutations.length > 0 && targetedRun.mutations.every((/** @type {{ origin?: string }} */ item) => item.origin === 'executed')
+    }
+  };
+}
+
 /**
  * @param {string} installedCliBinPath
  * @param {string} installRoot
@@ -653,6 +693,7 @@ export function runPackagingSmoke() {
     run(installedTscBinPath, ['--module', 'commonjs', '--moduleResolution', 'node', '--target', 'ES2022', '--esModuleInterop', '--noEmit', path.basename(typeSmokePath)], installRoot);
 
     const manualWitness = verifyManualWitnessContract((args, cwd) => run(installedCliBinPath, args, cwd), { baseDir: installRoot });
+    const mutationSelection = verifyInstalledMutationSelection(installedCliBinPath, installRoot);
 
     const reviewProjectRoot = prepareInstalledReviewProject(installRoot);
     run(installedCliBinPath, ['check', '--root', reviewProjectRoot, '--run-id', reviewRunId], installRoot);
@@ -952,7 +993,8 @@ export function runPackagingSmoke() {
           attestationPath: keygenAttestationPath,
           verifiedIssuer: 'ci.generated'
         },
-        manualWitness
+        manualWitness,
+        mutationSelection
       },
       api: {
         exportTypes: apiSummary.exportTypes,

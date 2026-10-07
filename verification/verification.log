@@ -344,6 +344,26 @@ $ npm run smoke:packaging --silent
         "reportByRunId": true,
         "explainByRunId": true
       }
+    },
+    "mutationSelection": {
+      "target": "symbol:src/auth/token.js#function:canUseRefreshToken",
+      "preview": {
+        "executed": false,
+        "targetStatus": "resolved",
+        "selectedSites": 3,
+        "projectUnchanged": true
+      },
+      "staleTarget": {
+        "refused": true,
+        "includes": "Mutation target(s) unresolved",
+        "runWritten": false
+      },
+      "targetedRun": {
+        "runId": "packaging-installed-targeted-run",
+        "selected": 3,
+        "complete": true,
+        "allExecuted": true
+      }
     }
   },
   "api": {
