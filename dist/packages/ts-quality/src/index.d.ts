@@ -1,4 +1,5 @@
 import { type Attestation, type AttestationVerificationRecord, type ExecutionReceipt, type ExecutionWitnessRecord, type ExecutionWitnessRunRecord, type ExecutionWitnessRunSummary, type ExecutionWitnessSkippedRecord, type RunArtifact } from '../../evidence-model/src/index';
+import { type PackageIndex, type PackageIndexInspection, parsePackageIndex } from './package-index';
 export interface CheckResult {
     run: RunArtifact;
     artifactDir: string;
@@ -114,6 +115,32 @@ export declare function renderNavigation(rootDir: string, options: {
     gitHorizon?: string;
     json?: boolean;
 }): string;
+export type { PackageIndex, PackageIndexInspection } from './package-index';
+export { parsePackageIndex };
+/**
+ * Writes the package artifact-reference index: discovered packages, the runs holding evidence for them and digests
+ * of their canonical run packet files. References only; it copies no verdict and claims no coverage.
+ */
+export declare function writePackageIndexFile(rootDir: string, options: {
+    packages?: string[];
+    all?: boolean;
+    runIds?: string[];
+    out?: string;
+}): {
+    index: PackageIndex;
+    indexPath: string;
+    output: string;
+};
+/** Re-reads every reference of a package index and reports facts (fresh/changed/missing, source drift, findings). */
+export declare function inspectPackageIndexFile(rootDir: string, options: {
+    index?: string;
+    packages?: string[];
+}): PackageIndexInspection;
+export declare function renderPackageIndexInspectionFile(rootDir: string, options: {
+    index?: string;
+    packages?: string[];
+    json?: boolean;
+}): string;
 export declare function renderTrend(rootDir: string): string;
 export declare function renderGovernance(rootDir: string, options?: RunDecisionOptions): string;
 export declare function renderPlan(rootDir: string, options?: RunDecisionOptions): string;
@@ -144,4 +171,3 @@ export declare function attestGenerateKey(outDir: string, keyId: string): string
 export declare function runAmend(rootDir: string, proposalFile: string, apply?: boolean, options?: {
     configPath?: string;
 }): string;
-export {};

@@ -182,6 +182,12 @@ $ npm run smoke:packaging --silent
     "dist/packages/ts-quality/src/navigation.d.ts",
     "dist/packages/ts-quality/src/navigation.js",
     "dist/packages/ts-quality/src/navigation.js.map",
+    "dist/packages/ts-quality/src/package-index-schema.d.ts",
+    "dist/packages/ts-quality/src/package-index-schema.js",
+    "dist/packages/ts-quality/src/package-index-schema.js.map",
+    "dist/packages/ts-quality/src/package-index.d.ts",
+    "dist/packages/ts-quality/src/package-index.js",
+    "dist/packages/ts-quality/src/package-index.js.map",
     "LICENSE",
     "package.json",
     "README.md"
@@ -235,6 +241,12 @@ $ npm run smoke:packaging --silent
     "package/dist/packages/ts-quality/src/navigation.d.ts",
     "package/dist/packages/ts-quality/src/navigation.js",
     "package/dist/packages/ts-quality/src/navigation.js.map",
+    "package/dist/packages/ts-quality/src/package-index-schema.d.ts",
+    "package/dist/packages/ts-quality/src/package-index-schema.js",
+    "package/dist/packages/ts-quality/src/package-index-schema.js.map",
+    "package/dist/packages/ts-quality/src/package-index.d.ts",
+    "package/dist/packages/ts-quality/src/package-index.js",
+    "package/dist/packages/ts-quality/src/package-index.js.map",
     "package/LICENSE",
     "package/package.json",
     "package/README.md"
@@ -380,6 +392,19 @@ $ npm run smoke:packaging --silent
       "primaryActionUnchanged": true,
       "queueHasBlockingItem": true,
       "projectUnchanged": true
+    },
+    "packageIndex": {
+      "runs": [
+        "ci-api-run",
+        "ci-web-run"
+      ],
+      "references": "fresh",
+      "packages": [
+        ".: no-run-evidence",
+        "packages/api: source-unavailable",
+        "packages/web: source-unavailable"
+      ],
+      "apiTypesCompile": true
     }
   },
   "api": {

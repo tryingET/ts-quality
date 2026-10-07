@@ -56,6 +56,9 @@ const OPTION_KINDS = new Map([
     ['--intervention-from', 'value'],
     ['--intervention-tests', 'value'],
     ['--git-horizon', 'value'],
+    ['--package', 'value'],
+    ['--index', 'value'],
+    ['--all', 'flag'],
     ['--json', 'flag'],
     ['--machine', 'flag'],
     ['--help', 'flag'],
@@ -82,6 +85,8 @@ const COMMAND_CONTRACTS = new Map([
     ['witness test', { allowedValues: ['--root', '--invariant', '--scenario', '--source-files', '--test-files', '--out', '--timeout-ms', '--observed-at'], allowedFlags: [], maxPositionals: 64 }],
     ['witness refresh', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: [], maxPositionals: 2 }],
     ['mutations preview', { allowedValues: ['--root', '--config', '--changed', '--mutation-targets'], allowedFlags: ['--json'], maxPositionals: 2 }],
+    ['index write', { allowedValues: ['--root', '--package', '--run-id', '--out'], allowedFlags: ['--all', '--json'], maxPositionals: 2 }],
+    ['index inspect', { allowedValues: ['--root', '--index', '--package'], allowedFlags: ['--json'], maxPositionals: 2 }],
     ['amend', { allowedValues: ['--root', '--proposal', '--config'], allowedFlags: ['--apply'], maxPositionals: 1 }]
 ]);
 function rememberValueOption(values, valueCounts, name, value) {
@@ -143,7 +148,7 @@ function commandContractKey(command, subcommand) {
     if (!command) {
         return undefined;
     }
-    if (command === 'attest' || command === 'witness' || command === 'mutations') {
+    if (command === 'attest' || command === 'witness' || command === 'mutations' || command === 'index') {
         return subcommand ? `${command} ${subcommand}` : command;
     }
     return command;
@@ -152,7 +157,7 @@ function commandLabel(command, subcommand) {
     if (!command) {
         return 'ts-quality';
     }
-    return (command === 'attest' || command === 'witness' || command === 'mutations') && subcommand ? `${command} ${subcommand}` : command;
+    return (command === 'attest' || command === 'witness' || command === 'mutations' || command === 'index') && subcommand ? `${command} ${subcommand}` : command;
 }
 function validateParsedArgs(parsed) {
     const [command, subcommand] = parsed.positionals;
@@ -192,6 +197,17 @@ function takeOption(parsed, name) {
 }
 function hasFlag(parsed, name) {
     return parsed.flags.has(name);
+}
+function commaList(parsed, name) {
+    const value = takeOption(parsed, name);
+    if (value === undefined) {
+        return undefined;
+    }
+    const items = value.split(',').map((item) => item.trim()).filter(Boolean);
+    if (items.length === 0) {
+        throw new Error(`${name} requires at least one value`);
+    }
+    return items;
 }
 function rootDir(parsed) {
     return path_1.default.resolve(takeOption(parsed, '--root') ?? process.cwd());
@@ -283,6 +299,7 @@ Core commands:
 - attest sign|verify|keygen                bind or verify run artifacts
 - trend                                    compare the nearest comparable prior run
 - navigate --run-id <id> [--json]         read-only blocking queue, intervention lineage and Git facts
+- index write|inspect                      package artifact-reference index and its read-only inspection
 - amend --proposal <file> [--apply]        evaluate a governance amendment
 
 Trust contract:
@@ -368,6 +385,19 @@ Inert preview of the mutation sites check would run for this changed scope, targ
 Lists discovered, eligible, selected and excluded sites with reasons and resolves every target against current source.
 Runs no command (not even coverage generation) and writes nothing.
 Target specs: file:<path>, span:<path>:<a>-<b>, symbol:<path>#<kind:name>[@<a>-<b>], site:<id>; separate several with ';'.
+`;
+    }
+    if (command === 'index') {
+        return `Usage: ts-quality index write [--root <dir>] (--package <dir[,dir]> | --all) [--run-id <id[,id]>] [--out <file>] [--json]
+       ts-quality index inspect [--root <dir>] [--index <file>] [--package <dir[,dir]>] [--json]
+
+write: references the canonical run packet files (digests) of the named runs (default: the latest pointer) and the
+packages they touch. Packages are the directories with a package.json, discovered as check discovers them (--all),
+or named with --package. Default output: .ts-quality/package-index.json. Copies no verdict and claims no coverage:
+a package without a changed file in the runs is listed as no-run-evidence.
+inspect: re-reads every reference (fresh, changed or missing), checks source drift and package enumeration, and
+reports findings per package. Refuses an unknown schema, paths outside the root and symbolic links. Writes nothing.
+Upload the index with every path in its upload.paths list, keeping their layout; inspect the copy with --root.
 `;
     }
     if (command === 'explain') {
@@ -605,6 +635,37 @@ function main() {
             previewOptions.mutationTargets = targets;
         }
         process.stdout.write((0, index_2.renderMutationPreview)(cwd, previewOptions));
+        return;
+    }
+    if (command === 'index' && subcommand === 'write') {
+        const writeOptions = { all: hasFlag(parsed, '--all') };
+        const packages = commaList(parsed, '--package');
+        if (packages) {
+            writeOptions.packages = packages;
+        }
+        const runIds = commaList(parsed, '--run-id');
+        if (runIds) {
+            writeOptions.runIds = runIds;
+        }
+        const out = takeOption(parsed, '--out');
+        if (out) {
+            writeOptions.out = out;
+        }
+        const written = (0, index_2.writePackageIndexFile)(cwd, writeOptions);
+        process.stdout.write(hasFlag(parsed, '--json') ? `${(0, index_1.stableStringify)(written.index)}\n` : written.output);
+        return;
+    }
+    if (command === 'index' && subcommand === 'inspect') {
+        const inspectOptions = { json: hasFlag(parsed, '--json') };
+        const index = takeOption(parsed, '--index');
+        if (index) {
+            inspectOptions.index = index;
+        }
+        const packages = commaList(parsed, '--package');
+        if (packages) {
+            inspectOptions.packages = packages;
+        }
+        process.stdout.write((0, index_2.renderPackageIndexInspectionFile)(cwd, inspectOptions));
         return;
     }
     if (command === 'explain') {

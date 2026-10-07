@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.parsePackageIndex = void 0;
 exports.materializeProject = materializeProject;
 exports.adoptFromRun = adoptFromRun;
 exports.loadVerifiedAttestations = loadVerifiedAttestations;
@@ -18,6 +19,9 @@ exports.renderDoctorMachine = renderDoctorMachine;
 exports.renderLatestReport = renderLatestReport;
 exports.renderLatestExplain = renderLatestExplain;
 exports.renderNavigation = renderNavigation;
+exports.writePackageIndexFile = writePackageIndexFile;
+exports.inspectPackageIndexFile = inspectPackageIndexFile;
+exports.renderPackageIndexInspectionFile = renderPackageIndexInspectionFile;
 exports.renderTrend = renderTrend;
 exports.renderGovernance = renderGovernance;
 exports.renderPlan = renderPlan;
@@ -36,6 +40,8 @@ const index_1 = require("../../evidence-model/src/index");
 const index_2 = require("../../crap4ts/src/index");
 const index_3 = require("../../ts-mutate/src/index");
 const navigation_1 = require("./navigation");
+const package_index_1 = require("./package-index");
+Object.defineProperty(exports, "parsePackageIndex", { enumerable: true, get: function () { return package_index_1.parsePackageIndex; } });
 const index_4 = require("../../invariants/src/index");
 const index_5 = require("../../policy-engine/src/index");
 const index_6 = require("../../governance/src/index");
@@ -2982,6 +2988,47 @@ function renderNavigation(rootDir, options) {
     const git = options.gitHorizon !== undefined ? (0, navigation_1.collectGitContext)(rootDir, options.gitHorizon, run.changedFiles) : undefined;
     const navigation = (0, navigation_1.buildNavigation)({ run: context.projectedRun, drift: context.drift, authorizations: authorizationFacts(rootDir, run.runId), lineage, git });
     return options.json ? `${(0, index_1.stableStringify)(navigation)}\n` : (0, navigation_1.renderNavigationText)(navigation);
+}
+/** The files a run's verdict depends on with their check-time digests; the package index reads them contained. */
+function runDriftSubjects(run) {
+    const changed = run.changedFiles.map((item) => (0, index_1.normalizePath)(item)).map((filePath) => ({
+        subject: `changed file ${filePath}`,
+        path: filePath,
+        expected: expectedRunFileDigest(run, filePath) ?? 'sha256:unrecorded'
+    }));
+    const plane = run.controlPlane;
+    return plane
+        ? [
+            ...changed,
+            { subject: 'control plane config', path: plane.configPath, expected: plane.configDigest },
+            { subject: 'control plane constitution', path: plane.constitutionPath, expected: plane.constitutionDigest },
+            { subject: 'control plane agents', path: plane.agentsPath, expected: plane.agentsDigest }
+        ]
+        : changed;
+}
+function packageIndexDeps() {
+    return {
+        loadRun: loadContainedRun,
+        latestRunId: (rootDir) => (0, index_1.readLatestRun)(rootDir).runId,
+        driftSubjects: runDriftSubjects,
+        toolVersion: tsQualityPackageVersion()
+    };
+}
+/**
+ * Writes the package artifact-reference index: discovered packages, the runs holding evidence for them and digests
+ * of their canonical run packet files. References only; it copies no verdict and claims no coverage.
+ */
+function writePackageIndexFile(rootDir, options) {
+    const { index, indexPath } = (0, package_index_1.writePackageIndex)(rootDir, options, packageIndexDeps());
+    return { index, indexPath, output: (0, package_index_1.renderPackageIndexWrite)(index, indexPath) };
+}
+/** Re-reads every reference of a package index and reports facts (fresh/changed/missing, source drift, findings). */
+function inspectPackageIndexFile(rootDir, options) {
+    return (0, package_index_1.inspectPackageIndex)(rootDir, options, packageIndexDeps());
+}
+function renderPackageIndexInspectionFile(rootDir, options) {
+    const inspection = inspectPackageIndexFile(rootDir, options);
+    return options.json ? `${(0, index_1.stableStringify)(inspection)}\n` : (0, package_index_1.renderPackageIndexInspection)(inspection);
 }
 function renderTrend(rootDir) {
     const runs = orderedRuns(rootDir);
