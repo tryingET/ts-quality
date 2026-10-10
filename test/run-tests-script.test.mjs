@@ -142,3 +142,84 @@ test('run-tests removes stale failure artifacts before a clean passing run', () 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(fs.existsSync(summaryPath), false, 'expected passing run to clear stale failure summary artifacts');
 });
+
+function isolatedCache() {
+  const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-quality-runner-cache-'));
+  return { cache, runnerTemp: path.join(cache, 'ts-quality', 'test-runner') };
+}
+
+function runRunner(rootDir, cache, extraEnv = {}) {
+  return spawnSync('node', [runTestsScript], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      TS_QUALITY_TEST_RUNNER_ROOT: rootDir,
+      TS_QUALITY_TEST_RUNNER_SKIP_BUILD: '1',
+      XDG_CACHE_HOME: cache,
+      ...extraEnv
+    }
+  });
+}
+
+// A test that leaves a temp directory behind and records where it put it.
+function writeLeakingTest(rootDir, name, { fail = false } = {}) {
+  const recordPath = path.join(rootDir, `${name}.tmpdir`);
+  fs.writeFileSync(path.join(rootDir, 'test', `${name}.test.mjs`), [
+    "import fs from 'fs';",
+    "import os from 'os';",
+    "import path from 'path';",
+    "import test from 'node:test';",
+    "import assert from 'assert/strict';",
+    `test(${JSON.stringify(name)}, () => {`,
+    "  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'leaked-'));",
+    "  fs.writeFileSync(path.join(dir, 'payload.txt'), 'x');",
+    `  fs.writeFileSync(${JSON.stringify(recordPath)}, dir);`,
+    `  assert.equal(${fail ? 1 : 2}, 2);`,
+    '});',
+    ''
+  ].join('\n'), 'utf8');
+  return recordPath;
+}
+
+test('Scenario: temp directories a test leaves behind are removed when the run ends, whether it passed or failed', () => {
+  for (const fail of [false, true]) {
+    const rootDir = tempRunnerRoot();
+    const { cache, runnerTemp } = isolatedCache();
+    const recordPath = writeLeakingTest(rootDir, 'leaks', { fail });
+    const result = runRunner(rootDir, cache);
+    assert.equal(result.status, fail ? 1 : 0, result.stderr);
+    const leaked = fs.readFileSync(recordPath, 'utf8');
+    assert.equal(leaked.startsWith(`${runnerTemp}${path.sep}run-`), true, `tests get a per-run TMPDIR, got ${leaked}`);
+    assert.equal(fs.existsSync(leaked), false, 'the leaked directory was removed');
+    assert.deepEqual(fs.readdirSync(runnerTemp).filter((entry) => entry.startsWith('run-')), []);
+  }
+});
+
+test('Scenario: TS_QUALITY_TEST_RUNNER_KEEP_TEMP=1 keeps the run directory for debugging and names it', () => {
+  const rootDir = tempRunnerRoot();
+  const { cache, runnerTemp } = isolatedCache();
+  const recordPath = writeLeakingTest(rootDir, 'kept');
+  const result = runRunner(rootDir, cache, { TS_QUALITY_TEST_RUNNER_KEEP_TEMP: '1' });
+  assert.equal(result.status, 0, result.stderr);
+  const leaked = fs.readFileSync(recordPath, 'utf8');
+  assert.equal(fs.existsSync(leaked), true);
+  const kept = fs.readdirSync(runnerTemp).filter((entry) => entry.startsWith('run-'));
+  assert.equal(kept.length, 1);
+  assert.match(result.stderr, new RegExp(`kept test temp directory: .*${kept[0]}`));
+});
+
+test('Scenario: run directories left by interrupted runs are pruned after a day; recent runs and other entries stay', () => {
+  const rootDir = tempRunnerRoot();
+  const { cache, runnerTemp } = isolatedCache();
+  writePassingTest(rootDir);
+  fs.mkdirSync(path.join(runnerTemp, 'run-interrupted', 'deep'), { recursive: true });
+  fs.mkdirSync(path.join(runnerTemp, 'run-concurrent'), { recursive: true });
+  fs.mkdirSync(path.join(runnerTemp, 'not-a-run'), { recursive: true });
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  fs.utimesSync(path.join(runnerTemp, 'run-interrupted'), twoDaysAgo, twoDaysAgo);
+  fs.utimesSync(path.join(runnerTemp, 'not-a-run'), twoDaysAgo, twoDaysAgo);
+  const result = runRunner(rootDir, cache);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(fs.readdirSync(runnerTemp).sort(), ['not-a-run', 'run-concurrent']);
+});
