@@ -61,10 +61,10 @@ The packages are intentionally layered:
 | Governance | `packages/governance/src/index.ts`, `import-collector.ts`, `import-provenance.ts` | Constitution rules, architectural boundary checks, import-flow provenance, approvals/risk/rollback checks. |
 | Legitimacy | `packages/legitimacy/src/index.ts` | Agents, grants, attestations, authorization, override validation, amendments. |
 | Product config | `packages/ts-quality/src/config.ts` | Data-only config loading, validation, defaults, repo-local path canonicalization. |
-| Product orchestration | `packages/ts-quality/src/index.ts` | `check`, report/explain/plan/govern projections, witnesses, attestations, authorization, amendments, artifacts. |
+| Product orchestration | `packages/ts-quality/src/*.ts` (`index.ts` only re-exports the public API) | `check.ts`/`analysis.ts`/`evidence-closure.ts` (check), `projections.ts`/`run-context.ts`/`trend.ts` (report/explain/plan/govern/navigate), `witness-commands.ts`, `attestations.ts`/`legitimacy-commands.ts` (attestations, authorization), `amend.ts`, `materialize-adopt.ts`, `init-retention.ts`, `doctor.ts`, `render-text.ts` (artifacts). |
 | CLI | `packages/ts-quality/src/cli.ts` | Strict argument parser and command dispatcher over the product orchestration layer. |
 
-If you are changing behavior, start at the narrow layer that owns the behavior and then follow call sites upward to `packages/ts-quality/src/index.ts` and `packages/ts-quality/src/cli.ts` only as needed.
+If you are changing behavior, start at the narrow layer that owns the behavior and then follow call sites upward to the owning module under `packages/ts-quality/src/` and `packages/ts-quality/src/cli.ts` only as needed; `index.ts` only re-exports the public API.
 
 ## Main use modes
 
@@ -226,14 +226,14 @@ When in doubt, preserve deterministic evidence boundaries over convenience. A fa
 Read:
 
 - `packages/ts-quality/src/cli.ts`
-- `packages/ts-quality/src/index.ts`
-- relevant tests in `test/cli-integration.test.mjs`
+- the owning module under `packages/ts-quality/src/` (see the layer table)
+- relevant tests in `test/cli-setup.test.mjs`, `test/cli-check-projections.test.mjs`, `test/cli-options-witness.test.mjs`, `test/cli-attestation.test.mjs`
 
 Verify:
 
 ```bash
 npm run build
-node --test test/cli-integration.test.mjs
+node --test test/cli-setup.test.mjs test/cli-check-projections.test.mjs test/cli-options-witness.test.mjs test/cli-attestation.test.mjs
 ```
 
 Escalate if command help, packaging, or sample artifacts change.
@@ -259,17 +259,17 @@ node --test test/config-loading.test.mjs test/evidence-model.test.mjs
 Read:
 
 - `packages/invariants/src/index.ts`
-- `packages/ts-quality/src/index.ts`
+- `packages/ts-quality/src/analysis.ts` and `packages/ts-quality/src/check.ts`
 - `docs/invariant-dsl.md`
 - `docs/config-reference.md`
 - `test/invariants.test.mjs`
-- `test/cli-integration.test.mjs`
+- `test/cli-check-projections.test.mjs`
 
 Verify:
 
 ```bash
 npm run build
-node --test test/invariants.test.mjs test/cli-integration.test.mjs
+node --test test/invariants.test.mjs test/cli-check-projections.test.mjs
 npm run sample-artifacts
 ```
 
@@ -294,7 +294,7 @@ node --test test/governance.test.mjs
 Read:
 
 - `packages/legitimacy/src/index.ts`
-- `packages/ts-quality/src/index.ts`
+- `packages/ts-quality/src/attestations.ts` and `packages/ts-quality/src/legitimacy-commands.ts`
 - `docs/attestation-format.md`
 - `docs/legitimacy-agent-licensing.md`
 - `test/legitimacy.test.mjs`
@@ -345,17 +345,7 @@ These are review findings, not a mandate to do them all at once.
 
 ### High leverage improvements
 
-1. **Split `packages/ts-quality/src/index.ts` into smaller runtime modules.**  
-   It currently owns run construction, projections, drift checks, witness execution, attestation flows, authorization, amendments, and artifact rendering. Suggested split:
-   - `run-check.ts`
-   - `run-projection.ts`
-   - `witness-runtime.ts`
-   - `attestation-runtime.ts`
-   - `authorization-runtime.ts`
-   - `amend-runtime.ts`
-   - `artifact-rendering.ts`
-
-   This would reduce accidental cross-layer edits by agents and make targeted tests easier to map to source.
+1. **Split `packages/ts-quality/src/index.ts` into smaller runtime modules.** Done (AK6552, 2026-10-10): `index.ts` re-exports the public API over 16 modules (run context, trend, check, analysis, evidence closure, mutation remediation, projections, witness commands, attestations, legitimacy commands, amend, materialize/adopt, init/retention, doctor, text renderers, CLI paths), and the CLI integration tests are split by topic into four files.
 
 2. **Add richer CLI help.**  
    `packages/ts-quality/src/cli.ts` validates options strictly, which is good, but command help is terse. Add command-specific examples, generated artifact lists, preconditions, `--run-id` guidance, and `--version`. This is the top remaining agent-operability debt after the guide split because it moves guidance from prose into the executable surface.
@@ -364,7 +354,7 @@ These are review findings, not a mandate to do them all at once.
    If external agents will import library functions rather than only execute the CLI, document which exports are public and which are internal. Today the practical public seam is the CLI plus generated artifacts.
 
 4. **Add narrowly scoped test helpers for large integration tests.**  
-   `test/cli-integration.test.mjs` is valuable but large. Extracting reusable fixture/run helpers would make new behavior tests less likely to copy brittle setup.
+   The CLI integration tests (`test/cli-*.test.mjs`) are split by topic but still repeat fixture and run setup. Extracting reusable fixture/run helpers would make new behavior tests less likely to copy brittle setup.
 
 ### Changes worth considering
 
