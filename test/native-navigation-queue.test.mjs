@@ -23,8 +23,8 @@ function fixture(t, { strongTests = false, rules = [], changed = 'src/big.js' } 
   write(root, 'test/big.test.js', `const {test} = require('node:test'); const assert = require('node:assert/strict'); const {big} = require(${JSON.stringify(target)});\ntest('big', () => { assert.equal(big(20), true); assert.equal(big(1), false);${strongTests ? ' assert.equal(big(10), false);' : ''} });\n`);
   write(root, 'ts-quality.config.json', JSON.stringify({
     sourcePatterns: ['src/**/*.js'], testPatterns: ['test/**/*.js'],
-    coverage: { lcovPath: 'coverage/lcov.info', generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info', 'test/'] },
-    mutations: { testCommand: ['node', '--test', 'test/'], coveredOnly: false, timeoutMs: 10000, maxSites: 5 },
+    coverage: { lcovPath: 'coverage/lcov.info', generateCommand: ['node', '--test', '--experimental-test-coverage', '--test-reporter=lcov', '--test-reporter-destination=coverage/lcov.info', 'test/*.test.js'] },
+    mutations: { testCommand: ['node', '--test', 'test/*.test.js'], coveredOnly: false, timeoutMs: 10000, maxSites: 5 },
     policy: { minMutationScore: 0, minMergeConfidence: 0, maxChangedCrap: 30 },
     changeSet: { files: [changed] }, invariantsPath: '.ts-quality/invariants.json',
     constitutionPath: '.ts-quality/constitution.json', agentsPath: '.ts-quality/agents.json'

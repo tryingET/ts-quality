@@ -26,7 +26,7 @@ function write(root, file, text) {
 function config(root, overrides = {}) {
   write(root, 'ts-quality.config.json', JSON.stringify({
     sourcePatterns: ['src/**/*.js'], testPatterns: ['test/**/*.js'],
-    mutations: { testCommand: ['node', '--test', 'test/'], coveredOnly: false, timeoutMs: 10000, maxSites: 5, ...overrides.mutations },
+    mutations: { testCommand: ['node', '--test', 'test/*.test.js'], coveredOnly: false, timeoutMs: 10000, maxSites: 5, ...overrides.mutations },
     policy: { minMutationScore: 0, minMergeConfidence: 0, ...overrides.policy },
     changeSet: { files: ['src/big.js'] }, invariantsPath: '.ts-quality/invariants.json',
     constitutionPath: '.ts-quality/constitution.json', agentsPath: '.ts-quality/agents.json'
