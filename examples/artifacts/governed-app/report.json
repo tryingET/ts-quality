@@ -553,7 +553,7 @@
     },
     "timeoutMs": 10000,
     "tool": {
-      "tsQuality": "0.7.0"
+      "tsQuality": "0.8.0"
     },
     "version": "1"
   },

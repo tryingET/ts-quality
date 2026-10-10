@@ -1,14 +1,14 @@
 ---
-summary: "Unreleased migration for decision180 S1: CRAP inventory/complexity/coverage semantics and the wider mutation catalog."
+summary: "v0.8.0 migration for decision180 S1: CRAP inventory/complexity/coverage semantics and the wider mutation catalog."
 read_when:
   - "When upgrading past 0.7.0 and CRAP symbols, coverage or mutation scores moved"
   - "When parsing complexity[] or coverage[] from run.json"
 type: "guide"
 ---
 
-# Native quality correctness — Unreleased migration
+# Native quality correctness — v0.8.0 migration
 
-This describes current source after 0.7.0, not a published release. Applies to consumers of `run.json`, `report.json`, CRAP text output and mutation results, including CI assertions, dashboards and agents that compare runs.
+Part of v0.8.0; [`v0.8.0.md`](v0.8.0.md) is the release-level map. Applies to consumers of `run.json`, `report.json`, CRAP text output and mutation results, including CI assertions, dashboards and agents that compare runs.
 
 ## 1. Expect different numbers for the same code
 

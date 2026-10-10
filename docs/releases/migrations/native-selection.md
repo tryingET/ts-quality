@@ -1,5 +1,5 @@
 ---
-summary: "Unreleased migration for decision180 S2: explicit mutation targets, inert preview, selection ledger, time budget and runner truth."
+summary: "v0.8.0 migration for decision180 S2: explicit mutation targets, inert preview, selection ledger, time budget and runner truth."
 read_when:
   - "When upgrading past the S1 changes and mutation results, errors or caching behave differently"
   - "When parsing run.json mutationSelection or mutation result origin/errorKind"
@@ -7,9 +7,9 @@ read_when:
 type: "guide"
 ---
 
-# Native mutation selection — Unreleased migration
+# Native mutation selection — v0.8.0 migration
 
-This describes current source, not a published release. It applies to CI scripts, agents and parsers that read `run.json` mutation fields, and to operators replacing legacy mutation jobs.
+Part of v0.8.0; [`v0.8.0.md`](v0.8.0.md) is the release-level map. It applies to CI scripts, agents and parsers that read `run.json` mutation fields, and to operators replacing legacy mutation jobs.
 
 ## 1. A killed test process is no longer a kill
 

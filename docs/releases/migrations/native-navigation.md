@@ -1,14 +1,14 @@
 ---
-summary: "Unreleased migration for decision180 S3: derived navigation queue, intervention lineage, Git facts and the run.json mutationContext."
+summary: "v0.8.0 migration for decision180 S3: derived navigation queue, intervention lineage, Git facts and the run.json mutationContext."
 read_when:
   - "When replacing legacy quality/loop/plan, survivor-memory or trend-as-progress jobs"
   - "When parsing run.json mutationContext or ts-quality navigate --json"
 type: "guide"
 ---
 
-# Native navigation — Unreleased migration
+# Native navigation — v0.8.0 migration
 
-This describes current source, not a published release. It applies to agents and operators who used the legacy planner/loop jobs or read mutation score movement as progress.
+Part of v0.8.0; [`v0.8.0.md`](v0.8.0.md) is the release-level map. It applies to agents and operators who used the legacy planner/loop jobs or read mutation score movement as progress.
 
 ## 1. New additive run field
 

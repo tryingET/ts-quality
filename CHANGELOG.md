@@ -10,9 +10,11 @@ type: "reference"
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-10
+
 ### Breaking Changes
 
-Migration map: [`docs/releases/migrations/legacy-quality-native-correctness.md`](docs/releases/migrations/legacy-quality-native-correctness.md). Decision: [`docs/decisions/2026-10-06-legacy-quality-native-correctness.md`](docs/decisions/2026-10-06-legacy-quality-native-correctness.md).
+Migration map: [`docs/releases/migrations/v0.8.0.md`](docs/releases/migrations/v0.8.0.md), which links the per-topic maps. Decision: [`docs/decisions/2026-10-06-legacy-quality-native-correctness.md`](docs/decisions/2026-10-06-legacy-quality-native-correctness.md).
 
 - A mutation test process killed by a signal is now an `error` result (`errorKind: "signal"`) instead of a killed mutant, and error outcomes are no longer cached. The mutation runtime version moved to 9, so results cached by earlier versions are re-run once. See [`docs/releases/migrations/native-selection.md`](docs/releases/migrations/native-selection.md).
 - CRAP symbols, complexity, coverage percentages and mutation site sets can change for unchanged code. Constructors and accessors gain entries, ambient/abstract/overload signatures lose them, assigned arrows and function expressions are named after their binding instead of `<anonymous@line>`, complexity counts only a function's own body, and coverage is measured over LCOV-instrumented lines. Re-run `check` with a new run id before comparing scores.
@@ -26,6 +28,10 @@ Migration map: [`docs/releases/migrations/legacy-quality-native-correctness.md`]
 - `run.json` `mutationSelection` ledger (discovered, eligible, selected, excluded with reasons, executed, cached, unobserved, `complete`), result `origin` and `errorKind`, and an optional `mutations.maxDurationMs` time budget whose unrun sites are blocking `budget` errors, never clean.
 - Mutation testing adds the remaining valid legacy probes: `*`→`/`, loose `==`↔`!=`, `++`↔`--`, numeric `0`↔`1` and condition inversion in `if`, `?:`, `while`, `do` and `for`. Every operator fixture of the legacy parity corpus now yields the legacy spans and replacements (`test/legacy-quality-catalog.test.mjs`).
 - `complexity[].coverageStatus` names why a function's coverage is unknown (`missing`, `ambiguous`, `malformed`, `mismatched`, `not-instrumented`) or `measured`; `coverage[].malformedLines` counts unreadable LCOV `DA:` records (the file's `pct` is then 0), and `coverage[].functionHits` keeps `FN`/`FNDA` entry hits so an empty-bodied function under istanbul LCOV is measured rather than unknown. A changed function with unknown coverage adds a verdict warning, and the CRAP report, budget finding and PR summary label it as unknown instead of 0%.
+
+### Changed
+
+- `ts-quality retention` lists `.ts-quality/package-index.json` as a generated artifact to keep out of commits.
 
 ### Fixed
 

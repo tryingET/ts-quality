@@ -147,7 +147,7 @@ Turn `nextEvidenceAction` into bounded work rather than broad cleanup:
 3. use `next-evidence-action.prompt.md` for LLM handoff or `next-evidence-action.ak-task.json` when the target repo uses task tooling,
 4. rerun the target repo quality command plus `check --changed "$CHANGED_SCOPE" --run-id "$NEW_RUN_ID"` for the follow-up review, then bind every projection and new approval to that new run.
 
-Check that mutation evidence is complete for the selected sites, not just that a score exists (Unreleased runs carry `mutationSelection`):
+Check that mutation evidence is complete for the selected sites, not just that a score exists (runs from 0.8.0 on carry `mutationSelection`):
 
 ```bash
 jq -e '.mutationSelection.complete == true and .mutationSelection.counts.unobserved == 0' ".ts-quality/runs/$RUN_ID/run.json"

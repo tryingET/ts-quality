@@ -1,14 +1,14 @@
 ---
-summary: "Unreleased migration for decision180 S4: package artifact-reference index, separate repo summary, offline release diagnostics and the CI upload roundtrip."
+summary: "v0.8.0 migration for decision180 S4: package artifact-reference index, separate repo summary, offline release diagnostics and the CI upload roundtrip."
 read_when:
   - "When replacing legacy quality:bundle, repo:readiness, repo:validation:summary or release:trust jobs"
   - "When parsing ts-quality index write/inspect output or uploading a package index from CI"
 type: "guide"
 ---
 
-# Native package index, separate summaries and release diagnostics — Unreleased migration
+# Native package index, separate summaries and release diagnostics — v0.8.0 migration
 
-This describes current source, not a published release. Every legacy script is mapped in
+Part of v0.8.0; [`v0.8.0.md`](v0.8.0.md) is the release-level map. Every legacy script is mapped in
 `docs/adoption/legacy-parity/native-s4-crosswalk.md`. Old names and schemas stay G6 holds: no alias exists.
 
 ## 1. Package artifact-reference index (product CLI)
