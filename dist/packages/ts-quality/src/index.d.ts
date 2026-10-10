@@ -1,173 +1,21 @@
-import { type Attestation, type AttestationVerificationRecord, type ExecutionReceipt, type ExecutionWitnessRecord, type ExecutionWitnessRunRecord, type ExecutionWitnessRunSummary, type ExecutionWitnessSkippedRecord, type RunArtifact } from '../../evidence-model/src/index';
-import { type PackageIndex, type PackageIndexInspection, parsePackageIndex } from './package-index';
-export interface CheckResult {
-    run: RunArtifact;
-    artifactDir: string;
-}
-export interface MaterializeResult {
-    configPath: string;
-    outDir: string;
-    files: string[];
-}
-export interface AdoptFromRunResult {
-    sourceRunId: string;
-    sourceRoot: string;
-    copied: string[];
-    skipped: Array<{
-        path: string;
-        reason: string;
-    }>;
-    omittedEphemeral: string[];
-}
-interface RunSelectionOptions {
-    runId?: string;
-}
-interface RunDecisionOptions extends RunSelectionOptions {
-    configPath?: string;
-}
-export declare function materializeProject(rootDir: string, options?: {
-    configPath?: string;
-    outDir?: string;
-}): MaterializeResult;
-export declare function adoptFromRun(rootDir: string, options: {
-    fromRun: string;
-}): AdoptFromRunResult;
-export declare function loadVerifiedAttestations(rootDir: string, attestationsDir: string, trustedKeysDir: string): {
-    attestations: Attestation[];
-    verification: AttestationVerificationRecord[];
-};
-export interface ExecutionWitnessRefreshResult extends ExecutionWitnessRunRecord {
-}
-export interface ExecutionWitnessRefreshSkipped extends ExecutionWitnessSkippedRecord {
-}
-export interface ExecutionWitnessRefreshSummary extends ExecutionWitnessRunSummary {
-}
-export declare function refreshExecutionWitnesses(rootDir: string, options?: {
-    changedFiles?: string[];
-    configPath?: string;
-    observedAt?: string;
-}): ExecutionWitnessRefreshSummary;
 /**
- * Inert mutation selection preview: the sites `check` would mutate for this scope, targets and budget, with every
- * exclusion reason. Runs no command (not even coverage generation) and writes nothing.
+ * Public API of the ts-quality package. Implementation lives in the sibling modules; this file only re-exports
+ * them, so the exported names and types are the package contract.
  */
-export declare function renderMutationPreview(rootDir: string, options?: {
-    changedFiles?: string[];
-    configPath?: string;
-    mutationTargets?: string[];
-    json?: boolean;
-}): string;
-export declare function runCheck(rootDir: string, options?: {
-    changedFiles?: string[];
-    configPath?: string;
-    runId?: string;
-    mutationTargets?: string[];
-}): CheckResult;
-export type InitPreset = 'default' | 'node-test' | 'node-test-ts-dist' | 'vitest' | 'jest';
-export declare function initProject(rootDir: string, options?: {
-    preset?: InitPreset;
-}): void;
-interface ArtifactRetentionPlanEntry {
-    path: string;
-    reason: string;
-    status?: 'present' | 'missing' | 'pattern';
-}
-export interface ArtifactRetentionPlan {
-    surface: 'ts-quality.artifact-retention';
-    schemaVersion: 1;
-    rootDir: string;
-    config: {
-        loaded: boolean;
-        path?: string | undefined;
-        error?: string | undefined;
-    };
-    keep: ArtifactRetentionPlanEntry[];
-    ignore: ArtifactRetentionPlanEntry[];
-    warnings: string[];
-}
-export declare function buildArtifactRetentionPlan(rootDir: string, options?: {
-    configPath?: string;
-}): ArtifactRetentionPlan;
-export declare function renderArtifactRetentionPlan(rootDir: string, options?: {
-    configPath?: string;
-}): string;
-export declare function renderArtifactRetentionPlanMachine(rootDir: string, options?: {
-    configPath?: string;
-}): string;
-export declare function renderDoctor(rootDir: string, options?: {
-    changedFiles?: string[];
-    configPath?: string;
-}): string;
-export declare function renderDoctorMachine(rootDir: string, options?: {
-    changedFiles?: string[];
-    configPath?: string;
-}): string;
-export declare function renderLatestReport(rootDir: string, format: 'markdown' | 'json', options?: RunDecisionOptions): string;
-export declare function renderLatestExplain(rootDir: string, options?: RunDecisionOptions): string;
-/**
- * Derived navigation for one run: a versioned blocking summary and action queue, optional intervention lineage
- * against an earlier run and optional Git facts pinned to a horizon. Read-only: it writes nothing and runs no test.
- */
-export declare function renderNavigation(rootDir: string, options: {
-    runId?: string;
-    interventionFrom?: string;
-    interventionTests?: string[];
-    gitHorizon?: string;
-    json?: boolean;
-}): string;
+export { runAmend } from './amend';
+export { refreshExecutionWitnesses } from './analysis';
+export { loadVerifiedAttestations } from './attestations';
+export type { CheckResult } from './check';
+export { renderMutationPreview, runCheck } from './check';
+export { renderDoctor, renderDoctorMachine } from './doctor';
+export type { ArtifactRetentionPlan, InitPreset } from './init-retention';
+export { buildArtifactRetentionPlan, initProject, renderArtifactRetentionPlan, renderArtifactRetentionPlanMachine } from './init-retention';
+export { attestGenerateKey, attestSign, attestVerify, runAuthorize } from './legitimacy-commands';
+export type { AdoptFromRunResult, MaterializeResult } from './materialize-adopt';
+export { adoptFromRun, materializeProject } from './materialize-adopt';
+export { inspectPackageIndexFile, renderGovernance, renderLatestExplain, renderLatestReport, renderNavigation, renderPackageIndexInspectionFile, renderPlan, writePackageIndexFile } from './projections';
+export { renderTrend } from './trend';
+export type { ExecutionWitnessRefreshResult, ExecutionWitnessRefreshSkipped, ExecutionWitnessRefreshSummary } from './witness-commands';
+export { runExecutionWitnessCommand } from './witness-commands';
 export type { PackageIndex, PackageIndexInspection } from './package-index';
-export { parsePackageIndex };
-/**
- * Writes the package artifact-reference index: discovered packages, the runs holding evidence for them and digests
- * of their canonical run packet files. References only; it copies no verdict and claims no coverage.
- */
-export declare function writePackageIndexFile(rootDir: string, options: {
-    packages?: string[];
-    all?: boolean;
-    runIds?: string[];
-    out?: string;
-}): {
-    index: PackageIndex;
-    indexPath: string;
-    output: string;
-};
-/** Re-reads every reference of a package index and reports facts (fresh/changed/missing, source drift, findings). */
-export declare function inspectPackageIndexFile(rootDir: string, options: {
-    index?: string;
-    packages?: string[];
-}): PackageIndexInspection;
-export declare function renderPackageIndexInspectionFile(rootDir: string, options: {
-    index?: string;
-    packages?: string[];
-    json?: boolean;
-}): string;
-export declare function renderTrend(rootDir: string): string;
-export declare function renderGovernance(rootDir: string, options?: RunDecisionOptions): string;
-export declare function renderPlan(rootDir: string, options?: RunDecisionOptions): string;
-export declare function runAuthorize(rootDir: string, agentId: string, action: string, options?: RunDecisionOptions): {
-    decisionPath: string;
-    output: string;
-};
-export declare function runExecutionWitnessCommand(rootDir: string, input: {
-    invariantId: string;
-    scenarioId: string;
-    sourceFiles: string[];
-    testFiles?: string[];
-    outputPath: string;
-    command: string[];
-    timeoutMs?: number;
-    observedAt?: string;
-}): {
-    outputPath: string;
-    recordedOutputPath: string;
-    receiptPath: string;
-    recordedReceiptPath: string;
-    witness: ExecutionWitnessRecord;
-    receipt: ExecutionReceipt;
-};
-export declare function attestSign(rootDir: string, issuer: string, keyId: string, privateKeyPath: string, subjectFile: string, claims: string[], outputPath: string): string;
-export declare function attestVerify(rootDir: string, attestationFile: string, trustedKeysDir: string, format?: 'text' | 'json'): string;
-export declare function attestGenerateKey(outDir: string, keyId: string): string;
-export declare function runAmend(rootDir: string, proposalFile: string, apply?: boolean, options?: {
-    configPath?: string;
-}): string;
+export { parsePackageIndex } from './package-index';
