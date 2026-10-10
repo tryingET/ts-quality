@@ -29,6 +29,7 @@ Migration map: [`docs/releases/migrations/legacy-quality-native-correctness.md`]
 
 ### Fixed
 
+- Recorded mutation output (a failing baseline, a mutation-workspace baseline, killed and errored mutants) keeps both its start and its end, up to about 800 characters with the middle marked `…`. It used to keep only the first 280 characters, which cut off the failing test's name that test runners print last.
 - An interrupted `check` no longer leaves a visible partial run packet or a torn `latest.json`: the packet is staged hidden, recorded in `publication.json` and published with one rename, and readers refuse published packets with missing files. Earlier packets without a publication record stay readable.
 - Type aliases, interfaces, type parameters, `declare` declarations and `.d.ts` files no longer yield mutation sites, and a replacement that would lex together with a neighboring character (`a */* c */ b`) is skipped instead of running a different mutant.
 - Repeated LCOV records for one file merge instead of producing separate coverage entries, and a function whose lines have no LCOV entries is reported as `not-instrumented` instead of a measured 0%.

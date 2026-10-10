@@ -25,6 +25,9 @@ This describes current source, not a published release. Every legacy script is m
   no plan.
 - `completeness` counts packages with and without run evidence. `executedCoverageClaim` is always `none`.
 - `upload.paths` lists exactly what to upload: the index, the packet files and the package manifests.
+- The index is a generated artifact: `ts-quality retention` lists `.ts-quality/package-index.json` to keep out of
+  commits. Add it to `.gitignore` if your repo ignores `.ts-quality/` entries one by one, or write it elsewhere with
+  `--out` (a lint or format gate over an unignored index fails).
 - Identical repository state and run selection give a byte-identical index in any locale, because ordering is
   by code unit.
 

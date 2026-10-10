@@ -607,8 +607,23 @@ function stdioText(value: string | Buffer | undefined): string {
   return typeof value === 'string' ? value : value ? value.toString('utf8') : '';
 }
 
+const DETAILS_HEAD = 200;
+const DETAILS_TAIL = 600;
+
+/**
+ * Bounds recorded command output but keeps both ends: the start says what failed, and test runners name the failing
+ * tests at the end. The omitted middle is marked.
+ */
+function boundedDetails(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= DETAILS_HEAD + DETAILS_TAIL + 3) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, DETAILS_HEAD).trimEnd()} … ${trimmed.slice(-DETAILS_TAIL).trimStart()}`;
+}
+
 function commandDetails(result: ReturnType<typeof spawnSync>): string {
-  return `${stdioText(result.stdout).trim()}\n${stdioText(result.stderr).trim()}`.trim().slice(0, 280);
+  return boundedDetails(`${stdioText(result.stdout).trim()}\n${stdioText(result.stderr).trim()}`);
 }
 
 function requiredExecutable(command: string[]): string {
@@ -641,7 +656,7 @@ function runCommand(cwd: string, testCommand: string[], timeoutMs: number): Comm
   if (result.status === null && result.signal) {
     // A process killed by a signal (OOM killer, external kill) never reached an assertion verdict.
     return {
-      receipt: { status: 'error', durationMs, details: `test command terminated by signal ${result.signal}. ${commandDetails(result)}`.trim().slice(0, 280) },
+      receipt: { status: 'error', durationMs, details: boundedDetails(`test command terminated by signal ${result.signal}. ${commandDetails(result)}`) },
       errorKind: 'signal'
     };
   }
@@ -1084,7 +1099,7 @@ export function runMutations(options: MutationOptions): MutationRun {
   const untrustedRun = (failedBaseline: ExecutionReceipt): MutationRun => finish(limitedSites.map((site) => mutationResultForSite(site, {
     status: 'error',
     durationMs: failedBaseline.durationMs,
-    details: `Baseline test command must pass before mutation scoring is trusted. ${failedBaseline.details ?? ''}`.trim().slice(0, 280),
+    details: boundedDetails(`Baseline test command must pass before mutation scoring is trusted. ${failedBaseline.details ?? ''}`),
     testCommand: options.testCommand,
     origin: 'not-executed',
     errorKind: 'baseline'
@@ -1141,7 +1156,7 @@ export function runMutations(options: MutationOptions): MutationRun {
         if (workspaceBaseline.status !== 'pass') {
           return untrustedRun({
             ...workspaceBaseline,
-            details: `mutation workspace baseline: the unmutated test command fails inside the mutation workspace, so kills there would not be evidence. ${workspaceBaseline.details ?? ''}`.trim().slice(0, 280)
+            details: boundedDetails(`mutation workspace baseline: the unmutated test command fails inside the mutation workspace, so kills there would not be evidence. ${workspaceBaseline.details ?? ''}`)
           });
         }
       }

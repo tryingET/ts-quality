@@ -359,3 +359,12 @@ test('Scenario: untrusted names are rendered inert in text output', (t) => {
   const text = ok(root, ['index', 'inspect']);
   assert.equal(/[\u001b\u0007]/.test(text), false);
 });
+
+test('Scenario: the retention guidance names the default package index as a generated artifact to keep out of commits', (t) => {
+  const root = copyBase(t);
+  let plan = ok(root, ['retention', '--machine']);
+  assert.match(plan, /\nignore\tmissing\t\.ts-quality\/package-index\.json\treason=generated package artifact-reference index/);
+  ok(root, ['index', 'write', '--all', '--run-id', 'api-run']);
+  plan = ok(root, ['retention', '--machine']);
+  assert.match(plan, /\nignore\tpresent\t\.ts-quality\/package-index\.json\treason=generated package artifact-reference index/);
+});
