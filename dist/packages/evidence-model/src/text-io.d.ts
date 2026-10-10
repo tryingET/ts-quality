@@ -1,0 +1,21 @@
+export declare function hasUnsafeAttestationMetadata(value: string): boolean;
+export declare function renderSafeText(value: string): string;
+export declare function validateAttestationMetadata(value: string, field: string, options?: {
+    allowEmpty?: boolean;
+    trimEmpty?: boolean;
+}): string | undefined;
+export declare function createRunId(date?: Date): string;
+export declare function assertSafeRunId(runId: string): string;
+export declare function ensureDir(dirPath: string): void;
+export declare function stableSortKeys<T>(value: T): T;
+export declare function stableStringify(value: unknown): string;
+export declare function sha256Hex(input: string | Uint8Array): string;
+export declare function digestObject(value: unknown): string;
+export declare function readText(filePath: string): string;
+export declare function writeText(filePath: string, contents: string): void;
+export declare function readJson<T>(filePath: string): T;
+export declare function writeJson(filePath: string, value: unknown): void;
+export declare function fileDigest(filePath: string): string;
+export declare function readMaybe<T>(filePath: string): T | undefined;
+export declare function clamp(value: number, minimum: number, maximum: number): number;
+export declare function nowIso(): string;

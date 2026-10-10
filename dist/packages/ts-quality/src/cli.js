@@ -4,10 +4,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const index_1 = require("../../evidence-model/src/index");
 const index_2 = require("./index");
+const cli_args_1 = require("./cli-args");
+const cli_usage_1 = require("./cli-usage");
+/** The ts-quality command dispatcher over the product API. */
 function args() {
     const argv = process.argv.slice(2);
     if (handleTopLevelVersionRequest(argv)) {
@@ -24,513 +26,46 @@ function handleTopLevelVersionRequest(argv) {
     if (argv.length !== 1) {
         throw new Error('--version is a top-level flag; run exactly ts-quality --version');
     }
-    process.stdout.write(`${cliVersion()}\n`);
+    process.stdout.write(`${(0, cli_usage_1.cliVersion)()}\n`);
     return true;
 }
-const OPTION_KINDS = new Map([
-    ['--root', 'value'],
-    ['--changed', 'value'],
-    ['--run-id', 'value'],
-    ['--config', 'value'],
-    ['--out-dir', 'value'],
-    ['--from-run', 'value'],
-    ['--preset', 'value'],
-    ['--agent', 'value'],
-    ['--action', 'value'],
-    ['--issuer', 'value'],
-    ['--key-id', 'value'],
-    ['--private-key', 'value'],
-    ['--subject', 'value'],
-    ['--out', 'value'],
-    ['--claims', 'value'],
-    ['--attestation', 'value'],
-    ['--trusted-keys', 'value'],
-    ['--proposal', 'value'],
-    ['--invariant', 'value'],
-    ['--scenario', 'value'],
-    ['--source-files', 'value'],
-    ['--test-files', 'value'],
-    ['--timeout-ms', 'value'],
-    ['--observed-at', 'value'],
-    ['--mutation-targets', 'value'],
-    ['--intervention-from', 'value'],
-    ['--intervention-tests', 'value'],
-    ['--git-horizon', 'value'],
-    ['--package', 'value'],
-    ['--index', 'value'],
-    ['--all', 'flag'],
-    ['--json', 'flag'],
-    ['--machine', 'flag'],
-    ['--help', 'flag'],
-    ['--apply', 'flag'],
-    ['--version', 'flag']
-]);
-const COMMAND_CONTRACTS = new Map([
-    ['init', { allowedValues: ['--root', '--preset'], allowedFlags: [], maxPositionals: 1 }],
-    ['doctor', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: ['--machine'], maxPositionals: 1 }],
-    ['materialize', { allowedValues: ['--root', '--config', '--out-dir'], allowedFlags: [], maxPositionals: 1 }],
-    ['adopt', { allowedValues: ['--root', '--from-run'], allowedFlags: [], maxPositionals: 1 }],
-    ['retention', { allowedValues: ['--root', '--config'], allowedFlags: ['--machine'], maxPositionals: 1 }],
-    ['check', { allowedValues: ['--root', '--config', '--changed', '--run-id', '--mutation-targets'], allowedFlags: [], maxPositionals: 1 }],
-    ['explain', { allowedValues: ['--root', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
-    ['report', { allowedValues: ['--root', '--run-id'], allowedFlags: ['--json'], maxPositionals: 1 }],
-    ['trend', { allowedValues: ['--root'], allowedFlags: [], maxPositionals: 1 }],
-    ['navigate', { allowedValues: ['--root', '--run-id', '--intervention-from', '--intervention-tests', '--git-horizon'], allowedFlags: ['--json'], maxPositionals: 1 }],
-    ['plan', { allowedValues: ['--root', '--config', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
-    ['govern', { allowedValues: ['--root', '--config', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
-    ['authorize', { allowedValues: ['--root', '--config', '--agent', '--action', '--run-id'], allowedFlags: [], maxPositionals: 1 }],
-    ['attest sign', { allowedValues: ['--root', '--issuer', '--key-id', '--private-key', '--subject', '--out', '--claims'], allowedFlags: [], maxPositionals: 2 }],
-    ['attest verify', { allowedValues: ['--root', '--attestation', '--trusted-keys'], allowedFlags: ['--json'], maxPositionals: 2 }],
-    ['attest keygen', { allowedValues: ['--root', '--out-dir', '--key-id'], allowedFlags: [], maxPositionals: 2 }],
-    ['witness test', { allowedValues: ['--root', '--invariant', '--scenario', '--source-files', '--test-files', '--out', '--timeout-ms', '--observed-at'], allowedFlags: [], maxPositionals: 64 }],
-    ['witness refresh', { allowedValues: ['--root', '--config', '--changed'], allowedFlags: [], maxPositionals: 2 }],
-    ['mutations preview', { allowedValues: ['--root', '--config', '--changed', '--mutation-targets'], allowedFlags: ['--json'], maxPositionals: 2 }],
-    ['index write', { allowedValues: ['--root', '--package', '--run-id', '--out'], allowedFlags: ['--all', '--json'], maxPositionals: 2 }],
-    ['index inspect', { allowedValues: ['--root', '--index', '--package'], allowedFlags: ['--json'], maxPositionals: 2 }],
-    ['amend', { allowedValues: ['--root', '--proposal', '--config'], allowedFlags: ['--apply'], maxPositionals: 1 }]
-]);
-function rememberValueOption(values, valueCounts, name, value) {
-    values.set(name, value);
-    valueCounts.set(name, (valueCounts.get(name) ?? 0) + 1);
-}
-function parseArgs(argv) {
-    const positionals = [];
-    const values = new Map();
-    const valueCounts = new Map();
-    const flags = new Set();
-    for (let index = 0; index < argv.length; index += 1) {
-        const token = argv[index];
-        if (token === undefined) {
-            break;
-        }
-        if (token === '--') {
-            positionals.push(...argv.slice(index + 1));
-            break;
-        }
-        if (!token.startsWith('--')) {
-            positionals.push(token);
-            continue;
-        }
-        const equalsIndex = token.indexOf('=');
-        const name = equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
-        const optionKind = OPTION_KINDS.get(name);
-        if (!optionKind) {
-            throw new Error(`unknown option ${name}`);
-        }
-        if (equalsIndex >= 0) {
-            if (optionKind === 'flag') {
-                throw new Error(`${name} does not take a value`);
-            }
-            rememberValueOption(values, valueCounts, name, token.slice(equalsIndex + 1));
-            continue;
-        }
-        if (optionKind === 'flag') {
-            flags.add(name);
-            continue;
-        }
-        const value = argv[index + 1];
-        if (value === undefined) {
-            throw new Error(`${name} requires a value`);
-        }
-        if (value.startsWith('--')) {
-            const nextName = value.includes('=') ? value.slice(0, value.indexOf('=')) : value;
-            if (OPTION_KINDS.has(nextName)) {
-                throw new Error(`${name} requires a value`);
-            }
-            continue;
-        }
-        rememberValueOption(values, valueCounts, name, value);
-        index += 1;
-    }
-    return { positionals, values, valueCounts, flags };
-}
-function commandContractKey(command, subcommand) {
-    if (!command) {
-        return undefined;
-    }
-    if (command === 'attest' || command === 'witness' || command === 'mutations' || command === 'index') {
-        return subcommand ? `${command} ${subcommand}` : command;
-    }
-    return command;
-}
-function commandLabel(command, subcommand) {
-    if (!command) {
-        return 'ts-quality';
-    }
-    return (command === 'attest' || command === 'witness' || command === 'mutations' || command === 'index') && subcommand ? `${command} ${subcommand}` : command;
-}
-function validateParsedArgs(parsed) {
-    const [command, subcommand] = parsed.positionals;
-    if (!command || command === 'help' || command === '--help') {
-        return;
-    }
-    if (parsed.flags.has('--help') || subcommand === 'help') {
-        return;
-    }
-    const contract = COMMAND_CONTRACTS.get(commandContractKey(command, subcommand) ?? '');
-    if (!contract) {
-        return;
-    }
-    if (parsed.positionals.length > contract.maxPositionals) {
-        throw new Error(`unexpected positional arguments for ${commandLabel(command, subcommand)}`);
-    }
-    const allowedValues = new Set(contract.allowedValues);
-    for (const name of parsed.values.keys()) {
-        if (!allowedValues.has(name)) {
-            throw new Error(`unexpected option ${name} for ${commandLabel(command, subcommand)}`);
-        }
-    }
-    const allowedFlags = new Set(contract.allowedFlags);
-    for (const name of parsed.flags) {
-        if (!allowedFlags.has(name)) {
-            throw new Error(`unexpected option ${name} for ${commandLabel(command, subcommand)}`);
-        }
-    }
-    for (const [name, count] of parsed.valueCounts.entries()) {
-        if (count > 1 && allowedValues.has(name)) {
-            throw new Error(`${name} may only be specified once`);
-        }
-    }
-}
-function takeOption(parsed, name) {
-    return parsed.values.get(name);
-}
-function hasFlag(parsed, name) {
-    return parsed.flags.has(name);
-}
-function commaList(parsed, name) {
-    const value = takeOption(parsed, name);
-    if (value === undefined) {
-        return undefined;
-    }
-    const items = value.split(',').map((item) => item.trim()).filter(Boolean);
-    if (items.length === 0) {
-        throw new Error(`${name} requires at least one value`);
-    }
-    return items;
-}
-function rootDir(parsed) {
-    return path_1.default.resolve(takeOption(parsed, '--root') ?? process.cwd());
-}
-function changedFiles(parsed) {
-    const value = takeOption(parsed, '--changed');
-    return value ? value.split(',').filter(Boolean) : undefined;
-}
-function runId(parsed) {
-    return takeOption(parsed, '--run-id');
-}
-function mutationTargets(parsed) {
-    if (!parsed.values.has('--mutation-targets')) {
-        return undefined;
-    }
-    const targets = (takeOption(parsed, '--mutation-targets') ?? '').split(';').map((item) => item.trim()).filter(Boolean);
-    if (targets.length === 0) {
-        // An empty list must not silently replace configured targets and widen mutation back to the whole scope.
-        throw new Error('--mutation-targets requires at least one target spec (file:, span:, symbol: or site:), separated by ;');
-    }
-    return targets;
-}
-function configPath(parsed) {
-    return takeOption(parsed, '--config');
-}
-function outDir(parsed) {
-    return takeOption(parsed, '--out-dir');
-}
-function fromRun(parsed) {
-    return takeOption(parsed, '--from-run');
-}
-function preset(parsed) {
-    const value = takeOption(parsed, '--preset');
-    if (!value) {
-        return undefined;
-    }
-    if (value === 'default' || value === 'node-test' || value === 'node-test-ts-dist' || value === 'vitest' || value === 'jest') {
-        return value;
-    }
-    throw new Error(`unsupported init preset ${value}`);
-}
-function csvValues(parsed, name) {
-    const value = takeOption(parsed, name);
-    return value ? value.split(',').filter(Boolean) : undefined;
-}
-function readPackageVersion(packageJsonPath) {
-    try {
-        const manifest = JSON.parse(fs_1.default.readFileSync(packageJsonPath, 'utf8'));
-        return typeof manifest.version === 'string' ? manifest.version : undefined;
-    }
-    catch {
-        return undefined;
-    }
-}
-function cliVersion() {
-    return readPackageVersion(path_1.default.resolve(__dirname, '../../../../packages/ts-quality/package.json'))
-        ?? readPackageVersion(path_1.default.resolve(__dirname, '../../../../package.json'))
-        ?? '0.0.0';
-}
-function usage(command, subcommand) {
-    if (!command) {
-        return `ts-quality commands:
-
-First bounded review:
-  ts-quality init
-  # configure ts-quality.config.* for coverage, changed scope, invariants, governance, and agents
-  ts-quality check --changed src/file.ts --run-id review-001
-  ts-quality explain --run-id review-001
-  ts-quality report --run-id review-001
-
-First focused witness:
-  # Pick a target-repo proof command before writing the witness: prefer a module-level test or a repo-local npm script over a broad npm test when the broad command cannot target the changed slice.
-  ts-quality witness test --invariant auth.refresh.validity --scenario expired-boundary --source-files src/auth/token.ts --test-files test/auth/token.test.ts --out .ts-quality/witnesses/auth-refresh-expired-boundary.json -- npm run test:auth-refresh --silent
-  # For dist-based TypeScript witnesses, run the target repo build first; for source-mode loaders/env flags, hide the long command behind an npm script.
-  ts-quality check --changed src/auth/token.ts --run-id review-001
-
-Core commands:
-- --version                                print the packaged CLI version
-- init [--preset <name>]                   create starter control-plane files
-- doctor [--machine]                       inspect adoption readiness without running tests
-- materialize [--out-dir <dir>]            write boring runtime JSON from config/support files
-- adopt --from-run <run-dir>               copy reusable config/control-plane/witness files from a pilot run
-- retention [--machine]                    project commit-vs-ephemeral artifact retention guidance
-- check [--changed <a,b>] [--run-id <id>]  write the immutable evidence run bundle
-- explain|report|plan|govern --run-id <id> project a persisted run without re-checking
-- authorize --agent <id> [--action merge] --run-id <id>
-- witness test|refresh                     create or refresh execution witnesses
-- mutations preview [--json]               inert preview of the sites check would mutate
-- attest sign|verify|keygen                bind or verify run artifacts
-- trend                                    compare the nearest comparable prior run
-- navigate --run-id <id> [--json]         read-only blocking queue, intervention lineage and Git facts
-- index write|inspect                      package artifact-reference index and its read-only inspection
-- amend --proposal <file> [--apply]        evaluate a governance amendment
-
-Trust contract:
-- check requires explicit changed scope from --changed, config changeSet.files, or a diff file.
-- Prefer --run-id in automation; latest.json fallback is only for selected read/projection commands.
-- Run coverage and your target repo quality gate before check when coverage/mutation evidence matters.
-- Machine truth is under .ts-quality/runs/<run-id>/; stdout and Markdown are projections.
-
-Use: ts-quality <command> --help
-`;
-    }
-    if (command === 'init') {
-        return `Usage: ts-quality init [--root <dir>] [--preset default|node-test|node-test-ts-dist|vitest|jest]
-
-Creates starter control-plane files. Presets only change generated starter config guidance; existing files are preserved.
-- node-test: Node's built-in test runner with LCOV generation.
-- node-test-ts-dist: built-output TypeScript repos; includes source-map coverage guidance and dist/lib/build runtime mirrors.
-- vitest: advisory npm run coverage / npm test starter shape.
-- jest: Jest through the repository's package manager, with LCOV coverage and in-band mutation runs.
-`;
-    }
-    if (command === 'doctor') {
-        return `Usage: ts-quality doctor [--root <dir>] [--changed <a,b,c>] [--config <file>] [--machine]
-
-Inspects package scripts, config, changed scope, LCOV presence, coverage.generateCommand, runtime mirror roots, and likely source-vs-dist coverage risk.
-Read-only: doctor does not run tests or mutate package.json.
-Use --machine for the compact harnessed-LLM / agent diagnostic line protocol; reserve --json on other commands for CI-style generic JSON projections.
-`;
-    }
-    if (command === 'materialize') {
-        return `Usage: ts-quality materialize [--root <dir>] [--config <file>] [--out-dir <dir>]
-
-Exports author-authored config/support data into canonical runtime JSON.
-Reads: ts-quality.config.* and configured support files.
-Writes: .ts-quality/materialized/ts-quality.config.json and related support JSON.
-Use this before check when CI or agents should consume generated data instead of source config.
-`;
-    }
-    if (command === 'adopt') {
-        return `Usage: ts-quality adopt --from-run <run-dir-or-run.json> [--root <dir>]
-
-Copies reusable ts-quality config/control-plane/witness files from a pilot run into this repo without copying ephemeral run artifacts.
-Reads: <source>/.ts-quality/runs/<run-id>/run.json plus referenced config/control-plane/witness files.
-Writes missing target files only; existing target files are skipped rather than overwritten.
-Copies trusted public keys (*.pub.pem) only; private key material is never adopted.
-Omits: .ts-quality/runs/, .ts-quality/latest.json, .ts-quality/mutation-manifest.json, coverage output, private keys, and witness receipt sidecars.
-`;
-    }
-    if (command === 'retention') {
-        return `Usage: ts-quality retention [--root <dir>] [--config <file>] [--machine]
-
-Projects a read-only artifact retention plan for adoption and review.
-Commit/review: reusable config, control-plane files, witness JSON records, and trusted public keys (*.pub.pem).
-Keep ephemeral or gitignored: .ts-quality/runs/, latest.json, mutation-manifest.json, coverage output, witness receipt sidecars, and private keys.
-Use --machine for the compact TSQ_RETENTION_PLAN_V1 line protocol.
-`;
-    }
-    if (command === 'check') {
-        return `Usage: ts-quality check [--root <dir>] [--config <file>] [--changed <a,b,c>] [--run-id <id>] [--mutation-targets <spec;spec>]
-
-Runs the evidence, mutation, invariant, governance, and verdict pipeline.
-Required trust precondition: explicit changed scope from --changed, config changeSet.files, or a configured diff file.
-Recommended precondition: run the target repo's tests/coverage first, or configure coverage.generateCommand so check can create missing LCOV before analysis.
-Writes: .ts-quality/runs/<run-id>/{run.json,verdict.json,report.json,report.md,pr-summary.md,check-summary.txt,explain.txt,plan.txt,govern.txt} and .ts-quality/latest.json.
-Automation: pass --run-id so explain/report/plan/govern/authorize stay bound to this exact run.
-Mutation targets (--mutation-targets or config mutations.targets) narrow mutation to file:<path>, span:<path>:<a>-<b>, symbol:<path>#<kind:name>[@<a>-<b>] or site:<id>; separate several with ';'. check refuses unresolved targets.
-`;
-    }
-    if (command === 'navigate') {
-        return `Usage: ts-quality navigate [--root <dir>] [--run-id <id>] [--intervention-from <earlier-run-id> --intervention-tests <a,b>] [--git-horizon <commit>] [--json]
-
-Derived, read-only navigation for one run: a versioned blocking summary and action queue ordered by class, severity, scope and identity, with inert argv experiments.
-The protected nextEvidenceAction.primaryAction is reported unchanged; the navigation headline is separate.
---intervention-from/--intervention-tests: per-site lineage "observed survivor before; observed kill after declared test edit", reported only for the same site identity, a fresh green execution and an otherwise unchanged context; anything else stays unknown or is labeled with the context that changed.
---git-horizon: optional Git facts (churn, recency, authors, uncommitted, renames) since a pinned commit; facts, not evidence.
-Writes nothing and runs no test command.
-`;
-    }
-    if (command === 'mutations') {
-        return `Usage: ts-quality mutations preview [--root <dir>] [--config <file>] [--changed <a,b,c>] [--mutation-targets <spec;spec>] [--json]
-
-Inert preview of the mutation sites check would run for this changed scope, targets and budget.
-Lists discovered, eligible, selected and excluded sites with reasons and resolves every target against current source.
-Runs no command (not even coverage generation) and writes nothing.
-Target specs: file:<path>, span:<path>:<a>-<b>, symbol:<path>#<kind:name>[@<a>-<b>], site:<id>; separate several with ';'.
-`;
-    }
-    if (command === 'index') {
-        return `Usage: ts-quality index write [--root <dir>] (--package <dir[,dir]> | --all) [--run-id <id[,id]>] [--out <file>] [--json]
-       ts-quality index inspect [--root <dir>] [--index <file>] [--package <dir[,dir]>] [--json]
-
-write: references the canonical run packet files (digests) of the named runs (default: the latest pointer) and the
-packages they touch. Packages are the directories with a package.json, discovered as check discovers them (--all),
-or named with --package. Default output: .ts-quality/package-index.json. Copies no verdict and claims no coverage:
-a package without a changed file in the runs is listed as no-run-evidence.
-inspect: re-reads every reference (fresh, changed or missing), checks source drift and package enumeration, and
-reports findings per package. Refuses an unknown schema, paths outside the root and symbolic links. Writes nothing.
-Upload the index with every path in its upload.paths list, keeping their layout; inspect the copy with --root.
-`;
-    }
-    if (command === 'explain') {
-        return `Usage: ts-quality explain [--root <dir>] [--run-id <id>]
-
-Renders the explanation trail for a persisted run. Prefer --run-id; when omitted this command reads .ts-quality/latest.json.
-Writes no artifacts; stdout is a projection of run.json and snapped decision context.
-`;
-    }
-    if (command === 'report') {
-        return `Usage: ts-quality report [--root <dir>] [--run-id <id>] [--json]
-
-Renders a Markdown or JSON report for a persisted run. Prefer --run-id; when omitted this command reads .ts-quality/latest.json.
-Use --json for machine consumers; report JSON includes additive decisionContext metadata.
-`;
-    }
-    if (command === 'trend') {
-        return `Usage: ts-quality trend [--root <dir>]
-
-Compares the latest run with the nearest earlier comparable run.
-Fails closed instead of comparing unrelated changed scopes or changed evidence baselines.
-`;
-    }
-    if (command === 'plan') {
-        return `Usage: ts-quality plan [--root <dir>] [--config <file>] [--run-id <id>]
-
-Renders governance implementation guidance for a persisted run or current config context.
-Prefer --run-id for review/release decisions so drift and snapped control-plane truth stay visible.
-`;
-    }
-    if (command === 'govern') {
-        return `Usage: ts-quality govern [--root <dir>] [--config <file>] [--run-id <id>]
-
-Renders governance findings for a persisted run or current config context.
-Prefer --run-id; findings are downstream of the exact run evidence, not a separate authority.
-`;
-    }
-    if (command === 'authorize') {
-        return `Usage: ts-quality authorize --agent <id> [--action merge] [--root <dir>] [--config <file>] [--run-id <id>]
-
-Evaluates whether an agent/human has standing to perform an action against a selected run.
-Prefer --run-id; authorization rechecks drift and writes run-bound authorization and bundle JSON.
-Writes: .ts-quality/runs/<run-id>/authorize.<agent>.<action>.json and bundle.<agent>.<action>.json.
-`;
-    }
-    if (command === 'attest' && subcommand === 'sign') {
-        return `Usage: ts-quality attest sign --issuer <id> --key-id <id> --private-key <file> --subject <file> --out <file> [--claims <a,b>] [--root <dir>]
-
-Signs a repo-local subject artifact. Subject paths must stay inside --root and run-scoped payload metadata must match the subject path when present.
-Do not commit private keys.
-`;
-    }
-    if (command === 'attest' && subcommand === 'verify') {
-        return `Usage: ts-quality attest verify --attestation <file> [--trusted-keys <dir>] [--json] [--root <dir>]
-
-Verifies a signed attestation against trusted public keys. Use --json for machine consumers.
-`;
-    }
-    if (command === 'attest' && subcommand === 'keygen') {
-        return `Usage: ts-quality attest keygen [--out-dir <dir>] [--key-id <id>] [--root <dir>]
-
-Generates an Ed25519 keypair for local attestation workflows. Do not commit private keys.
-`;
-    }
-    if (command === 'witness' && subcommand === 'test') {
-        return `Usage: ts-quality witness test --invariant <id> --scenario <id> --source-files <a,b> [--test-files <a,b>] --out <file> [--timeout-ms <ms>] [--observed-at <iso>] [--root <dir>] -- <command...>
-
-Runs one explicit proof command and writes an execution witness plus receipt sidecar.
-Use this when a lexical invariant match should graduate to execution-backed support for one scenario.
-
-Choosing the command after --:
-1. Start from the changed source file and the focused test file you would trust in code review.
-2. Prefer a module-level target-repo command, for example: -- npm run test:auth-refresh --silent or -- node --test test/auth/token.test.js.
-3. Use a repo-global npm test only as baseline evidence when it cannot target the changed behavior or leaves long-lived handles.
-4. For dist-based TypeScript witnesses, run the target repo build first. For source-mode loaders, env flags, or long inline assertions, put the exact proof command in package.json and invoke that script after --.
-
-Keep commands narrow: one invariant, one scenario, one changed behavior, and one focused test command are stronger product evidence than a repo-global green test run.
-`;
-    }
-    if (command === 'witness' && subcommand === 'refresh') {
-        return `Usage: ts-quality witness refresh [--root <dir>] [--config <file>] [--changed <a,b,c>]
-
-Runs configured execution witness commands impacted by the current changed scope.
-Use this before check when your invariant scenarios already declare witness commands and you want witness artifact churn to be an explicit stage.
-Pass --changed in automation unless config changeSet.files or a diff file supplies scope.
-`;
-    }
-    if (command === 'amend') {
-        return `Usage: ts-quality amend --proposal <file> [--apply] [--root <dir>] [--config <file>]
-
-Evaluates a constitutional amendment proposal and writes amendment result JSON/text.
-Omit --apply for review-only evaluation.
-`;
-    }
-    return `Usage: ts-quality ${command} [--root <dir>]\n`;
-}
 function main() {
-    const parsed = parseArgs(args());
+    const parsed = (0, cli_args_1.parseArgs)(args());
     const [command, subcommand] = parsed.positionals;
     if (!command || command === 'help' || command === '--help') {
-        process.stdout.write(usage());
+        process.stdout.write((0, cli_usage_1.usage)());
         return;
     }
-    if (hasFlag(parsed, '--help') || subcommand === 'help') {
-        process.stdout.write(usage(command, subcommand === 'help' ? undefined : subcommand));
+    if ((0, cli_args_1.hasFlag)(parsed, '--help') || subcommand === 'help') {
+        process.stdout.write((0, cli_usage_1.usage)(command, subcommand === 'help' ? undefined : subcommand));
         return;
     }
-    validateParsedArgs(parsed);
-    const cwd = rootDir(parsed);
+    (0, cli_args_1.validateParsedArgs)(parsed);
+    const cwd = (0, cli_args_1.rootDir)(parsed);
     if (command === 'init') {
-        const selectedPreset = preset(parsed);
+        const selectedPreset = (0, cli_args_1.preset)(parsed);
         (0, index_2.initProject)(cwd, selectedPreset ? { preset: selectedPreset } : undefined);
         process.stdout.write(`Initialized ts-quality in ${cwd}${selectedPreset ? ` with preset ${selectedPreset}` : ''}\n`);
         return;
     }
     if (command === 'doctor') {
         const doctorOptions = {};
-        const changed = changedFiles(parsed);
+        const changed = (0, cli_args_1.changedFiles)(parsed);
         if (changed) {
             doctorOptions.changedFiles = changed;
         }
-        const explicitConfigPath = configPath(parsed);
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
         if (explicitConfigPath) {
             doctorOptions.configPath = explicitConfigPath;
         }
-        process.stdout.write(hasFlag(parsed, '--machine')
+        process.stdout.write((0, cli_args_1.hasFlag)(parsed, '--machine')
             ? (0, index_2.renderDoctorMachine)(cwd, Object.keys(doctorOptions).length > 0 ? doctorOptions : undefined)
             : (0, index_2.renderDoctor)(cwd, Object.keys(doctorOptions).length > 0 ? doctorOptions : undefined));
         return;
     }
     if (command === 'materialize') {
-        const explicitConfigPath = configPath(parsed);
-        const requestedOutDir = outDir(parsed);
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
+        const requestedOutDir = (0, cli_args_1.outDir)(parsed);
         const materializeOptions = {};
         if (explicitConfigPath) {
             materializeOptions.configPath = explicitConfigPath;
@@ -543,7 +78,7 @@ function main() {
         return;
     }
     if (command === 'adopt') {
-        const requestedFromRun = fromRun(parsed);
+        const requestedFromRun = (0, cli_args_1.fromRun)(parsed);
         if (!requestedFromRun) {
             throw new Error('adopt requires --from-run <run-dir-or-run.json>');
         }
@@ -561,28 +96,28 @@ function main() {
         return;
     }
     if (command === 'retention') {
-        const explicitConfigPath = configPath(parsed);
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
         const retentionOptions = explicitConfigPath ? { configPath: explicitConfigPath } : undefined;
-        process.stdout.write(hasFlag(parsed, '--machine')
+        process.stdout.write((0, cli_args_1.hasFlag)(parsed, '--machine')
             ? (0, index_2.renderArtifactRetentionPlanMachine)(cwd, retentionOptions)
             : (0, index_2.renderArtifactRetentionPlan)(cwd, retentionOptions));
         return;
     }
     if (command === 'check') {
-        const changed = changedFiles(parsed);
-        const explicitConfigPath = configPath(parsed);
+        const changed = (0, cli_args_1.changedFiles)(parsed);
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
         const checkOptions = {};
         if (changed) {
             checkOptions.changedFiles = changed;
         }
-        const requestedRunId = runId(parsed);
+        const requestedRunId = (0, cli_args_1.runId)(parsed);
         if (requestedRunId) {
             checkOptions.runId = requestedRunId;
         }
         if (explicitConfigPath) {
             checkOptions.configPath = explicitConfigPath;
         }
-        const targets = mutationTargets(parsed);
+        const targets = (0, cli_args_1.mutationTargets)(parsed);
         if (targets) {
             checkOptions.mutationTargets = targets;
         }
@@ -600,20 +135,20 @@ function main() {
         return;
     }
     if (command === 'navigate') {
-        const navigateOptions = { json: hasFlag(parsed, '--json') };
-        const requestedRunId = runId(parsed);
+        const navigateOptions = { json: (0, cli_args_1.hasFlag)(parsed, '--json') };
+        const requestedRunId = (0, cli_args_1.runId)(parsed);
         if (requestedRunId) {
             navigateOptions.runId = requestedRunId;
         }
-        const interventionFrom = takeOption(parsed, '--intervention-from');
+        const interventionFrom = (0, cli_args_1.takeOption)(parsed, '--intervention-from');
         if (interventionFrom !== undefined) {
             navigateOptions.interventionFrom = interventionFrom;
         }
-        const interventionTests = takeOption(parsed, '--intervention-tests');
+        const interventionTests = (0, cli_args_1.takeOption)(parsed, '--intervention-tests');
         if (interventionTests !== undefined) {
             navigateOptions.interventionTests = interventionTests.split(',').map((item) => item.trim()).filter(Boolean);
         }
-        const gitHorizon = takeOption(parsed, '--git-horizon');
+        const gitHorizon = (0, cli_args_1.takeOption)(parsed, '--git-horizon');
         if (gitHorizon !== undefined) {
             navigateOptions.gitHorizon = gitHorizon;
         }
@@ -621,16 +156,16 @@ function main() {
         return;
     }
     if (command === 'mutations' && subcommand === 'preview') {
-        const previewOptions = { json: hasFlag(parsed, '--json') };
-        const changed = changedFiles(parsed);
+        const previewOptions = { json: (0, cli_args_1.hasFlag)(parsed, '--json') };
+        const changed = (0, cli_args_1.changedFiles)(parsed);
         if (changed) {
             previewOptions.changedFiles = changed;
         }
-        const explicitConfigPath = configPath(parsed);
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
         if (explicitConfigPath) {
             previewOptions.configPath = explicitConfigPath;
         }
-        const targets = mutationTargets(parsed);
+        const targets = (0, cli_args_1.mutationTargets)(parsed);
         if (targets) {
             previewOptions.mutationTargets = targets;
         }
@@ -638,30 +173,30 @@ function main() {
         return;
     }
     if (command === 'index' && subcommand === 'write') {
-        const writeOptions = { all: hasFlag(parsed, '--all') };
-        const packages = commaList(parsed, '--package');
+        const writeOptions = { all: (0, cli_args_1.hasFlag)(parsed, '--all') };
+        const packages = (0, cli_args_1.commaList)(parsed, '--package');
         if (packages) {
             writeOptions.packages = packages;
         }
-        const runIds = commaList(parsed, '--run-id');
+        const runIds = (0, cli_args_1.commaList)(parsed, '--run-id');
         if (runIds) {
             writeOptions.runIds = runIds;
         }
-        const out = takeOption(parsed, '--out');
+        const out = (0, cli_args_1.takeOption)(parsed, '--out');
         if (out) {
             writeOptions.out = out;
         }
         const written = (0, index_2.writePackageIndexFile)(cwd, writeOptions);
-        process.stdout.write(hasFlag(parsed, '--json') ? `${(0, index_1.stableStringify)(written.index)}\n` : written.output);
+        process.stdout.write((0, cli_args_1.hasFlag)(parsed, '--json') ? `${(0, index_1.stableStringify)(written.index)}\n` : written.output);
         return;
     }
     if (command === 'index' && subcommand === 'inspect') {
-        const inspectOptions = { json: hasFlag(parsed, '--json') };
-        const index = takeOption(parsed, '--index');
+        const inspectOptions = { json: (0, cli_args_1.hasFlag)(parsed, '--json') };
+        const index = (0, cli_args_1.takeOption)(parsed, '--index');
         if (index) {
             inspectOptions.index = index;
         }
-        const packages = commaList(parsed, '--package');
+        const packages = (0, cli_args_1.commaList)(parsed, '--package');
         if (packages) {
             inspectOptions.packages = packages;
         }
@@ -669,13 +204,13 @@ function main() {
         return;
     }
     if (command === 'explain') {
-        const requestedRunId = runId(parsed);
+        const requestedRunId = (0, cli_args_1.runId)(parsed);
         process.stdout.write((0, index_2.renderLatestExplain)(cwd, requestedRunId ? { runId: requestedRunId } : undefined));
         return;
     }
     if (command === 'report') {
-        const requestedRunId = runId(parsed);
-        process.stdout.write((0, index_2.renderLatestReport)(cwd, hasFlag(parsed, '--json') ? 'json' : 'markdown', requestedRunId ? { runId: requestedRunId } : undefined));
+        const requestedRunId = (0, cli_args_1.runId)(parsed);
+        process.stdout.write((0, index_2.renderLatestReport)(cwd, (0, cli_args_1.hasFlag)(parsed, '--json') ? 'json' : 'markdown', requestedRunId ? { runId: requestedRunId } : undefined));
         return;
     }
     if (command === 'trend') {
@@ -683,8 +218,8 @@ function main() {
         return;
     }
     if (command === 'plan') {
-        const explicitConfigPath = configPath(parsed);
-        const requestedRunId = runId(parsed);
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
+        const requestedRunId = (0, cli_args_1.runId)(parsed);
         const planOptions = {};
         if (explicitConfigPath) {
             planOptions.configPath = explicitConfigPath;
@@ -696,8 +231,8 @@ function main() {
         return;
     }
     if (command === 'govern') {
-        const explicitConfigPath = configPath(parsed);
-        const requestedRunId = runId(parsed);
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
+        const requestedRunId = (0, cli_args_1.runId)(parsed);
         const governOptions = {};
         if (explicitConfigPath) {
             governOptions.configPath = explicitConfigPath;
@@ -709,13 +244,13 @@ function main() {
         return;
     }
     if (command === 'authorize') {
-        const agentId = takeOption(parsed, '--agent');
+        const agentId = (0, cli_args_1.takeOption)(parsed, '--agent');
         if (!agentId) {
             throw new Error('authorize requires --agent <id>');
         }
-        const action = takeOption(parsed, '--action') ?? 'merge';
-        const explicitConfigPath = configPath(parsed);
-        const requestedRunId = runId(parsed);
+        const action = (0, cli_args_1.takeOption)(parsed, '--action') ?? 'merge';
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
+        const requestedRunId = (0, cli_args_1.runId)(parsed);
         const authorizeOptions = {};
         if (explicitConfigPath) {
             authorizeOptions.configPath = explicitConfigPath;
@@ -729,8 +264,8 @@ function main() {
     }
     if (command === 'witness') {
         if (subcommand === 'refresh') {
-            const explicitConfigPath = configPath(parsed);
-            const changed = changedFiles(parsed);
+            const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
+            const changed = (0, cli_args_1.changedFiles)(parsed);
             const refreshOptions = {};
             if (explicitConfigPath) {
                 refreshOptions.configPath = explicitConfigPath;
@@ -759,13 +294,13 @@ function main() {
             return;
         }
         if (subcommand === 'test') {
-            const invariantId = takeOption(parsed, '--invariant');
-            const scenarioId = takeOption(parsed, '--scenario');
-            const sourceFiles = csvValues(parsed, '--source-files');
-            const testFiles = csvValues(parsed, '--test-files');
-            const output = takeOption(parsed, '--out');
-            const timeoutMsRaw = takeOption(parsed, '--timeout-ms');
-            const observedAt = takeOption(parsed, '--observed-at');
+            const invariantId = (0, cli_args_1.takeOption)(parsed, '--invariant');
+            const scenarioId = (0, cli_args_1.takeOption)(parsed, '--scenario');
+            const sourceFiles = (0, cli_args_1.csvValues)(parsed, '--source-files');
+            const testFiles = (0, cli_args_1.csvValues)(parsed, '--test-files');
+            const output = (0, cli_args_1.takeOption)(parsed, '--out');
+            const timeoutMsRaw = (0, cli_args_1.takeOption)(parsed, '--timeout-ms');
+            const observedAt = (0, cli_args_1.takeOption)(parsed, '--observed-at');
             const commandArgs = parsed.positionals.slice(2);
             if (!invariantId || !scenarioId || !sourceFiles || sourceFiles.length === 0 || !output) {
                 throw new Error('witness test requires --invariant --scenario --source-files --out and a command');
@@ -801,12 +336,12 @@ function main() {
     }
     if (command === 'attest') {
         if (subcommand === 'sign') {
-            const issuer = takeOption(parsed, '--issuer');
-            const keyId = takeOption(parsed, '--key-id');
-            const privateKey = takeOption(parsed, '--private-key');
-            const subject = takeOption(parsed, '--subject');
-            const output = takeOption(parsed, '--out');
-            const claims = (takeOption(parsed, '--claims') ?? '').split(',').filter(Boolean);
+            const issuer = (0, cli_args_1.takeOption)(parsed, '--issuer');
+            const keyId = (0, cli_args_1.takeOption)(parsed, '--key-id');
+            const privateKey = (0, cli_args_1.takeOption)(parsed, '--private-key');
+            const subject = (0, cli_args_1.takeOption)(parsed, '--subject');
+            const output = (0, cli_args_1.takeOption)(parsed, '--out');
+            const claims = ((0, cli_args_1.takeOption)(parsed, '--claims') ?? '').split(',').filter(Boolean);
             if (issuer === undefined || !keyId || !privateKey || !subject || !output) {
                 throw new Error('attest sign requires --issuer --key-id --private-key --subject --out');
             }
@@ -814,29 +349,29 @@ function main() {
             return;
         }
         if (subcommand === 'verify') {
-            const attestation = takeOption(parsed, '--attestation');
-            const trusted = takeOption(parsed, '--trusted-keys') ?? '.ts-quality/keys';
+            const attestation = (0, cli_args_1.takeOption)(parsed, '--attestation');
+            const trusted = (0, cli_args_1.takeOption)(parsed, '--trusted-keys') ?? '.ts-quality/keys';
             if (!attestation) {
                 throw new Error('attest verify requires --attestation <file>');
             }
-            process.stdout.write((0, index_2.attestVerify)(cwd, attestation, trusted, hasFlag(parsed, '--json') ? 'json' : 'text'));
+            process.stdout.write((0, index_2.attestVerify)(cwd, attestation, trusted, (0, cli_args_1.hasFlag)(parsed, '--json') ? 'json' : 'text'));
             return;
         }
         if (subcommand === 'keygen') {
-            const out = path_1.default.resolve(cwd, takeOption(parsed, '--out-dir') ?? path_1.default.join('.ts-quality', 'keys'));
-            const keyId = takeOption(parsed, '--key-id') ?? 'generated';
+            const out = path_1.default.resolve(cwd, (0, cli_args_1.takeOption)(parsed, '--out-dir') ?? path_1.default.join('.ts-quality', 'keys'));
+            const keyId = (0, cli_args_1.takeOption)(parsed, '--key-id') ?? 'generated';
             process.stdout.write((0, index_2.attestGenerateKey)(out, keyId));
             return;
         }
         throw new Error('attest requires subcommand sign|verify|keygen');
     }
     if (command === 'amend') {
-        const proposal = takeOption(parsed, '--proposal');
+        const proposal = (0, cli_args_1.takeOption)(parsed, '--proposal');
         if (!proposal) {
             throw new Error('amend requires --proposal <file>');
         }
-        const explicitConfigPath = configPath(parsed);
-        process.stdout.write((0, index_2.runAmend)(cwd, proposal, hasFlag(parsed, '--apply'), explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
+        const explicitConfigPath = (0, cli_args_1.configPath)(parsed);
+        process.stdout.write((0, index_2.runAmend)(cwd, proposal, (0, cli_args_1.hasFlag)(parsed, '--apply'), explicitConfigPath ? { configPath: explicitConfigPath } : undefined));
         return;
     }
     throw new Error(`Unknown command ${command}`);
