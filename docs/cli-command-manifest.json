@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "kind": "ts-quality-cli-command-manifest",
   "status": "authored-projection",
-  "sourceOfTruth": "packages/ts-quality/src/cli.ts",
-  "description": "Machine-readable guide for harnesses choosing ts-quality CLI commands. Keep this aligned with COMMAND_CONTRACTS and dispatch behavior in packages/ts-quality/src/cli.ts.",
+  "sourceOfTruth": "packages/ts-quality/src/cli-args.ts",
+  "description": "Machine-readable guide for harnesses choosing ts-quality CLI commands. Keep this aligned with COMMAND_CONTRACTS in packages/ts-quality/src/cli-args.ts and dispatch behavior in packages/ts-quality/src/cli.ts.",
   "globalRules": {
     "rootDefault": "process.cwd()",
     "strictOptionValidation": true,

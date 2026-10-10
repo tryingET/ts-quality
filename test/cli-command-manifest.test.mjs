@@ -17,7 +17,7 @@ function parseStringArray(source) {
 }
 
 function parseCliCommandContracts() {
-  const cliSource = readRepoFile('packages/ts-quality/src/cli.ts');
+  const cliSource = readRepoFile('packages/ts-quality/src/cli-args.ts');
   const contracts = new Map();
   const contractPattern = /\['([^']+)', \{ allowedValues: \[([^\]]*)\], allowedFlags: \[([^\]]*)\], maxPositionals: (\d+) \}\]/gu;
   for (const match of cliSource.matchAll(contractPattern)) {
