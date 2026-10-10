@@ -2469,6 +2469,7 @@ function buildArtifactRetentionPlan(rootDir, options) {
         { path: '.ts-quality/runs/', reason: 'generated immutable run bundles; snapshot deliberately only for reviewed examples', status: 'pattern' },
         { path: '.ts-quality/latest.json', reason: 'ambient pointer to latest run, not durable authority', status: repoFileStatus(rootDir, '.ts-quality/latest.json') },
         { path: '.ts-quality/mutation-manifest.json', reason: 'generated mutation execution scratch artifact', status: repoFileStatus(rootDir, '.ts-quality/mutation-manifest.json') },
+        { path: '.ts-quality/package-index.json', reason: 'generated package artifact-reference index; regenerate it, or upload it with its upload.paths, instead of committing it', status: repoFileStatus(rootDir, '.ts-quality/package-index.json') },
         { path: coveragePath, reason: 'generated LCOV output', status: repoFileStatus(rootDir, coveragePath) },
         { path: '.ts-quality/witnesses/**/*.receipt.json', reason: 'execution receipt sidecars; witness JSON is the reusable evidence record', status: 'pattern' },
         ...(privateKeys.length > 0
@@ -2837,7 +2838,7 @@ function buildDoctorDiagnostic(rootDir, options) {
     recommendations.push({
         id: 'artifact-retention-policy',
         kind: 'artifact-retention',
-        summary: 'Commit reusable ts-quality config/control-plane/witness files; keep generated run artifacts, latest.json, mutation-manifest.json, and coverage outputs ephemeral or gitignored unless your repo deliberately snapshots reviewed samples.'
+        summary: 'Commit reusable ts-quality config/control-plane/witness files; keep generated run artifacts, latest.json, mutation-manifest.json, package-index.json, and coverage outputs ephemeral or gitignored unless your repo deliberately snapshots reviewed samples.'
     });
     recommendations.push({ id: 'script-snippets', kind: 'script-snippet', summary: 'Suggested package.json snippets are advisory only: coverage:<slice>, witness:<slice>, quality:<slice>.' });
     return {
